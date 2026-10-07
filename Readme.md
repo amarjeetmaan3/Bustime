@@ -1,0 +1,4 @@
+storePassword=your_secure_store_password
+keyPassword=your_secure_key_password
+keyAlias=bustime_alias
+storeFile=../app/keystore/app_signature.jks
