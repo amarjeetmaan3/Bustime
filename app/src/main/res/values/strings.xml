@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Bustime</string>
+    <string name="show_number">Show Driver Number</string>
+</resources>
