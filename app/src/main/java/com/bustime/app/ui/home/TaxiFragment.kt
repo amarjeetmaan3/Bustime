@@ -16,15 +16,13 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // यहाँ अगर ID गलत होती है तो ऐप क्रैश होता है, अब यह एकदम सही है
-        val recyclerViewTaxi = view.findViewById<RecyclerView>(R.id.recyclerViewTaxi)
-        
-        if (recyclerViewTaxi != null) {
-            recyclerViewTaxi.layoutManager = LinearLayoutManager(requireContext())
+        val recyclerView = view.findViewById<RecyclerView>(R.id.recyclerViewTaxi)
+        if (recyclerView != null) {
+            recyclerView.layoutManager = LinearLayoutManager(requireContext())
             
             val drivers = mutableListOf("Taxi Driver A", "Taxi Driver B", "Taxi Driver C")
             val adapter = VehicleAdapter(drivers)
-            recyclerViewTaxi.adapter = adapter
+            recyclerView.adapter = adapter
 
             viewLifecycleOwner.lifecycleScope.launch {
                 while (isActive) {
