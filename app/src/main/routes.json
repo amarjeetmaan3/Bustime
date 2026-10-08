@@ -1,0 +1,53 @@
+{
+  "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
+  "dataVersion": 1,
+
+  "places": [
+    { "id": "city_sample", "kind": "place", "city": "Sample City", "district": "Sample District",
+      "name": { "en": "Sample City", "hi": "नमूना शहर", "pa": "ਨਮੂਨਾ ਸ਼ਹਿਰ" } },
+    { "id": "stand_central", "kind": "stand", "city": "Sample City", "district": "Sample District",
+      "name": { "en": "Central Bus Stand", "hi": "केंद्रीय बस स्टैंड", "pa": "ਕੇਂਦਰੀ ਬੱਸ ਸਟੈਂਡ" },
+      "aliases": ["main bus stand"] },
+    { "id": "place_gandhi_chowk", "kind": "place", "city": "Sample City", "district": "Sample District",
+      "name": { "en": "Gandhi Chowk", "hi": "गांधी चौक", "pa": "ਗਾਂਧੀ ਚੌਕ" } },
+    { "id": "place_railway", "kind": "place", "city": "Sample City", "district": "Sample District",
+      "name": { "en": "Railway Station", "hi": "रेलवे स्टेशन", "pa": "ਰੇਲਵੇ ਸਟੇਸ਼ਨ" } },
+    { "id": "place_model_town", "kind": "place", "city": "Sample City", "district": "Sample District",
+      "name": { "en": "Model Town", "hi": "मॉडल टाउन", "pa": "ਮਾਡਲ ਟਾਊਨ" } },
+    { "id": "village_sample", "kind": "place", "district": "Sample District",
+      "name": { "en": "Sample Village", "hi": "नमूना गाँव", "pa": "ਨਮੂਨਾ ਪਿੰਡ" } },
+    { "id": "stand_village", "kind": "stand", "district": "Sample District",
+      "name": { "en": "Village Bus Stop", "hi": "गाँव बस अड्डा", "pa": "ਪਿੰਡ ਬੱਸ ਅੱਡਾ" } }
+  ],
+
+  "routes": [
+    { "id": "r1", "from": "stand_central", "to": "village_sample", "time": "06:30", "arrive": "07:45",
+      "service": "Sample Travels", "contact": "9000000011",
+      "stops": [
+        { "place": "place_gandhi_chowk", "time": "06:40" },
+        { "place": "stand_village", "time": "07:35" }
+      ] },
+    { "id": "r2", "from": "stand_central", "to": "village_sample", "time": "09:15", "arrive": "10:30",
+      "stops": [
+        { "place": "place_railway", "time": "09:25" },
+        { "place": "stand_village", "time": "10:20" }
+      ] },
+    { "id": "r3", "from": "village_sample", "to": "stand_central", "time": "17:00", "arrive": "18:15",
+      "service": "Sample Roadways",
+      "stops": [
+        { "place": "stand_village", "time": "17:05" },
+        { "place": "place_model_town", "time": "18:00" }
+      ] }
+  ],
+
+  "taxiSeaters": [4, 5, 6, 7],
+
+  "drivers": [
+    { "id": "t1", "type": "taxi", "name": "Sample Driver A", "phone": "9000000001", "seats": 4, "vehicle": "Sample Sedan, white" },
+    { "id": "t2", "type": "taxi", "name": "Sample Driver B", "phone": "9000000002", "seats": 5, "vehicle": "Sample SUV, grey" },
+    { "id": "t3", "type": "taxi", "name": "Sample Driver C", "phone": "9000000003", "seats": 7, "vehicle": "Sample Van, white" },
+    { "id": "a1", "type": "auto", "name": "Sample Auto 1", "phone": "9000000004", "fuel": "ev", "vehicle": "E-rickshaw" },
+    { "id": "a2", "type": "auto", "name": "Sample Auto 2", "phone": "9000000005", "fuel": "oil", "vehicle": "CNG auto" },
+    { "id": "a3", "type": "auto", "name": "Sample Auto 3", "phone": "9000000006", "fuel": "ev", "vehicle": "E-rickshaw" }
+  ]
+}
