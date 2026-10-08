@@ -11,7 +11,7 @@ class ContactDriverHelper(private val context: Context) {
 
     fun playDisclaimerAndShowNumber(driverNumber: String, onVoiceFinished: () -> Unit) {
         // AI वॉइस प्ले करें (raw फोल्डर से)
-        mediaPlayer = MediaPlayer.create(context, com.bustime.app.R.raw.ai_voice_disclaimer)
+      //  mediaPlayer = MediaPlayer.create(context, com.bustime.app.R.raw.ai_voice_disclaimer)
         mediaPlayer?.setOnCompletionListener {
             it.release()
             onVoiceFinished() // 3-5 सेकंड बाद नंबर दिखाने के लिए कॉलबैक
