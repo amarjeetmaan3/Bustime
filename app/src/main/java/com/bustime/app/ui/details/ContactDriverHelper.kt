@@ -1,33 +1,49 @@
 package com.bustime.app.ui.details
 
 import android.content.Context
-import android.content.Intent
-import android.media.MediaPlayer
-import android.net.Uri
+import android.speech.tts.TextToSpeech
+import android.widget.Toast
+import java.util.Locale
 
-class ContactDriverHelper(private val context: Context) {
+class ContactDriverHelper(private val context: Context) : TextToSpeech.OnInitListener {
 
-    private var mediaPlayer: MediaPlayer? = null
+    private var tts: TextToSpeech? = null
+    private var isInitialized = false
 
-    fun playDisclaimerAndShowNumber(driverNumber: String, onVoiceFinished: () -> Unit) {
-        // AI वॉइस प्ले करें (raw फोल्डर से)
-      //  mediaPlayer = MediaPlayer.create(context, com.bustime.app.R.raw.ai_voice_disclaimer)
-        mediaPlayer?.setOnCompletionListener {
-            it.release()
-            onVoiceFinished() // 3-5 सेकंड बाद नंबर दिखाने के लिए कॉलबैक
+    init {
+        // AI Voice (TTS) इंजन को स्टार्ट करना
+        tts = TextToSpeech(context, this)
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            // हम इंग्लिश (US) की आवाज़ सेट कर रहे हैं, आप चाहें तो Locale("hi", "IN") से हिंदी भी कर सकते हैं
+            val result = tts?.setLanguage(Locale.US)
+            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                isInitialized = true
+            }
         }
-        mediaPlayer?.start()
     }
 
-    fun callDriver(number: String) {
-        val intent = Intent(Intent.ACTION_DIAL)
-        intent.data = Uri.parse("tel:$number")
-        context.startActivity(intent)
+    fun playDisclaimerAndShowNumber(driverName: String, driverNumber: String) {
+        // यह वह मैसेज है जो AI बोलकर सुनाएगा
+        val disclaimerText = "Connecting you to $driverName. Please note, fares are fixed. Do not negotiate."
+        
+        if (isInitialized) {
+            // आवाज़ प्ले करें
+            tts?.speak(disclaimerText, TextToSpeech.QUEUE_FLUSH, null, null)
+            Toast.makeText(context, "Playing AI Disclaimer...", Toast.LENGTH_SHORT).show()
+            
+            // (भविष्य का काम: यहाँ हम आवाज़ खत्म होने के बाद नंबर स्क्रीन पर दिखाएंगे या डायलर खोलेंगे)
+            
+        } else {
+            Toast.makeText(context, "Voice engine is loading, please try again...", Toast.LENGTH_SHORT).show()
+        }
     }
-
-    fun openWhatsApp(number: String) {
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("https://wa.me/$number")
-        context.startActivity(intent)
+    
+    // जब ऐप बंद हो तो वॉइस इंजन को रोकना ज़रूरी है
+    fun stopVoice() {
+        tts?.stop()
+        tts?.shutdown()
     }
 }
