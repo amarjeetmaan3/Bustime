@@ -16,6 +16,6 @@ class SearchActivity : AppCompatActivity() {
         // सर्च एनालिटिक्स दर्ज करें
         AnalyticsHelper.logSearchEvent(fromLocation, toLocation, vehicleType)
 
-        // TODO: AppRepository से सर्च करके RotationalAdapter में डेटा पास करना
+                // TODO (चरण 3): AppRepository से सर्च करके नतीजे दिखाना
     }
 }
