@@ -7,6 +7,8 @@ import com.bustime.app.models.SnapshotDto
 import com.bustime.app.utils.Constants
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
@@ -22,24 +24,33 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
     private val prefs = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
     private val gson = Gson()
 
-    suspend fun sync() {
-        withContext(Dispatchers.IO) { runSync() }
-    }
+    private val localMutex = Mutex()
 
-    private suspend fun runSync() {
-        try {
-            if (dao.countPlaces() == 0) {
-                // डेटाबेस खाली है: पुराने वर्ज़न/ETag भूल जाओ और ऐप वाली फाइल से भरो
-                prefs.edit().remove(KEY_VERSION).remove(KEY_ETAG).apply()
+    // स्क्रीन खुलने से पहले यह पक्का करता है कि डेटाबेस खाली न हो (पहली बार ऐप वाली फाइल से भरता है)
+    suspend fun ensureLocalData() {
+        withContext(Dispatchers.IO) {
+            localMutex.withLock {
                 try {
-                    importBundled()
+                    if (dao.countPlaces() == 0) {
+                        // डेटाबेस खाली है: पुराने वर्ज़न/ETag भूल जाओ और ऐप वाली फाइल से भरो
+                        prefs.edit().remove(KEY_VERSION).remove(KEY_ETAG).apply()
+                        importBundled()
+                    }
                 } catch (e: Exception) {
                     Log.w(TAG, "Bundled data failed: ${e.message}")
                 }
             }
-            fetchRemote()
-        } catch (e: Exception) {
-            Log.w(TAG, "Sync failed, old data kept: ${e.message}")
+        }
+    }
+
+    suspend fun sync() {
+        ensureLocalData()
+        withContext(Dispatchers.IO) {
+            try {
+                fetchRemote()
+            } catch (e: Exception) {
+                Log.w(TAG, "Sync failed, old data kept: ${e.message}")
+            }
         }
     }
 

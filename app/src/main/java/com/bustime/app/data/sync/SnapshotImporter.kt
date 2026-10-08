@@ -90,8 +90,7 @@ object SnapshotImporter {
         }
 
         // ---------- टैक्सी / ऑटो ड्राइवर (नाम और मोबाइल ज़रूरी) ----------
-        val seaterSet = sortedSetOf<Int>()
-        for (n in dto.taxiSeaters.orEmpty()) if (n > 0) seaterSet.add(n)
+        val driverSeats = sortedSetOf<Int>()
 
         val drivers = ArrayList<Driver>()
         val driverIds = HashSet<String>()
@@ -111,16 +110,21 @@ object SnapshotImporter {
             if (type == "taxi") {
                 seats = d.seats?.takeIf { it > 0 }
                 if (seats == null) { skipped++; continue }   // टैक्सी में सीटर ज़रूरी
-                seaterSet.add(seats)
+                driverSeats.add(seats)
             }
             val fuel = if (type == "auto") clean(d.fuel)?.lowercase()?.takeIf { it == "ev" || it == "oil" } else null
             drivers.add(Driver(id, type, name, phone, clean(d.vehicle), seats, fuel, clean(d.info)))
         }
 
+        // सीटर के विकल्प वही दिखेंगे जो तुमने taxiSeaters में लिखे हैं (जिस सीटर की गाड़ी नहीं, उसे सूची से हटा दो)।
+        // सूची खाली या गायब हो तभी विकल्प ड्राइवरों के सीटर से बनते हैं।
+        val listed = dto.taxiSeaters.orEmpty().filter { it > 0 }.toSortedSet()
+        val finalSeaters: Set<Int> = if (listed.isNotEmpty()) listed else driverSeats
+
         if (skipped > 0) Log.w(TAG, "$skipped गलत/अधूरी एंट्री छोड़ी गईं")
         return Result(
             places.values.toList(), routes, stops, drivers,
-            seaterSet.map { SeaterGroup(it) }, skipped
+            finalSeaters.map { SeaterGroup(it) }, skipped
         )
     }
 }
