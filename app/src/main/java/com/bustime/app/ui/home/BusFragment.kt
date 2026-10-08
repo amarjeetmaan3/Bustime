@@ -3,9 +3,13 @@ package com.bustime.app.ui.home
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class BusFragment : Fragment(R.layout.fragment_bus) {
 
@@ -13,11 +17,17 @@ class BusFragment : Fragment(R.layout.fragment_bus) {
         super.onViewCreated(view, savedInstanceState)
 
         val recyclerViewBus = view.findViewById<RecyclerView>(R.id.recyclerViewBus)
-        
-        // लिस्ट को ऊपर से नीचे (Vertical) दिखाने के लिए
         recyclerViewBus.layoutManager = LinearLayoutManager(requireContext())
         
-        // अडैप्टर को जोड़ना (यहाँ हम टेस्टिंग के लिए 10 कार्ड्स दिखा रहे हैं)
-        recyclerViewBus.adapter = VehicleAdapter(10) 
+        val drivers = mutableListOf("Bus Driver 1", "Bus Driver 2", "Bus Driver 3", "Bus Driver 4", "Bus Driver 5")
+        val adapter = VehicleAdapter(drivers)
+        recyclerViewBus.adapter = adapter
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            while (isActive) {
+                delay(8000)
+                adapter.rotateList()
+            }
+        }
     }
 }
