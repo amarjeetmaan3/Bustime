@@ -4,12 +4,22 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.bustime.app.models.Driver
+import com.bustime.app.models.Place
 import com.bustime.app.models.Route
+import com.bustime.app.models.RouteStop
+import com.bustime.app.models.SeaterGroup
 
-@Database(entities = [Route::class], version = 1, exportSchema = false)
+@Database(
+    entities = [Place::class, Route::class, RouteStop::class, Driver::class, SeaterGroup::class],
+    version = 2,
+    exportSchema = false
+)
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun routeDao(): RouteDao
+    abstract fun transportDao(): TransportDao
 
     companion object {
         @Volatile
@@ -21,7 +31,10 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "bustime_offline_database"
-                ).build()
+                )
+                    // डेटा हमेशा routes.json से दोबारा आ सकता है, इसलिए पुराना ढाँचा बदलते समय मिटा देना ठीक है
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
