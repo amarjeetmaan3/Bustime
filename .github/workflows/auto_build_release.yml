@@ -2,8 +2,8 @@ name: Auto Build and Release APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,42 +11,50 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: gradle
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.4'
+      # यह स्टेप Bustime के लिए परमानेंट की-स्टोर बनाएगा और सेव करेगा
+      - name: Create Permanent Keystore (If not exists)
+        run: |
+          if [ ! -f app/bustime.jks ]; then
+            echo "Generating new permanent keystore..."
+            keytool -genkey -v -keystore app/bustime.jks -storepass bustime123 -alias bustime -keypass bustime123 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Bustime, O=BustimeApp, C=IN"
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add -f app/bustime.jks
+            git commit -m "Add permanent keystore to fix App Not Installed error"
+            git push
+          else
+            echo "Permanent keystore already exists!"
+          fi
 
-      # यह स्टेप Keystore को सेव करेगा ताकि बार-बार ऐप अनइंस्टॉल न करना पड़े
-      - name: Cache Android Debug Keystore
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: bustime-debug-keystore
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: gradle assembleDebug
+        run: ./gradlew :app:assembleDebug
 
       - name: Upload APK as Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Bustime-Debug-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+          path: app/build/outputs/apk/debug/*.apk
+          
+      - name: Publish GitHub Release (for in-app updater)
+        if: success()
+        uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/debug/app-debug.apk
           tag_name: v1.0.${{ github.run_number }}
-          name: Debug Build v1.0.${{ github.run_number }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: Bustime v1.0.${{ github.run_number }}
+          files: app/build/outputs/apk/debug/*.apk
+          make_latest: true
