@@ -9,10 +9,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
 import com.bustime.app.ui.details.ContactDriverHelper
 
-class VehicleAdapter(private val itemCount: Int) : 
+class VehicleAdapter(private var driverList: MutableList<String>) : 
     RecyclerView.Adapter<VehicleAdapter.VehicleViewHolder>() {
 
-    // हमारा नया AI Voice Helper
     private var contactHelper: ContactDriverHelper? = null
 
     class VehicleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -22,13 +21,11 @@ class VehicleAdapter(private val itemCount: Int) :
         val btnShowNumber: Button = view.findViewById(R.id.btnShowNumber)
     }
 
-    // जब लिस्ट स्क्रीन पर आती है, तब वॉइस इंजन को रेडी कर लेते हैं
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
         contactHelper = ContactDriverHelper(recyclerView.context)
     }
 
-    // जब लिस्ट स्क्रीन से हटती है, तो वॉइस इंजन को बंद कर देते हैं
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
         contactHelper?.stopVoice()
@@ -41,19 +38,32 @@ class VehicleAdapter(private val itemCount: Int) :
     }
 
     override fun onBindViewHolder(holder: VehicleViewHolder, position: Int) {
-        val driverName = "Driver ${position + 1}"
+        val driverName = driverList[position]
         
         holder.tvName.text = driverName
         holder.tvTiming.text = "Departure: 10:30 AM"
         holder.tvPrice.text = "Price: ₹50 - ₹80"
         
-        // बटन क्लिक करने पर AI Voice प्ले होगी
         holder.btnShowNumber.setOnClickListener {
             contactHelper?.playDisclaimerAndShowNumber(driverName, "+91-9876543210")
         }
     }
 
-    override fun getItemCount(): Int {
-        return itemCount
+    override fun getItemCount(): Int = driverList.size
+
+    // 8-सेकंड वाला शफलिंग लॉजिक
+    fun rotateList() {
+        if (driverList.size > 1) {
+            val firstItem = driverList.removeAt(0)
+            driverList.add(firstItem)
+            notifyItemRemoved(0)
+            notifyItemInserted(driverList.size - 1)
+        }
+    }
+
+    // चिप्स (फिल्टर) के लिए डेटा अपडेट करने का लॉजिक
+    fun updateData(newList: MutableList<String>) {
+        driverList = ArrayList(newList)
+        notifyDataSetChanged()
     }
     }
