@@ -11,6 +11,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # true तभी होगा जब GitHub Secrets में RELEASE_KEYSTORE_BASE64 डाली हो
+      HAS_RELEASE_KEY: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -21,39 +24,59 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # पुराना वाला Gradle सेटअप जो काम कर रहा था
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.4'
 
-      - name: Create Permanent Keystore (If not exists)
-        run: |
-          if [ ! -f app/bustime.jks ]; then
-            echo "Generating new permanent keystore..."
-            keytool -genkey -v -keystore app/bustime.jks -storepass bustime123 -alias bustime -keypass bustime123 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Bustime, O=BustimeApp, C=IN"
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
-            git add -f app/bustime.jks
-            git commit -m "Add permanent keystore to fix App Not Installed error"
-            git push
-          else
-            echo "Permanent keystore already exists!"
-          fi
-
-      # बिना gradlew के डायरेक्ट gradle कमांड
+      # ---------- टेस्ट बिल्ड (हमेशा) ----------
       - name: Build Debug APK
-        run: gradle assembleDebug
+        run: gradle assembleDebug -PappVersionCode=${{ github.run_number }}
 
-      - name: Upload APK as Artifact
-        if: success()
+      - name: Upload Debug APK as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Bustime-Debug-APK
           path: app/build/outputs/apk/debug/*.apk
-          
-      - name: Publish GitHub Release (for in-app updater)
-        if: success()
+
+      # ---------- Store बिल्ड (सिर्फ़ जब सीक्रेट्स हों) ----------
+      - name: Decode release keystore
+        if: env.HAS_RELEASE_KEY == 'true'
+        run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build signed Release APK + AAB
+        if: env.HAS_RELEASE_KEY == 'true'
+        env:
+          RELEASE_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: gradle assembleRelease bundleRelease -PappVersionCode=${{ github.run_number }}
+
+      - name: Upload Release files as Artifact
+        if: env.HAS_RELEASE_KEY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bustime-Release
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+
+      # ---------- GitHub Release (अपडेटर इसी से पढ़ता है) ----------
+      # सीक्रेट्स हों तो सिर्फ़ Release APK, वरना Debug APK (दोनों साथ नहीं, वरना साइन अलग होने से इंस्टॉल फेल)
+      - name: Publish GitHub Release (signed)
+        if: env.HAS_RELEASE_KEY == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Bustime v1.0.${{ github.run_number }}
+          files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+          make_latest: true
+
+      - name: Publish GitHub Release (debug)
+        if: env.HAS_RELEASE_KEY != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
