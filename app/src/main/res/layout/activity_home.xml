@@ -20,9 +20,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:tabMode="fixed"> <!-- 'fixed' करने से तीनों टैब पूरी स्क्रीन पर बराबर फ़ैल जाएंगे -->
-            <com.google.android.material.tabs.TabItem android:text="Bus" />
-            <com.google.android.material.tabs.TabItem android:text="Taxi" />
-            <com.google.android.material.tabs.TabItem android:text="Auto Rickshaw" />
+            <com.google.android.material.tabs.TabItem android:text="@string/tab_bus" />
+            <com.google.android.material.tabs.TabItem android:text="@string/tab_taxi" />
+            <com.google.android.material.tabs.TabItem android:text="@string/tab_auto" />
         </com.google.android.material.tabs.TabLayout>
     </com.google.android.material.appbar.AppBarLayout>
 

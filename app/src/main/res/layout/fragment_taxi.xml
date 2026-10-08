@@ -3,11 +3,93 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F5F5">
-    
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewTaxi"
+
+    <!-- 1) पहले सीटर चुनो -->
+    <ScrollView
+        android:id="@+id/layoutSeaters"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/taxi_select_seats"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/seatersContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tvSeatersEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="16dp"
+                android:text="@string/no_seaters"
+                android:textSize="16sp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 2) चुने हुए सीटर के ड्राइवरों की लिस्ट -->
+    <LinearLayout
+        android:id="@+id/layoutDrivers"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="8dp"
-        android:clipToPadding="false" />
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp">
+
+            <Button
+                android:id="@+id/btnBackSeats"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/back" />
+
+            <TextView
+                android:id="@+id/tvSeatsHeading"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvNoDrivers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="16dp"
+            android:text="@string/no_drivers"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewTaxi"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp" />
+    </LinearLayout>
 </FrameLayout>
