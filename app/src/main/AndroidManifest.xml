@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- ऐप के अंदर से अपडेट इंस्टॉल करने के लिए। Store वाली रिलीज़ में अपडेटर बंद करते समय इसे हटाना है -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- CALL_PHONE हटा दिया: ड्राइवर को कॉल ACTION_DIAL (डायलर खोलना) से होगी, जिसे परमिशन नहीं चाहिए -->
 
     <application
@@ -14,6 +16,16 @@
         android:theme="@style/Theme.Bustime">
 
         <!-- AdMob: SDK जोड़ते समय यहाँ असली App ID की meta-data डालेंगे (टेस्ट ID के साथ Store पर मत डालना) -->
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <activity android:name=".ui.home.HomeActivity" android:exported="true">
             <intent-filter>
