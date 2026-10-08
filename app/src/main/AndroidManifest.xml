@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permissions for Network Lock and API Calls -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Permission to open phone dialer -->
-    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- CALL_PHONE हटा दिया: ड्राइवर को कॉल ACTION_DIAL (डायलर खोलना) से होगी, जिसे परमिशन नहीं चाहिए -->
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:roundIcon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        
-        <!-- AdMob App ID (Samsung Store ID update later) -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+        android:theme="@style/Theme.Bustime">
+
+        <!-- AdMob: SDK जोड़ते समय यहाँ असली App ID की meta-data डालेंगे (टेस्ट ID के साथ Store पर मत डालना) -->
 
         <activity android:name=".ui.home.HomeActivity" android:exported="true">
             <intent-filter>
@@ -24,9 +21,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-        <activity android:name=".ui.search.SearchActivity" />
-        <activity android:name=".ui.details.RouteDetailActivity" />
-        
+
+        <activity android:name=".ui.search.SearchActivity" android:exported="false" />
+        <activity android:name=".ui.details.RouteDetailActivity" android:exported="false" />
+
     </application>
 </manifest>
