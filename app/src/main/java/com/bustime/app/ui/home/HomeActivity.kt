@@ -3,9 +3,12 @@ package com.bustime.app.ui.home
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.tabs.TabLayout
 import com.bustime.app.R
+import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.ui.updater.GitHubUpdateChecker
+import kotlinx.coroutines.launch
 
 class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -14,6 +17,9 @@ class HomeActivity : AppCompatActivity() {
 
         // अपडेटर चेक करना
         GitHubUpdateChecker(this).checkForLatestUpdate()
+
+        // रूट/ड्राइवर का डेटा: पहली बार भरना, फिर बदलाव देखना (बैकग्राउंड में)
+        lifecycleScope.launch { AppRepository.getInstance(this@HomeActivity).syncData() }
 
         val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
         replaceFragment(BusFragment())
