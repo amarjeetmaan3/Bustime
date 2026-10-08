@@ -18,21 +18,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # यह स्टेप बिना gradlew फाइल के सीधा सही Gradle वर्ज़न सेटअप कर देगा
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.4'
 
-      # अब हम ./gradlew की जगह सीधे gradle कमांड यूज़ कर सकते हैं
-      - name: Build Release APK
-        run: gradle assembleRelease
+      # अब हम Release की जगह Debug (Testing) APK बना रहे हैं
+      - name: Build Debug APK
+        run: gradle assembleDebug
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: app/build/outputs/apk/release/app-release.apk
+          # फाइल का पाथ भी debug वाले फोल्डर का कर दिया गया है
+          files: app/build/outputs/apk/debug/app-debug.apk
           tag_name: v1.0.${{ github.run_number }}
-          name: Release v1.0.${{ github.run_number }}
+          name: Debug Build v1.0.${{ github.run_number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
