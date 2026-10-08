@@ -3,12 +3,18 @@ package com.bustime.app.ui.home
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.ChipGroup
 import com.bustime.app.R
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
+
+    private var adapter: VehicleAdapter? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -16,25 +22,28 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
         val recyclerViewAutos = view.findViewById<RecyclerView>(R.id.recyclerViewAutos)
         recyclerViewAutos.layoutManager = LinearLayoutManager(requireContext())
         
-        // ऐप खुलते ही डिफ़ॉल्ट रूप से 'All' सेलेक्ट रहता है, तो हम 15 कार्ड्स दिखाएंगे
-        recyclerViewAutos.adapter = VehicleAdapter(15)
+        val allAutos = mutableListOf("Auto 1 (EV)", "Auto 2 (Oil)", "Auto 3 (EV)", "Auto 4 (Oil)")
+        val evAutos = mutableListOf("Auto 1 (EV)", "Auto 3 (EV)")
+        val oilAutos = mutableListOf("Auto 2 (Oil)", "Auto 4 (Oil)")
+        
+        adapter = VehicleAdapter(ArrayList(allAutos))
+        recyclerViewAutos.adapter = adapter
 
-        // चिप्स (फिल्टर बटन) का क्लिक लॉजिक
         val chipGroup = view.findViewById<ChipGroup>(R.id.chipGroupAutoType)
-        chipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+        chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
             
-            // जो चिप सेलेक्ट हुआ है, उसके हिसाब से लिस्ट को अपडेट करना (फिल्टर इफ़ेक्ट)
             when (checkedIds.first()) {
-                R.id.chipAll -> {
-                    recyclerViewAutos.adapter = VehicleAdapter(15) // सारे 15 कार्ड्स
-                }
-                R.id.chipEV -> {
-                    recyclerViewAutos.adapter = VehicleAdapter(5)  // सिर्फ 5 EV कार्ड्स
-                }
-                R.id.chipOil -> {
-                    recyclerViewAutos.adapter = VehicleAdapter(10) // सिर्फ 10 Oil कार्ड्स
-                }
+                R.id.chipAll -> adapter?.updateData(ArrayList(allAutos))
+                R.id.chipEV -> adapter?.updateData(ArrayList(evAutos))
+                R.id.chipOil -> adapter?.updateData(ArrayList(oilAutos))
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            while (isActive) {
+                delay(8000)
+                adapter?.rotateList()
             }
         }
     }
