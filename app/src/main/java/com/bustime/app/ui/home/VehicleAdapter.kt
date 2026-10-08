@@ -26,13 +26,18 @@ class VehicleAdapter(private val itemCount: Int) :
     }
 
     override fun onBindViewHolder(holder: VehicleViewHolder, position: Int) {
-        // अभी हम डमी (Testing) डेटा दिखा रहे हैं, बाद में यह रूम डेटाबेस (Delta Sync) से आएगा
         holder.tvName.text = "Vehicle/Driver ${position + 1}"
         holder.tvTiming.text = "Departure: 10:30 AM"
         holder.tvPrice.text = "Price: ₹50 - ₹80"
         
+        // बटन क्लिक करने का कोड
         holder.btnShowNumber.setOnClickListener {
-            // यहाँ बाद में AI Voice वाला कोड चलेगा
+            // अभी हम एक मैसेज दिखा रहे हैं, बाद में यहाँ ContactDriverHelper कॉल होगा
+            android.widget.Toast.makeText(
+                holder.itemView.context, 
+                "Driver ${position + 1} Selected! AI Voice will play here.", 
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
