@@ -29,17 +29,19 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
     // स्क्रीन खुलने से पहले यह पक्का करता है कि डेटाबेस खाली न हो (पहली बार ऐप वाली फाइल से भरता है)
     suspend fun ensureLocalData() {
         withContext(Dispatchers.IO) {
-            localMutex.withLock {
-                try {
-                    if (dao.countPlaces() == 0) {
-                        // डेटाबेस खाली है: पुराने वर्ज़न/ETag भूल जाओ और ऐप वाली फाइल से भरो
-                        prefs.edit().remove(KEY_VERSION).remove(KEY_ETAG).apply()
-                        importBundled()
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Bundled data failed: ${e.message}")
-                }
+            localMutex.withLock { fillIfEmpty() }
+        }
+    }
+
+    private suspend fun fillIfEmpty() {
+        try {
+            if (dao.countPlaces() == 0) {
+                // डेटाबेस खाली है: पुराने वर्ज़न/ETag भूल जाओ और ऐप वाली फाइल से भरो
+                prefs.edit().remove(KEY_VERSION).remove(KEY_ETAG).apply()
+                importBundled()
             }
+        } catch (e: Exception) {
+            Log.w(TAG, "Bundled data failed: ${e.message}")
         }
     }
 
