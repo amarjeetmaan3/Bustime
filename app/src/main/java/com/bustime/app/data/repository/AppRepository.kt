@@ -1,39 +1,60 @@
 package com.bustime.app.data.repository
 
-import com.bustime.app.data.local.RouteDao
-import com.bustime.app.data.remote.ApiService
+import android.content.Context
+import com.bustime.app.data.local.AppDatabase
+import com.bustime.app.data.sync.SnapshotSync
+import com.bustime.app.models.BusResult
+import com.bustime.app.models.Driver
+import com.bustime.app.models.Place
 import com.bustime.app.models.Route
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.bustime.app.models.RouteStop
+import com.bustime.app.models.StandResult
+import com.bustime.app.utils.TextNormalizer
 
-class AppRepository(
-    private val routeDao: RouteDao,
-    private val apiService: ApiService
-) {
-    // सर्च के समय डेटा सीधे लोकल डेटाबेस से आएगा (सुपरफास्ट)
-    suspend fun searchLocalRoutes(from: String, to: String): List<Route> {
-        return routeDao.searchRoutes(from, to)
+class AppRepository private constructor(context: Context) {
+
+    private val appContext = context.applicationContext
+    private val dao = AppDatabase.getDatabase(appContext).transportDao()
+    private val snapshotSync = SnapshotSync(appContext, dao)
+
+    // ऐप खुलने पर चलाओ: पहली बार डेटा भरता है, फिर बदलाव देखता है
+    suspend fun syncData() = snapshotSync.sync()
+
+    // ---------- जगहें ----------
+    suspend fun searchPlaces(query: String, standsOnly: Boolean = false, limit: Int = 10): List<Place> {
+        val q = TextNormalizer.normalize(query)
+        if (q.isEmpty()) return emptyList()
+        return dao.searchPlaces(q, if (standsOnly) "stand" else null, limit)
     }
 
-    // हिडन रिफ्रेश के दौरान नया डेटा API से लाकर लोकल DB में डालना
-    suspend fun syncRoutes(lastUpdated: Long) {
-        withContext(Dispatchers.IO) {
-            try {
-                // 1. नए या अपडेट हुए रूट्स लाकर सेव करना
-                val updatedRoutes = apiService.getUpdatedRoutes(lastUpdated)
-                if (updatedRoutes.isNotEmpty()) {
-                    routeDao.insertRoutes(updatedRoutes)
-                }
-                
-                // 2. एडमिन द्वारा डिलीट किए गए रूट्स को हटाना
-                val activeIds = apiService.getActiveRouteIds()
-                if (activeIds.isNotEmpty()) {
-                    routeDao.removeDeletedRoutes(activeIds)
-                }
-            } catch (e: Exception) {
-                // अगर नेटवर्क एरर आए, तो कुछ नहीं करना (यूज़र को पता नहीं चलेगा)
-                e.printStackTrace()
+    suspend fun getPlacesById(ids: Collection<String>): Map<String, Place> =
+        if (ids.isEmpty()) emptyMap() else dao.getPlaces(ids.toList()).associateBy { it.id }
+
+    // ---------- बस ----------
+    suspend fun searchBusRoutes(fromId: String, toId: String): List<BusResult> =
+        dao.searchBusRoutes(fromId, toId)
+
+    suspend fun busesAtStand(standId: String): List<StandResult> = dao.busesAtStand(standId)
+
+    suspend fun getRoute(routeId: String): Route? = dao.getRoute(routeId)
+
+    suspend fun getRouteStops(routeId: String): List<RouteStop> = dao.getStops(routeId)
+
+    // ---------- टैक्सी / ऑटो ----------
+    suspend fun getSeaterGroups(): List<Int> = dao.getSeaterGroups()
+
+    suspend fun getTaxis(seats: Int): List<Driver> = dao.getDrivers("taxi", seats, null)
+
+    // fuel: null = सारे, "ev" या "oil"
+    suspend fun getAutos(fuel: String? = null): List<Driver> = dao.getDrivers("auto", null, fuel)
+
+    companion object {
+        @Volatile
+        private var INSTANCE: AppRepository? = null
+
+        fun getInstance(context: Context): AppRepository =
+            INSTANCE ?: synchronized(this) {
+                INSTANCE ?: AppRepository(context).also { INSTANCE = it }
             }
-        }
     }
 }
