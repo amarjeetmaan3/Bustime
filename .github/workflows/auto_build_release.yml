@@ -5,7 +5,6 @@ on:
     branches:
       - main
 
-# GitHub को रिलीज़ बनाने की परमिशन
 permissions:
   contents: write
 
@@ -27,10 +26,16 @@ jobs:
         with:
           gradle-version: '8.4'
 
+      # यह स्टेप Keystore को सेव करेगा ताकि बार-बार ऐप अनइंस्टॉल न करना पड़े
+      - name: Cache Android Debug Keystore
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: bustime-debug-keystore
+
       - name: Build Debug APK
         run: gradle assembleDebug
 
-      # यह स्टेप आपके APK को सीधा Actions पेज पर डाउनलोड के लिए लगा देगा
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -45,4 +50,3 @@ jobs:
           name: Debug Build v1.0.${{ github.run_number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
