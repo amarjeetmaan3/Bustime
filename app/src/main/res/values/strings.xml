@@ -1,4 +1,45 @@
 <resources>
     <string name="app_name">Bustime</string>
+
+    <!-- Tabs / Language -->
+    <string name="tab_bus">Bus</string>
+    <string name="tab_taxi">Taxi</string>
+    <string name="tab_auto">Auto Rickshaw</string>
+    <string name="language">Language</string>
+    <string name="language_title">Choose language</string>
+
+    <!-- Bus -->
+    <string name="from_hint">From</string>
+    <string name="to_hint">To</string>
+    <string name="search">Search</string>
+    <string name="stand_hint">Search by bus stand name</string>
+    <string name="results_routes">%1$s → %2$s</string>
+    <string name="results_stand">Buses at %1$s</string>
+    <string name="no_buses">No buses found for this route</string>
+    <string name="no_stand_buses">No buses found at this stand</string>
+    <string name="select_places">Please select both From and To places</string>
+    <string name="same_place">From and To cannot be the same</string>
+    <string name="arrives_at">Arrives %1$s</string>
+    <string name="departs_at">Departs %1$s</string>
+    <string name="route_stops">Stops</string>
+    <string name="back">Back</string>
+
+    <!-- Taxi -->
+    <string name="taxi_select_seats">How many seats do you need?</string>
+    <string name="seater_format">%1$d Seater</string>
+    <string name="no_seaters">No taxi options available yet</string>
+    <string name="no_drivers">No drivers available</string>
+
+    <!-- Auto -->
+    <string name="auto_all">All</string>
+    <string name="auto_ev">EV (Electric)</string>
+    <string name="auto_oil">Oil (Petrol/CNG)</string>
+    <string name="no_autos">No autos available</string>
+
+    <!-- Driver card -->
     <string name="show_number">Show Driver Number</string>
+    <string name="number_notice">Please note: fares are fixed. Do not negotiate. The number will appear in a few seconds…</string>
+    <string name="call">Call</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="action_failed">Could not open this action</string>
 </resources>
