@@ -5,7 +5,7 @@ on:
     branches:
       - main
 
-# यह नया ब्लॉक गिटहब को APK अपलोड करने की परमिशन देगा
+# GitHub को रिलीज़ बनाने की परमिशन
 permissions:
   contents: write
 
@@ -29,6 +29,13 @@ jobs:
 
       - name: Build Debug APK
         run: gradle assembleDebug
+
+      # यह स्टेप आपके APK को सीधा Actions पेज पर डाउनलोड के लिए लगा देगा
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bustime-Debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
