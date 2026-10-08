@@ -3,7 +3,7 @@ package com.bustime.app.ui.home
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.bustime.app.ads.AdMobManager
-import com.bustime.app.updater.GitHubUpdateChecker
+import com.bustime.app.ui.updater.GitHubUpdateChecker
 import com.bustime.app.utils.AnalyticsHelper
 import com.bustime.app.utils.NetworkGuard
 
