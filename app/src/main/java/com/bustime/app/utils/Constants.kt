@@ -8,6 +8,10 @@ object Constants {
     const val ADMOB_BANNER_ID = "ca-app-pub-3940256099942544/6300978111"
     const val ADMOB_NATIVE_ID = "ca-app-pub-3940256099942544/2247696110"
 
+    // GitHub अपडेटर: यहाँ अपना GitHub username लिखो (रिपो का नाम Bustime है)
+    const val GITHUB_OWNER = "YOUR_GITHUB_USERNAME"
+    const val GITHUB_REPO = "Bustime"
+
     // SharedPreferences
     const val PREFS_NAME = "BustimePrefs"
     const val KEY_LAST_SYNC_TIME = "last_sync_time"
