@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- अपडेट की APK यहीं डाउनलोड होती है (ऐप की अपनी Download फोल्डर) -->
+    <external-files-path name="update_downloads" path="Download/" />
+</paths>
