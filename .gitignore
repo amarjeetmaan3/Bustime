@@ -50,6 +50,8 @@ captures/
 *.jks
 *.keystore
 keystore.properties
+# सिर्फ़ टेस्ट (debug) चाबी रिपो में रखी है; Store वाली चाबी कभी रिपो में नहीं
+!app/bustime.jks
 
 # OS-specific files
 .DS_Store
