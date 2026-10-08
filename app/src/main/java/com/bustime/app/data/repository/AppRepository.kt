@@ -20,33 +20,39 @@ class AppRepository private constructor(context: Context) {
     // ऐप खुलने पर चलाओ: पहली बार डेटा भरता है, फिर बदलाव देखता है
     suspend fun syncData() = snapshotSync.sync()
 
-    // ---------- जगहें ----------
-    suspend fun searchPlaces(query: String, standsOnly: Boolean = false, limit: Int = 10): List<Place> {
-        val q = TextNormalizer.normalize(query)
-        if (q.isEmpty()) return emptyList()
-        return dao.searchPlaces(q, if (standsOnly) "stand" else null, limit)
+    // हर सवाल से पहले पक्का करता है कि पहली बार का डेटा भर चुका हो
+    private suspend fun <T> query(block: suspend () -> T): T {
+        snapshotSync.ensureLocalData()
+        return block()
     }
 
-    suspend fun getPlacesById(ids: Collection<String>): Map<String, Place> =
+    // ---------- जगहें ----------
+    suspend fun searchPlaces(text: String, standsOnly: Boolean = false, limit: Int = 10): List<Place> = query {
+        val q = TextNormalizer.normalize(text)
+        if (q.isEmpty()) emptyList() else dao.searchPlaces(q, if (standsOnly) "stand" else null, limit)
+    }
+
+    suspend fun getPlacesById(ids: Collection<String>): Map<String, Place> = query {
         if (ids.isEmpty()) emptyMap() else dao.getPlaces(ids.toList()).associateBy { it.id }
+    }
 
     // ---------- बस ----------
     suspend fun searchBusRoutes(fromId: String, toId: String): List<BusResult> =
-        dao.searchBusRoutes(fromId, toId)
+        query { dao.searchBusRoutes(fromId, toId) }
 
-    suspend fun busesAtStand(standId: String): List<StandResult> = dao.busesAtStand(standId)
+    suspend fun busesAtStand(standId: String): List<StandResult> = query { dao.busesAtStand(standId) }
 
-    suspend fun getRoute(routeId: String): Route? = dao.getRoute(routeId)
+    suspend fun getRoute(routeId: String): Route? = query { dao.getRoute(routeId) }
 
-    suspend fun getRouteStops(routeId: String): List<RouteStop> = dao.getStops(routeId)
+    suspend fun getRouteStops(routeId: String): List<RouteStop> = query { dao.getStops(routeId) }
 
     // ---------- टैक्सी / ऑटो ----------
-    suspend fun getSeaterGroups(): List<Int> = dao.getSeaterGroups()
+    suspend fun getSeaterGroups(): List<Int> = query { dao.getSeaterGroups() }
 
-    suspend fun getTaxis(seats: Int): List<Driver> = dao.getDrivers("taxi", seats, null)
+    suspend fun getTaxis(seats: Int): List<Driver> = query { dao.getDrivers("taxi", seats, null) }
 
     // fuel: null = सारे, "ev" या "oil"
-    suspend fun getAutos(fuel: String? = null): List<Driver> = dao.getDrivers("auto", null, fuel)
+    suspend fun getAutos(fuel: String? = null): List<Driver> = query { dao.getDrivers("auto", null, fuel) }
 
     companion object {
         @Volatile
