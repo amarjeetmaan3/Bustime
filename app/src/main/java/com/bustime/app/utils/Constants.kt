@@ -9,7 +9,7 @@ object Constants {
     const val ADMOB_NATIVE_ID = "ca-app-pub-3940256099942544/2247696110"
 
     // GitHub अपडेटर: यहाँ अपना GitHub username लिखो (रिपो का नाम Bustime है)
-    const val GITHUB_OWNER = "YOUR_GITHUB_USERNAME"
+    const val GITHUB_OWNER = "amarjeetmaan3"
     const val GITHUB_REPO = "Bustime"
 
     // SharedPreferences
