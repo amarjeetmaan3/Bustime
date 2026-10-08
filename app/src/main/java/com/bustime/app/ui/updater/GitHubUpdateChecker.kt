@@ -1,7 +1,9 @@
 package com.bustime.app.ui.updater
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.view.LayoutInflater
 import android.widget.Button
 import android.widget.TextView
@@ -11,14 +13,10 @@ import com.bustime.app.R
 class GitHubUpdateChecker(private val context: Context) {
     
     fun checkForLatestUpdate() {
-        // फोन में इंस्टॉल हुए ऐप का वर्ज़न पता करना
         val currentVersion = getCurrentAppVersion()
-        
-        // अभी टेस्टिंग के लिए मान लेते हैं कि गिटहब पर नया वर्ज़न "1.0.5" है
-        // (भविष्य में यह "1.0.5" सीधा गिटहब API से आएगा)
-        val latestVersionOnGithub = "1.0.5" 
+        // अभी के लिए हम इसे अलग रख रहे हैं ताकि पॉप-अप हमेशा दिखे और तुम बटन टेस्ट कर सको।
+        val latestVersionOnGithub = "1.0.18" 
 
-        // अगर हमारा वर्ज़न और गिटहब का वर्ज़न अलग है, तभी पॉप-अप दिखाओ
         if (currentVersion != latestVersionOnGithub) {
             showUpdateDialog(currentVersion, latestVersionOnGithub)
         }
@@ -36,20 +34,18 @@ class GitHubUpdateChecker(private val context: Context) {
     private fun showUpdateDialog(currentVersion: String, newVersion: String) {
         val view = LayoutInflater.from(context).inflate(R.layout.dialog_update, null)
         
-        val tvNewVersion = view.findViewById<TextView>(R.id.tvNewVersion)
-        val tvCurrentVersion = view.findViewById<TextView>(R.id.tvCurrentVersion)
-        val btnDownload = view.findViewById<Button>(R.id.btnDownloadUpdate)
-
-        // टेक्स्ट सेट करना
-        tvNewVersion.text = "New Version: v$newVersion"
-        tvCurrentVersion.text = "You have: v$currentVersion"
+        view.findViewById<TextView>(R.id.tvNewVersion).text = "New Version: v$newVersion"
+        view.findViewById<TextView>(R.id.tvCurrentVersion).text = "You have: v$currentVersion"
 
         val dialog = AlertDialog.Builder(context)
             .setView(view)
             .setCancelable(false)
             .create()
 
-        btnDownload.setOnClickListener {
+        view.findViewById<Button>(R.id.btnDownloadUpdate).setOnClickListener {
+            // यह कोड तुम्हारे फोन के ब्राउज़र में सीधा गिटहब का डाउनलोड पेज खोल देगा
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/YOUR_GITHUB_USERNAME/Bustime/releases/latest"))
+            context.startActivity(intent)
             dialog.dismiss() 
         }
 
