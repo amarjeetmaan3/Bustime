@@ -1,54 +1,67 @@
 package com.bustime.app.ui.home
 
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
-import com.google.android.material.tabs.TabLayout
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
-import com.bustime.app.ads.AdMobManager
-import com.bustime.app.ui.updater.GitHubUpdateChecker
-import com.bustime.app.utils.AnalyticsHelper
-import com.bustime.app.utils.NetworkGuard
+import com.bustime.app.ui.details.ContactDriverHelper
 
-class HomeActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+class VehicleAdapter(private var driverList: MutableList<String>) : 
+    RecyclerView.Adapter<VehicleAdapter.VehicleViewHolder>() {
 
-        if (!NetworkGuard.isInternetAvailable(this)) {
-            setContentView(R.layout.layout_network_error)
-            return
+    private var contactHelper: ContactDriverHelper? = null
+
+    class VehicleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val tvName: TextView = view.findViewById(R.id.tvDriverOrCompanyName)
+        val tvTiming: TextView = view.findViewById(R.id.tvTiming)
+        val tvPrice: TextView = view.findViewById(R.id.tvPriceRange)
+        val btnShowNumber: Button = view.findViewById(R.id.btnShowNumber)
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        contactHelper = ContactDriverHelper(recyclerView.context)
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        contactHelper?.stopVoice()
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VehicleViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_vehicle_card, parent, false)
+        return VehicleViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: VehicleViewHolder, position: Int) {
+        val driverName = driverList[position]
+        
+        holder.tvName.text = driverName
+        holder.tvTiming.text = "Departure: 10:30 AM"
+        holder.tvPrice.text = "Price: ₹50 - ₹80"
+        
+        holder.btnShowNumber.setOnClickListener {
+            contactHelper?.playDisclaimerAndShowNumber(driverName, "+91-9876543210")
         }
-
-        setContentView(R.layout.activity_home)
-
-        AnalyticsHelper.logAppOpened(this)
-        AdMobManager.initialize(this)
-        GitHubUpdateChecker(this).checkForLatestUpdate()
-
-        // टैब लेआउट को ढूँढना
-        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
-
-        // ऐप खुलते ही डिफ़ॉल्ट रूप से Bus वाला टैब दिखाना
-        replaceFragment(BusFragment())
-
-        // जब यूज़र किसी टैब पर क्लिक करे
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                when (tab?.position) {
-                    0 -> replaceFragment(BusFragment())           // पहला टैब (Bus)
-                    1 -> replaceFragment(TaxiFragment())          // दूसरा टैब (Taxi)
-                    2 -> replaceFragment(AutoRickshawFragment())  // तीसरा टैब (Auto)
-                }
-            }
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
-        })
     }
 
-    // स्क्रीन के बीच वाले हिस्से (FrameLayout) में नई स्क्रीन (Fragment) चिपकाने का फंक्शन
-    private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
+    override fun getItemCount(): Int = driverList.size
+
+    fun rotateList() {
+        if (driverList.size > 1) {
+            val firstItem = driverList.removeAt(0)
+            driverList.add(firstItem)
+            notifyItemRemoved(0)
+            notifyItemInserted(driverList.size - 1)
+        }
     }
-}
+
+    fun updateData(newList: MutableList<String>) {
+        driverList = ArrayList(newList)
+        notifyDataSetChanged()
+    }
+    }
