@@ -1,0 +1,40 @@
+<resources>
+    <string name="app_name">Bustime</string>
+
+    <string name="tab_bus">ਬੱਸ</string>
+    <string name="tab_taxi">ਟੈਕਸੀ</string>
+    <string name="tab_auto">ਆਟੋ ਰਿਕਸ਼ਾ</string>
+    <string name="language">ਭਾਸ਼ਾ</string>
+    <string name="language_title">ਭਾਸ਼ਾ ਚੁਣੋ</string>
+
+    <string name="from_hint">ਕਿੱਥੋਂ</string>
+    <string name="to_hint">ਕਿੱਥੇ ਤੱਕ</string>
+    <string name="search">ਖੋਜੋ</string>
+    <string name="stand_hint">ਬੱਸ ਅੱਡੇ ਦੇ ਨਾਮ ਨਾਲ ਖੋਜੋ</string>
+    <string name="results_routes">%1$s → %2$s</string>
+    <string name="results_stand">%1$s ਤੇ ਬੱਸਾਂ</string>
+    <string name="no_buses">ਇਸ ਰੂਟ ਤੇ ਕੋਈ ਬੱਸ ਨਹੀਂ ਮਿਲੀ</string>
+    <string name="no_stand_buses">ਇਸ ਅੱਡੇ ਤੇ ਕੋਈ ਬੱਸ ਨਹੀਂ ਮਿਲੀ</string>
+    <string name="select_places">ਕਿਰਪਾ ਕਰਕੇ ਕਿੱਥੋਂ ਅਤੇ ਕਿੱਥੇ ਤੱਕ, ਦੋਵੇਂ ਥਾਵਾਂ ਚੁਣੋ</string>
+    <string name="same_place">ਕਿੱਥੋਂ ਅਤੇ ਕਿੱਥੇ ਤੱਕ ਦੀ ਥਾਂ ਵੱਖ ਹੋਣੀ ਚਾਹੀਦੀ ਹੈ</string>
+    <string name="arrives_at">%1$s ਪਹੁੰਚੇਗੀ</string>
+    <string name="departs_at">%1$s ਰਵਾਨਾ</string>
+    <string name="route_stops">ਪੜਾਅ</string>
+    <string name="back">ਵਾਪਸ</string>
+
+    <string name="taxi_select_seats">ਤੁਹਾਨੂੰ ਕਿੰਨੀਆਂ ਸੀਟਾਂ ਵਾਲੀ ਗੱਡੀ ਚਾਹੀਦੀ ਹੈ?</string>
+    <string name="seater_format">%1$d ਸੀਟਰ</string>
+    <string name="no_seaters">ਹਾਲੇ ਕੋਈ ਟੈਕਸੀ ਵਿਕਲਪ ਉਪਲਬਧ ਨਹੀਂ ਹੈ</string>
+    <string name="no_drivers">ਕੋਈ ਡਰਾਈਵਰ ਉਪਲਬਧ ਨਹੀਂ ਹੈ</string>
+
+    <string name="auto_all">ਸਾਰੇ</string>
+    <string name="auto_ev">EV (ਇਲੈਕਟ੍ਰਿਕ)</string>
+    <string name="auto_oil">Oil (ਪੈਟਰੋਲ/CNG)</string>
+    <string name="no_autos">ਕੋਈ ਆਟੋ ਉਪਲਬਧ ਨਹੀਂ ਹੈ</string>
+
+    <string name="show_number">ਡਰਾਈਵਰ ਦਾ ਨੰਬਰ ਵੇਖੋ</string>
+    <string name="number_notice">ਧਿਆਨ ਦਿਓ: ਕਿਰਾਇਆ ਤੈਅ ਹੈ, ਮੋਲ-ਭਾਵ ਨਾ ਕਰੋ। ਨੰਬਰ ਕੁਝ ਸਕਿੰਟਾਂ ਵਿੱਚ ਦਿਖੇਗਾ…</string>
+    <string name="call">ਕਾਲ</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="action_failed">ਇਹ ਕੰਮ ਨਹੀਂ ਖੁੱਲ੍ਹ ਸਕਿਆ</string>
+</resources>
