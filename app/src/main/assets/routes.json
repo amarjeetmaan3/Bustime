@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 7,
+  "dataVersion": 8,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -346,6 +346,15 @@
       "phone": "9000000006",
       "fuel": "ev",
       "vehicle": "E-rickshaw"
+    },
+    {
+      "id": "t4",
+      "type": "taxi",
+      "name": "Amarjeet",
+      "phone": "9638527412",
+      "vehicle": "Sss",
+      "seats": 4,
+      "info": "Sadul Shahar"
     }
   ]
 }
