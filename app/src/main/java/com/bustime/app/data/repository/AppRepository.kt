@@ -27,9 +27,16 @@ class AppRepository private constructor(context: Context) {
     }
 
     // ---------- जगहें ----------
-    suspend fun searchPlaces(text: String, standsOnly: Boolean = false, limit: Int = 10): List<Place> = query {
+    // allowEmpty = true: टेक्स्ट खाली हो तो भी जगहों की सूची मिलती है (खोज पेज खुलते ही दिखाने के लिए)
+    suspend fun searchPlaces(
+        text: String,
+        standsOnly: Boolean = false,
+        limit: Int = 10,
+        allowEmpty: Boolean = false
+    ): List<Place> = query {
         val q = TextNormalizer.normalize(text)
-        if (q.isEmpty()) emptyList() else dao.searchPlaces(q, if (standsOnly) "stand" else null, limit)
+        if (q.isEmpty() && !allowEmpty) emptyList()
+        else dao.searchPlaces(q, if (standsOnly) "stand" else null, limit)
     }
 
     suspend fun getPlacesById(ids: Collection<String>): Map<String, Place> = query {
