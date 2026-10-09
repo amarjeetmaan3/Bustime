@@ -133,6 +133,7 @@ function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
 var data = null, sha = null, baseVersion = 0, dirty = false;
 var tab = 'settings';
 var sbToken = null, subs = null, subsError = '';   // Supabase login lives only in memory
+var reviewStatus = 'pending';
 var editing = null;
 var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
@@ -338,14 +339,14 @@ function viewPlaces() {
     return (!k || x.p.kind === k) && (!q || placeText(x.p).indexOf(q) >= 0);
   }).sort(function (a, b) { return pname(a.p).localeCompare(pname(b.p)); });
   return '<div class="toolbar"><input class="grow" id="f_places" data-filter="places" placeholder="Search places" value="' + esc(filters.places) + '">' +
-    '<select id="f_pkind"><option value="">All types</option><option value="stand"' + (k === 'stand' ? ' selected' : '') + '>Bus stands</option>' +
-    '<option value="place"' + (k === 'place' ? ' selected' : '') + '>Other places</option></select>' +
+    '<select id="f_pkind"><option value="">All types</option><option value="stand"' + (k === 'stand' ? ' selected' : '') + '>Bus stand</option>' +
+    '<option value="village"' + (k === 'village' ? ' selected' : '') + '>Village</option><option value="city"' + (k === 'city' ? ' selected' : '') + '>City</option><option value="place"' + (k === 'place' ? ' selected' : '') + '>Other place</option></select>' +
     '<button class="btn primary" data-act="new-place">+ Add place</button></div>' +
     '<div class="tablewrap"><table><thead><tr><th>English</th><th>Hindi</th><th>Punjabi</th><th>Type</th><th>City</th><th></th></tr></thead><tbody>' +
     (rows.map(function (x) {
       var p = x.p, n = p.name || {};
       return '<tr><td><b>' + esc(n.en || '-') + '</b></td><td>' + esc(n.hi || '-') + '</td><td>' + esc(n.pa || '-') + '</td>' +
-        '<td><span class="badge ' + (p.kind === 'stand' ? '' : 'gray') + '">' + (p.kind === 'stand' ? 'Bus stand' : 'Place') + '</span></td>' +
+        '<td><span class="badge ' + (p.kind === 'stand' ? '' : 'gray') + '">' + (p.kind === 'stand' ? 'Bus stand' : p.kind === 'village' ? 'Village' : p.kind === 'city' ? 'City' : 'Place') + '</span></td>' +
         '<td>' + esc(p.city || '-') + '</td><td class="actions">' +
         '<button class="btn sm" data-act="edit-place" data-i="' + x.i + '">Edit</button>' +
         '<button class="btn sm danger" data-act="del-place" data-i="' + x.i + '">Delete</button></td></tr>';
@@ -353,15 +354,16 @@ function viewPlaces() {
 }
 function placeFormHtml() {
   var p = editing.draft, n = p.name || {};
-  return '<label>Type</label><select id="fp_kind"><option value="place"' + (p.kind !== 'stand' ? ' selected' : '') + '>Place / city / village</option>' +
-    '<option value="stand"' + (p.kind === 'stand' ? ' selected' : '') + '>Bus stand</option></select>' +
+  return '<label>Type</label><select id="fp_kind"><option value="stand"' + (p.kind === 'stand' ? ' selected' : '') + '>Bus stand</option>' +
+    '<option value="village"' + (p.kind === 'village' ? ' selected' : '') + '>Village</option>' +
+    '<option value="city"' + (p.kind === 'city' ? ' selected' : '') + '>City</option>' +
+    '<option value="place"' + (p.kind === 'place' || !p.kind ? ' selected' : '') + '>Other place</option></select>' +
     '<label>Name in English</label><input id="fp_en" value="' + esc(n.en) + '">' +
-    '<label>Name in Hindi</label><input id="fp_hi" value="' + esc(n.hi) + '">' +
-    '<label>Name in Punjabi</label><input id="fp_pa" value="' + esc(n.pa) + '">' +
+    '<label>Name in Hindi (auto-translated when English loses focus)</label><input id="fp_hi" value="' + esc(n.hi) + '">' +
+    '<label>Name in Punjabi (auto-translated when English loses focus)</label><input id="fp_pa" value="' + esc(n.pa) + '">' +
     '<label>Alternate spellings (comma separated)</label><input id="fp_alias" value="' + esc((p.aliases || []).join(', ')) + '">' +
     '<div class="row2"><div><label>City</label><input id="fp_city" value="' + esc(p.city) + '"></div>' +
-    '<div><label>District</label><input id="fp_dist" value="' + esc(p.district) + '"></div></div>' +
-    foot('save-place');
+    '<div><label>District</label><input id="fp_dist" value="' + esc(p.district) + '"></div></div>' + foot('save-place');
 }
 
 function viewRoutes() {
@@ -401,6 +403,8 @@ function routeFormHtml() {
     '<label>To</label><select id="fr_to">' + placeOptions(r.to) + '</select>' +
     '<div class="row2"><div><label>Departure time</label><input id="fr_time" type="time" value="' + esc(r.time) + '"></div>' +
     '<div><label>Arrival time (optional)</label><input id="fr_arrive" type="time" value="' + esc(r.arrive) + '"></div></div>' +
+    '<label><input type="checkbox" id="fr_long"' + (r.longRoute ? ' checked' : '') + '> Long Route (रात 12 बजे के बाद तारीख आगे बढ़ेगी)</label>' +
+    '<label>Long route start date</label><input id="fr_start_date" type="date" value="' + esc(r.startDate || '') + '">' +
     '<label>Service / company (optional)</label><input id="fr_service" value="' + esc(r.service) + '">' +
     '<label>Contact number (optional)</label><input id="fr_contact" inputmode="tel" value="' + esc(r.contact) + '">' +
     '<label>Additional info (optional)</label><input id="fr_info" value="' + esc(r.info) + '">' +
@@ -499,11 +503,11 @@ async function sbLogin(email, password) {
   sbToken = j.access_token;
 }
 async function loadSubs() {
-  subs = await sbFetch('/rest/v1/route_submissions?status=eq.pending&order=created_at.desc&limit=100');
+  subs = await sbFetch('/rest/v1/route_submissions?select=*&order=created_at.desc&limit=300');
 }
 function viewReview() {
   if (!sbToken) {
-    return '<div class="card"><h2>Supabase sign-in</h2><p class="muted">Sign in with the admin user you created in Supabase (Authentication &rarr; Users). The password is never stored.</p>' +
+    return '<div class="card"><h2>Supabase sign-in</h2><p class="muted">Sign in with the admin user you created in Supabase (Authentication → Users). The password is never stored.</p>' +
       '<label>Project URL</label><input id="sb_url" value="' + esc(cfg.sbUrl) + '" placeholder="https://xxxx.supabase.co">' +
       '<label>Anon (public) key</label><input id="sb_key" value="' + esc(cfg.sbKey) + '">' +
       '<div class="row2"><div><label>Email</label><input id="sb_email" value="' + esc(cfg.sbEmail) + '"></div>' +
@@ -511,31 +515,36 @@ function viewReview() {
       '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="sb-login">Sign in</button></div></div>';
   }
   if (!subs) return '<div class="card"><p class="muted">Loading...</p></div>' + (subsError ? '<div class="alert err">' + esc(subsError) + '</div>' : '');
-  var head = '<div class="toolbar"><span class="grow muted">' + subs.length + ' pending. Approving adds the route to your data; then use Publish.</span>' +
-    '<button class="btn" data-act="sb-refresh">Refresh</button><button class="btn" data-act="sb-logout">Sign out</button></div>';
-  if (!subs.length) return head + '<div class="card"><p class="muted">No pending submissions.</p></div>';
-  return head + subs.map(function (s, i) {
+  var counts = { pending:0, approved:0, rejected:0 };
+  subs.forEach(function (s) { if (counts[s.status] !== undefined) counts[s.status]++; });
+  var head = '<div class="toolbar"><span class="grow muted">Approved and rejected submissions remain in their own lists.</span>' +
+    '<button class="btn" data-act="sb-refresh">Refresh</button><button class="btn" data-act="sb-logout">Sign out</button></div>' +
+    '<div class="toolbar" style="flex-wrap:wrap">' + ['pending','approved','rejected'].map(function (st) {
+      var label = st === 'pending' ? 'Pending' : st === 'approved' ? 'Approved' : 'Rejected';
+      return '<button class="btn ' + (reviewStatus === st ? 'primary' : '') + '" data-act="review-status" data-status="' + st + '">' + label + ' (' + counts[st] + ')</button>';
+    }).join('') + '</div>';
+  var filtered = subs.map(function (s, index) { return { s:s, index:index }; }).filter(function (x) { return x.s.status === reviewStatus; });
+  if (!filtered.length) return head + '<div class="card"><p class="muted">No ' + esc(reviewStatus) + ' submissions.</p></div>';
+  return head + filtered.map(function (x) {
+    var s = x.s, i = x.index;
     var stops = (s.stops || []).map(function (st) {
-      return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><span class="grow">' + esc(pname(placeById(st.place)) || st.place) +
-        '</span><input type="time" class="sub_t" data-place="' + esc(st.place) + '" value="' + esc(st.time || '') + '" style="max-width:140px"></div>';
+      var offset = Number(st.day_offset || 0), dayText = offset ? ' <span class="badge">Day +' + offset + '</span>' : '';
+      return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><span class="grow">' + esc(pname(placeById(st.place)) || st.place) + dayText +
+        '</span><input type="time" class="sub_t" data-place="' + esc(st.place) + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '></div>';
     }).join('');
+    var actions = s.status === 'pending' ? '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Approve</button><button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button>' :
+      s.status === 'rejected' ? '<button class="btn danger" data-act="sb-delete" data-i="' + i + '">Delete rejected request</button>' : '<span class="badge">Approved · retained</span>';
     return '<div class="card" data-sub="' + i + '"><h2>' + esc(pname(placeById(s.from_id)) || s.from_id) + ' &rarr; ' + esc(pname(placeById(s.to_id)) || s.to_id) + '</h2>' +
-      '<p class="muted">Sent ' + esc(new Date(s.created_at).toLocaleString()) + ' &middot; Phone <b>' + esc(s.phone) + '</b>' +
-      (s.service_name ? ' &middot; Service: ' + esc(s.service_name) : '') + '</p>' +
-      '<label>Start time</label><input type="time" class="sub_start" value="' + esc(s.start_time || '') + '" style="max-width:140px">' +
-      '<label>Stop times (edit if needed; blank = unknown)</label>' + stops +
-      '<div class="dlg-foot" style="justify-content:flex-start;gap:8px">' +
-      '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Approve</button>' +
-      '<button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button></div></div>';
+      '<p class="muted">Sent ' + esc(new Date(s.created_at).toLocaleString()) + ' · Phone <b>' + esc(s.phone) + '</b>' +
+      (s.service_name ? ' · Service: ' + esc(s.service_name) : '') + (s.long_route ? ' · <b>Long route</b> · Start date ' + esc(s.start_date || '-') : '') + '</p>' +
+      '<label>Start time</label><input type="time" class="sub_start" value="' + esc(s.start_time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
+      '<label>Stop times (blank = unknown)</label>' + stops + '<div class="dlg-foot" style="justify-content:flex-start;gap:8px">' + actions + '</div></div>';
   }).join('');
 }
 function subCardValues(i) {
-  var card = document.querySelector('[data-sub="' + i + '"]');
-  var times = [];
-  card.querySelectorAll('.sub_t').forEach(function (el) {
-    times.push({ place: el.getAttribute('data-place'), time: TIME_RE.test(el.value) ? el.value : null });
-  });
-  return { start: card.querySelector('.sub_start').value, stops: times };
+  var card = document.querySelector('[data-sub="' + i + '"]'), times = [];
+  card.querySelectorAll('.sub_t').forEach(function (el) { times.push({ place:el.getAttribute('data-place'), time:TIME_RE.test(el.value) ? el.value : null }); });
+  return { start:card.querySelector('.sub_start').value, stops:times };
 }
 
 // ============ Dialog ============
@@ -582,6 +591,28 @@ document.addEventListener('change', function (e) {
   if (e.target.id === 'f_dtype') { filters.driverType = e.target.value; render(); }
   if (e.target.id === 'f_pkind') { filters.placeKind = e.target.value; render(); }
 });
+async function autoTranslatePlaceName() {
+  var source = document.getElementById('fp_en');
+  if (!source || !source.value.trim()) return;
+  var english = source.value.trim();
+  async function translate(target) {
+    var response = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(english) + '&langpair=en%7C' + target);
+    if (!response.ok) throw new Error('Translation service unavailable');
+    var json = await response.json(), translated = json && json.responseData && json.responseData.translatedText;
+    if (!translated || json.responseStatus !== 200) throw new Error('Translation unavailable');
+    return translated;
+  }
+  var hi = document.getElementById('fp_hi'), pa = document.getElementById('fp_pa');
+  try {
+    var values = await Promise.all([translate('hi'), translate('pa')]);
+    if (source.value.trim() !== english) return;
+    if (hi && (!hi.value.trim() || hi.dataset.autofilled === 'true')) { hi.value = values[0]; hi.dataset.autofilled = 'true'; }
+    if (pa && (!pa.value.trim() || pa.dataset.autofilled === 'true')) { pa.value = values[1]; pa.dataset.autofilled = 'true'; }
+  } catch (err) { toast('Auto translation failed; enter Hindi/Punjabi manually.'); }
+}
+document.addEventListener('focusout', function (e) { if (e.target && e.target.id === 'fp_en') autoTranslatePlaceName(); });
+document.addEventListener('input', function (e) { if (e.target && (e.target.id === 'fp_hi' || e.target.id === 'fp_pa')) e.target.dataset.autofilled = 'false'; });
+
 document.addEventListener('click', async function (e) {
   if (e.target.id === 'overlay') { editing = null; publishOpen = false; render(); return; }
   var b = e.target.closest('[data-act]');
@@ -646,7 +677,7 @@ document.addEventListener('click', async function (e) {
     else if (act === 'reverse-route') {
       var src = data.routes[i];
       editing = { type: 'route', index: -1, draft: {
-        from: src.to, to: src.from, time: '', service: src.service, contact: src.contact, info: src.info,
+        from: src.to, to: src.from, time: '', service: src.service, contact: src.contact, info: src.info, longRoute: !!src.longRoute, startDate: src.startDate,
         stops: (src.stops || []).slice().reverse().map(function (s) { return { place: s.place }; })
       } };
       render(); toast('Return route prepared. Fill in the times and save.');
@@ -659,13 +690,25 @@ document.addEventListener('click', async function (e) {
       if (!from || !to) { toast('Select both From and To'); return; }
       if (from === to) { toast('From and To must be different'); return; }
       if (!TIME_RE.test(time)) { toast('Enter the departure time'); return; }
-      var stops = [];
+      var isLong = $('#fr_long') ? $('#fr_long').checked : false, startDate = val('fr_start_date');
+      if (isLong && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) { toast('Choose the long-route start date'); return; }
+      var stops = [], previousTime = time, dayOffset = 0;
+      var invalidTimeOrder = false;
       document.querySelectorAll('#stops .stoprow').forEach(function (row) {
         var sp = row.querySelector('.st_place').value, st = row.querySelector('.st_time').value;
-        if (sp) { var s = { place: sp }; if (TIME_RE.test(st)) s.time = st; stops.push(s); }
+        if (sp) {
+          var stop = { place:sp };
+          if (TIME_RE.test(st)) {
+            if (st < previousTime) { if (!isLong) invalidTimeOrder = true; else dayOffset++; }
+            previousTime = st; stop.time = st; if (isLong) stop.day_offset = dayOffset;
+          }
+          stops.push(stop);
+        }
       });
+      if (TIME_RE.test(arrive) && arrive < previousTime && !isLong) invalidTimeOrder = true;
+      if (invalidTimeOrder) { toast('A stop/arrival time cannot be earlier than the previous time. Enable Long Route to cross midnight.'); return; }
       var r = editing.index < 0 ? { id: nextNum('r', data.routes) } : data.routes[editing.index];
-      r.from = from; r.to = to; r.time = time;
+      r.from = from; r.to = to; r.time = time; r.longRoute = isLong; if (isLong) r.startDate = startDate; else delete r.startDate;
       ['arrive', 'service', 'contact', 'info'].forEach(function (k) {
         var v = k === 'arrive' ? (TIME_RE.test(arrive) ? arrive : '') : val('fr_' + k);
         if (v) r[k] = v; else delete r[k];
@@ -725,27 +768,41 @@ document.addEventListener('click', async function (e) {
     }
     else if (act === 'sb-logout') { sbToken = null; subs = null; render(); }
     else if (act === 'sb-refresh') { subs = null; render(); await loadSubs(); render(); }
+    else if (act === 'review-status') { reviewStatus = b.getAttribute('data-status'); render(); }
     else if (act === 'sb-reject') {
       if (!confirm('Reject this submission?')) return;
       await sbFetch('/rest/v1/route_submissions?id=eq.' + subs[i].id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'rejected' }) });
-      subs.splice(i, 1); toast('Rejected'); render();
+      subs[i].status = 'rejected'; toast('Moved to Rejected list'); render();
+    }
+    else if (act === 'sb-delete') {
+      if (!subs[i] || subs[i].status !== 'rejected') { toast('Only rejected requests can be deleted'); return; }
+      if (!confirm('Permanently delete this rejected request?')) return;
+      await sbFetch('/rest/v1/route_submissions?id=eq.' + encodeURIComponent(subs[i].id) + '&status=eq.rejected', { method:'DELETE', headers:{ Prefer:'return=minimal' } });
+      subs.splice(i, 1); toast('Rejected request deleted'); render();
     }
     else if (act === 'sb-approve') {
       var sub = subs[i], v = subCardValues(i);
       if (!TIME_RE.test(v.start)) { toast('Set a valid start time'); return; }
       if (!placeById(sub.from_id) || !placeById(sub.to_id)) { toast('This route uses a place that no longer exists'); return; }
+      var previousReviewTime = v.start, invalidReviewTime = false;
+      v.stops.forEach(function (st) {
+        if (st.time && st.time < previousReviewTime && !sub.long_route) invalidReviewTime = true;
+        if (st.time) previousReviewTime = st.time;
+      });
+      if (invalidReviewTime) { toast('A stop time is earlier than the previous time. Mark this as a Long Route in the route editor if it crosses midnight.'); return; }
       var arrive = null, mid = [];
       v.stops.forEach(function (st) {
         if (st.place === sub.to_id) arrive = st.time;
-        else if (st.place !== sub.from_id && placeById(st.place)) { var o = { place: st.place }; if (st.time) o.time = st.time; mid.push(o); }
+        else if (st.place !== sub.from_id && placeById(st.place)) { var o = { place: st.place }; if (st.time) o.time = st.time; if (st.day_offset != null) o.day_offset = st.day_offset; mid.push(o); }
       });
       var nr = { id: nextNum('r', data.routes), from: sub.from_id, to: sub.to_id, time: v.start };
+      if (sub.long_route) { nr.longRoute = true; nr.startDate = sub.start_date; }
       if (arrive) nr.arrive = arrive;
       if (sub.service_name) nr.service = sub.service_name;
       if (mid.length) nr.stops = mid;
       data.routes.push(nr); setDirty(true);
       await sbFetch('/rest/v1/route_submissions?id=eq.' + sub.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'approved' }) });
-      subs.splice(i, 1); toast('Added to routes. Press Publish to make it live.'); render();
+      subs[i].status = 'approved'; toast('Approved and retained in Approved list. Press Publish to make it live.'); render();
     }
 
     // ---- publish ----
