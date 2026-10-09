@@ -42,4 +42,7 @@
     <string name="call">Call</string>
     <string name="whatsapp">WhatsApp</string>
     <string name="action_failed">Could not open this action</string>
+    <string name="type_place_hint">Type a place name</string>
+    <string name="no_places">No places found</string>
+    <string name="swap_places">Swap From and To</string>
 </resources>
