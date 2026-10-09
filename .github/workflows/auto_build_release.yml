@@ -3,6 +3,10 @@ name: Auto Build and Release APK
 on:
   push:
     branches: [ "main" ]
+    # सिर्फ़ डेटा/एडमिन पेज बदलने पर नया APK और रिलीज़ नहीं बनेगी
+    paths-ignore:
+      - 'app/src/main/assets/routes.json'
+      - 'admin/**'
   workflow_dispatch:
 
 permissions:
