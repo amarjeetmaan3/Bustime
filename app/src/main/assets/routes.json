@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 8,
+  "dataVersion": 9,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -31,7 +31,8 @@
       "id": "place_dhani_khichdhan",
       "kind": "place",
       "name": {
-        "en": "Dhani khichdran"
+        "en": "Dhani khichdran",
+        "hi": "ढाणी खिचढा़न"
       }
     },
     {
@@ -66,7 +67,9 @@
       "id": "place_4_chak_4lnp",
       "kind": "place",
       "name": {
-        "en": "4 chak - 4LNP"
+        "en": "4 chak - 4LNP",
+        "hi": "4 चक - 4 एलएनपी",
+        "pa": "4 ਚੱਕ - 4LNP"
       }
     },
     {
@@ -87,7 +90,9 @@
       "id": "place_banwala",
       "kind": "place",
       "name": {
-        "en": "Banwala"
+        "en": "Banwala",
+        "hi": "बनवाला",
+        "pa": "ਬਨਵਾਲਾ"
       }
     },
     {
@@ -101,14 +106,18 @@
       "id": "place_bhudharwali",
       "kind": "place",
       "name": {
-        "en": "Bhudharwali"
+        "en": "Budharwali",
+        "hi": "बुधरवाली",
+        "pa": "ਬੁੱਢਰਵਾਲੀ"
       }
     },
     {
       "id": "place_chak_shone_wala",
       "kind": "place",
       "name": {
-        "en": "Chak shone wala"
+        "en": "Chak sohne wala",
+        "hi": "चक सोहने वाला",
+        "pa": "ਚੱਕ ਸੋਹਨੇ ਵਾਲਾ"
       }
     },
     {
@@ -129,7 +138,9 @@
       "id": "place_chak_hira_singh_wala",
       "kind": "place",
       "name": {
-        "en": "Chak Hira Singh wala"
+        "en": "Chak Hira Singh wala",
+        "hi": "चक हीरा सिंह वाला",
+        "pa": "ਚੱਕ ਹੀਰਾ ਸਿੰਘ ਵਾਲਾ"
       }
     },
     {
@@ -143,7 +154,9 @@
       "id": "place_bolanwali",
       "kind": "place",
       "name": {
-        "en": "Bolanwali"
+        "en": "Bolanwali",
+        "hi": "बोलंवाली",
+        "pa": "ਬੋਲਾਂਵਾਲੀ"
       }
     },
     {
@@ -151,6 +164,15 @@
       "kind": "stand",
       "name": {
         "en": "Sangriya"
+      }
+    },
+    {
+      "id": "stand_jaipur",
+      "kind": "stand",
+      "name": {
+        "en": "Jaipur",
+        "hi": "जयपुर",
+        "pa": "ਜੈਪੁਰ"
       }
     }
   ],
