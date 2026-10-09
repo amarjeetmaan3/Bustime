@@ -2,6 +2,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_add_route"
+        android:title="@string/add_route"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_language"
         android:title="@string/language"
         app:showAsAction="always" />
