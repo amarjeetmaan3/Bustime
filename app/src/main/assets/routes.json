@@ -1,10 +1,10 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 9,
+  "dataVersion": 10,
   "places": [
     {
       "id": "stand_sri_ganganagar",
-      "kind": "stand",
+      "kind": "city",
       "name": {
         "en": "Sri Ganganagar",
         "hi": "श्री गंगानगर",
@@ -13,14 +13,16 @@
     },
     {
       "id": "place_sadulshahar",
-      "kind": "place",
+      "kind": "city",
       "name": {
-        "en": "Sadulshahar"
+        "en": "Sadulshahar",
+        "hi": "सादुलशहर",
+        "pa": "ਸਦੁਲਸ਼ਹਿਰ"
       }
     },
     {
       "id": "place_amargarh",
-      "kind": "place",
+      "kind": "village",
       "name": {
         "en": "Amargarh",
         "hi": "अमरगढ़",
@@ -29,7 +31,7 @@
     },
     {
       "id": "place_dhani_khichdhan",
-      "kind": "place",
+      "kind": "village",
       "name": {
         "en": "Dhani khichdran",
         "hi": "ढाणी खिचढा़न"
@@ -37,35 +39,43 @@
     },
     {
       "id": "place_kishanpura_uttradha",
-      "kind": "place",
+      "kind": "village",
       "name": {
-        "en": "Kishanpura uttradha"
+        "en": "Kishanpura uttraadha",
+        "hi": "किशनपुरा उत्ताराधा",
+        "pa": "ਕਿਸ਼ਨਪੁਰਾ"
       }
     },
     {
       "id": "place_rasuwala",
-      "kind": "place",
+      "kind": "village",
       "name": {
-        "en": "Rasuwala"
+        "en": "Rasuwala",
+        "hi": "रासुवाला",
+        "pa": "ਰਾਸੂਵਾਲਾ"
       }
     },
     {
       "id": "place_miraa_chowk_sri_ganganagar",
-      "kind": "place",
+      "kind": "city",
       "name": {
-        "en": "Miraa chowk Sri Ganganagar"
+        "en": "Miraa chowk Sri Ganganagar",
+        "hi": "मीरा चौक श्री गंगानगर",
+        "pa": "ਮੀਰਾ ਚੌਕ ਸ੍ਰੀ ਗੰਗਾਨਗਰ"
       }
     },
     {
       "id": "place_kaluwala",
-      "kind": "place",
+      "kind": "village",
       "name": {
-        "en": "Kaluwala"
+        "en": "Kaluwala",
+        "hi": "कालूवाला",
+        "pa": "ਕਾਲੂਵਾਲਾ"
       }
     },
     {
       "id": "place_4_chak_4lnp",
-      "kind": "place",
+      "kind": "village",
       "name": {
         "en": "4 chak - 4LNP",
         "hi": "4 चक - 4 एलएनपी",
@@ -74,21 +84,25 @@
     },
     {
       "id": "place_5_chak",
-      "kind": "place",
+      "kind": "village",
       "name": {
-        "en": "5 CHAK"
+        "en": "5 CHAK",
+        "hi": "5 चक",
+        "pa": "5 ਚੱਕ"
       }
     },
     {
       "id": "place_abhoria",
-      "kind": "place",
+      "kind": "village",
       "name": {
-        "en": "Abhoria"
+        "en": "Abhoria",
+        "hi": "अभोरिया",
+        "pa": "ਅਬੋਰੀਆ"
       }
     },
     {
       "id": "place_banwala",
-      "kind": "place",
+      "kind": "village",
       "name": {
         "en": "Banwala",
         "hi": "बनवाला",
@@ -97,14 +111,16 @@
     },
     {
       "id": "place_hakmabad",
-      "kind": "place",
+      "kind": "village",
       "name": {
-        "en": "Hakmabad"
+        "en": "Hakmabad",
+        "hi": "हाकमाबाद",
+        "pa": "ਹਾਕਮਾਬਾਦ"
       }
     },
     {
       "id": "place_bhudharwali",
-      "kind": "place",
+      "kind": "village",
       "name": {
         "en": "Budharwali",
         "hi": "बुधरवाली",
@@ -113,7 +129,7 @@
     },
     {
       "id": "place_chak_shone_wala",
-      "kind": "place",
+      "kind": "village",
       "name": {
         "en": "Chak sohne wala",
         "hi": "चक सोहने वाला",
@@ -122,21 +138,25 @@
     },
     {
       "id": "place_takhat_hazara_babiran",
-      "kind": "place",
+      "kind": "village",
       "name": {
-        "en": "Takhat hazara babiran"
+        "en": "Takhat hazara babriyan",
+        "hi": "तख्त हज़ारा बाबरियान",
+        "pa": "ਤਖਤ ਹਜ਼ਾਰਾ ਬਾਬਰੀਅਨ"
       }
     },
     {
       "id": "place_kanchiya_chowk_sadulshahar",
-      "kind": "place",
+      "kind": "village",
       "name": {
-        "en": "Kanchiya chowk sadulshahar"
+        "en": "Kainchiya chowk sadulshahar",
+        "hi": "कैंचिया चौक सादुलशहर",
+        "pa": "ਕੈਂਚੀਆ ਚੌਕ ਸਦੁਲਸ਼ਹਿਰ"
       }
     },
     {
       "id": "place_chak_hira_singh_wala",
-      "kind": "place",
+      "kind": "village",
       "name": {
         "en": "Chak Hira Singh wala",
         "hi": "चक हीरा सिंह वाला",
@@ -145,14 +165,16 @@
     },
     {
       "id": "place_lambi_dhab",
-      "kind": "place",
+      "kind": "village",
       "name": {
-        "en": "Lambi dhab"
+        "en": "Lambi dhab",
+        "hi": "लम्बी ढाब",
+        "pa": "ਲੰਬੀ ਢਾਬ"
       }
     },
     {
       "id": "place_bolanwali",
-      "kind": "place",
+      "kind": "village",
       "name": {
         "en": "Bolanwali",
         "hi": "बोलंवाली",
@@ -161,14 +183,16 @@
     },
     {
       "id": "stand_sangriya",
-      "kind": "stand",
+      "kind": "city",
       "name": {
-        "en": "Sangriya"
+        "en": "Sangriya",
+        "hi": "संगरिया",
+        "pa": "ਸੰਗਰਿਆ"
       }
     },
     {
       "id": "stand_jaipur",
-      "kind": "stand",
+      "kind": "city",
       "name": {
         "en": "Jaipur",
         "hi": "जयपुर",
