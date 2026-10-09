@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 10,
+  "dataVersion": 11,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -334,6 +334,73 @@
         },
         {
           "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "from": "stand_sangriya",
+      "to": "stand_sri_ganganagar",
+      "time": "20:50",
+      "longRoute": false,
+      "arrive": "22:51",
+      "stops": [
+        {
+          "place": "place_bolanwali"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_amargarh"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
         }
       ]
     }
