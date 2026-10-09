@@ -62,6 +62,33 @@
             android:text="@string/ar_tap_time"
             android:textSize="16sp" />
 
+        <CheckBox
+            android:id="@+id/cbLongRoute"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Long Route (रात 12 बजे के बाद तारीख अपने-आप बदलेगी)" />
+
+        <TextView
+            android:id="@+id/tvStartDateLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Long route की शुरू होने की तारीख"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvStartDate"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#FFFFFF"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="तारीख चुनें"
+            android:visibility="gone" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
