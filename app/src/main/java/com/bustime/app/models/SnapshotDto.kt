@@ -29,7 +29,9 @@ data class RouteDto(
     val routeName: String?,
     val contact: String?,
     val info: String?,
-    val stops: List<StopDto>?
+    val stops: List<StopDto>?,
+    val longRoute: Boolean?,
+    val startDate: String?
 )
 
 data class StopDto(
