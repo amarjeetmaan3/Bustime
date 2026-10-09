@@ -9,8 +9,8 @@ import java.net.URL
 object SupabaseClient {
 
     fun isConfigured(): Boolean =
-        Constants.SUPABASE_URL.startsWith("https://") && !Constants.SUPABASE_URL.contains("YOUR-") &&
-            !Constants.SUPABASE_ANON_KEY.contains("YOUR-")
+           const val SUPABASE_URL = "https://mdryxbvmqsphbfkvqtnf.supabase.co"
+    const val SUPABASE_ANON_KEY = "sb_publishable_1J6qNzpvPH-TTI-qxRU8wA_RVO7EpfM"
 
     /** true = भेज दिया गया। नेटवर्क के काम की वजह से इसे बैकग्राउंड थ्रेड पर ही चलाओ। */
     fun insertRouteSubmission(body: JSONObject): Boolean {
