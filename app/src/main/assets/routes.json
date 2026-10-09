@@ -1,172 +1,151 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 2,
+  "dataVersion": 3,
   "places": [
     {
-      "id": "city_sample",
-      "kind": "place",
-      "city": "Sample City",
-      "district": "Sample District",
-      "name": {
-        "en": "Sample City",
-        "hi": "नमूना शहर",
-        "pa": "ਨਮੂਨਾ ਸ਼ਹਿਰ"
-      }
-    },
-    {
-      "id": "stand_central",
+      "id": "stand_sri_ganganagar",
       "kind": "stand",
-      "city": "Sample City",
-      "district": "Sample District",
       "name": {
-        "en": "Central Bus Stand",
-        "hi": "केंद्रीय बस स्टैंड",
-        "pa": "ਕੇਂਦਰੀ ਬੱਸ ਸਟੈਂਡ"
-      },
-      "aliases": [
-        "main bus stand"
-      ]
-    },
-    {
-      "id": "place_gandhi_chowk",
-      "kind": "place",
-      "city": "Sample City",
-      "district": "Sample District",
-      "name": {
-        "en": "Gandhi Chowk",
-        "hi": "गांधी चौक",
-        "pa": "ਗਾਂਧੀ ਚੌਕ"
+        "en": "Sri Ganganagar",
+        "hi": "श्री गंगानगर",
+        "pa": "ਸ਼੍ਰੀ ਗੰਗਨਗਰ"
       }
     },
     {
-      "id": "place_railway",
+      "id": "place_sadulshahar",
       "kind": "place",
-      "city": "Sample City",
-      "district": "Sample District",
       "name": {
-        "en": "Railway Station",
-        "hi": "रेलवे स्टेशन",
-        "pa": "ਰੇਲਵੇ ਸਟੇਸ਼ਨ"
+        "en": "Sadulshahar"
       }
     },
     {
-      "id": "place_model_town",
+      "id": "place_amargarh",
       "kind": "place",
-      "city": "Sample City",
-      "district": "Sample District",
       "name": {
-        "en": "Model Town",
-        "hi": "मॉडल टाउन",
-        "pa": "ਮਾਡਲ ਟਾਊਨ"
+        "en": "Amargarh"
       }
     },
     {
-      "id": "village_sample",
+      "id": "place_dhani_khichdhan",
       "kind": "place",
-      "district": "Sample District",
       "name": {
-        "en": "Sample Village",
-        "hi": "नमूना गाँव",
-        "pa": "ਨਮੂਨਾ ਪਿੰਡ"
+        "en": "Dhani khichdran"
       }
     },
     {
-      "id": "stand_village",
-      "kind": "stand",
-      "district": "Sample District",
+      "id": "place_kishanpura_uttradha",
+      "kind": "place",
       "name": {
-        "en": "Village Bus Stop",
-        "hi": "गाँव बस अड्डा",
-        "pa": "ਪਿੰਡ ਬੱਸ ਅੱਡਾ"
+        "en": "Kishanpura uttradha"
+      }
+    },
+    {
+      "id": "place_rasuwala",
+      "kind": "place",
+      "name": {
+        "en": "Rasuwala"
+      }
+    },
+    {
+      "id": "place_miraa_chowk_sri_ganganagar",
+      "kind": "place",
+      "name": {
+        "en": "Miraa chowk Sri Ganganagar"
+      }
+    },
+    {
+      "id": "place_kaluwala",
+      "kind": "place",
+      "name": {
+        "en": "Kaluwala"
+      }
+    },
+    {
+      "id": "place_4_chak_4lnp",
+      "kind": "place",
+      "name": {
+        "en": "4 chak - 4LNP"
+      }
+    },
+    {
+      "id": "place_5_chak",
+      "kind": "place",
+      "name": {
+        "en": "5 CHAK"
+      }
+    },
+    {
+      "id": "place_abhoria",
+      "kind": "place",
+      "name": {
+        "en": "Abhoria"
+      }
+    },
+    {
+      "id": "place_banwala",
+      "kind": "place",
+      "name": {
+        "en": "Banwala"
+      }
+    },
+    {
+      "id": "place_hakmabad",
+      "kind": "place",
+      "name": {
+        "en": "Hakmabad"
+      }
+    },
+    {
+      "id": "place_bhudharwali",
+      "kind": "place",
+      "name": {
+        "en": "Bhudharwali"
+      }
+    },
+    {
+      "id": "place_chak_shone_wala",
+      "kind": "place",
+      "name": {
+        "en": "Chak shone wala"
+      }
+    },
+    {
+      "id": "place_takhat_hazara_babiran",
+      "kind": "place",
+      "name": {
+        "en": "Takhat hazara babiran"
+      }
+    },
+    {
+      "id": "place_kanchiya_chowk_sadulshahar",
+      "kind": "place",
+      "name": {
+        "en": "Kanchiya chowk sadulshahar"
+      }
+    },
+    {
+      "id": "place_chak_hira_singh_wala",
+      "kind": "place",
+      "name": {
+        "en": "Chak Hira Singh wala"
+      }
+    },
+    {
+      "id": "place_lambi_dhab",
+      "kind": "place",
+      "name": {
+        "en": "Lambi dhab"
+      }
+    },
+    {
+      "id": "place_bolanwali",
+      "kind": "place",
+      "name": {
+        "en": "Bolanwali"
       }
     }
   ],
-  "routes": [
-    {
-      "id": "r1",
-      "from": "stand_central",
-      "to": "village_sample",
-      "time": "06:30",
-      "arrive": "07:45",
-      "service": "Sample Travels",
-      "contact": "9000000011",
-      "stops": [
-        {
-          "place": "place_gandhi_chowk",
-          "time": "06:40"
-        },
-        {
-          "place": "stand_village",
-          "time": "07:35"
-        }
-      ]
-    },
-    {
-      "id": "r2",
-      "from": "stand_central",
-      "to": "village_sample",
-      "time": "09:15",
-      "arrive": "10:30",
-      "stops": [
-        {
-          "place": "place_railway",
-          "time": "09:25"
-        },
-        {
-          "place": "stand_village",
-          "time": "10:20"
-        }
-      ]
-    },
-    {
-      "id": "r3",
-      "from": "village_sample",
-      "to": "stand_central",
-      "time": "17:00",
-      "arrive": "18:15",
-      "service": "Sample Roadways",
-      "stops": [
-        {
-          "place": "stand_village",
-          "time": "17:05"
-        },
-        {
-          "place": "place_model_town",
-          "time": "18:00"
-        }
-      ]
-    },
-    {
-      "id": "r4",
-      "from": "city_sample",
-      "to": "village_sample",
-      "time": "06:42",
-      "arrive": "08:42",
-      "service": "Ajhere",
-      "stops": [
-        {
-          "place": "place_railway",
-          "time": "06:43"
-        },
-        {
-          "place": "place_model_town",
-          "time": "06:50"
-        },
-        {
-          "place": "place_gandhi_chowk",
-          "time": "07:10"
-        },
-        {
-          "place": "stand_central",
-          "time": "07:29"
-        },
-        {
-          "place": "stand_village",
-          "time": "08:02"
-        }
-      ]
-    }
-  ],
+  "routes": [],
   "taxiSeaters": [
     4,
     5,
