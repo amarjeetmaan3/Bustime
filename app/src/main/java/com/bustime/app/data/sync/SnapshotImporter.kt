@@ -85,7 +85,7 @@ object SnapshotImporter {
             }
             stops.add(RouteStop(id, order++, to, clean(r.arrive)?.takeIf { TIME.matches(it) }))
             routes.add(
-                Route(id, from, to, time, clean(r.service), clean(r.routeName), clean(r.contact), clean(r.info))
+                Route(id, from, to, time, clean(r.service), clean(r.routeName), clean(r.contact), clean(r.info), r.longRoute == true, clean(r.startDate))
             )
         }
 
