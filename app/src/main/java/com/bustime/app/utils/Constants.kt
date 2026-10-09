@@ -14,8 +14,8 @@ object Constants {
 
     // Supabase (यूज़र से मिले रूट के लिए)। Supabase में Settings -> API से लेकर यहाँ भरो।
     // anon key सार्वजनिक रहती है, यही उसका काम है: यह सिर्फ़ नया रूट भेजने की इजाज़त देती है, पढ़ने की नहीं।
-    const val SUPABASE_URL = "https://YOUR-PROJECT-ID.supabase.co"
-    const val SUPABASE_ANON_KEY = "YOUR-ANON-KEY"
+    const val SUPABASE_URL = "https://mdryxbvmqsphbfkvqtnf.supabase.co"
+    const val SUPABASE_ANON_KEY = "sb_publishable_1J6qNzpvPH-TTI-qxRU8wA_RVO7EpfM"
 
     // SharedPreferences
     const val PREFS_NAME = "BustimePrefs"
