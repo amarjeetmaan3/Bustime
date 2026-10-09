@@ -40,4 +40,22 @@
     <string name="type_place_hint">जगह का नाम लिखें</string>
     <string name="no_places">कोई जगह नहीं मिली</string>
     <string name="swap_places">कहाँ से और कहाँ तक बदलें</string>
+
+    <string name="add_route">बस का रूट जोड़ें</string>
+    <string name="add_route_intro">किसी बस का समय पता है? रूट चुनें, जो समय पता हो भरें और बाकी खाली छोड़ दें। हर जानकारी हमारी टीम जाँचने के बाद ही ऐप में दिखेगी।</string>
+    <string name="ar_choose_route">रूट चुनें</string>
+    <string name="ar_start_time">चलने का समय</string>
+    <string name="ar_stop_times">हर पड़ाव का समय (वैकल्पिक)</string>
+    <string name="ar_tap_time">समय चुनने के लिए टैप करें</string>
+    <string name="ar_clear">हटाएँ</string>
+    <string name="ar_service_hint">बस / सर्विस का नाम (वैकल्पिक)</string>
+    <string name="ar_phone_hint">आपका मोबाइल नंबर</string>
+    <string name="ar_phone_note">कृपया अपना सही नंबर डालें। समय की पुष्टि के लिए हमारी टीम आपको फ़ोन कर सकती है। यह नंबर ऐप में कभी नहीं दिखेगा।</string>
+    <string name="ar_submit">भेजें</string>
+    <string name="ar_need_start">कृपया चलने का समय चुनें</string>
+    <string name="ar_need_phone">कृपया 10 अंकों का सही मोबाइल नंबर डालें</string>
+    <string name="ar_sent">धन्यवाद! आपका रूट जाँच के लिए भेज दिया गया है।</string>
+    <string name="ar_failed">भेजा नहीं जा सका। इंटरनेट देखकर दोबारा कोशिश करें।</string>
+    <string name="ar_not_set">ऑनलाइन भेजने की सुविधा अभी चालू नहीं है</string>
+    <string name="ar_no_routes">अभी कोई रूट उपलब्ध नहीं है। बाद में कोशिश करें।</string>
 </resources>
