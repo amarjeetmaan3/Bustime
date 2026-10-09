@@ -121,7 +121,7 @@
 <script>
 // ============ Settings (stored only in this browser) ============
 var CFG_KEY = 'bustime_admin_cfg';
-var DEFAULT_CFG = { owner:'amarjeetmaan3', repo:'Bustime', branch:'main', path:'app/src/main/assets/routes.json', token:'' };
+var DEFAULT_CFG = { owner:'amarjeetmaan3', repo:'Bustime', branch:'main', path:'app/src/main/assets/routes.json', token:'', sbUrl:'', sbKey:'', sbEmail:'' };
 var cfg = loadCfg();
 function loadCfg() {
   try { return Object.assign({}, DEFAULT_CFG, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); }
@@ -132,13 +132,14 @@ function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
 // ============ State ============
 var data = null, sha = null, baseVersion = 0, dirty = false;
 var tab = 'settings';
+var sbToken = null, subs = null, subsError = '';   // Supabase login lives only in memory
 var editing = null;
 var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
 var NAV = [['dashboard','Dashboard'], ['places','Places'], ['routes','Bus Routes'],
-           ['seats','Taxi Seats'], ['drivers','Drivers'], ['settings','Settings']];
-var TITLES = { dashboard:'Dashboard', places:'Places', routes:'Bus Routes', seats:'Taxi Seats', drivers:'Drivers', settings:'Settings' };
+           ['seats','Taxi Seats'], ['drivers','Drivers'], ['review','Review'], ['settings','Settings']];
+var TITLES = { dashboard:'Dashboard', places:'Places', routes:'Bus Routes', seats:'Taxi Seats', drivers:'Drivers', review:'Review submissions', settings:'Settings' };
 
 // ============ Helpers ============
 function $(s) { return document.querySelector(s); }
@@ -299,6 +300,7 @@ function refreshChrome() {
 }
 function render() {
   var counts = data ? { places:data.places.length, routes:data.routes.length, seats:data.taxiSeaters.length, drivers:data.drivers.length } : {};
+  if (subs) counts.review = subs.length;
   $('#nav').innerHTML = NAV.map(function (n) {
     return '<button data-act="tab" data-t="' + n[0] + '" class="' + (tab === n[0] ? 'on' : '') + '">' + n[1] +
       (counts[n[0]] != null ? '<span class="count">' + counts[n[0]] + '</span>' : '') + '</button>';
@@ -310,7 +312,7 @@ function render() {
       '<button class="btn primary" data-act="tab" data-t="settings">Go to Settings</button></div>';
   } else {
     v.innerHTML = { dashboard: viewDashboard, places: viewPlaces, routes: viewRoutes,
-                    seats: viewSeats, drivers: viewDrivers, settings: viewSettings }[tab]();
+                    seats: viewSeats, drivers: viewDrivers, review: viewReview, settings: viewSettings }[tab]();
   }
   renderModal();
 }
@@ -472,6 +474,70 @@ function viewSettings() {
     'Paste the token above. Never share it and never commit it to the repository.</p></div>';
 }
 
+
+// ============ Supabase (user submissions) ============
+async function sbFetch(path, opts) {
+  opts = opts || {};
+  var base = cfg.sbUrl.replace(/\/+$/, '');
+  var headers = Object.assign({ apikey: cfg.sbKey, 'Content-Type': 'application/json' }, opts.headers || {});
+  if (sbToken) headers.Authorization = 'Bearer ' + sbToken;
+  var res = await fetch(base + path, Object.assign({}, opts, { headers: headers }));
+  if (!res.ok) {
+    var t = ''; try { t = (await res.json()).error_description || ''; } catch (e) {}
+    throw new Error('Supabase ' + res.status + (t ? ': ' + t : ''));
+  }
+  return res.status === 204 ? null : res.json();
+}
+async function sbLogin(email, password) {
+  var base = cfg.sbUrl.replace(/\/+$/, '');
+  var res = await fetch(base + '/auth/v1/token?grant_type=password', {
+    method: 'POST', headers: { apikey: cfg.sbKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, password: password })
+  });
+  var j = await res.json();
+  if (!res.ok) throw new Error(j.error_description || j.msg || 'Login failed');
+  sbToken = j.access_token;
+}
+async function loadSubs() {
+  subs = await sbFetch('/rest/v1/route_submissions?status=eq.pending&order=created_at.desc&limit=100');
+}
+function viewReview() {
+  if (!sbToken) {
+    return '<div class="card"><h2>Supabase sign-in</h2><p class="muted">Sign in with the admin user you created in Supabase (Authentication &rarr; Users). The password is never stored.</p>' +
+      '<label>Project URL</label><input id="sb_url" value="' + esc(cfg.sbUrl) + '" placeholder="https://xxxx.supabase.co">' +
+      '<label>Anon (public) key</label><input id="sb_key" value="' + esc(cfg.sbKey) + '">' +
+      '<div class="row2"><div><label>Email</label><input id="sb_email" value="' + esc(cfg.sbEmail) + '"></div>' +
+      '<div><label>Password</label><input id="sb_pass" type="password"></div></div>' +
+      '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="sb-login">Sign in</button></div></div>';
+  }
+  if (!subs) return '<div class="card"><p class="muted">Loading...</p></div>' + (subsError ? '<div class="alert err">' + esc(subsError) + '</div>' : '');
+  var head = '<div class="toolbar"><span class="grow muted">' + subs.length + ' pending. Approving adds the route to your data; then use Publish.</span>' +
+    '<button class="btn" data-act="sb-refresh">Refresh</button><button class="btn" data-act="sb-logout">Sign out</button></div>';
+  if (!subs.length) return head + '<div class="card"><p class="muted">No pending submissions.</p></div>';
+  return head + subs.map(function (s, i) {
+    var stops = (s.stops || []).map(function (st) {
+      return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><span class="grow">' + esc(pname(placeById(st.place)) || st.place) +
+        '</span><input type="time" class="sub_t" data-place="' + esc(st.place) + '" value="' + esc(st.time || '') + '" style="max-width:140px"></div>';
+    }).join('');
+    return '<div class="card" data-sub="' + i + '"><h2>' + esc(pname(placeById(s.from_id)) || s.from_id) + ' &rarr; ' + esc(pname(placeById(s.to_id)) || s.to_id) + '</h2>' +
+      '<p class="muted">Sent ' + esc(new Date(s.created_at).toLocaleString()) + ' &middot; Phone <b>' + esc(s.phone) + '</b>' +
+      (s.service_name ? ' &middot; Service: ' + esc(s.service_name) : '') + '</p>' +
+      '<label>Start time</label><input type="time" class="sub_start" value="' + esc(s.start_time || '') + '" style="max-width:140px">' +
+      '<label>Stop times (edit if needed; blank = unknown)</label>' + stops +
+      '<div class="dlg-foot" style="justify-content:flex-start;gap:8px">' +
+      '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Approve</button>' +
+      '<button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button></div></div>';
+  }).join('');
+}
+function subCardValues(i) {
+  var card = document.querySelector('[data-sub="' + i + '"]');
+  var times = [];
+  card.querySelectorAll('.sub_t').forEach(function (el) {
+    times.push({ place: el.getAttribute('data-place'), time: TIME_RE.test(el.value) ? el.value : null });
+  });
+  return { start: card.querySelector('.sub_start').value, stops: times };
+}
+
 // ============ Dialog ============
 function foot(saveAct) {
   return '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="' + saveAct + '">Save</button></div>';
@@ -522,7 +588,10 @@ document.addEventListener('click', async function (e) {
   if (!b) return;
   var act = b.getAttribute('data-act'), i = parseInt(b.getAttribute('data-i'), 10);
   try {
-    if (act === 'tab') { tab = b.getAttribute('data-t'); editing = null; publishOpen = false; render(); }
+    if (act === 'tab') {
+      tab = b.getAttribute('data-t'); editing = null; publishOpen = false; render();
+      if (tab === 'review' && sbToken && !subs) { try { await loadSubs(); } catch (e) { subsError = e.message; } render(); }
+    }
     else if (act === 'close') { editing = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
     else if (act === 'save-cfg') {
@@ -644,6 +713,39 @@ document.addEventListener('click', async function (e) {
       if (val('fd_info')) d.info = val('fd_info'); else delete d.info;
       if (editing.index < 0) data.drivers.push(d);
       editing = null; setDirty(true); toast('Driver saved'); render();
+    }
+
+
+    // ---- user submissions (Supabase) ----
+    else if (act === 'sb-login') {
+      cfg.sbUrl = val('sb_url'); cfg.sbKey = val('sb_key'); cfg.sbEmail = val('sb_email'); saveCfg();
+      b.disabled = true; b.textContent = 'Signing in...';
+      await sbLogin(cfg.sbEmail, document.getElementById('sb_pass').value);
+      subs = null; render(); await loadSubs(); render();
+    }
+    else if (act === 'sb-logout') { sbToken = null; subs = null; render(); }
+    else if (act === 'sb-refresh') { subs = null; render(); await loadSubs(); render(); }
+    else if (act === 'sb-reject') {
+      if (!confirm('Reject this submission?')) return;
+      await sbFetch('/rest/v1/route_submissions?id=eq.' + subs[i].id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'rejected' }) });
+      subs.splice(i, 1); toast('Rejected'); render();
+    }
+    else if (act === 'sb-approve') {
+      var sub = subs[i], v = subCardValues(i);
+      if (!TIME_RE.test(v.start)) { toast('Set a valid start time'); return; }
+      if (!placeById(sub.from_id) || !placeById(sub.to_id)) { toast('This route uses a place that no longer exists'); return; }
+      var arrive = null, mid = [];
+      v.stops.forEach(function (st) {
+        if (st.place === sub.to_id) arrive = st.time;
+        else if (st.place !== sub.from_id && placeById(st.place)) { var o = { place: st.place }; if (st.time) o.time = st.time; mid.push(o); }
+      });
+      var nr = { id: nextNum('r', data.routes), from: sub.from_id, to: sub.to_id, time: v.start };
+      if (arrive) nr.arrive = arrive;
+      if (sub.service_name) nr.service = sub.service_name;
+      if (mid.length) nr.stops = mid;
+      data.routes.push(nr); setDirty(true);
+      await sbFetch('/rest/v1/route_submissions?id=eq.' + sub.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'approved' }) });
+      subs.splice(i, 1); toast('Added to routes. Press Publish to make it live.'); render();
     }
 
     // ---- publish ----
