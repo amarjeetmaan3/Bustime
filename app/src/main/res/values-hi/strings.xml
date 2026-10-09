@@ -37,4 +37,7 @@
     <string name="call">कॉल</string>
     <string name="whatsapp">WhatsApp</string>
     <string name="action_failed">यह काम नहीं खुल सका</string>
+    <string name="type_place_hint">जगह का नाम लिखें</string>
+    <string name="no_places">कोई जगह नहीं मिली</string>
+    <string name="swap_places">कहाँ से और कहाँ तक बदलें</string>
 </resources>
