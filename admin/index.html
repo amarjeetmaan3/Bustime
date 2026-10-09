@@ -1,54 +1,125 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bustime Admin</title>
 <style>
-  :root { --p:#1976D2; --pd:#0D47A1; --bg:#F5F5F5; --card:#fff; --line:#E0E0E0; --red:#C62828; --green:#2E7D32; --warn:#E65100; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: system-ui, -apple-system, "Noto Sans", "Noto Sans Devanagari", "Noto Sans Gurmukhi", sans-serif; background:var(--bg); color:#212121; font-size:16px; }
-  header { background:var(--p); color:#fff; padding:12px 16px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:5; }
-  header h1 { font-size:18px; margin:0; flex:1; }
-  #dirty { background:#FFB300; color:#000; border-radius:12px; padding:2px 10px; font-size:13px; display:none; }
-  nav { display:flex; overflow-x:auto; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:48px; z-index:4; }
-  nav button { flex:0 0 auto; border:0; background:none; padding:14px 16px; font-size:15px; border-bottom:3px solid transparent; color:#424242; }
-  nav button.on { color:var(--p); border-bottom-color:var(--p); font-weight:600; }
-  main { padding:12px; max-width:900px; margin:0 auto; }
-  .bar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
-  .bar input { flex:1; min-width:140px; }
-  input, select, textarea { font:inherit; padding:10px; border:1px solid #BDBDBD; border-radius:8px; background:#fff; width:100%; }
-  label { display:block; font-size:13px; color:#616161; margin:10px 0 4px; }
-  button { font:inherit; padding:10px 14px; border:1px solid #BDBDBD; border-radius:8px; background:#fff; cursor:pointer; }
-  button.primary { background:var(--p); color:#fff; border-color:var(--p); }
-  button.danger { color:var(--red); border-color:#EF9A9A; }
-  button:disabled { opacity:.5; }
-  .card { background:var(--card); border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.12); }
-  .item { background:var(--card); border-radius:10px; padding:12px; margin-bottom:8px; display:flex; gap:8px; align-items:center; box-shadow:0 1px 2px rgba(0,0,0,.1); }
-  .item .grow { flex:1; min-width:0; }
-  .sub { font-size:13px; color:#616161; overflow-wrap:anywhere; }
-  .tag { font-size:12px; background:#E3F2FD; color:var(--pd); border-radius:8px; padding:1px 8px; margin-left:6px; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .stoprow { display:flex; gap:6px; margin-bottom:6px; }
-  .stoprow select { flex:2; } .stoprow input { flex:1; }
-  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
-  .chip { background:#E3F2FD; border-radius:16px; padding:6px 6px 6px 14px; display:flex; align-items:center; gap:6px; }
-  .chip button { padding:2px 8px; border-radius:12px; }
-  .msg-err { color:var(--red); } .msg-warn { color:var(--warn); } .msg-ok { color:var(--green); }
-  ul.rep { padding-left:20px; margin:6px 0; }
-  #toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#323232; color:#fff; padding:10px 18px; border-radius:20px; display:none; z-index:20; max-width:90%; }
-  .hint { font-size:13px; color:#616161; line-height:1.5; }
-  .btnrow { display:flex; gap:8px; margin-top:14px; }
+  :root {
+    --brand:#1565C0; --brand-d:#0D47A1; --brand-l:#E3F2FD;
+    --bg:#F4F6F9; --card:#FFFFFF; --line:#E3E7EC; --text:#1F2933; --muted:#667085;
+    --red:#C62828; --red-l:#FDECEA; --green:#2E7D32; --green-l:#E8F5E9; --amber:#B26A00; --amber-l:#FFF4E0;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI","Noto Sans","Noto Sans Devanagari","Noto Sans Gurmukhi",sans-serif; font-size:15px; }
+  button { font:inherit; cursor:pointer; }
+  input, select { font:inherit; width:100%; padding:10px 12px; border:1px solid #C9D1DA; border-radius:8px; background:#fff; color:var(--text); }
+  input:focus, select:focus { outline:2px solid var(--brand-l); border-color:var(--brand); }
+  label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin:14px 0 5px; text-transform:uppercase; letter-spacing:.03em; }
+
+  .app { display:flex; min-height:100vh; }
+  aside { width:220px; background:#fff; border-right:1px solid var(--line); padding:16px 10px; position:sticky; top:0; height:100vh; flex:0 0 auto; }
+  .brand { font-weight:700; font-size:18px; color:var(--brand-d); padding:6px 10px 18px; }
+  .brand small { display:block; font-weight:500; font-size:12px; color:var(--muted); }
+  .nav { display:flex; flex-direction:column; gap:2px; }
+  .nav button { display:flex; justify-content:space-between; align-items:center; border:0; background:none; text-align:left; padding:11px 12px; border-radius:8px; color:#344054; font-size:15px; }
+  .nav button:hover { background:#F2F4F7; }
+  .nav button.on { background:var(--brand-l); color:var(--brand-d); font-weight:600; }
+  .nav .count { font-size:12px; background:#EAECF0; border-radius:10px; padding:1px 8px; color:#475467; }
+  .nav button.on .count { background:#fff; }
+  .content { flex:1; min-width:0; display:flex; flex-direction:column; }
+  header.top { display:flex; align-items:center; gap:12px; padding:12px 24px; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  header.top h1 { font-size:20px; margin:0; flex:1; }
+  .pill { font-size:12px; border-radius:12px; padding:3px 10px; background:#EAECF0; color:#475467; white-space:nowrap; }
+  .pill.dirty { background:var(--amber-l); color:var(--amber); font-weight:600; }
+  main { padding:24px; max-width:1100px; width:100%; }
+
+  .btn { border:1px solid #C9D1DA; background:#fff; border-radius:8px; padding:9px 14px; font-weight:500; color:#344054; }
+  .btn:hover { background:#F9FAFB; }
+  .btn.primary { background:var(--brand); border-color:var(--brand); color:#fff; }
+  .btn.primary:hover { background:var(--brand-d); }
+  .btn.danger { color:var(--red); border-color:#F1B8B3; }
+  .btn.sm { padding:5px 10px; font-size:13px; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:16px; }
+  .card h2 { font-size:16px; margin:0 0 4px; }
+  .muted { color:var(--muted); font-size:13px; line-height:1.5; }
+  .toolbar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+  .toolbar .grow { flex:1; min-width:180px; }
+  .toolbar select { width:auto; min-width:140px; }
+  .tablewrap { background:#fff; border:1px solid var(--line); border-radius:12px; overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; min-width:640px; }
+  th { text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); background:#F9FAFB; padding:11px 14px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  td { padding:11px 14px; border-bottom:1px solid #F0F2F5; vertical-align:middle; }
+  tr:last-child td { border-bottom:0; }
+  td.actions { white-space:nowrap; text-align:right; }
+  td.actions .btn { margin-left:6px; }
+  .empty { padding:36px; text-align:center; color:var(--muted); }
+  .badge { display:inline-block; font-size:12px; border-radius:10px; padding:2px 9px; background:var(--brand-l); color:var(--brand-d); font-weight:600; }
+  .badge.green { background:var(--green-l); color:var(--green); }
+  .badge.gray { background:#EAECF0; color:#475467; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .stat { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; }
+  .stat b { display:block; font-size:28px; color:var(--brand-d); }
+  .stat span { font-size:13px; color:var(--muted); }
+  .alert { border-radius:10px; padding:12px 14px; margin-top:10px; font-size:14px; }
+  .alert.err { background:var(--red-l); color:var(--red); }
+  .alert.warn { background:var(--amber-l); color:var(--amber); }
+  .alert.ok { background:var(--green-l); color:var(--green); }
+  .alert ul { margin:6px 0 0; padding-left:20px; }
+  .chips { display:flex; flex-wrap:wrap; gap:10px; margin:16px 0; }
+  .chip { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 8px 10px 16px; }
+  .chip b { font-size:18px; color:var(--brand-d); }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .stoprow { display:flex; gap:6px; margin-bottom:6px; align-items:center; }
+  .stoprow select { flex:3; } .stoprow input { flex:1.2; }
+
+  .overlay { position:fixed; inset:0; background:rgba(16,24,40,.5); display:none; align-items:flex-start; justify-content:center; padding:24px 12px; overflow-y:auto; z-index:30; }
+  .overlay.show { display:flex; }
+  .dialog { background:#fff; border-radius:14px; width:100%; max-width:560px; box-shadow:0 20px 40px rgba(0,0,0,.25); }
+  .dlg-head { display:flex; align-items:center; padding:16px 20px; border-bottom:1px solid var(--line); }
+  .dlg-head h2 { margin:0; font-size:17px; flex:1; }
+  .dlg-head button { border:0; background:none; font-size:24px; line-height:1; color:var(--muted); }
+  .dlg-body { padding:4px 20px 20px; }
+  .dlg-foot { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+  #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1F2933; color:#fff; padding:11px 20px; border-radius:24px; display:none; z-index:50; max-width:92%; font-size:14px; }
+
+  @media (max-width:860px) {
+    .app { flex-direction:column; }
+    aside { width:100%; height:auto; position:static; padding:8px; border-right:0; border-bottom:1px solid var(--line); }
+    .brand { display:none; }
+    .nav { flex-direction:row; overflow-x:auto; }
+    .nav button { white-space:nowrap; }
+    header.top, main { padding:12px; }
+    .row2 { grid-template-columns:1fr; }
+  }
 </style>
 </head>
 <body>
-<header><h1>Bustime Admin</h1><span id="dirty">● बिना सेव किए बदलाव</span></header>
-<nav id="tabs"></nav>
-<main id="view"></main>
+<div class="app">
+  <aside>
+    <div class="brand">Bustime<small>Admin console</small></div>
+    <div class="nav" id="nav"></div>
+  </aside>
+  <div class="content">
+    <header class="top">
+      <h1 id="pageTitle">Dashboard</h1>
+      <span class="pill" id="verPill"></span>
+      <span class="pill dirty" id="dirty" style="display:none">Unpublished changes</span>
+      <button class="btn primary" data-act="open-publish" id="pubBtn">Publish</button>
+    </header>
+    <main id="view"></main>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"><div class="dialog">
+  <div class="dlg-head"><h2 id="dlgTitle"></h2><button data-act="close" aria-label="Close">&times;</button></div>
+  <div class="dlg-body" id="dlgBody"></div>
+</div></div>
 <div id="toast"></div>
 
 <script>
-// ============ सेटिंग (सिर्फ़ इसी ब्राउज़र में सेव रहती है) ============
+// ============ Settings (stored only in this browser) ============
 var CFG_KEY = 'bustime_admin_cfg';
 var DEFAULT_CFG = { owner:'amarjeetmaan3', repo:'Bustime', branch:'main', path:'app/src/main/assets/routes.json', token:'' };
 var cfg = loadCfg();
@@ -58,17 +129,18 @@ function loadCfg() {
 }
 function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {} }
 
-// ============ स्थिति ============
+// ============ State ============
 var data = null, sha = null, baseVersion = 0, dirty = false;
-var tab = 'settings', editing = null;
-var filters = { places:'', routes:'', drivers:'', driverType:'' };
+var tab = 'settings';
+var editing = null;
+var publishOpen = false;
+var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
-var TABS = [
-  ['settings','सेटिंग'], ['places','जगहें'], ['routes','बस रूट'],
-  ['seaters','टैक्सी सीटर'], ['drivers','ड्राइवर'], ['publish','प्रकाशित करें']
-];
+var NAV = [['dashboard','Dashboard'], ['places','Places'], ['routes','Bus Routes'],
+           ['seats','Taxi Seats'], ['drivers','Drivers'], ['settings','Settings']];
+var TITLES = { dashboard:'Dashboard', places:'Places', routes:'Bus Routes', seats:'Taxi Seats', drivers:'Drivers', settings:'Settings' };
 
-// ============ छोटे औज़ार ============
+// ============ Helpers ============
 function $(s) { return document.querySelector(s); }
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -93,7 +165,7 @@ function pname(p) { var n = (p && p.name) || {}; return n.en || n.hi || n.pa || 
 function placeById(id) { return data.places.find(function (p) { return p.id === id; }); }
 function placeText(p) {
   var n = Object.keys(p.name || {}).map(function (k) { return p.name[k]; });
-  return (n.concat(p.aliases || [], [p.id])).join(' ').toLowerCase();
+  return n.concat(p.aliases || [], [p.id]).join(' ').toLowerCase();
 }
 function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
 function makeId(prefix, base, exists) {
@@ -109,14 +181,17 @@ function nextNum(prefix, list) {
   });
   return prefix + (max + 1);
 }
-function setDirty(v) { dirty = v; $('#dirty').style.display = v ? 'inline-block' : 'none'; }
+function setDirty(v) { dirty = v; refreshChrome(); }
 window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 var TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-// ============ GitHub ============
-function apiUrl() {
-  return 'https://api.github.com/repos/' + cfg.owner + '/' + cfg.repo + '/contents/' + cfg.path;
+function fmtTime(t) {
+  if (!t) return '-';
+  var h = parseInt(t.slice(0, 2), 10), m = t.slice(3, 5);
+  return ((h % 12) || 12) + ':' + m + ' ' + (h < 12 ? 'AM' : 'PM');
 }
+
+// ============ GitHub API ============
+function apiUrl() { return 'https://api.github.com/repos/' + cfg.owner + '/' + cfg.repo + '/contents/' + cfg.path; }
 function ghHeaders() {
   var h = { 'Accept': 'application/vnd.github+json' };
   if (cfg.token) h['Authorization'] = 'Bearer ' + cfg.token;
@@ -131,16 +206,16 @@ function normalize(d) {
 async function loadData() {
   var r = await fetch(apiUrl() + '?ref=' + encodeURIComponent(cfg.branch) + '&t=' + Date.now(),
                       { headers: ghHeaders(), cache: 'no-store' });
-  if (!r.ok) throw new Error('GitHub ' + r.status + ' — ' + (await r.text()).slice(0, 160));
+  if (!r.ok) throw new Error('GitHub ' + r.status + ' - ' + (await r.text()).slice(0, 160));
   var j = await r.json();
-  if (!j.content) throw new Error('फाइल पढ़ी नहीं जा सकी');
+  if (!j.content) throw new Error('Could not read the data file');
   data = normalize(JSON.parse(b64decode(j.content)));
-  sha = j.sha; baseVersion = data.dataVersion || 0; setDirty(false); editing = null;
+  sha = j.sha; baseVersion = data.dataVersion || 0; editing = null; publishOpen = false; setDirty(false);
 }
 async function publish() {
-  if (!cfg.token) { toast('पहले सेटिंग में GitHub token डालो'); return; }
+  if (!cfg.token) { toast('Add your GitHub token in Settings first'); return; }
   var v = validate();
-  if (v.errors.length) { toast('पहले गलतियाँ ठीक करो'); return; }
+  if (v.errors.length) { toast('Fix the errors first'); return; }
   var out = {};
   if (data._note) out._note = data._note;
   out.dataVersion = baseVersion + 1;
@@ -154,121 +229,137 @@ async function publish() {
   var h = ghHeaders(); h['Content-Type'] = 'application/json';
   var r = await fetch(apiUrl(), { method: 'PUT', headers: h, body: JSON.stringify(body) });
   if (r.status === 409 || r.status === 422) {
-    throw new Error('फाइल इस बीच कहीं और से बदल गई। "GitHub से दोबारा लोड करो" दबाओ (तुम्हारे बदलाव मिट जाएँगे)।');
+    throw new Error('The file was changed elsewhere in the meantime. Reload from GitHub (your unpublished changes will be lost).');
   }
-  if (!r.ok) throw new Error('GitHub ' + r.status + ' — ' + (await r.text()).slice(0, 160));
+  if (!r.ok) throw new Error('GitHub ' + r.status + ' - ' + (await r.text()).slice(0, 160));
   var j = await r.json();
   sha = j.content.sha; baseVersion = out.dataVersion; data.dataVersion = out.dataVersion; setDirty(false);
 }
 
-// ============ जाँच (ऐप के importer जैसे ही नियम) ============
+// ============ Validation (same rules the app applies on import) ============
 function validate() {
-  var errors = [], warnings = [];
-  var pids = {};
+  var errors = [], warnings = [], pids = {};
   data.places.forEach(function (p) {
-    if (!p.id) errors.push('बिना id की एक जगह');
-    else if (pids[p.id]) errors.push('जगह का id दो बार: ' + p.id);
+    if (!p.id) errors.push('A place has no id');
+    else if (pids[p.id]) errors.push('Duplicate place id: ' + p.id);
     pids[p.id] = true;
     var hasName = Object.keys(p.name || {}).some(function (k) { return String(p.name[k] || '').trim(); });
-    if (!hasName) errors.push('जगह "' + p.id + '" का कोई नाम नहीं');
+    if (!hasName) errors.push('Place "' + p.id + '" has no name');
   });
   var noHi = data.places.filter(function (p) { return !(p.name && p.name.hi); }).length;
   var noPa = data.places.filter(function (p) { return !(p.name && p.name.pa); }).length;
-  if (noHi) warnings.push(noHi + ' जगहों का हिंदी नाम नहीं है');
-  if (noPa) warnings.push(noPa + ' जगहों का पंजाबी नाम नहीं है');
+  if (noHi) warnings.push(noHi + ' place(s) have no Hindi name');
+  if (noPa) warnings.push(noPa + ' place(s) have no Punjabi name');
 
   var rids = {};
   data.routes.forEach(function (r) {
-    var tag = 'रूट ' + r.id;
-    if (!r.id) errors.push('बिना id का एक रूट');
-    else if (rids[r.id]) errors.push('रूट id दो बार: ' + r.id);
+    var tag = 'Route ' + r.id;
+    if (!r.id) errors.push('A route has no id');
+    else if (rids[r.id]) errors.push('Duplicate route id: ' + r.id);
     rids[r.id] = true;
-    if (!pids[r.from]) errors.push(tag + ': "कहाँ से" जगह मौजूद नहीं');
-    if (!pids[r.to]) errors.push(tag + ': "कहाँ तक" जगह मौजूद नहीं');
-    if (r.from && r.from === r.to) errors.push(tag + ': From और To एक ही हैं');
-    if (!TIME_RE.test(r.time || '')) errors.push(tag + ': समय गलत');
-    (r.stops || []).forEach(function (s) {
-      if (!pids[s.place]) errors.push(tag + ': कोई पड़ाव मौजूद नहीं');
-    });
+    if (!pids[r.from]) errors.push(tag + ': "From" place does not exist');
+    if (!pids[r.to]) errors.push(tag + ': "To" place does not exist');
+    if (r.from && r.from === r.to) errors.push(tag + ': From and To are the same');
+    if (!TIME_RE.test(r.time || '')) errors.push(tag + ': invalid departure time');
+    (r.stops || []).forEach(function (s) { if (!pids[s.place]) errors.push(tag + ': a stop refers to a missing place'); });
   });
 
   var dids = {};
   data.drivers.forEach(function (d) {
-    var tag = 'ड्राइवर ' + (d.name || d.id);
-    if (!d.id) errors.push('बिना id का एक ड्राइवर');
-    else if (dids[d.id]) errors.push('ड्राइवर id दो बार: ' + d.id);
+    var tag = 'Driver ' + (d.name || d.id);
+    if (!d.id) errors.push('A driver has no id');
+    else if (dids[d.id]) errors.push('Duplicate driver id: ' + d.id);
     dids[d.id] = true;
-    if (d.type !== 'taxi' && d.type !== 'auto') errors.push(tag + ': प्रकार गलत');
-    if (!String(d.name || '').trim()) errors.push(tag + ': नाम ज़रूरी है');
+    if (d.type !== 'taxi' && d.type !== 'auto') errors.push(tag + ': invalid type');
+    if (!String(d.name || '').trim()) errors.push(tag + ': name is required');
     var digits = String(d.phone || '').replace(/\D/g, '').length;
-    if (digits < 10 || digits > 13) errors.push(tag + ': मोबाइल नंबर गलत');
-    if (d.type === 'taxi' && !(d.seats > 0)) errors.push(tag + ': टैक्सी में सीटर ज़रूरी है');
+    if (digits < 10 || digits > 13) errors.push(tag + ': invalid mobile number');
+    if (d.type === 'taxi' && !(d.seats > 0)) errors.push(tag + ': taxi needs a seat count');
   });
   var hidden = data.drivers.filter(function (d) {
     return d.type === 'taxi' && data.taxiSeaters.length && data.taxiSeaters.indexOf(d.seats) < 0;
   }).length;
-  if (hidden) warnings.push(hidden + ' टैक्सी ड्राइवर ऐप में नहीं दिखेंगे (उनका सीटर "टैक्सी सीटर" सूची में नहीं है)');
+  if (hidden) warnings.push(hidden + ' taxi driver(s) will not appear in the app (their seat count is not in the Taxi Seats list)');
   return { errors: errors, warnings: warnings };
 }
+function reportHtml(v) {
+  return (v.errors.length ? '<div class="alert err"><b>Errors (publishing is blocked)</b><ul>' +
+      v.errors.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div>'
+    : '<div class="alert ok">No errors. The data is valid.</div>') +
+    (v.warnings.length ? '<div class="alert warn"><b>Warnings</b><ul>' +
+      v.warnings.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div>' : '');
+}
 
-// ============ स्क्रीन बनाना ============
+// ============ Views ============
+function refreshChrome() {
+  $('#dirty').style.display = dirty ? 'inline-block' : 'none';
+  $('#verPill').textContent = data ? 'Data v' + baseVersion : 'Not loaded';
+  $('#pubBtn').disabled = !data || !dirty;
+  $('#pageTitle').textContent = TITLES[tab] || '';
+}
 function render() {
-  $('#tabs').innerHTML = TABS.map(function (t) {
-    return '<button data-act="tab" data-t="' + t[0] + '" class="' + (tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>';
+  var counts = data ? { places:data.places.length, routes:data.routes.length, seats:data.taxiSeaters.length, drivers:data.drivers.length } : {};
+  $('#nav').innerHTML = NAV.map(function (n) {
+    return '<button data-act="tab" data-t="' + n[0] + '" class="' + (tab === n[0] ? 'on' : '') + '">' + n[1] +
+      (counts[n[0]] != null ? '<span class="count">' + counts[n[0]] + '</span>' : '') + '</button>';
   }).join('');
+  refreshChrome();
   var v = $('#view');
   if (tab !== 'settings' && !data) {
-    v.innerHTML = '<div class="card">पहले "सेटिंग" में जाकर GitHub से डेटा लोड करो।</div>';
-    return;
+    v.innerHTML = '<div class="card"><h2>No data loaded</h2><p class="muted">Open Settings and load the data from GitHub first.</p>' +
+      '<button class="btn primary" data-act="tab" data-t="settings">Go to Settings</button></div>';
+  } else {
+    v.innerHTML = { dashboard: viewDashboard, places: viewPlaces, routes: viewRoutes,
+                    seats: viewSeats, drivers: viewDrivers, settings: viewSettings }[tab]();
   }
-  var fn = { settings: viewSettings, places: viewPlaces, routes: viewRoutes,
-             seaters: viewSeaters, drivers: viewDrivers, publish: viewPublish }[tab];
-  v.innerHTML = fn();
+  renderModal();
 }
 
-function viewSettings() {
-  return '<div class="card"><b>GitHub से जुड़ना</b>' +
-    '<label>GitHub username</label><input id="c_owner" value="' + esc(cfg.owner) + '">' +
-    '<label>Repository</label><input id="c_repo" value="' + esc(cfg.repo) + '">' +
-    '<label>Branch</label><input id="c_branch" value="' + esc(cfg.branch) + '">' +
-    '<label>डेटा फाइल का पाथ</label><input id="c_path" value="' + esc(cfg.path) + '">' +
-    '<label>GitHub token (सिर्फ़ इसी ब्राउज़र में रहेगा)</label><input id="c_token" type="password" value="' + esc(cfg.token) + '">' +
-    '<div class="btnrow"><button class="primary" data-act="save-cfg">सेव करो और डेटा लोड करो</button></div>' +
-    (data ? '<p class="msg-ok">लोड हो गया: dataVersion ' + baseVersion + ' · ' + data.places.length + ' जगहें · ' +
-            data.routes.length + ' रूट · ' + data.drivers.length + ' ड्राइवर</p>' : '') + '</div>' +
-    '<div class="card hint"><b>Token कैसे बनाएँ (एक बार):</b><br>' +
-    'GitHub → अपनी फोटो → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.<br>' +
-    '• Repository access: सिर्फ़ <b>Bustime</b> चुनो<br>• Permissions → Repository permissions → <b>Contents: Read and write</b><br>' +
-    'बना हुआ token यहाँ चिपका दो। इसे किसी को मत देना, और रिपो में कभी मत डालना।</div>';
+function viewDashboard() {
+  var stands = data.places.filter(function (p) { return p.kind === 'stand'; }).length;
+  var taxis = data.drivers.filter(function (d) { return d.type === 'taxi'; }).length;
+  var autos = data.drivers.length - taxis;
+  var v = validate();
+  return '<div class="stats">' +
+    stat(data.places.length, 'Places (' + stands + ' bus stands)') + stat(data.routes.length, 'Bus routes') +
+    stat(data.taxiSeaters.length, 'Taxi seat options') + stat(taxis, 'Taxis') + stat(autos, 'Autos') + '</div>' +
+    '<div class="card"><h2>Data health</h2><p class="muted">Published data version: ' + baseVersion + '. ' +
+    (dirty ? 'You have unpublished changes.' : 'Everything is published.') + '</p>' + reportHtml(v) + '</div>' +
+    '<div class="card"><h2>How it works</h2><p class="muted">Edit places, routes, taxi seats and drivers here, then press <b>Publish</b>. ' +
+    'The app picks up the new data the next time it opens. No new APK is needed for data changes.</p></div>';
 }
+function stat(n, label) { return '<div class="stat"><b>' + n + '</b><span>' + esc(label) + '</span></div>'; }
 
 function viewPlaces() {
-  var q = filters.places.toLowerCase();
-  var rows = data.places.map(function (p, i) { return { p: p, i: i }; })
-    .filter(function (x) { return !q || placeText(x.p).indexOf(q) >= 0; });
-  return '<div class="bar"><input id="f_places" data-filter="places" placeholder="जगह खोजो" value="' + esc(filters.places) + '">' +
-    '<button class="primary" data-act="new-place">＋ नई जगह</button></div>' +
-    (editing && editing.type === 'place' ? placeForm() : '') +
-    rows.map(function (x) {
-      var p = x.p;
-      return '<div class="item"><div class="grow"><b>' + esc(pname(p)) + '</b><span class="tag">' + (p.kind === 'stand' ? 'बस स्टैंड' : 'जगह') + '</span>' +
-        '<div class="sub">' + esc([(p.name || {}).hi, (p.name || {}).pa].filter(Boolean).join(' • ')) + '</div></div>' +
-        '<button data-act="edit-place" data-i="' + x.i + '">बदलो</button>' +
-        '<button class="danger" data-act="del-place" data-i="' + x.i + '">हटाओ</button></div>';
-    }).join('') || '<div class="card">कोई जगह नहीं</div>';
+  var q = filters.places.toLowerCase(), k = filters.placeKind;
+  var rows = data.places.map(function (p, i) { return { p: p, i: i }; }).filter(function (x) {
+    return (!k || x.p.kind === k) && (!q || placeText(x.p).indexOf(q) >= 0);
+  }).sort(function (a, b) { return pname(a.p).localeCompare(pname(b.p)); });
+  return '<div class="toolbar"><input class="grow" id="f_places" data-filter="places" placeholder="Search places" value="' + esc(filters.places) + '">' +
+    '<select id="f_pkind"><option value="">All types</option><option value="stand"' + (k === 'stand' ? ' selected' : '') + '>Bus stands</option>' +
+    '<option value="place"' + (k === 'place' ? ' selected' : '') + '>Other places</option></select>' +
+    '<button class="btn primary" data-act="new-place">+ Add place</button></div>' +
+    '<div class="tablewrap"><table><thead><tr><th>English</th><th>Hindi</th><th>Punjabi</th><th>Type</th><th>City</th><th></th></tr></thead><tbody>' +
+    (rows.map(function (x) {
+      var p = x.p, n = p.name || {};
+      return '<tr><td><b>' + esc(n.en || '-') + '</b></td><td>' + esc(n.hi || '-') + '</td><td>' + esc(n.pa || '-') + '</td>' +
+        '<td><span class="badge ' + (p.kind === 'stand' ? '' : 'gray') + '">' + (p.kind === 'stand' ? 'Bus stand' : 'Place') + '</span></td>' +
+        '<td>' + esc(p.city || '-') + '</td><td class="actions">' +
+        '<button class="btn sm" data-act="edit-place" data-i="' + x.i + '">Edit</button>' +
+        '<button class="btn sm danger" data-act="del-place" data-i="' + x.i + '">Delete</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="empty">No places found</td></tr>') + '</tbody></table></div>';
 }
-function placeForm() {
+function placeFormHtml() {
   var p = editing.draft, n = p.name || {};
-  return '<div class="card"><b>' + (editing.index < 0 ? 'नई जगह' : 'जगह बदलो') + '</b>' +
-    '<label>प्रकार</label><select id="fp_kind"><option value="place"' + (p.kind !== 'stand' ? ' selected' : '') + '>जगह / शहर / गाँव</option>' +
-    '<option value="stand"' + (p.kind === 'stand' ? ' selected' : '') + '>बस स्टैंड</option></select>' +
-    '<label>नाम — English</label><input id="fp_en" value="' + esc(n.en) + '">' +
-    '<label>नाम — हिंदी</label><input id="fp_hi" value="' + esc(n.hi) + '">' +
-    '<label>नाम — ਪੰਜਾਬੀ</label><input id="fp_pa" value="' + esc(n.pa) + '">' +
-    '<label>दूसरे लिखने के तरीके (कॉमा से अलग)</label><input id="fp_alias" value="' + esc((p.aliases || []).join(', ')) + '">' +
-    '<div class="grid2"><div><label>शहर</label><input id="fp_city" value="' + esc(p.city) + '"></div>' +
-    '<div><label>ज़िला</label><input id="fp_dist" value="' + esc(p.district) + '"></div></div>' +
-    '<div class="btnrow"><button class="primary" data-act="save-place">सेव</button><button data-act="cancel">रद्द</button></div></div>';
+  return '<label>Type</label><select id="fp_kind"><option value="place"' + (p.kind !== 'stand' ? ' selected' : '') + '>Place / city / village</option>' +
+    '<option value="stand"' + (p.kind === 'stand' ? ' selected' : '') + '>Bus stand</option></select>' +
+    '<label>Name in English</label><input id="fp_en" value="' + esc(n.en) + '">' +
+    '<label>Name in Hindi</label><input id="fp_hi" value="' + esc(n.hi) + '">' +
+    '<label>Name in Punjabi</label><input id="fp_pa" value="' + esc(n.pa) + '">' +
+    '<label>Alternate spellings (comma separated)</label><input id="fp_alias" value="' + esc((p.aliases || []).join(', ')) + '">' +
+    '<div class="row2"><div><label>City</label><input id="fp_city" value="' + esc(p.city) + '"></div>' +
+    '<div><label>District</label><input id="fp_dist" value="' + esc(p.district) + '"></div></div>' +
+    foot('save-place');
 }
 
 function viewRoutes() {
@@ -277,54 +368,57 @@ function viewRoutes() {
     var t = (pname(placeById(x.r.from)) + ' ' + pname(placeById(x.r.to)) + ' ' + (x.r.service || '')).toLowerCase();
     return !q || t.indexOf(q) >= 0;
   });
-  return '<div class="bar"><input id="f_routes" data-filter="routes" placeholder="रूट खोजो" value="' + esc(filters.routes) + '">' +
-    '<button class="primary" data-act="new-route">＋ नया रूट</button></div>' +
-    (editing && editing.type === 'route' ? routeForm() : '') +
-    rows.map(function (x) {
+  return '<div class="toolbar"><input class="grow" id="f_routes" data-filter="routes" placeholder="Search routes" value="' + esc(filters.routes) + '">' +
+    '<button class="btn primary" data-act="new-route">+ Add route</button></div>' +
+    '<div class="tablewrap"><table><thead><tr><th>Departs</th><th>Route</th><th>Service</th><th>Stops</th><th></th></tr></thead><tbody>' +
+    (rows.map(function (x) {
       var r = x.r;
-      return '<div class="item"><div class="grow"><b>' + esc(r.time) + '</b> ' + esc(pname(placeById(r.from))) + ' → ' + esc(pname(placeById(r.to))) +
-        '<div class="sub">' + esc(r.service || '') + ' ' + ((r.stops || []).length ? '· ' + r.stops.length + ' पड़ाव' : '') + '</div></div>' +
-        '<button data-act="edit-route" data-i="' + x.i + '">बदलो</button>' +
-        '<button class="danger" data-act="del-route" data-i="' + x.i + '">हटाओ</button></div>';
-    }).join('') || '<div class="card">कोई रूट नहीं</div>';
+      return '<tr><td><b>' + fmtTime(r.time) + '</b></td><td>' + esc(pname(placeById(r.from))) + ' &rarr; ' + esc(pname(placeById(r.to))) + '</td>' +
+        '<td>' + esc(r.service || '-') + '</td><td>' + ((r.stops || []).length + 2) + '</td><td class="actions">' +
+        '<button class="btn sm" data-act="reverse-route" data-i="' + x.i + '">Create return</button>' +
+        '<button class="btn sm" data-act="edit-route" data-i="' + x.i + '">Edit</button>' +
+        '<button class="btn sm danger" data-act="del-route" data-i="' + x.i + '">Delete</button></td></tr>';
+    }).join('') || '<tr><td colspan="5" class="empty">No routes found</td></tr>') + '</tbody></table></div>';
 }
 function placeOptions(sel) {
   var list = data.places.slice().sort(function (a, b) { return pname(a).localeCompare(pname(b)); });
-  return '<option value="">— चुनो —</option>' + list.map(function (p) {
+  return '<option value="">Select a place</option>' + list.map(function (p) {
     return '<option value="' + esc(p.id) + '"' + (p.id === sel ? ' selected' : '') + '>' + esc(pname(p)) + '</option>';
   }).join('');
 }
 function stopRow(place, time) {
   return '<div class="stoprow"><select class="st_place">' + placeOptions(place) + '</select>' +
     '<input type="time" class="st_time" value="' + esc(time || '') + '">' +
-    '<button data-act="rm-stop">✕</button></div>';
+    '<button class="btn sm" data-act="stop-up" title="Move up">&uarr;</button>' +
+    '<button class="btn sm" data-act="stop-down" title="Move down">&darr;</button>' +
+    '<button class="btn sm danger" data-act="rm-stop" title="Remove">&times;</button></div>';
 }
-function routeForm() {
+function routeFormHtml() {
   var r = editing.draft;
-  return '<div class="card"><b>' + (editing.index < 0 ? 'नया रूट' : 'रूट बदलो') + '</b>' +
-    '<label>कहाँ से</label><select id="fr_from">' + placeOptions(r.from) + '</select>' +
-    '<label>कहाँ तक</label><select id="fr_to">' + placeOptions(r.to) + '</select>' +
-    '<div class="grid2"><div><label>चलने का समय</label><input id="fr_time" type="time" value="' + esc(r.time) + '"></div>' +
-    '<div><label>पहुँचने का समय (वैकल्पिक)</label><input id="fr_arrive" type="time" value="' + esc(r.arrive) + '"></div></div>' +
-    '<label>सर्विस / कंपनी का नाम (वैकल्पिक)</label><input id="fr_service" value="' + esc(r.service) + '">' +
-    '<label>संपर्क नंबर (वैकल्पिक)</label><input id="fr_contact" inputmode="tel" value="' + esc(r.contact) + '">' +
-    '<label>जानकारी (वैकल्पिक)</label><input id="fr_info" value="' + esc(r.info) + '">' +
-    '<label>बीच के पड़ाव (क्रम से)</label><div id="stops">' +
+  return '<label>From</label><select id="fr_from">' + placeOptions(r.from) + '</select>' +
+    '<label>To</label><select id="fr_to">' + placeOptions(r.to) + '</select>' +
+    '<div class="row2"><div><label>Departure time</label><input id="fr_time" type="time" value="' + esc(r.time) + '"></div>' +
+    '<div><label>Arrival time (optional)</label><input id="fr_arrive" type="time" value="' + esc(r.arrive) + '"></div></div>' +
+    '<label>Service / company (optional)</label><input id="fr_service" value="' + esc(r.service) + '">' +
+    '<label>Contact number (optional)</label><input id="fr_contact" inputmode="tel" value="' + esc(r.contact) + '">' +
+    '<label>Additional info (optional)</label><input id="fr_info" value="' + esc(r.info) + '">' +
+    '<label>Intermediate stops, in order</label><div id="stops">' +
     (r.stops || []).map(function (s) { return stopRow(s.place, s.time); }).join('') + '</div>' +
-    '<button data-act="add-stop">＋ पड़ाव जोड़ो</button>' +
-    '<div class="btnrow"><button class="primary" data-act="save-route">सेव</button><button data-act="cancel">रद्द</button></div></div>';
+    '<button class="btn sm" data-act="add-stop">+ Add stop</button>' + foot('save-route');
 }
 
-function viewSeaters() {
+function viewSeats() {
   var counts = {};
   data.drivers.forEach(function (d) { if (d.type === 'taxi') counts[d.seats] = (counts[d.seats] || 0) + 1; });
-  return '<div class="card"><b>टैक्सी के सीटर विकल्प</b>' +
-    '<p class="hint">ऐप में टैक्सी खोलने पर यूज़र को सिर्फ़ यही विकल्प दिखेंगे। जिस सीटर की गाड़ी नहीं है उसे हटा दो।</p>' +
+  return '<div class="card"><h2>Taxi seat options</h2>' +
+    '<p class="muted">These are the options users see first in the Taxi section. Remove a seat count that has no vehicles. ' +
+    'If this list is empty, options are built from the drivers\' seat counts.</p>' +
     '<div class="chips">' + (data.taxiSeaters.map(function (n) {
-      return '<span class="chip">' + n + ' सीटर · ' + (counts[n] || 0) + ' गाड़ी <button data-act="rm-seater" data-n="' + n + '">✕</button></span>';
-    }).join('') || '<span class="hint">कोई विकल्प नहीं (ऐसे में विकल्प ड्राइवरों के सीटर से बनेंगे)</span>') + '</div>' +
-    '<div class="bar"><input id="newSeater" type="number" min="1" placeholder="जैसे 6">' +
-    '<button class="primary" data-act="add-seater">＋ जोड़ो</button></div></div>';
+      return '<div class="chip"><div><b>' + n + '</b> seater<div class="muted">' + (counts[n] || 0) + ' vehicle(s)</div></div>' +
+        '<button class="btn sm danger" data-act="rm-seater" data-n="' + n + '">&times;</button></div>';
+    }).join('') || '<span class="muted">No options defined</span>') + '</div>' +
+    '<div class="toolbar"><input type="number" min="1" id="newSeater" placeholder="e.g. 6" style="max-width:160px">' +
+    '<button class="btn primary" data-act="add-seater">+ Add seat option</button></div></div>';
 }
 
 function viewDrivers() {
@@ -333,53 +427,77 @@ function viewDrivers() {
     if (t && x.d.type !== t) return false;
     return !q || (String(x.d.name) + ' ' + x.d.phone + ' ' + (x.d.vehicle || '')).toLowerCase().indexOf(q) >= 0;
   });
-  return '<div class="bar"><input id="f_drivers" data-filter="drivers" placeholder="नाम / नंबर खोजो" value="' + esc(filters.drivers) + '">' +
-    '<select id="f_dtype" style="max-width:130px"><option value="">सब</option><option value="taxi"' + (t === 'taxi' ? ' selected' : '') + '>टैक्सी</option>' +
-    '<option value="auto"' + (t === 'auto' ? ' selected' : '') + '>ऑटो</option></select>' +
-    '<button class="primary" data-act="new-driver">＋ नया ड्राइवर</button></div>' +
-    (editing && editing.type === 'driver' ? driverForm() : '') +
-    rows.map(function (x) {
+  return '<div class="toolbar"><input class="grow" id="f_drivers" data-filter="drivers" placeholder="Search by name, number or vehicle" value="' + esc(filters.drivers) + '">' +
+    '<select id="f_dtype"><option value="">Taxi and auto</option><option value="taxi"' + (t === 'taxi' ? ' selected' : '') + '>Taxi</option>' +
+    '<option value="auto"' + (t === 'auto' ? ' selected' : '') + '>Auto</option></select>' +
+    '<button class="btn primary" data-act="new-driver">+ Add driver</button></div>' +
+    '<div class="tablewrap"><table><thead><tr><th>Name</th><th>Type</th><th>Vehicle</th><th>Details</th><th>Mobile</th><th></th></tr></thead><tbody>' +
+    (rows.map(function (x) {
       var d = x.d;
-      return '<div class="item"><div class="grow"><b>' + esc(d.name) + '</b><span class="tag">' +
-        (d.type === 'taxi' ? 'टैक्सी ' + (d.seats || '') + ' सीटर' : 'ऑटो ' + (d.fuel ? d.fuel.toUpperCase() : '')) + '</span>' +
-        '<div class="sub">' + esc(d.phone) + ' · ' + esc(d.vehicle || '') + '</div></div>' +
-        '<button data-act="edit-driver" data-i="' + x.i + '">बदलो</button>' +
-        '<button class="danger" data-act="del-driver" data-i="' + x.i + '">हटाओ</button></div>';
-    }).join('') || '<div class="card">कोई ड्राइवर नहीं</div>';
+      return '<tr><td><b>' + esc(d.name) + '</b></td><td><span class="badge ' + (d.type === 'taxi' ? '' : 'green') + '">' + (d.type === 'taxi' ? 'Taxi' : 'Auto') + '</span></td>' +
+        '<td>' + esc(d.vehicle || '-') + '</td><td>' + (d.type === 'taxi' ? (d.seats || '?') + ' seater' : (d.fuel ? d.fuel.toUpperCase() : '-')) + '</td>' +
+        '<td>' + esc(d.phone) + '</td><td class="actions">' +
+        '<button class="btn sm" data-act="edit-driver" data-i="' + x.i + '">Edit</button>' +
+        '<button class="btn sm danger" data-act="del-driver" data-i="' + x.i + '">Delete</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="empty">No drivers found</td></tr>') + '</tbody></table></div>';
 }
-function driverForm() {
+function driverFormHtml() {
   var d = editing.draft, isTaxi = d.type !== 'auto';
-  return '<div class="card"><b>' + (editing.index < 0 ? 'नया ड्राइवर' : 'ड्राइवर बदलो') + '</b>' +
-    '<label>प्रकार</label><select id="fd_type"><option value="taxi"' + (isTaxi ? ' selected' : '') + '>टैक्सी</option>' +
-    '<option value="auto"' + (!isTaxi ? ' selected' : '') + '>ऑटो</option></select>' +
-    '<label>नाम (ज़रूरी)</label><input id="fd_name" value="' + esc(d.name) + '">' +
-    '<label>मोबाइल नंबर (ज़रूरी)</label><input id="fd_phone" inputmode="tel" value="' + esc(d.phone) + '">' +
-    '<label>गाड़ी की डिटेल</label><input id="fd_vehicle" value="' + esc(d.vehicle) + '">' +
-    '<div id="seatRow" style="display:' + (isTaxi ? 'block' : 'none') + '"><label>सीटर (टैक्सी में ज़रूरी)</label>' +
+  return '<label>Type</label><select id="fd_type"><option value="taxi"' + (isTaxi ? ' selected' : '') + '>Taxi</option>' +
+    '<option value="auto"' + (!isTaxi ? ' selected' : '') + '>Auto rickshaw</option></select>' +
+    '<label>Driver name (required)</label><input id="fd_name" value="' + esc(d.name) + '">' +
+    '<label>Mobile number (required)</label><input id="fd_phone" inputmode="tel" value="' + esc(d.phone) + '">' +
+    '<label>Vehicle details</label><input id="fd_vehicle" value="' + esc(d.vehicle) + '">' +
+    '<div id="seatRow" style="display:' + (isTaxi ? 'block' : 'none') + '"><label>Seat count (required for taxi)</label>' +
     '<input id="fd_seats" type="number" min="1" value="' + esc(d.seats) + '"></div>' +
-    '<div id="fuelRow" style="display:' + (!isTaxi ? 'block' : 'none') + '"><label>ईंधन</label><select id="fd_fuel">' +
-    '<option value="">— चुनो —</option><option value="ev"' + (d.fuel === 'ev' ? ' selected' : '') + '>EV (इलेक्ट्रिक)</option>' +
-    '<option value="oil"' + (d.fuel === 'oil' ? ' selected' : '') + '>Oil (पेट्रोल/CNG)</option></select></div>' +
-    '<label>जानकारी / इलाका (वैकल्पिक)</label><input id="fd_info" value="' + esc(d.info) + '">' +
-    '<div class="btnrow"><button class="primary" data-act="save-driver">सेव</button><button data-act="cancel">रद्द</button></div></div>';
+    '<div id="fuelRow" style="display:' + (!isTaxi ? 'block' : 'none') + '"><label>Fuel type</label><select id="fd_fuel">' +
+    '<option value="">Select</option><option value="ev"' + (d.fuel === 'ev' ? ' selected' : '') + '>EV (electric)</option>' +
+    '<option value="oil"' + (d.fuel === 'oil' ? ' selected' : '') + '>Oil (petrol / CNG)</option></select></div>' +
+    '<label>Area / additional info (optional)</label><input id="fd_info" value="' + esc(d.info) + '">' + foot('save-driver');
 }
 
-function viewPublish() {
-  var v = validate();
-  return '<div class="card"><b>प्रकाशित करने से पहले जाँच</b>' +
-    '<p>' + data.places.length + ' जगहें · ' + data.routes.length + ' रूट · ' + data.taxiSeaters.length + ' सीटर विकल्प · ' + data.drivers.length + ' ड्राइवर</p>' +
-    (v.errors.length ? '<div class="msg-err"><b>गलतियाँ (इन्हें ठीक किए बिना प्रकाशित नहीं होगा):</b><ul class="rep">' +
-      v.errors.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div>' : '<p class="msg-ok">कोई गलती नहीं ✓</p>') +
-    (v.warnings.length ? '<div class="msg-warn"><b>ध्यान दो:</b><ul class="rep">' +
-      v.warnings.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div>' : '') +
-    '<p class="hint">प्रकाशित करने पर dataVersion ' + baseVersion + ' से ' + (baseVersion + 1) + ' हो जाएगा। ऐप अगली बार खुलने पर नया डेटा ले लेगा; नया APK नहीं बनेगा।</p>' +
-    '<div class="btnrow"><button class="primary" data-act="publish"' + (v.errors.length || !dirty ? ' disabled' : '') + '>GitHub पर प्रकाशित करो</button>' +
-    '<button class="danger" data-act="reload">GitHub से दोबारा लोड करो</button></div></div>';
+function viewSettings() {
+  return '<div class="card"><h2>GitHub connection</h2><p class="muted">Data is read from and published to the file below in your repository.</p>' +
+    '<div class="row2"><div><label>GitHub username</label><input id="c_owner" value="' + esc(cfg.owner) + '"></div>' +
+    '<div><label>Repository</label><input id="c_repo" value="' + esc(cfg.repo) + '"></div></div>' +
+    '<div class="row2"><div><label>Branch</label><input id="c_branch" value="' + esc(cfg.branch) + '"></div>' +
+    '<div><label>Data file path</label><input id="c_path" value="' + esc(cfg.path) + '"></div></div>' +
+    '<label>GitHub token (kept only in this browser)</label><input id="c_token" type="password" value="' + esc(cfg.token) + '">' +
+    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="save-cfg">Save and load data</button></div>' +
+    (data ? '<div class="alert ok">Loaded: data version ' + baseVersion + ', ' + data.places.length + ' places, ' + data.routes.length +
+            ' routes, ' + data.drivers.length + ' drivers.</div>' : '') + '</div>' +
+    '<div class="card"><h2>Creating a token (one time)</h2><p class="muted">' +
+    'GitHub &rarr; profile picture &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens &rarr; Generate new token.<br>' +
+    '&bull; Repository access: only the <b>Bustime</b> repository<br>&bull; Repository permissions: <b>Contents &rarr; Read and write</b><br>' +
+    'Paste the token above. Never share it and never commit it to the repository.</p></div>';
 }
 
-// ============ बटन / इनपुट की घटनाएँ ============
+// ============ Dialog ============
+function foot(saveAct) {
+  return '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="' + saveAct + '">Save</button></div>';
+}
+function renderModal() {
+  var ov = $('#overlay');
+  if (publishOpen) {
+    var v = validate();
+    $('#dlgTitle').textContent = 'Publish changes';
+    $('#dlgBody').innerHTML = '<p class="muted" style="margin-top:14px">Data version will change from ' + baseVersion + ' to ' + (baseVersion + 1) +
+      '. The app picks up the new data the next time it opens. No new APK is built.</p>' + reportHtml(v) +
+      '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button>' +
+      '<button class="btn primary" data-act="publish"' + (v.errors.length ? ' disabled' : '') + '>Publish to GitHub</button></div>';
+    ov.classList.add('show');
+  } else if (editing) {
+    var titles = { place: 'place', route: 'route', driver: 'driver' };
+    $('#dlgTitle').textContent = (editing.index < 0 ? 'Add ' : 'Edit ') + titles[editing.type];
+    $('#dlgBody').innerHTML = { place: placeFormHtml, route: routeFormHtml, driver: driverFormHtml }[editing.type]();
+    ov.classList.add('show');
+  } else {
+    ov.classList.remove('show');
+  }
+}
+
+// ============ Events ============
 function val(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
-function opt(v) { return v ? v : undefined; }
 
 document.addEventListener('input', function (e) {
   var key = e.target.getAttribute && e.target.getAttribute('data-filter');
@@ -396,24 +514,35 @@ document.addEventListener('change', function (e) {
     $('#fuelRow').style.display = taxi ? 'none' : 'block';
   }
   if (e.target.id === 'f_dtype') { filters.driverType = e.target.value; render(); }
+  if (e.target.id === 'f_pkind') { filters.placeKind = e.target.value; render(); }
 });
 document.addEventListener('click', async function (e) {
+  if (e.target.id === 'overlay') { editing = null; publishOpen = false; render(); return; }
   var b = e.target.closest('[data-act]');
   if (!b) return;
   var act = b.getAttribute('data-act'), i = parseInt(b.getAttribute('data-i'), 10);
   try {
-    if (act === 'tab') { tab = b.getAttribute('data-t'); editing = null; render(); }
+    if (act === 'tab') { tab = b.getAttribute('data-t'); editing = null; publishOpen = false; render(); }
+    else if (act === 'close') { editing = null; publishOpen = false; render(); }
+    else if (act === 'open-publish') { publishOpen = true; render(); }
     else if (act === 'save-cfg') {
       cfg.owner = val('c_owner'); cfg.repo = val('c_repo'); cfg.branch = val('c_branch');
       cfg.path = val('c_path'); cfg.token = document.getElementById('c_token').value.trim(); saveCfg();
-      b.disabled = true; b.textContent = 'लोड हो रहा है…';
-      await loadData(); toast('डेटा लोड हो गया'); tab = 'places'; render();
+      b.disabled = true; b.textContent = 'Loading...';
+      await loadData(); toast('Data loaded'); tab = 'dashboard'; render();
     }
-    else if (act === 'cancel') { editing = null; render(); }
     else if (act === 'add-stop') { $('#stops').insertAdjacentHTML('beforeend', stopRow('', '')); }
     else if (act === 'rm-stop') { b.closest('.stoprow').remove(); }
+    else if (act === 'stop-up') {
+      var row = b.closest('.stoprow'), prev = row.previousElementSibling;
+      if (prev) row.parentNode.insertBefore(row, prev);
+    }
+    else if (act === 'stop-down') {
+      var row2 = b.closest('.stoprow'), next = row2.nextElementSibling;
+      if (next) row2.parentNode.insertBefore(next, row2);
+    }
 
-    // ---- जगहें ----
+    // ---- places ----
     else if (act === 'new-place') { editing = { type: 'place', index: -1, draft: { kind: 'place', name: {}, aliases: [] } }; render(); }
     else if (act === 'edit-place') { editing = { type: 'place', index: i, draft: JSON.parse(JSON.stringify(data.places[i])) }; render(); }
     else if (act === 'del-place') {
@@ -421,13 +550,13 @@ document.addEventListener('click', async function (e) {
       var used = data.routes.filter(function (r) {
         return r.from === pid || r.to === pid || (r.stops || []).some(function (s) { return s.place === pid; });
       });
-      if (used.length) { toast('यह जगह ' + used.length + ' रूट में इस्तेमाल हो रही है, पहले उन्हें बदलो'); return; }
-      if (confirm('"' + pname(data.places[i]) + '" हटाएँ?')) { data.places.splice(i, 1); setDirty(true); render(); }
+      if (used.length) { toast('This place is used in ' + used.length + ' route(s). Change those routes first.'); return; }
+      if (confirm('Delete "' + pname(data.places[i]) + '"?')) { data.places.splice(i, 1); setDirty(true); render(); }
     }
     else if (act === 'save-place') {
       var name = {};
       [['en','fp_en'], ['hi','fp_hi'], ['pa','fp_pa']].forEach(function (x) { if (val(x[1])) name[x[0]] = val(x[1]); });
-      if (!Object.keys(name).length) { toast('कम से कम एक नाम लिखो'); return; }
+      if (!Object.keys(name).length) { toast('Enter at least one name'); return; }
       var p = editing.index < 0 ? {} : data.places[editing.index];
       var kind = val('fp_kind');
       if (editing.index < 0) {
@@ -439,20 +568,28 @@ document.addEventListener('click', async function (e) {
       if (val('fp_city')) p.city = val('fp_city'); else delete p.city;
       if (val('fp_dist')) p.district = val('fp_dist'); else delete p.district;
       if (editing.index < 0) data.places.push(p);
-      editing = null; setDirty(true); toast('जगह सेव हो गई'); render();
+      editing = null; setDirty(true); toast('Place saved'); render();
     }
 
-    // ---- रूट ----
+    // ---- routes ----
     else if (act === 'new-route') { editing = { type: 'route', index: -1, draft: { stops: [] } }; render(); }
     else if (act === 'edit-route') { editing = { type: 'route', index: i, draft: JSON.parse(JSON.stringify(data.routes[i])) }; render(); }
+    else if (act === 'reverse-route') {
+      var src = data.routes[i];
+      editing = { type: 'route', index: -1, draft: {
+        from: src.to, to: src.from, time: '', service: src.service, contact: src.contact, info: src.info,
+        stops: (src.stops || []).slice().reverse().map(function (s) { return { place: s.place }; })
+      } };
+      render(); toast('Return route prepared. Fill in the times and save.');
+    }
     else if (act === 'del-route') {
-      if (confirm('यह रूट हटाएँ?')) { data.routes.splice(i, 1); setDirty(true); render(); }
+      if (confirm('Delete this route?')) { data.routes.splice(i, 1); setDirty(true); render(); }
     }
     else if (act === 'save-route') {
       var from = val('fr_from'), to = val('fr_to'), time = val('fr_time'), arrive = val('fr_arrive');
-      if (!from || !to) { toast('कहाँ से और कहाँ तक, दोनों चुनो'); return; }
-      if (from === to) { toast('From और To अलग होने चाहिए'); return; }
-      if (!TIME_RE.test(time)) { toast('चलने का समय डालो'); return; }
+      if (!from || !to) { toast('Select both From and To'); return; }
+      if (from === to) { toast('From and To must be different'); return; }
+      if (!TIME_RE.test(time)) { toast('Enter the departure time'); return; }
       var stops = [];
       document.querySelectorAll('#stops .stoprow').forEach(function (row) {
         var sp = row.querySelector('.st_place').value, st = row.querySelector('.st_time').value;
@@ -466,39 +603,39 @@ document.addEventListener('click', async function (e) {
       });
       if (stops.length) r.stops = stops; else delete r.stops;
       if (editing.index < 0) data.routes.push(r);
-      editing = null; setDirty(true); toast('रूट सेव हो गया'); render();
+      editing = null; setDirty(true); toast('Route saved'); render();
     }
 
-    // ---- सीटर ----
+    // ---- taxi seats ----
     else if (act === 'add-seater') {
       var n = parseInt(val('newSeater'), 10);
-      if (!(n > 0)) { toast('सही संख्या लिखो'); return; }
-      if (data.taxiSeaters.indexOf(n) >= 0) { toast('यह सीटर पहले से है'); return; }
+      if (!(n > 0)) { toast('Enter a valid number'); return; }
+      if (data.taxiSeaters.indexOf(n) >= 0) { toast('That seat option already exists'); return; }
       data.taxiSeaters.push(n); data.taxiSeaters.sort(function (a, c) { return a - c; });
       setDirty(true); render();
     }
     else if (act === 'rm-seater') {
       var rn = parseInt(b.getAttribute('data-n'), 10);
       var cnt = data.drivers.filter(function (d) { return d.type === 'taxi' && d.seats === rn; }).length;
-      if (confirm(rn + ' सीटर का विकल्प हटाएँ?' + (cnt ? '\n(' + cnt + ' ड्राइवर ऐप में नहीं दिखेंगे)' : ''))) {
+      if (confirm('Remove the ' + rn + ' seater option?' + (cnt ? '\n' + cnt + ' driver(s) will no longer appear in the app.' : ''))) {
         data.taxiSeaters = data.taxiSeaters.filter(function (x) { return x !== rn; });
         setDirty(true); render();
       }
     }
 
-    // ---- ड्राइवर ----
+    // ---- drivers ----
     else if (act === 'new-driver') { editing = { type: 'driver', index: -1, draft: { type: 'taxi' } }; render(); }
     else if (act === 'edit-driver') { editing = { type: 'driver', index: i, draft: JSON.parse(JSON.stringify(data.drivers[i])) }; render(); }
     else if (act === 'del-driver') {
-      if (confirm('"' + data.drivers[i].name + '" हटाएँ?')) { data.drivers.splice(i, 1); setDirty(true); render(); }
+      if (confirm('Delete "' + data.drivers[i].name + '"?')) { data.drivers.splice(i, 1); setDirty(true); render(); }
     }
     else if (act === 'save-driver') {
       var type = val('fd_type'), dn = val('fd_name'), ph = val('fd_phone');
       var digits = ph.replace(/\D/g, '').length;
-      if (!dn) { toast('नाम ज़रूरी है'); return; }
-      if (digits < 10 || digits > 13) { toast('सही मोबाइल नंबर लिखो'); return; }
+      if (!dn) { toast('Driver name is required'); return; }
+      if (digits < 10 || digits > 13) { toast('Enter a valid mobile number'); return; }
       var seats = parseInt(val('fd_seats'), 10);
-      if (type === 'taxi' && !(seats > 0)) { toast('टैक्सी में सीटर ज़रूरी है'); return; }
+      if (type === 'taxi' && !(seats > 0)) { toast('Seat count is required for a taxi'); return; }
       var d = editing.index < 0 ? { id: nextNum(type === 'taxi' ? 't' : 'a', data.drivers) } : data.drivers[editing.index];
       d.type = type; d.name = dn; d.phone = ph;
       if (val('fd_vehicle')) d.vehicle = val('fd_vehicle'); else delete d.vehicle;
@@ -506,26 +643,23 @@ document.addEventListener('click', async function (e) {
       else { delete d.seats; if (val('fd_fuel')) d.fuel = val('fd_fuel'); else delete d.fuel; }
       if (val('fd_info')) d.info = val('fd_info'); else delete d.info;
       if (editing.index < 0) data.drivers.push(d);
-      editing = null; setDirty(true); toast('ड्राइवर सेव हो गया'); render();
+      editing = null; setDirty(true); toast('Driver saved'); render();
     }
 
-    // ---- प्रकाशित ----
+    // ---- publish ----
     else if (act === 'publish') {
-      b.disabled = true; b.textContent = 'प्रकाशित हो रहा है…';
-      await publish(); toast('प्रकाशित हो गया ✓ dataVersion ' + baseVersion); render();
-    }
-    else if (act === 'reload') {
-      if (!dirty || confirm('बिना सेव किए बदलाव मिट जाएँगे। दोबारा लोड करें?')) { await loadData(); toast('दोबारा लोड हो गया'); render(); }
+      b.disabled = true; b.textContent = 'Publishing...';
+      await publish(); publishOpen = false; toast('Published. Data version ' + baseVersion); render();
     }
   } catch (err) {
-    toast('गड़बड़ी: ' + err.message); alert('गड़बड़ी: ' + err.message); render();
+    toast('Error: ' + err.message); render();
   }
 });
 
-// ============ शुरुआत ============
+// ============ Start ============
 render();
 if (cfg.token) {
-  loadData().then(function () { tab = 'places'; render(); }).catch(function (e) { toast('लोड नहीं हुआ: ' + e.message); });
+  loadData().then(function () { tab = 'dashboard'; render(); }).catch(function (e) { toast('Could not load: ' + e.message); });
 }
 </script>
 </body>
