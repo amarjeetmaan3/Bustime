@@ -53,5 +53,10 @@
             android:windowSoftInputMode="stateVisible|adjustResize" />
         <activity android:name=".ui.details.RouteDetailActivity" android:exported="false" />
 
+        <activity
+            android:name=".ui.addroute.AddRouteActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
     </application>
 </manifest>
