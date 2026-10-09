@@ -59,6 +59,25 @@ class BusFragment : Fragment(R.layout.fragment_bus) {
         }
 
         view.findViewById<View>(R.id.btnSearchRoute).setOnClickListener { searchRoutes() }
+
+        // भाषा बदलने पर स्क्रीन दोबारा बनती है: चुनी हुई जगहें वापस भरो
+        val savedFrom = savedInstanceState?.getString("FROM_ID")
+        val savedTo = savedInstanceState?.getString("TO_ID")
+        if (savedFrom != null || savedTo != null) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val ids = listOfNotNull(savedFrom, savedTo).toSet()
+                val found = repo.getPlacesById(ids)
+                fromPlace = savedFrom?.let { found[it] }
+                toPlace = savedTo?.let { found[it] }
+                showTexts()
+            }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("FROM_ID", fromPlace?.id)
+        outState.putString("TO_ID", toPlace?.id)
     }
 
     private fun openPicker(target: String, hint: String, standsOnly: Boolean) {

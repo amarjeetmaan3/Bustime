@@ -36,10 +36,14 @@ class HomeActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         toolbar.inflateMenu(R.menu.home_menu)
         toolbar.setOnMenuItemClickListener { item ->
-            if (item.itemId == R.id.action_language) {
-                showLanguageDialog()
-                true
-            } else false
+            when (item.itemId) {
+                R.id.action_language -> { showLanguageDialog(); true }
+                R.id.action_add_route -> {
+                    startActivity(android.content.Intent(this, com.bustime.app.ui.addroute.AddRouteActivity::class.java))
+                    true
+                }
+                else -> false
+            }
         }
 
         val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
