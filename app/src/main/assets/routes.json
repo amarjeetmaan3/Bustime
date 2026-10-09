@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 4,
+  "dataVersion": 5,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -152,7 +152,74 @@
       }
     }
   ],
-  "routes": [],
+  "routes": [
+    {
+      "id": "r1",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "12:26",
+      "arrive": "02:26",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    }
+  ],
   "taxiSeaters": [
     4,
     5,
