@@ -57,6 +57,9 @@ abstract class TransportDao {
     @Query("SELECT * FROM routes WHERE id = :routeId")
     abstract suspend fun getRoute(routeId: String): Route?
 
+    @Query("SELECT * FROM routes ORDER BY fromId, toId, time")
+    abstract suspend fun getAllRoutes(): List<Route>
+
     @Query("SELECT * FROM route_stops WHERE routeId = :routeId ORDER BY stopOrder")
     abstract suspend fun getStops(routeId: String): List<RouteStop>
 
