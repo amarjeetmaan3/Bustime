@@ -9,8 +9,8 @@ import java.net.URL
 object SupabaseClient {
 
     fun isConfigured(): Boolean =
-           const val SUPABASE_URL = "https://mdryxbvmqsphbfkvqtnf.supabase.co"
-    const val SUPABASE_ANON_KEY = "sb_publishable_1J6qNzpvPH-TTI-qxRU8wA_RVO7EpfM"
+        Constants.SUPABASE_URL.startsWith("https://") && !Constants.SUPABASE_URL.contains("YOUR-") &&
+            !Constants.SUPABASE_ANON_KEY.contains("YOUR-")
 
     /** true = भेज दिया गया। नेटवर्क के काम की वजह से इसे बैकग्राउंड थ्रेड पर ही चलाओ। */
     fun insertRouteSubmission(body: JSONObject): Boolean {
@@ -22,7 +22,11 @@ object SupabaseClient {
             conn.readTimeout = 15000
             conn.doOutput = true
             conn.setRequestProperty("apikey", Constants.SUPABASE_ANON_KEY)
-            conn.setRequestProperty("Authorization", "Bearer ${Constants.SUPABASE_ANON_KEY}")
+            // पुरानी anon key (eyJ... वाली JWT) को Authorization में भी भेजना होता है;
+            // नई "sb_publishable_..." key सिर्फ़ apikey में जाती है
+            if (Constants.SUPABASE_ANON_KEY.startsWith("eyJ")) {
+                conn.setRequestProperty("Authorization", "Bearer ${Constants.SUPABASE_ANON_KEY}")
+            }
             conn.setRequestProperty("Content-Type", "application/json")
             // पढ़ने की इजाज़त नहीं है, इसलिए जवाब में रिकॉर्ड वापस मत माँगो
             conn.setRequestProperty("Prefer", "return=minimal")
