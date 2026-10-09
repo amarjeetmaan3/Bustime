@@ -45,4 +45,22 @@
     <string name="type_place_hint">Type a place name</string>
     <string name="no_places">No places found</string>
     <string name="swap_places">Swap From and To</string>
+
+    <string name="add_route">Add a bus route</string>
+    <string name="add_route_intro">Know the timings of a bus? Choose the route, fill in the times you know and leave the rest blank. Our team checks every entry before it appears in the app.</string>
+    <string name="ar_choose_route">Choose route</string>
+    <string name="ar_start_time">Start time</string>
+    <string name="ar_stop_times">Time at each stop (optional)</string>
+    <string name="ar_tap_time">Tap to set time</string>
+    <string name="ar_clear">Clear</string>
+    <string name="ar_service_hint">Bus / service name (optional)</string>
+    <string name="ar_phone_hint">Your mobile number</string>
+    <string name="ar_phone_note">Please enter your correct number. Our team may call you to verify the timings. It is never shown in the app.</string>
+    <string name="ar_submit">Submit</string>
+    <string name="ar_need_start">Please set the start time</string>
+    <string name="ar_need_phone">Please enter a valid 10-digit mobile number</string>
+    <string name="ar_sent">Thank you! Your route was sent for review.</string>
+    <string name="ar_failed">Could not send. Check your internet and try again.</string>
+    <string name="ar_not_set">Online submission is not set up yet</string>
+    <string name="ar_no_routes">No routes available yet. Please try again later.</string>
 </resources>
