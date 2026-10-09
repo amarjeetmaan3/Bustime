@@ -46,6 +46,11 @@
         </activity>
 
         <activity android:name=".ui.search.SearchActivity" android:exported="false" />
+        <!-- जगह चुनने का पूरा पेज: कीबोर्ड खुलते ही सूची उसके ऊपर सिकुड़कर दिखती है -->
+        <activity
+            android:name=".ui.search.PlacePickerActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
         <activity android:name=".ui.details.RouteDetailActivity" android:exported="false" />
 
     </application>
