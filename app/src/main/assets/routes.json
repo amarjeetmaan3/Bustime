@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 3,
+  "dataVersion": 4,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -142,6 +142,13 @@
       "kind": "place",
       "name": {
         "en": "Bolanwali"
+      }
+    },
+    {
+      "id": "stand_sangriya",
+      "kind": "stand",
+      "name": {
+        "en": "Sangriya"
       }
     }
   ],
