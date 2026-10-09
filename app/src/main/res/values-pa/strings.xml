@@ -40,4 +40,22 @@
     <string name="type_place_hint">ਥਾਂ ਦਾ ਨਾਮ ਲਿਖੋ</string>
     <string name="no_places">ਕੋਈ ਥਾਂ ਨਹੀਂ ਮਿਲੀ</string>
     <string name="swap_places">ਕਿੱਥੋਂ ਅਤੇ ਕਿੱਥੇ ਤੱਕ ਬਦਲੋ</string>
+
+    <string name="add_route">ਬੱਸ ਦਾ ਰੂਟ ਜੋੜੋ</string>
+    <string name="add_route_intro">ਕਿਸੇ ਬੱਸ ਦਾ ਸਮਾਂ ਪਤਾ ਹੈ? ਰੂਟ ਚੁਣੋ, ਜੋ ਸਮਾਂ ਪਤਾ ਹੈ ਭਰੋ ਅਤੇ ਬਾਕੀ ਖਾਲੀ ਛੱਡ ਦਿਓ। ਹਰ ਜਾਣਕਾਰੀ ਸਾਡੀ ਟੀਮ ਦੀ ਜਾਂਚ ਤੋਂ ਬਾਅਦ ਹੀ ਐਪ ਵਿੱਚ ਦਿਖੇਗੀ।</string>
+    <string name="ar_choose_route">ਰੂਟ ਚੁਣੋ</string>
+    <string name="ar_start_time">ਚੱਲਣ ਦਾ ਸਮਾਂ</string>
+    <string name="ar_stop_times">ਹਰ ਅੱਡੇ ਦਾ ਸਮਾਂ (ਵਿਕਲਪਿਕ)</string>
+    <string name="ar_tap_time">ਸਮਾਂ ਚੁਣਨ ਲਈ ਟੈਪ ਕਰੋ</string>
+    <string name="ar_clear">ਹਟਾਓ</string>
+    <string name="ar_service_hint">ਬੱਸ / ਸਰਵਿਸ ਦਾ ਨਾਮ (ਵਿਕਲਪਿਕ)</string>
+    <string name="ar_phone_hint">ਤੁਹਾਡਾ ਮੋਬਾਈਲ ਨੰਬਰ</string>
+    <string name="ar_phone_note">ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਸਹੀ ਨੰਬਰ ਪਾਓ। ਸਮੇਂ ਦੀ ਪੁਸ਼ਟੀ ਲਈ ਸਾਡੀ ਟੀਮ ਤੁਹਾਨੂੰ ਫ਼ੋਨ ਕਰ ਸਕਦੀ ਹੈ। ਇਹ ਨੰਬਰ ਐਪ ਵਿੱਚ ਕਦੇ ਨਹੀਂ ਦਿਖੇਗਾ।</string>
+    <string name="ar_submit">ਭੇਜੋ</string>
+    <string name="ar_need_start">ਕਿਰਪਾ ਕਰਕੇ ਚੱਲਣ ਦਾ ਸਮਾਂ ਚੁਣੋ</string>
+    <string name="ar_need_phone">ਕਿਰਪਾ ਕਰਕੇ 10 ਅੰਕਾਂ ਦਾ ਸਹੀ ਮੋਬਾਈਲ ਨੰਬਰ ਪਾਓ</string>
+    <string name="ar_sent">ਧੰਨਵਾਦ! ਤੁਹਾਡਾ ਰੂਟ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤਾ ਗਿਆ ਹੈ।</string>
+    <string name="ar_failed">ਭੇਜਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ। ਇੰਟਰਨੈੱਟ ਵੇਖ ਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।</string>
+    <string name="ar_not_set">ਆਨਲਾਈਨ ਭੇਜਣ ਦੀ ਸਹੂਲਤ ਅਜੇ ਚਾਲੂ ਨਹੀਂ ਹੈ</string>
+    <string name="ar_no_routes">ਅਜੇ ਕੋਈ ਰੂਟ ਉਪਲਬਧ ਨਹੀਂ। ਬਾਅਦ ਵਿੱਚ ਕੋਸ਼ਿਸ਼ ਕਰੋ।</string>
 </resources>
