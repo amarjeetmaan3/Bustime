@@ -16,9 +16,15 @@ import com.bustime.app.utils.LanguageHelper
 import kotlinx.coroutines.launch
 
 class HomeActivity : AppCompatActivity() {
+
+    private var currentTab = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+
+        // भाषा बदलने पर स्क्रीन दोबारा बनती है: जो टैब खुला था वही खुला रहे
+        currentTab = savedInstanceState?.getInt("TAB", 0) ?: 0
 
         // अपडेटर चेक करना
         GitHubUpdateChecker(this).checkForLatestUpdate()
@@ -37,11 +43,15 @@ class HomeActivity : AppCompatActivity() {
         }
 
         val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
-        replaceFragment(BusFragment())
+        tabLayout.getTabAt(currentTab)?.select()
+        if (savedInstanceState == null) {
+            replaceFragment(BusFragment())
+        }
 
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
-                when (tab?.position) {
+                currentTab = tab?.position ?: 0
+                when (currentTab) {
                     0 -> replaceFragment(BusFragment())
                     1 -> replaceFragment(TaxiFragment())
                     2 -> replaceFragment(AutoRickshawFragment())
@@ -50,6 +60,11 @@ class HomeActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("TAB", currentTab)
     }
 
     private fun showLanguageDialog() {

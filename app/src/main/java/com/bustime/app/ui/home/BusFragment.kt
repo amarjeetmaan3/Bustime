@@ -1,92 +1,124 @@
 package com.bustime.app.ui.home
 
-import android.content.Context
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
-import android.widget.Button
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.models.Place
+import com.bustime.app.ui.search.PlacePickerActivity
 import com.bustime.app.ui.search.SearchActivity
+import com.bustime.app.utils.LanguageHelper
 import kotlinx.coroutines.launch
 
-/** यहाँ सिर्फ़ खोजने के बॉक्स हैं; नतीजे अलग पेज (SearchActivity) पर खुलते हैं */
+/**
+ * बॉक्स पर टैप करो -> जगह चुनने का पूरा पेज खुलता है (कीबोर्ड के साथ)।
+ * बीच का गोल बटन From और To की जगहें आपस में बदल देता है। नतीजे अलग पेज पर खुलते हैं।
+ */
 class BusFragment : Fragment(R.layout.fragment_bus) {
 
-    private lateinit var fromPicker: PlacePicker
-    private lateinit var toPicker: PlacePicker
-    private lateinit var standPicker: PlacePicker
+    private lateinit var repo: AppRepository
+    private lateinit var etFrom: EditText
+    private lateinit var etTo: EditText
+    private lateinit var etStand: EditText
+
+    private var fromPlace: Place? = null
+    private var toPlace: Place? = null
+    private var pickTarget = ""   // "from", "to" या "stand"
+
+    private val pickLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val id = result.data?.getStringExtra("PLACE_ID")
+            if (id != null) onPicked(pickTarget, id)
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val repo = AppRepository.getInstance(requireContext())
-        val scope = viewLifecycleOwner.lifecycleScope
+        repo = AppRepository.getInstance(requireContext())
 
-        val etStand = view.findViewById<EditText>(R.id.etStand)
-        fromPicker = PlacePicker(scope, repo, view.findViewById(R.id.etFrom), view.findViewById<LinearLayout>(R.id.suggestFrom), false)
-        toPicker = PlacePicker(scope, repo, view.findViewById(R.id.etTo), view.findViewById<LinearLayout>(R.id.suggestTo), false)
-        standPicker = PlacePicker(scope, repo, etStand, view.findViewById<LinearLayout>(R.id.suggestStand), true) { place ->
-            openStandResults(place)
+        etFrom = view.findViewById(R.id.etFrom)
+        etTo = view.findViewById(R.id.etTo)
+        etStand = view.findViewById(R.id.etStand)
+
+        etFrom.setOnClickListener { openPicker("from", getString(R.string.from_hint), false) }
+        etTo.setOnClickListener { openPicker("to", getString(R.string.to_hint), false) }
+        etStand.setOnClickListener { openPicker("stand", getString(R.string.stand_hint), true) }
+
+        view.findViewById<View>(R.id.btnSwap).setOnClickListener {
+            val t = fromPlace
+            fromPlace = toPlace
+            toPlace = t
+            showTexts()
         }
 
-        view.findViewById<Button>(R.id.btnSearchRoute).setOnClickListener { searchRoutes() }
+        view.findViewById<View>(R.id.btnSearchRoute).setOnClickListener { searchRoutes() }
+    }
 
-        // कीबोर्ड का Search बटन: पूरा स्टैंड नाम लिखा हो तो भी चलेगा
-        etStand.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                scope.launch { standPicker.resolve() }
-                true
-            } else false
+    private fun openPicker(target: String, hint: String, standsOnly: Boolean) {
+        pickTarget = target
+        pickLauncher.launch(
+            Intent(requireContext(), PlacePickerActivity::class.java)
+                .putExtra("HINT", hint)
+                .putExtra("STANDS_ONLY", standsOnly)
+        )
+    }
+
+    private fun onPicked(target: String, placeId: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val place = repo.getPlacesById(setOf(placeId))[placeId] ?: return@launch
+            when (target) {
+                "from" -> fromPlace = place
+                "to" -> toPlace = place
+                "stand" -> {
+                    etStand.setText(place.displayName(LanguageHelper.current()))
+                    openStandResults(place)
+                }
+            }
+            showTexts()
         }
+    }
+
+    private fun showTexts() {
+        val lang = LanguageHelper.current()
+        etFrom.setText(fromPlace?.displayName(lang).orEmpty())
+        etTo.setText(toPlace?.displayName(lang).orEmpty())
     }
 
     // From -> To: नतीजे अगले पेज पर
     private fun searchRoutes() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            val from = fromPicker.resolve()
-            val to = toPicker.resolve()
-            val ctx = context ?: return@launch
-            if (from == null || to == null) {
-                Toast.makeText(ctx, R.string.select_places, Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-            if (from.id == to.id) {
-                Toast.makeText(ctx, R.string.same_place, Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-            hideKeyboard()
-            startActivity(
-                Intent(ctx, SearchActivity::class.java)
-                    .putExtra("MODE", "route")
-                    .putExtra("FROM_ID", from.id)
-                    .putExtra("TO_ID", to.id)
-            )
+        val ctx = context ?: return
+        val from = fromPlace
+        val to = toPlace
+        if (from == null || to == null) {
+            Toast.makeText(ctx, R.string.select_places, Toast.LENGTH_SHORT).show()
+            return
         }
+        if (from.id == to.id) {
+            Toast.makeText(ctx, R.string.same_place, Toast.LENGTH_SHORT).show()
+            return
+        }
+        startActivity(
+            Intent(ctx, SearchActivity::class.java)
+                .putExtra("MODE", "route")
+                .putExtra("FROM_ID", from.id)
+                .putExtra("TO_ID", to.id)
+        )
     }
 
     // बस स्टैंड: नतीजे अगले पेज पर
     private fun openStandResults(place: Place) {
         val ctx = context ?: return
-        hideKeyboard()
         startActivity(
             Intent(ctx, SearchActivity::class.java)
                 .putExtra("MODE", "stand")
                 .putExtra("STAND_ID", place.id)
         )
-    }
-
-    private fun hideKeyboard() {
-        val v = view ?: return
-        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(v.windowToken, 0)
-        v.findFocus()?.clearFocus()
     }
 }
