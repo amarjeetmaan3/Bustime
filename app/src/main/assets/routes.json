@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 12,
+  "dataVersion": 13,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -197,6 +197,15 @@
         "en": "Jaipur",
         "hi": "जयपुर",
         "pa": "ਜੈਪੁਰ"
+      }
+    },
+    {
+      "id": "place_hunmangarh",
+      "kind": "city",
+      "name": {
+        "en": "Hunmangarh",
+        "hi": "हुनमनगढ़",
+        "pa": "ਹੁਨਮੰਗਗੜ"
       }
     }
   ],
