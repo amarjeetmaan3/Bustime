@@ -146,17 +146,7 @@ class CommunityRequestActivity : AppCompatActivity() {
     }
 
     private fun vehicleForm() {
-        val requestedType = intent.getStringExtra("vehicle_type")?.lowercase(Locale.ROOT)
-        val vehicleSpinner = spinner("Vehicle type", listOf("Auto", "Taxi"), "vehicle_type")
-        if (requestedType == "taxi") vehicleSpinner.setSelection(1) else if (requestedType == "auto") vehicleSpinner.setSelection(0)
-        val fuelSpinner = spinner("Auto fuel type", listOf("All / not specified", "EV (Electric)", "Oil (Petrol/CNG)"), "fuel_type")
-        fuelSpinner.visibility = if (requestedType == "auto" || requestedType == null) View.VISIBLE else View.GONE
-        vehicleSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                fuelSpinner.visibility = if (position == 0) View.VISIBLE else View.GONE
-            }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-        }
+        spinner("Vehicle type", listOf("Auto", "Taxi"), "vehicle_type")
         field("person_name", "Driver / contact person name")
         field("vehicle_name", "Vehicle name / model")
         field("seats", "Number of seats (if applicable)")
@@ -168,8 +158,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             val name = value("person_name"); val vehicle = value("vehicle_name"); val phone = digits(value("phone"))
             val seats = value("seats").toIntOrNull()
             if (name.isBlank() || vehicle.isBlank() || value("location").isBlank() || phone.length !in 10..13 || (type == "taxi" && (seats == null || seats < 1))) { toast("Enter name, vehicle, location and valid mobile number. Taxi listings also need seat count."); return@button }
-            val fuel = when (spinners["fuel_type"]?.selectedItemPosition) { 1 -> "ev"; 2 -> "oil"; else -> null }
-            val body = JSONObject().put("vehicle_type", type).put("fuel_type", if (type == "auto") fuel ?: JSONObject.NULL else JSONObject.NULL).put("person_name", name).put("vehicle_name", vehicle)
+            val body = JSONObject().put("vehicle_type", type).put("person_name", name).put("vehicle_name", vehicle)
                 .put("seats", seats ?: JSONObject.NULL).put("location", value("location"))
                 .put("phone", phone).put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             sendRequests(listOf(body), "vehicle_submissions", "Listing sent for admin review.")
@@ -198,7 +187,10 @@ class CommunityRequestActivity : AppCompatActivity() {
             val results = withContext(Dispatchers.IO) { bodies.map { CommunitySupabase.insert(table, it) } }
             root.isEnabled = true
             if (results.all { it }) { toast(success); finish() }
-            else toast("Could not send all requests. Check internet and try again; no request was merged with another.")
+            else {
+                val detail = CommunitySupabase.lastError
+                toast(if (detail.isBlank()) "Submit failed. Check Supabase setup and permissions." else "Submit failed: $detail")
+            }
         }
     }
 
