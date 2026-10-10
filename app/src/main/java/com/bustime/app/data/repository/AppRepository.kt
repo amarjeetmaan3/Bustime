@@ -43,6 +43,8 @@ class AppRepository private constructor(context: Context) {
         if (ids.isEmpty()) emptyMap() else dao.getPlaces(ids.toList()).associateBy { it.id }
     }
 
+    suspend fun getAllPlaces(): List<Place> = query { dao.getAllPlaces() }
+
     // ---------- बस ----------
     suspend fun searchBusRoutes(fromId: String, toId: String): List<BusResult> =
         query { dao.searchBusRoutes(fromId, toId) }
