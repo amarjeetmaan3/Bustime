@@ -72,8 +72,10 @@ class AddRouteActivity : AppCompatActivity() {
         stopsBox = findViewById(R.id.stopsBox)
         btnSubmit = findViewById(R.id.btnSubmitRoute)
         routeSpinner = findViewById(R.id.spRoute)
-        cbLongRoute = findViewById(R.id.cbLongRoute).apply { visibility = View.GONE }
-        tvStartDate = findViewById(R.id.tvStartDate).apply { visibility = View.GONE }
+        cbLongRoute = findViewById<CheckBox>(R.id.cbLongRoute)
+        cbLongRoute.visibility = View.GONE
+        tvStartDate = findViewById<TextView>(R.id.tvStartDate)
+        tvStartDate.visibility = View.GONE
         findViewById<TextView>(R.id.tvStartDateLabel).visibility = View.GONE
 
         val content = findViewById<Button>(R.id.btnSubmitRoute).parent as LinearLayout
