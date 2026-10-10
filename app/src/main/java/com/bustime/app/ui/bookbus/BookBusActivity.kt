@@ -20,7 +20,7 @@ import org.json.JSONArray
 class BookBusActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        title = "Book Bus · Contact Operator"
+        title = getString(com.bustime.app.R.string.book_bus)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(18, 12, 18, 18) }
         root.addView(TextView(this).apply { text = "Choose a bus service and contact the operator directly. Booking and payment are handled outside the app."; textSize = 15f; setPadding(0, 8, 0, 16) })
         val scroll = ScrollView(this).apply { addView(root) }; setContentView(scroll)
@@ -34,13 +34,20 @@ class BookBusActivity : AppCompatActivity() {
                 val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(0xFFF3F6FA.toInt()); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
                 val name = item.optString("operator_name", "Bus Operator")
                 card.addView(TextView(this@BookBusActivity).apply { text = name; textSize = 19f; setTypeface(null, android.graphics.Typeface.BOLD) })
-                listOf("Service: ${item.optString("service_name", "-")}", "Bus type: ${item.optString("bus_type", "-")}", "Route: ${item.optString("from_text", "-")} → ${item.optString("to_text", "-")}", item.optString("details", "")).filter { it.isNotBlank() }.forEach { line ->
-                    card.addView(TextView(this@BookBusActivity).apply { text = line; textSize = 14f; setPadding(0, 5, 0, 0) })
-                }
+                val detailLines = listOf("Service: ${item.optString("service_name", "-")}", "Bus type: ${item.optString("bus_type", "-")}", "Seat type: ${item.optString("seat_type", "-")}", "Route: ${item.optString("from_text", "-")} → ${item.optString("to_text", "-")}", "Location: ${item.optString("location", "-")}", item.optString("details", "")).filter { it.isNotBlank() }
+                val detailBox = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; visibility = android.view.View.GONE }
+                detailLines.forEach { line -> detailBox.addView(TextView(this@BookBusActivity).apply { text = line; textSize = 14f; setPadding(0, 5, 0, 0) }) }
+                card.addView(TextView(this@BookBusActivity).apply { text = "Tap for full details ▾"; textSize = 13f; setPadding(0, 8, 0, 4); setOnClickListener { detailBox.visibility = if (detailBox.visibility == android.view.View.VISIBLE) android.view.View.GONE else android.view.View.VISIBLE } })
+                card.addView(detailBox)
                 val phone = item.optString("phone", "").filter { it.isDigit() || it == '+' }
                 if (phone.isNotBlank()) card.addView(TextView(this@BookBusActivity).apply {
                     text = "☎  Contact operator: $phone"; textSize = 16f; setTextColor(0xFF0D47A1.toInt()); gravity = Gravity.CENTER_VERTICAL; setPadding(0, 12, 0, 2)
                     setOnClickListener { try { startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))) } catch (_: Exception) { Toast.makeText(this@BookBusActivity, "Could not open phone dialer", Toast.LENGTH_SHORT).show() } }
+                })
+                val whatsapp = item.optString("whatsapp", phone).filter { it.isDigit() || it == '+' }
+                if (whatsapp.isNotBlank()) card.addView(TextView(this@BookBusActivity).apply {
+                    text = "WhatsApp: $whatsapp"; textSize = 16f; setTextColor(0xFF128C7E.toInt()); setPadding(0, 8, 0, 2)
+                    setOnClickListener { try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/${whatsapp.filter { c -> c.isDigit() }}"))) } catch (_: Exception) { Toast.makeText(this@BookBusActivity, "Could not open WhatsApp", Toast.LENGTH_SHORT).show() } }
                 })
                 root.addView(card)
             }
