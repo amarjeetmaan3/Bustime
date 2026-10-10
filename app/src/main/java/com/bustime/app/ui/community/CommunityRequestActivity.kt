@@ -47,13 +47,21 @@ class CommunityRequestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mode = intent.getStringExtra("mode") ?: "feedback"
-        title = when (mode) { "correction" -> "Route Correction"; "vehicle" -> "List Auto / Taxi"; else -> "Feedback" }
+        title = when (mode) {
+            "correction" -> "Bus Route Correction"
+            "auto_correction" -> "Auto Correction"
+            "taxi_correction" -> "Taxi Correction"
+            "vehicle" -> "List Auto / Taxi"
+            else -> "Feedback"
+        }
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll)
         text("${title}\nYour submission will be reviewed by the admin before it affects the public app.", 18f)
         when (mode) {
             "correction" -> loadCorrectionForm()
+            "auto_correction" -> vehicleCorrectionForm("auto")
+            "taxi_correction" -> vehicleCorrectionForm("taxi")
             "vehicle" -> vehicleForm()
             else -> feedbackForm()
         }
@@ -145,6 +153,37 @@ class CommunityRequestActivity : AppCompatActivity() {
         sendRequests(jobs.map { it.second }, "correction_submissions", "Correction request(s) sent for admin review.")
     }
 
+    /** Auto/Taxi corrections are sent to the existing admin-reviewed feedback queue.
+     * This avoids calling a non-existent endpoint/table and keeps them separate from bus-route corrections.
+     */
+    private fun vehicleCorrectionForm(type: String) {
+        text("Report incorrect or outdated ${type.replaceFirstChar { it.uppercase() }} details. The admin will review the request before any public data changes.", 14f)
+        field("vehicle_person", "Driver / contact name (if known)")
+        field("vehicle_model", "Auto / Taxi name or vehicle model")
+        field("vehicle_location", "Location / stand / service area")
+        field("vehicle_phone", "Existing phone number (if known)")
+        field("vehicle_correct", "What needs correction? (required)")
+        field("vehicle_contact", "Your contact number (optional)")
+        button("Send ${type.replaceFirstChar { it.uppercase() }} correction") {
+            val issue = value("vehicle_correct")
+            if (issue.length < 4) { toast("Please describe what is incorrect."); return@button }
+            val details = buildString {
+                append("Vehicle type: ").append(type.uppercase()).append("\n")
+                append("Driver/contact: ").append(value("vehicle_person").ifBlank { "Not provided" }).append("\n")
+                append("Vehicle/model: ").append(value("vehicle_model").ifBlank { "Not provided" }).append("\n")
+                append("Location/stand: ").append(value("vehicle_location").ifBlank { "Not provided" }).append("\n")
+                append("Existing phone: ").append(value("vehicle_phone").ifBlank { "Not provided" }).append("\n")
+                append("Requested correction: ").append(issue)
+            }
+            val body = JSONObject()
+                .put("category", "${type.replaceFirstChar { it.uppercase() }} correction")
+                .put("related_route", JSONObject.NULL)
+                .put("message", details)
+                .put("contact", digits(value("vehicle_contact")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+            sendRequests(listOf(body), "feedback_submissions", "${type.replaceFirstChar { it.uppercase() }} correction sent for admin review.")
+        }
+    }
+
     private fun vehicleForm() {
         spinner("Vehicle type", listOf("Auto", "Taxi"), "vehicle_type")
         field("person_name", "Driver / contact person name")
@@ -187,10 +226,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             val results = withContext(Dispatchers.IO) { bodies.map { CommunitySupabase.insert(table, it) } }
             root.isEnabled = true
             if (results.all { it }) { toast(success); finish() }
-            else {
-                val detail = CommunitySupabase.lastError
-                toast(if (detail.isBlank()) "Submit failed. Check Supabase setup and permissions." else "Submit failed: $detail")
-            }
+            else toast("Could not send all requests. Check internet and try again; no request was merged with another.")
         }
     }
 
