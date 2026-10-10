@@ -34,7 +34,7 @@ object CommunitySupabase {
     }
 
     fun getPublicOperators(): String? {
-        val conn = URL(Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/bus_operators?select=id,operator_name,service_name,bus_type,from_text,to_text,phone,details&active=eq.true&order=operator_name.asc")
+        val conn = URL(Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/bus_operators?select=id,operator_name,service_name,bus_type,seat_type,from_text,to_text,location,phone,whatsapp,details&active=eq.true&order=operator_name.asc")
             .openConnection() as HttpURLConnection
         return try {
             conn.requestMethod = "GET"
