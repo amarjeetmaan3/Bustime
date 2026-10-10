@@ -67,4 +67,27 @@
     <string name="bus_type">ਬੱਸ ਦੀ ਕਿਸਮ</string>
     <string name="seat_type">ਸੀਟਾਂ ਦੀ ਕਿਸਮ</string>
     <string name="operator_location">ਬੱਸ ਦੀ ਲੋਕੇਸ਼ਨ</string>
+
+    <!-- Custom route and Book Bus labels -->
+    <string name="ar_new_route_mode">ਬਿਲਕੁਲ ਨਵਾਂ ਰੂਟ / ਅੱਡੇ ਦਰਜ ਕਰੋ</string>
+    <string name="ar_existing_route_mode">ਮੌਜੂਦਾ ਰੂਟ ਚੁਣੋ</string>
+    <string name="ar_new_route_intro">ਸ਼ਹਿਰ ਅਤੇ ਬੱਸ ਅੱਡੇ ਦੇ ਨਾਮ ਪੰਜਾਬੀ, ਹਿੰਦੀ ਜਾਂ ਅੰਗਰੇਜ਼ੀ ਵਿੱਚ ਲਿਖੋ। ਐਡਮਿਨ ਜਾਂਚ ਕਰਕੇ ਮਨਜ਼ੂਰ ਕਰੇਗਾ।</string>
+    <string name="ar_custom_from">ਕਿੱਥੋਂ — ਸ਼ਹਿਰ / ਬੱਸ ਅੱਡਾ</string>
+    <string name="ar_custom_to">ਕਿੱਥੇ ਤੱਕ — ਸ਼ਹਿਰ / ਬੱਸ ਅੱਡਾ</string>
+    <string name="ar_custom_stops">ਵਿਚਕਾਰਲੇ ਅੱਡੇ (ਵਿਕਲਪਿਕ)</string>
+    <string name="ar_add_stop">+ ਅੱਡਾ ਜੋੜੋ</string>
+    <string name="ar_custom_stop_name">ਅੱਡੇ ਦਾ ਨਾਮ</string>
+    <string name="ar_custom_need_endpoints">ਕਿਰਪਾ ਕਰਕੇ ਕਿੱਥੋਂ ਅਤੇ ਕਿੱਥੇ ਤੱਕ ਦੇ ਨਾਮ ਭਰੋ।</string>
+    <string name="bb_intro">ਬੱਸ ਸੇਵਾ ਚੁਣੋ ਅਤੇ ਆਪਰੇਟਰ ਨਾਲ ਸਿੱਧਾ ਸੰਪਰਕ ਕਰੋ। ਬੁਕਿੰਗ ਅਤੇ ਭੁਗਤਾਨ ਐਪ ਤੋਂ ਬਾਹਰ ਹੋਣਗੇ।</string>
+    <string name="bb_load_failed">ਬੱਸ ਸੇਵਾਵਾਂ ਨਹੀਂ ਖੁੱਲ੍ਹੀਆਂ। ਇੰਟਰਨੈੱਟ ਜਾਂਚੋ।</string>
+    <string name="bb_none">ਹਾਲੇ ਕੋਈ ਬੱਸ ਸੇਵਾ ਪ੍ਰਕਾਸ਼ਿਤ ਨਹੀਂ ਹੋਈ।</string>
+    <string name="bb_service">ਬੱਸ ਸੇਵਾ</string>
+    <string name="bb_seat_unspecified">ਸੀਟਾਂ ਦੀ ਕਿਸਮ ਨਹੀਂ ਦਿੱਤੀ</string>
+    <string name="bb_route">ਰੂਟ</string>
+    <string name="bb_location">ਟਿਕਾਣਾ / ਚੜ੍ਹਨ ਵਾਲੀ ਥਾਂ</string>
+    <string name="bb_expand">ਪੂਰੀ ਜਾਣਕਾਰੀ ਲਈ ਟੈਪ ਕਰੋ ▾</string>
+    <string name="bb_contact">ਆਪਰੇਟਰ ਨਾਲ ਸੰਪਰਕ</string>
+    <string name="bb_whatsapp">ਵਟਸਐਪ</string>
+    <string name="bb_call_error">ਫ਼ੋਨ ਡਾਇਲਰ ਨਹੀਂ ਖੁੱਲ੍ਹਿਆ</string>
+    <string name="bb_whatsapp_error">ਵਟਸਐਪ ਨਹੀਂ ਖੁੱਲ੍ਹਿਆ</string>
 </resources>
