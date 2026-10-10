@@ -6,6 +6,8 @@
         android:title="@string/add_route"
         app:showAsAction="never" />
     <item android:id="@+id/action_route_correction" android:title="Correct a bus route" app:showAsAction="never" />
+    <item android:id="@+id/action_auto_correction" android:title="Correct Auto details" app:showAsAction="never" />
+    <item android:id="@+id/action_taxi_correction" android:title="Correct Taxi details" app:showAsAction="never" />
     <item android:id="@+id/action_vehicle_listing" android:title="List Auto / Taxi" app:showAsAction="never" />
     <item android:id="@+id/action_book_bus" android:title="Book Bus · Contact Operator" app:showAsAction="never" />
     <item android:id="@+id/action_feedback" android:title="Feedback" app:showAsAction="never" />
