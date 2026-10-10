@@ -529,28 +529,37 @@ function viewReview() {
   if (!filtered.length) return head + '<div class="card"><p class="muted">No ' + esc(reviewStatus) + ' submissions.</p></div>';
   return head + filtered.map(function (x) {
     var s = x.s, i = x.index;
-    var stops = (s.stops || []).map(function (st, si) {
+    var stops = (s.stops || []).map(function (st) {
       var offset = Number(st.day_offset || 0), dayText = offset ? ' <span class="badge">Day +' + offset + '</span>' : '';
-      var label = st.place_name || (pname(placeById(st.place)) || st.place || 'Stop');
-      return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><span class="grow">' + esc(label) + dayText +
-        '</span><input type="time" class="sub_t" data-place="' + esc(st.place || '') + '" data-name="' + esc(st.place_name || '') + '" data-day-offset="' + esc(st.day_offset == null ? 0 : st.day_offset) + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '></div>';
+      var stopName = st.name || (pname(placeById(st.place)) || st.place || '');
+      return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><span class="grow">' + esc(stopName) + dayText +
+        '</span><input type="time" class="sub_t" data-place="' + esc(st.place || '') + '" data-name="' + esc(st.name || '') + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '></div>';
     }).join('');
     var actions = s.status === 'pending' ? '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Approve</button><button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button>' :
       s.status === 'rejected' ? '<button class="btn danger" data-act="sb-delete" data-i="' + i + '">Delete rejected request</button>' : '<span class="badge">Approved · retained</span>';
     var fromLabel = s.from_text || pname(placeById(s.from_id)) || s.from_id || '(missing From)';
     var toLabel = s.to_text || pname(placeById(s.to_id)) || s.to_id || '(missing To)';
-    return '<div class="card" data-sub="' + i + '"><h2>' + esc(fromLabel) + ' &rarr; ' + esc(toLabel) + '</h2>' +
+    return '<div class="card" data-sub="' + i + '"><h2>' + esc(fromLabel) + ' &rarr; ' + esc(toLabel) + (s.submission_type === 'new_route' ? ' <span class="badge">New free-text route</span>' : '') + '</h2>' +
       '<p class="muted">Sent ' + esc(new Date(s.created_at).toLocaleString()) + ' · Phone <b>' + esc(s.phone) + '</b>' +
-      (s.service_name ? ' · Service: ' + esc(s.service_name) : '') + ' · Language: ' + esc(s.source_language || '-') + '</p>' +
-      '<label>Start time (optional if any stop time is entered)</label><input type="time" class="sub_start" value="' + esc(s.start_time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
+      (s.service_name ? ' · Service: ' + esc(s.service_name) : '') + (s.long_route ? ' · <b>Long route</b> · Start date ' + esc(s.start_date || '-') : '') + '</p>' +
+      '<label>Start time</label><input type="time" class="sub_start" value="' + esc(s.start_time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
       '<label>Stop times (blank = unknown)</label>' + stops + '<div class="dlg-foot" style="justify-content:flex-start;gap:8px">' + actions + '</div></div>';
   }).join('');
 }
 function subCardValues(i) {
   var card = document.querySelector('[data-sub="' + i + '"]'), times = [];
-  card.querySelectorAll('.sub_t').forEach(function (el) { times.push({ place:el.getAttribute('data-place'), place_name:el.getAttribute('data-name'), day_offset:Number(el.getAttribute('data-day-offset')||0), time:TIME_RE.test(el.value) ? el.value : null }); });
-  var start = card.querySelector('.sub_start').value;
-  return { start:TIME_RE.test(start) ? start : null, stops:times };
+  card.querySelectorAll('.sub_t').forEach(function (el) { times.push({ place:el.getAttribute('data-place'), name:el.getAttribute('data-name'), time:TIME_RE.test(el.value) ? el.value : null }); });
+  return { start:card.querySelector('.sub_start').value, stops:times };
+}
+function ensureSubmittedPlace(rawName) {
+  var name = String(rawName || '').trim();
+  var lower = name.toLowerCase().replace(/\s+/g, ' ');
+  var existing = data.places.find(function (p) { return Object.keys(p.name || {}).some(function(k){ return String(p.name[k] || '').trim().toLowerCase().replace(/\s+/g, ' ') === lower; }); });
+  if (existing) return existing.id;
+  var id = makeId('place_user_', name, function (candidate) { return !!placeById(candidate); });
+  data.places.push({ id:id, kind:'place', name:{ en:name } });
+  setDirty(true);
+  return id;
 }
 
 // ============ Community submissions + Book Bus operators ============
@@ -596,9 +605,7 @@ function viewCommunity() {
   });
   html += '<div class="card"><h2>Book Bus — published operators</h2><p class="muted">Only active operators are visible to users. This is contact-only; no in-app booking or payment.</p>'+
     '<div class="row2"><div><label>Operator name</label><input id="op_name"></div><div><label>Service name</label><input id="op_service"></div></div>'+
-    '<div class="row2"><div><label>Bus type</label><input id="op_type" placeholder="AC / Non-AC / Sleeper / Ordinary"></div><div><label>Seat type</label><input id="op_seat_type" placeholder="Seater / Sleeper / Both"></div></div>'+
-    '<div class="row2"><div><label>Phone</label><input id="op_phone"></div><div><label>WhatsApp number (optional)</label><input id="op_whatsapp"></div></div>'+
-    '<label>Location / boarding point</label><input id="op_location">'+
+    '<div class="row2"><div><label>Bus type</label><input id="op_type" placeholder="AC / Non-AC / Sleeper / Ordinary"></div><div><label>Phone</label><input id="op_phone"></div></div>'+
     '<div class="row2"><div><label>From</label><input id="op_from"></div><div><label>To</label><input id="op_to"></div></div>'+
     '<label>Details</label><input id="op_details"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-add">Add operator</button></div>';
   html += '<div class="tablewrap"><table><thead><tr><th>Operator</th><th>Service / type</th><th>Route</th><th>Phone</th><th>Visibility</th><th></th></tr></thead><tbody>' +
@@ -872,32 +879,32 @@ document.addEventListener('click', async function (e) {
     }
     else if (act === 'sb-approve') {
       var sub = subs[i], v = subCardValues(i);
-      if (!v.start && !v.stops.some(function(st){return !!st.time;})) { toast('Enter a start time or at least one stop time.'); return; }
-      var sourceLang = ['en','hi','pa'].indexOf(sub.source_language) >= 0 ? sub.source_language : 'en';
-      async function translatedNames(raw) {
-        var out = { en:'', hi:'', pa:'' }; out[sourceLang] = raw;
-        async function tr(target) { var pair = sourceLang + '%7C' + target; var res = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(raw) + '&langpair=' + pair); var j = await res.json(); if (j.responseStatus === 200 && j.responseData && j.responseData.translatedText) return j.responseData.translatedText; throw new Error('Translation unavailable'); }
-        for (var lang of ['en','hi','pa']) { if (lang === sourceLang) continue; try { out[lang] = await tr(lang); } catch (_) { out[lang] = raw; } }
-        return out;
-      }
-      async function resolvePlace(id, raw, kind) {
-        if (id && placeById(id)) return id;
-        raw = String(raw || '').trim(); if (!raw) throw new Error('A route place name is empty.');
-        var names = await translatedNames(raw);
-        var pid = makeId(kind === 'stand' ? 'stand_' : 'place_', names.en || raw, function(x){return !!placeById(x);});
-        data.places.push({id:pid,kind:kind,name:names,aliases:[raw]});
-        return pid;
-      }
-      var fromId = await resolvePlace(sub.from_id, sub.from_text, 'city');
-      var toId = await resolvePlace(sub.to_id, sub.to_text, 'city');
-      var previousReviewTime = v.start || (v.stops.find(function(st){return st.time;}) || {}).time || '00:00';
+      var isFreeText = sub.submission_type === 'new_route' || (!!sub.from_text && !!sub.to_text);
+      var effectiveStart = TIME_RE.test(v.start) ? v.start : (v.stops.find(function(st){ return TIME_RE.test(st.time || ''); }) || {}).time;
+      if (!TIME_RE.test(effectiveStart || '')) { toast('Add at least one time before approving'); return; }
+      if (!isFreeText && (!placeById(sub.from_id) || !placeById(sub.to_id))) { toast('This route uses a place that no longer exists'); return; }
+      // New free-text names become editable place records; translations can be added in Places later.
+      var fromId = isFreeText ? ensureSubmittedPlace(sub.from_text) : sub.from_id;
+      var toId = isFreeText ? ensureSubmittedPlace(sub.to_text) : sub.to_id;
+      var previousReviewTime = effectiveStart, invalidReviewTime = false, inferredDayOffset = 0;
+      v.stops.forEach(function (st) {
+        if (st.time && st.time < previousReviewTime) {
+          if (isFreeText) inferredDayOffset++;
+          else if (!sub.long_route) invalidReviewTime = true;
+        }
+        if (st.time) previousReviewTime = st.time;
+        if (isFreeText && inferredDayOffset > 0) st.day_offset = inferredDayOffset;
+      });
+      if (invalidReviewTime) { toast('A stop time is earlier than the previous time. Check the times before approving.'); return; }
       var arrive = null, mid = [];
-      for (var st of v.stops) {
-        var pid = await resolvePlace(st.place, st.place_name, 'stand');
-        if (pid === toId) arrive = st.time;
-        else if (pid !== fromId) { var o = { place:pid }; if (st.time) o.time = st.time; if (st.day_offset) o.day_offset = st.day_offset; mid.push(o); }
-      }
-      var nr = { id: nextNum('r', data.routes), from: fromId, to: toId, time: v.start || previousReviewTime };
+      v.stops.forEach(function (st) {
+        var stopPlace = st.place;
+        if (isFreeText && st.name) stopPlace = ensureSubmittedPlace(st.name);
+        if (stopPlace === toId) arrive = st.time;
+        else if (stopPlace && stopPlace !== fromId && placeById(stopPlace)) { var o = { place:stopPlace }; if (st.time) o.time = st.time; if (st.day_offset != null) o.day_offset = st.day_offset; mid.push(o); }
+      });
+      var nr = { id: nextNum('r', data.routes), from: fromId, to: toId, time: effectiveStart };
+      if (sub.long_route) { nr.longRoute = true; nr.startDate = sub.start_date; }
       if (arrive) nr.arrive = arrive;
       if (sub.service_name) nr.service = sub.service_name;
       if (mid.length) nr.stops = mid;
@@ -917,7 +924,7 @@ document.addEventListener('click', async function (e) {
         if (kind === 'corrections') applyApprovedCorrection(record);
         if (kind === 'vehicles') {
           var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name, phone:record.phone, info:record.location + (record.details ? ' · ' + record.details : '') };
-          if (record.vehicle_type==='auto' && record.fuel_type) driver.fuel=record.fuel_type;
+          if (record.vehicle_type==='auto') driver.fuel='oil';
           if (record.seats) driver.seats = record.seats;
           data.drivers.push(driver); setDirty(true);
         }
@@ -936,7 +943,7 @@ document.addEventListener('click', async function (e) {
     else if (act === 'operator-add') {
       var on=val('op_name'), op=val('op_phone').replace(/[^+0-9 -]/g,'');
       if (!on || op.replace(/\D/g,'').length<9) { toast('Enter operator name and valid phone.'); return; }
-      await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:val('op_service')||null,bus_type:val('op_type')||'Bus',seat_type:val('op_seat_type')||null,phone:op,whatsapp:val('op_whatsapp')||null,location:val('op_location')||null,from_text:val('op_from')||null,to_text:val('op_to')||null,details:val('op_details')||null,active:true})});
+      await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:val('op_service')||null,bus_type:val('op_type')||'Bus',phone:op,from_text:val('op_from')||null,to_text:val('op_to')||null,details:val('op_details')||null,active:true})});
       await loadCommunity(); toast('Operator added and published.'); render();
     }
     else if (act === 'operator-toggle') {
