@@ -58,4 +58,13 @@
     <string name="ar_failed">भेजा नहीं जा सका। इंटरनेट देखकर दोबारा कोशिश करें।</string>
     <string name="ar_not_set">ऑनलाइन भेजने की सुविधा अभी चालू नहीं है</string>
     <string name="ar_no_routes">अभी कोई रूट उपलब्ध नहीं है। बाद में कोशिश करें।</string>
+    <string name="correction_route">रूट में सुधार</string>
+    <string name="book_bus">बस बुक करें</string>
+    <string name="add_auto">ऑटो जोड़ें</string>
+    <string name="correction_auto">ऑटो में सुधार</string>
+    <string name="add_taxi">टैक्सी जोड़ें</string>
+    <string name="correction_taxi">टैक्सी में सुधार</string>
+    <string name="bus_type">बस का प्रकार</string>
+    <string name="seat_type">सीटों का प्रकार</string>
+    <string name="operator_location">बस की लोकेशन</string>
 </resources>
