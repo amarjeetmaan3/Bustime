@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 13,
+  "dataVersion": 14,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -207,6 +207,48 @@
         "hi": "हुनमनगढ़",
         "pa": "ਹੁਨਮੰਗਗੜ"
       }
+    },
+    {
+      "id": "place_user_zgc",
+      "kind": "place",
+      "name": {
+        "en": "Zgc"
+      }
+    },
+    {
+      "id": "place_user_dhc",
+      "kind": "place",
+      "name": {
+        "en": "Dhc"
+      }
+    },
+    {
+      "id": "place_user_fhcc",
+      "kind": "place",
+      "name": {
+        "en": "fhcc"
+      }
+    },
+    {
+      "id": "place_user_ujcn",
+      "kind": "place",
+      "name": {
+        "en": "ujcn"
+      }
+    },
+    {
+      "id": "place_user_sds",
+      "kind": "place",
+      "name": {
+        "en": "Sds"
+      }
+    },
+    {
+      "id": "place_user_sdft",
+      "kind": "place",
+      "name": {
+        "en": "Sdft"
+      }
     }
   ],
   "routes": [
@@ -412,6 +454,29 @@
           "place": "place_miraa_chowk_sri_ganganagar"
         }
       ]
+    },
+    {
+      "id": "r4",
+      "from": "place_user_zgc",
+      "to": "place_user_dhc",
+      "time": "14:00",
+      "stops": [
+        {
+          "place": "place_user_fhcc",
+          "time": "14:00"
+        },
+        {
+          "place": "place_user_ujcn",
+          "time": "03:00",
+          "day_offset": 1
+        }
+      ]
+    },
+    {
+      "id": "r5",
+      "from": "place_user_sds",
+      "to": "place_user_sdft",
+      "time": "08:00"
     }
   ],
   "taxiSeaters": [
