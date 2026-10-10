@@ -161,7 +161,11 @@ class AddRouteActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val ok = withContext(Dispatchers.IO) { SupabaseClient.insertRouteSubmission(body) }
             if (ok) { Toast.makeText(this@AddRouteActivity, R.string.ar_sent, Toast.LENGTH_LONG).show(); finish() }
-            else { btnSubmit.isEnabled = true; Toast.makeText(this@AddRouteActivity, R.string.ar_failed, Toast.LENGTH_LONG).show() }
+            else {
+                btnSubmit.isEnabled = true
+                val detail = SupabaseClient.lastError.ifBlank { getString(R.string.ar_failed) }
+                Toast.makeText(this@AddRouteActivity, "Route submit failed: $detail", Toast.LENGTH_LONG).show()
+            }
         }
     }
 }
