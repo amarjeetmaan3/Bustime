@@ -72,4 +72,27 @@
     <string name="bus_type">Bus type</string>
     <string name="seat_type">Seat type</string>
     <string name="operator_location">Bus location</string>
+
+    <!-- Custom route and Book Bus labels -->
+    <string name="ar_new_route_mode">Enter a completely new route / stops</string>
+    <string name="ar_existing_route_mode">Choose an existing route instead</string>
+    <string name="ar_new_route_intro">Type city and bus stand names in English, Hindi, or Punjabi. Admin will review your submission.</string>
+    <string name="ar_custom_from">From city / bus stand (any language)</string>
+    <string name="ar_custom_to">To city / bus stand (any language)</string>
+    <string name="ar_custom_stops">Intermediate stops (optional)</string>
+    <string name="ar_add_stop">+ Add stop</string>
+    <string name="ar_custom_stop_name">Stop / stand name (any language)</string>
+    <string name="ar_custom_need_endpoints">Enter both From and To city / stand names.</string>
+    <string name="bb_intro">Choose a bus service and contact the operator directly. Booking and payment are handled outside the app.</string>
+    <string name="bb_load_failed">Could not load bus services. Check your internet connection.</string>
+    <string name="bb_none">No bus services have been published yet.</string>
+    <string name="bb_service">Bus service</string>
+    <string name="bb_seat_unspecified">Seat type not specified</string>
+    <string name="bb_route">Route</string>
+    <string name="bb_location">Location / boarding point</string>
+    <string name="bb_expand">Tap for full details ▾</string>
+    <string name="bb_contact">Contact operator</string>
+    <string name="bb_whatsapp">WhatsApp</string>
+    <string name="bb_call_error">Could not open phone dialer</string>
+    <string name="bb_whatsapp_error">Could not open WhatsApp</string>
 </resources>
