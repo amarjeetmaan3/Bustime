@@ -195,7 +195,8 @@ class AddRouteActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.ar_not_set, Toast.LENGTH_LONG).show()
             return
         }
-        val start: String = startTime ?: run {
+        val start = startTime
+        if (start == null) {
             Toast.makeText(this, R.string.ar_need_start, Toast.LENGTH_SHORT).show()
             return
         }
@@ -231,7 +232,7 @@ class AddRouteActivity : AppCompatActivity() {
             .put("from_id", route.fromId)
             .put("to_id", route.toId)
             .put("start_time", start)
-            .put("service_name", findViewById<EditText>(R.id.etService).text.toString().trim().ifEmpty { null } ?: JSONObject.NULL)
+            .put("service_name", findViewById<EditText>(R.id.etService).text.toString().trim().takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             .put("stops", stopsJson)
             .put("long_route", cbLongRoute.isChecked)
             .put("start_date", if (cbLongRoute.isChecked) startDate.toString() else JSONObject.NULL)
