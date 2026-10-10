@@ -63,7 +63,11 @@ class AddRouteActivity : AppCompatActivity() {
         stopsBox = findViewById(R.id.stopsBox)
         btnSubmit = findViewById(R.id.btnSubmitRoute)
         cbLongRoute = findViewById(R.id.cbLongRoute)
+        // Cross-midnight timing is inferred from the times; no long-route/date control is needed.
+        cbLongRoute.visibility = View.GONE
         tvStartDate = findViewById(R.id.tvStartDate)
+        tvStartDate.visibility = View.GONE
+        findViewById<TextView>(R.id.tvStartDateLabel).visibility = View.GONE
         val dateLabel = findViewById<TextView>(R.id.tvStartDateLabel)
         cbLongRoute.setOnCheckedChangeListener { _, checked ->
             dateLabel.visibility = if (checked) View.VISIBLE else View.GONE
@@ -142,7 +146,7 @@ class AddRouteActivity : AppCompatActivity() {
                 val row = StopRow(s.placeId, time)
                 time.setOnClickListener {
                     pickTime(row.time) { t ->
-                        if (t != null && !cbLongRoute.isChecked && violatesTimeOrder(t, row)) {
+                        if (false && t != null && violatesTimeOrder(t, row)) {
                             Toast.makeText(this@AddRouteActivity, "स्टॉप का समय पिछले समय से पहले नहीं हो सकता। Long Route चुनें यदि बस आधी रात पार करती है।", Toast.LENGTH_LONG).show()
                         } else {
                             row.time = t
@@ -195,46 +199,35 @@ class AddRouteActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.ar_not_set, Toast.LENGTH_LONG).show()
             return
         }
-        val start: String = startTime ?: run {
-            Toast.makeText(this, R.string.ar_need_start, Toast.LENGTH_SHORT).show()
-            return
-        }
+        val start: String? = startTime
         val phone = findViewById<EditText>(R.id.etPhone).text.toString().filter { it.isDigit() }
         if (phone.length < 10 || phone.length > 13) {
             Toast.makeText(this, R.string.ar_need_phone, Toast.LENGTH_SHORT).show()
             return
         }
-        if (cbLongRoute.isChecked && startDate == null) {
-            Toast.makeText(this, "Long Route के लिए शुरू होने की तारीख चुनें", Toast.LENGTH_SHORT).show()
+        if (start == null && rows.none { it.time != null }) {
+            Toast.makeText(this, R.string.ar_need_start, Toast.LENGTH_SHORT).show()
             return
         }
-        var previous = start
+        var previous = start ?: "00:00"
         var dayOffset = 0
         val stopsJson = JSONArray()
         for (r in rows) {
             val t = r.time
             if (t != null) {
-                if (t < previous) {
-                    if (!cbLongRoute.isChecked) {
-                        Toast.makeText(this, "स्टॉप का समय पिछले समय से पहले है। Long Route चुनें।", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    dayOffset++
-                }
+                if (t < previous) dayOffset++ // time rolled past midnight: next calendar day
                 previous = t
             }
             val item = JSONObject().put("place", r.placeId).put("time", t ?: JSONObject.NULL)
-            if (cbLongRoute.isChecked) item.put("day_offset", dayOffset)
+            item.put("day_offset", dayOffset)
             stopsJson.put(item)
         }
         val body = JSONObject()
             .put("from_id", route.fromId)
             .put("to_id", route.toId)
-            .put("start_time", start)
+            .put("start_time", start ?: JSONObject.NULL)
             .put("service_name", findViewById<EditText>(R.id.etService).text.toString().trim().takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             .put("stops", stopsJson)
-            .put("long_route", cbLongRoute.isChecked)
-            .put("start_date", if (cbLongRoute.isChecked) startDate.toString() else JSONObject.NULL)
             .put("phone", phone)
 
         btnSubmit.isEnabled = false
