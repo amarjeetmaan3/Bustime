@@ -30,6 +30,9 @@ abstract class TransportDao {
     @Query("SELECT * FROM places WHERE id IN (:ids)")
     abstract suspend fun getPlaces(ids: List<String>): List<Place>
 
+    @Query("SELECT * FROM places ORDER BY searchText")
+    abstract suspend fun getAllPlaces(): List<Place>
+
     // From → To: वो रूट जिनमें From वाली जगह To वाली से पहले आती है, समय के क्रम में
     @Query(
         "SELECT r.id AS routeId, r.fromId AS routeFromId, r.toId AS routeToId, " +
