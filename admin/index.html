@@ -134,13 +134,15 @@ var data = null, sha = null, baseVersion = 0, dirty = false;
 var tab = 'settings';
 var sbToken = null, subs = null, subsError = '';   // Supabase login lives only in memory
 var reviewStatus = 'pending';
+var community = { corrections:null, vehicles:null, feedback:null, operators:null };
+var communityStatus = 'pending';
 var editing = null;
 var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
 var NAV = [['dashboard','Dashboard'], ['places','Places'], ['routes','Bus Routes'],
-           ['seats','Taxi Seats'], ['drivers','Drivers'], ['review','Review'], ['settings','Settings']];
-var TITLES = { dashboard:'Dashboard', places:'Places', routes:'Bus Routes', seats:'Taxi Seats', drivers:'Drivers', review:'Review submissions', settings:'Settings' };
+           ['seats','Taxi Seats'], ['drivers','Drivers'], ['review','Review'], ['community','Community'], ['settings','Settings']];
+var TITLES = { dashboard:'Dashboard', places:'Places', routes:'Bus Routes', seats:'Taxi Seats', drivers:'Drivers', review:'Review submissions', community:'Community requests & bus operators', settings:'Settings' };
 
 // ============ Helpers ============
 function $(s) { return document.querySelector(s); }
@@ -313,7 +315,7 @@ function render() {
       '<button class="btn primary" data-act="tab" data-t="settings">Go to Settings</button></div>';
   } else {
     v.innerHTML = { dashboard: viewDashboard, places: viewPlaces, routes: viewRoutes,
-                    seats: viewSeats, drivers: viewDrivers, review: viewReview, settings: viewSettings }[tab]();
+                    seats: viewSeats, drivers: viewDrivers, review: viewReview, community: viewCommunity, settings: viewSettings }[tab]();
   }
   renderModal();
 }
@@ -547,6 +549,87 @@ function subCardValues(i) {
   return { start:card.querySelector('.sub_start').value, stops:times };
 }
 
+// ============ Community submissions + Book Bus operators ============
+async function loadCommunity() {
+  var specs = [
+    ['corrections','correction_submissions'],
+    ['vehicles','vehicle_submissions'],
+    ['feedback','feedback_submissions'],
+    ['operators','bus_operators']
+  ];
+  for (var i = 0; i < specs.length; i++) {
+    community[specs[i][0]] = await sbFetch('/rest/v1/' + specs[i][1] + '?select=*&order=created_at.desc&limit=500');
+  }
+}
+function viewCommunity() {
+  if (!sbToken) return viewReview();
+  if (!community.corrections || !community.vehicles || !community.feedback || !community.operators) {
+    return '<div class="card"><p class="muted">Loading community requests…</p><button class="btn" data-act="community-refresh">Refresh</button></div>';
+  }
+  var all = [];
+  [['corrections','Route corrections'],['vehicles','Auto / Taxi listings'],['feedback','Feedback']].forEach(function (pair) {
+    (community[pair[0]] || []).forEach(function (x) { x._kind = pair[0]; x._label = pair[1]; all.push(x); });
+  });
+  var counts = { pending:0, approved:0, rejected:0 };
+  all.forEach(function (x) { if (counts[x.status] !== undefined) counts[x.status]++; });
+  var html = '<div class="toolbar"><span class="grow muted">Each request is a separate record, including multiple requests for the same route. No deduplication is performed.</span><button class="btn" data-act="community-refresh">Refresh</button></div>';
+  html += '<div class="toolbar">' + ['pending','approved','rejected'].map(function(st){ return '<button class="btn '+(communityStatus===st?'primary':'')+'" data-act="community-status" data-status="'+st+'">'+st[0].toUpperCase()+st.slice(1)+' ('+counts[st]+')</button>'; }).join('') + '</div>';
+  var filtered = all.filter(function(x){return x.status===communityStatus;});
+  if (!filtered.length) html += '<div class="card"><p class="muted">No '+esc(communityStatus)+' community requests.</p></div>';
+  filtered.forEach(function(x){
+    var details = '';
+    if (x._kind === 'corrections') {
+      details = '<p><b>Route:</b> '+esc(x.route_id)+' · <b>Type:</b> '+esc(x.request_type)+'</p>' +
+        (x.request_type==='missing_stop' ? '<p><b>Between:</b> '+esc(x.before_stop_id)+' → '+esc(x.after_stop_id)+' · <b>Missing:</b> '+esc(x.missing_place_name)+' · <b>Time:</b> '+esc(x.missing_time||'-')+'</p>' : '<p><b>Stop:</b> '+esc(x.stop_id)+' · <b>Correct time:</b> '+esc(x.corrected_time)+'</p>') +
+        '<p class="muted">'+esc(x.notes||'')+'</p>';
+    } else if (x._kind === 'vehicles') {
+      details = '<p><b>'+esc(x.vehicle_type)+'</b> · '+esc(x.person_name)+' · '+esc(x.vehicle_name)+' · Seats '+esc(x.seats||'-')+'</p><p>'+esc(x.location)+' · '+esc(x.phone)+'</p><p>'+esc(x.details||'')+'</p>';
+    } else {
+      details = '<p><b>'+esc(x.category)+'</b> · Route '+esc(x.related_route||'-')+'</p><p>'+esc(x.message)+'</p><p class="muted">Contact: '+esc(x.contact||'-')+'</p>';
+    }
+    var actions = x.status==='pending' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
+    html += '<div class="card"><h2>'+esc(x._label)+' · '+esc(x.request_type||x.vehicle_type||x.category||'Request')+'</h2><p class="muted">'+esc(new Date(x.created_at).toLocaleString())+' · ID '+esc(x.id)+'</p>'+details+'<div class="dlg-foot" style="justify-content:flex-start">'+actions+'</div></div>';
+  });
+  html += '<div class="card"><h2>Book Bus — published operators</h2><p class="muted">Only active operators are visible to users. This is contact-only; no in-app booking or payment.</p>'+
+    '<div class="row2"><div><label>Operator name</label><input id="op_name"></div><div><label>Service name</label><input id="op_service"></div></div>'+
+    '<div class="row2"><div><label>Bus type</label><input id="op_type" placeholder="AC / Non-AC / Sleeper / Ordinary"></div><div><label>Phone</label><input id="op_phone"></div></div>'+
+    '<div class="row2"><div><label>From</label><input id="op_from"></div><div><label>To</label><input id="op_to"></div></div>'+
+    '<label>Details</label><input id="op_details"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-add">Add operator</button></div>';
+  html += '<div class="tablewrap"><table><thead><tr><th>Operator</th><th>Service / type</th><th>Route</th><th>Phone</th><th>Visibility</th><th></th></tr></thead><tbody>' +
+    community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||'-')+' / '+esc(o.bus_type)+'</td><td>'+esc(o.from_text||'-')+' → '+esc(o.to_text||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
+  return html;
+}
+function communityTable(kind) { return kind==='corrections'?'correction_submissions':kind==='vehicles'?'vehicle_submissions':'feedback_submissions'; }
+function applyApprovedCorrection(x) {
+  var r = data.routes.find(function(z){ return z.id === x.route_id; });
+  if (!r) throw new Error('Route '+x.route_id+' was not found in routes.json; request not approved.');
+  if (x.request_type === 'correct_time') {
+    if (x.stop_id === r.from) r.time = x.corrected_time;
+    else if (x.stop_id === r.to) r.arrive = x.corrected_time;
+    else {
+      var st = (r.stops || []).find(function(z){return z.place===x.stop_id;});
+      if (!st) throw new Error('Selected stop was not found in this route; request not approved.');
+      st.time = x.corrected_time;
+    }
+  } else if (x.request_type === 'missing_stop') {
+    var before = x.before_stop_id, after = x.after_stop_id;
+    var placeId = x.missing_place_id || '';
+    if (!placeId) {
+      placeId = makeId('place_', x.missing_place_name || 'missing_stop', function(id){return data.places.some(function(p){return p.id===id;});});
+      data.places.push({id:placeId,kind:'place',name:{en:x.missing_place_name},aliases:[]});
+    } else if (!placeById(placeId)) { throw new Error('The selected existing place no longer exists; request not approved.'); }
+    var stops = r.stops || (r.stops=[]);
+    var beforeIndex = before===r.from ? -1 : stops.findIndex(function(z){return z.place===before;});
+    var afterIndex = after===r.to ? stops.length : stops.findIndex(function(z){return z.place===after;});
+    if (beforeIndex < -1 || afterIndex < 0 || afterIndex !== beforeIndex+1) {
+      if (!x.missing_place_id) data.places.pop(); throw new Error('The two chosen stops are no longer adjacent; request not approved.');
+    }
+    var newStop = {place:placeId}; if (x.missing_time) newStop.time=x.missing_time;
+    stops.splice(afterIndex,0,newStop);
+  }
+  setDirty(true);
+}
+
 // ============ Dialog ============
 function foot(saveAct) {
   return '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="' + saveAct + '">Save</button></div>';
@@ -622,6 +705,7 @@ document.addEventListener('click', async function (e) {
     if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; publishOpen = false; render();
       if (tab === 'review' && sbToken && !subs) { try { await loadSubs(); } catch (e) { subsError = e.message; } render(); }
+      if (tab === 'community' && sbToken && !community.corrections) { try { await loadCommunity(); } catch (e) { toast(e.message); } render(); }
     }
     else if (act === 'close') { editing = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
@@ -764,10 +848,10 @@ document.addEventListener('click', async function (e) {
       cfg.sbUrl = val('sb_url'); cfg.sbKey = val('sb_key'); cfg.sbEmail = val('sb_email'); saveCfg();
       b.disabled = true; b.textContent = 'Signing in...';
       await sbLogin(cfg.sbEmail, document.getElementById('sb_pass').value);
-      subs = null; render(); await loadSubs(); render();
+      subs = null; render(); await loadSubs(); if (tab === 'community') await loadCommunity(); render();
     }
     else if (act === 'sb-logout') { sbToken = null; subs = null; render(); }
-    else if (act === 'sb-refresh') { subs = null; render(); await loadSubs(); render(); }
+    else if (act === 'sb-refresh') { subs = null; render(); await loadSubs(); if (tab === 'community') await loadCommunity(); render(); }
     else if (act === 'review-status') { reviewStatus = b.getAttribute('data-status'); render(); }
     else if (act === 'sb-reject') {
       if (!confirm('Reject this submission?')) return;
@@ -803,6 +887,50 @@ document.addEventListener('click', async function (e) {
       data.routes.push(nr); setDirty(true);
       await sbFetch('/rest/v1/route_submissions?id=eq.' + sub.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'approved' }) });
       subs[i].status = 'approved'; toast('Approved and retained in Approved list. Press Publish to make it live.'); render();
+    }
+
+    // ---- community requests ----
+    else if (act === 'community-refresh') { await loadCommunity(); render(); }
+    else if (act === 'community-status') { communityStatus = b.getAttribute('data-status'); render(); }
+    else if (act === 'community-reject' || act === 'community-approve') {
+      var kind = b.getAttribute('data-kind'), cid = b.getAttribute('data-id'), table = communityTable(kind);
+      var listKey = kind, record = (community[listKey] || []).find(function(x){return x.id===cid;});
+      if (!record || record.status !== 'pending') { toast('This request is no longer pending. Refresh the list.'); return; }
+      if (act === 'community-approve') {
+        if (kind === 'corrections') applyApprovedCorrection(record);
+        if (kind === 'vehicles') {
+          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name, phone:record.phone, info:record.location + (record.details ? ' · ' + record.details : '') };
+          if (record.vehicle_type==='auto') driver.fuel='oil';
+          if (record.seats) driver.seats = record.seats;
+          data.drivers.push(driver); setDirty(true);
+        }
+      } else if (!confirm('Reject this request?')) return;
+      await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({status:act==='community-approve'?'approved':'rejected'}) });
+      record.status = act==='community-approve'?'approved':'rejected'; toast(act==='community-approve'?'Approved. If route data changed, press Publish to make it live.':'Moved to Rejected.'); render();
+    }
+    else if (act === 'community-delete') {
+      var dk=b.getAttribute('data-kind'), did=b.getAttribute('data-id'), dtable=communityTable(dk);
+      var drec=(community[dk]||[]).find(function(x){return x.id===did;});
+      if (!drec || drec.status!=='rejected') { toast('Only rejected requests can be deleted.'); return; }
+      if (!confirm('Permanently delete this rejected request?')) return;
+      await sbFetch('/rest/v1/'+dtable+'?id=eq.'+encodeURIComponent(did)+'&status=eq.rejected',{method:'DELETE',headers:{Prefer:'return=minimal'}});
+      community[dk]=community[dk].filter(function(x){return x.id!==did;}); render();
+    }
+    else if (act === 'operator-add') {
+      var on=val('op_name'), op=val('op_phone').replace(/[^+0-9 -]/g,'');
+      if (!on || op.replace(/\D/g,'').length<9) { toast('Enter operator name and valid phone.'); return; }
+      await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:val('op_service')||null,bus_type:val('op_type')||'Bus',phone:op,from_text:val('op_from')||null,to_text:val('op_to')||null,details:val('op_details')||null,active:true})});
+      await loadCommunity(); toast('Operator added and published.'); render();
+    }
+    else if (act === 'operator-toggle') {
+      var oid=b.getAttribute('data-id'), active=b.getAttribute('data-active')==='true';
+      await sbFetch('/rest/v1/bus_operators?id=eq.'+encodeURIComponent(oid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({active:active})});
+      await loadCommunity(); render();
+    }
+    else if (act === 'operator-delete') {
+      var odid=b.getAttribute('data-id'); if(!confirm('Delete this bus operator?')) return;
+      await sbFetch('/rest/v1/bus_operators?id=eq.'+encodeURIComponent(odid),{method:'DELETE',headers:{Prefer:'return=minimal'}});
+      await loadCommunity(); render();
     }
 
     // ---- publish ----
