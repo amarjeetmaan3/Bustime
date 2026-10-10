@@ -39,8 +39,19 @@ class HomeActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.action_language -> { showLanguageDialog(); true }
                 R.id.action_add_route -> {
-                    startActivity(android.content.Intent(this, com.bustime.app.ui.addroute.AddRouteActivity::class.java))
-                    true
+                    startActivity(android.content.Intent(this, com.bustime.app.ui.addroute.AddRouteActivity::class.java)); true
+                }
+                R.id.action_route_correction -> {
+                    startActivity(android.content.Intent(this, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "correction")); true
+                }
+                R.id.action_vehicle_listing -> {
+                    startActivity(android.content.Intent(this, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "vehicle")); true
+                }
+                R.id.action_feedback -> {
+                    startActivity(android.content.Intent(this, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "feedback")); true
+                }
+                R.id.action_book_bus -> {
+                    startActivity(android.content.Intent(this, com.bustime.app.ui.bookbus.BookBusActivity::class.java)); true
                 }
                 else -> false
             }
