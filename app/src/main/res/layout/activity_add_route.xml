@@ -39,6 +39,26 @@
             android:text="@string/ar_choose_route"
             android:textStyle="bold" />
 
+        <CheckBox
+            android:id="@+id/cbNewRoute"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="नया रूट जोड़ना है? (किसी भी भाषा में नाम लिखें)" />
+
+        <LinearLayout
+            android:id="@+id/newRouteFields"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <EditText android:id="@+id/etFromText" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp" android:background="#FFFFFF" android:hint="From / शुरू होने की जगह" android:paddingStart="12dp" android:paddingEnd="12dp" android:inputType="textCapSentences" />
+            <EditText android:id="@+id/etToText" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp" android:background="#FFFFFF" android:hint="To / अंतिम जगह" android:paddingStart="12dp" android:paddingEnd="12dp" android:inputType="textCapSentences" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="बीच के पड़ाव (नाम किसी भी भाषा में लिखें)" android:textStyle="bold" />
+            <LinearLayout android:id="@+id/newStopsBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+            <Button android:id="@+id/btnAddNewStop" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+ Add stop / पड़ाव जोड़ें" />
+        </LinearLayout>
+
         <Spinner
             android:id="@+id/spRoute"
             android:layout_width="match_parent"
@@ -64,6 +84,7 @@
 
         <CheckBox
             android:id="@+id/cbLongRoute"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
