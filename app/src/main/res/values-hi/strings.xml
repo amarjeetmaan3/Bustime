@@ -67,4 +67,27 @@
     <string name="bus_type">बस का प्रकार</string>
     <string name="seat_type">सीटों का प्रकार</string>
     <string name="operator_location">बस की लोकेशन</string>
+
+    <!-- Custom route and Book Bus labels -->
+    <string name="ar_new_route_mode">बिल्कुल नया रूट / पड़ाव दर्ज करें</string>
+    <string name="ar_existing_route_mode">मौजूदा रूट चुनें</string>
+    <string name="ar_new_route_intro">शहर और बस स्टैंड के नाम हिंदी, पंजाबी या अंग्रेज़ी में लिखें। एडमिन जाँच के बाद मंज़ूर करेगा।</string>
+    <string name="ar_custom_from">कहाँ से — शहर / बस स्टैंड</string>
+    <string name="ar_custom_to">कहाँ तक — शहर / बस स्टैंड</string>
+    <string name="ar_custom_stops">बीच के पड़ाव (वैकल्पिक)</string>
+    <string name="ar_add_stop">+ पड़ाव जोड़ें</string>
+    <string name="ar_custom_stop_name">पड़ाव / स्टैंड का नाम</string>
+    <string name="ar_custom_need_endpoints">कृपया कहाँ से और कहाँ तक के नाम भरें।</string>
+    <string name="bb_intro">बस सेवा चुनें और ऑपरेटर से सीधे संपर्क करें। बुकिंग और भुगतान ऐप के बाहर होंगे।</string>
+    <string name="bb_load_failed">बस सेवाएँ नहीं खुलीं। इंटरनेट जाँचें।</string>
+    <string name="bb_none">अभी कोई बस सेवा प्रकाशित नहीं हुई है।</string>
+    <string name="bb_service">बस सेवा</string>
+    <string name="bb_seat_unspecified">सीटों का प्रकार नहीं दिया गया</string>
+    <string name="bb_route">रूट</string>
+    <string name="bb_location">लोकेशन / चढ़ने का स्थान</string>
+    <string name="bb_expand">पूरी जानकारी के लिए टैप करें ▾</string>
+    <string name="bb_contact">ऑपरेटर से संपर्क</string>
+    <string name="bb_whatsapp">व्हाट्सऐप</string>
+    <string name="bb_call_error">फ़ोन डायलर नहीं खुल सका</string>
+    <string name="bb_whatsapp_error">व्हाट्सऐप नहीं खुल सका</string>
 </resources>
