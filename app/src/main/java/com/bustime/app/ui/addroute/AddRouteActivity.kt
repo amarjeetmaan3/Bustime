@@ -195,8 +195,7 @@ class AddRouteActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.ar_not_set, Toast.LENGTH_LONG).show()
             return
         }
-        val start = startTime
-        if (start == null) {
+        val start: String = startTime ?: run {
             Toast.makeText(this, R.string.ar_need_start, Toast.LENGTH_SHORT).show()
             return
         }
