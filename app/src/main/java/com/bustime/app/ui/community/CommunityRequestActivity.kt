@@ -60,10 +60,10 @@ class CommunityRequestActivity : AppCompatActivity() {
     }
 
     private fun loadCorrectionForm() {
-        if (!CommunitySupabase.isConfigured()) { text("Online submissions are not configured yet."); return }
+        if (!CommunitySupabase.isConfigured()) { text("Online submissions are not configured yet.", 14f); return }
         lifecycleScope.launch {
             routes = AppRepository.getInstance(this@CommunityRequestActivity).getAllRoutes()
-            if (routes.isEmpty()) { text("No bus routes are available yet."); return@launch }
+            if (routes.isEmpty()) { text("No bus routes are available yet.", 14f); return@launch }
             val repo = AppRepository.getInstance(this@CommunityRequestActivity)
             allPlaces = repo.getAllPlaces()
             placeNames = allPlaces.associate { it.id to it.displayName(LanguageHelper.current()) }
