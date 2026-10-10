@@ -63,4 +63,13 @@
     <string name="ar_failed">Could not send. Check your internet and try again.</string>
     <string name="ar_not_set">Online submission is not set up yet</string>
     <string name="ar_no_routes">No routes available yet. Please try again later.</string>
+    <string name="correction_route">Correction Route</string>
+    <string name="book_bus">Book Bus</string>
+    <string name="add_auto">Add Auto</string>
+    <string name="correction_auto">Correction Auto</string>
+    <string name="add_taxi">Add Taxi</string>
+    <string name="correction_taxi">Correction Taxi</string>
+    <string name="bus_type">Bus type</string>
+    <string name="seat_type">Seat type</string>
+    <string name="operator_location">Bus location</string>
 </resources>
