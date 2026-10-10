@@ -59,6 +59,9 @@ class BusFragment : Fragment(R.layout.fragment_bus) {
         }
 
         view.findViewById<View>(R.id.btnSearchRoute).setOnClickListener { searchRoutes() }
+        view.findViewById<View>(R.id.btnAddRoute).setOnClickListener { startActivity(Intent(requireContext(), com.bustime.app.ui.addroute.AddRouteActivity::class.java)) }
+        view.findViewById<View>(R.id.btnCorrectRoute).setOnClickListener { startActivity(Intent(requireContext(), com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "correction")) }
+        view.findViewById<View>(R.id.btnBookBus).setOnClickListener { startActivity(Intent(requireContext(), com.bustime.app.ui.bookbus.BookBusActivity::class.java)) }
 
         // भाषा बदलने पर स्क्रीन दोबारा बनती है: चुनी हुई जगहें वापस भरो
         val savedFrom = savedInstanceState?.getString("FROM_ID")

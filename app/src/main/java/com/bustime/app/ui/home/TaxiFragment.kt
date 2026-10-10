@@ -32,6 +32,8 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         repo = AppRepository.getInstance(requireContext())
+        view.findViewById<View>(R.id.btnAddTaxi).setOnClickListener { startActivity(android.content.Intent(requireContext(), com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "vehicle").putExtra("vehicle_type", "taxi")) }
+        view.findViewById<View>(R.id.btnCorrectTaxi).setOnClickListener { startActivity(android.content.Intent(requireContext(), com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "correction").putExtra("vehicle_type", "taxi")) }
 
         layoutSeaters = view.findViewById(R.id.layoutSeaters)
         layoutDrivers = view.findViewById(R.id.layoutDrivers)
