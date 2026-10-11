@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.ChipGroup
 import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
+import com.bustime.app.utils.AnalyticsHelper
 import kotlinx.coroutines.launch
 
 /** सारे ऑटो एक लिस्ट में; ऊपर All | EV | Oil */
@@ -18,6 +19,7 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val repo = AppRepository.getInstance(requireContext())
+        AnalyticsHelper.logEvent(requireContext(), "section_open", "auto")
 
         val recycler = view.findViewById<RecyclerView>(R.id.recyclerViewAutos)
         recycler.layoutManager = LinearLayoutManager(requireContext())
@@ -33,9 +35,11 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
 
         fun load(fuel: String?) {
             currentFuel = fuel
+            AnalyticsHelper.logEvent(requireContext(), "auto_fuel_filter", "auto", org.json.JSONObject().put("fuel", fuel ?: "all"))
             viewLifecycleOwner.lifecycleScope.launch {
                 val ctx = context ?: return@launch
                 val selectedArea = AreaPicker.savedId(ctx)
+                AnalyticsHelper.logEvent(ctx, "auto_list_view", "auto", org.json.JSONObject().put("fuel", fuel ?: "all").put("area_selected", selectedArea != null))
                 val list = if (selectedArea == null) emptyList() else repo.getAutos(fuel, selectedArea).shuffled()
                 adapter.submit(list)
                 tvEmpty.text = if (selectedArea == null) "Select your area first to see drivers." else "No drivers found for this area and filter."
