@@ -66,7 +66,14 @@ object AreaPicker {
         }
         var job: Job? = null
         job = owner.lifecycleScope.launch {
-            allAreas = repo.getDriverAreas().distinctBy { it.trim().lowercase(Locale.ROOT) }
+            val areaIds = repo.getDriverAreas().distinctBy { it.trim().lowercase(Locale.ROOT) }
+            val places = repo.getPlacesById(areaIds)
+            allAreas = areaIds.map { id ->
+                val display = places[id]?.displayName(com.bustime.app.utils.LanguageHelper.current())
+                    ?.takeIf { it.isNotBlank() }
+                    ?: id.removePrefix("place_").replace('_', ' ').replaceFirstChar { it.uppercase() }
+                id to display
+            }
             filter(etSearch.text?.toString().orEmpty())
             if (allAreas.isEmpty()) android.widget.Toast.makeText(ctx, R.string.no_areas_yet, android.widget.Toast.LENGTH_LONG).show()
         }
