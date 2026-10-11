@@ -2,8 +2,18 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
+    android:background="@color/bgScreen"
     android:orientation="vertical">
+
+    <!-- शहर / इलाका चुनने का बटन (खोजने वाली सूची खुलती है) -->
+    <Button
+        android:id="@+id/btnSelectArea"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/select_area" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -56,30 +66,6 @@
         android:orientation="vertical"
         android:visibility="gone">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp">
-
-            <Button
-                android:id="@+id/btnBackSeats"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/back" />
-
-            <TextView
-                android:id="@+id/tvSeatsHeading"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
         <TextView
             android:id="@+id/tvNoDrivers"
             android:layout_width="match_parent"
@@ -108,5 +94,5 @@
         android:layout_marginEnd="12dp"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="6dp"
-        android:text="Add Taxi" />
+        android:text="@string/add_taxi" />
 </LinearLayout>

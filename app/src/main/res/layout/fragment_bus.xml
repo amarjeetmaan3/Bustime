@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
+    android:background="@color/bgScreen"
     android:orientation="vertical">
 
     <androidx.core.widget.NestedScrollView
@@ -86,7 +86,7 @@
                         android:src="@drawable/ic_swap_vert"
                         app:backgroundTint="@color/colorPrimary"
                         app:fabSize="mini"
-                        app:tint="@android:color/white" />
+                        app:tint="@color/colorOnPrimary" />
                 </FrameLayout>
 
                 <Button

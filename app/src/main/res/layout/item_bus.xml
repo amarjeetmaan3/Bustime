@@ -3,31 +3,37 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginVertical="6dp"
+    android:layout_marginVertical="5dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="12dp">
 
+        <!-- समय का डिब्बा -->
         <TextView
             android:id="@+id/tvBusTime"
-            android:layout_width="88dp"
+            android:layout_width="86dp"
             android:layout_height="wrap_content"
+            android:background="@drawable/bg_time_chip"
+            android:gravity="center"
+            android:paddingVertical="12dp"
             android:textColor="@color/colorPrimary"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -35,6 +41,7 @@
                 android:id="@+id/tvBusTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/textPrimary"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -42,15 +49,19 @@
                 android:id="@+id/tvBusExtra"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textSize="14sp" />
+                android:layout_marginTop="3dp"
+                android:textColor="@color/textSecondary"
+                android:textSize="13sp" />
         </LinearLayout>
 
-        <Button
+        <ImageButton
             android:id="@+id/btnBusCall"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/call" />
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_call_circle"
+            android:contentDescription="@string/call"
+            android:src="@drawable/ic_call"
+            app:tint="@color/colorOnPrimary" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

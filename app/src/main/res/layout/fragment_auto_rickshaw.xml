@@ -3,8 +3,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
+    android:background="@color/bgScreen"
     android:orientation="vertical">
+
+    <!-- शहर / इलाका चुनने का बटन (खोजने वाली सूची खुलती है) -->
+    <Button
+        android:id="@+id/btnSelectArea"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/select_area" />
 
     <!-- Filters (All, EV, Oil) -->
     <HorizontalScrollView
@@ -71,5 +81,5 @@
         android:layout_marginEnd="12dp"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="6dp"
-        android:text="Add Auto" />
+        android:text="@string/add_auto" />
 </LinearLayout>
