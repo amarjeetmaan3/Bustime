@@ -114,9 +114,9 @@ object SnapshotImporter {
             }
             val fuel = if (type == "auto") clean(d.fuel)?.lowercase()?.takeIf { it == "ev" || it == "oil" } else null
             // Driver area is an independent free-text service area, not a bus Place ID.
-            // Old records containing a bus-place ID are deliberately ignored until corrected.
+            // If an old record holds a bus-place ID, use that place's English name as the area text.
             val rawArea = clean(d.area)
-            val area = rawArea?.takeUnless { places.containsKey(it) }
+            val area = rawArea?.let { a -> places[a]?.let { it.names["en"] ?: it.names.values.firstOrNull() } ?: a }
             drivers.add(Driver(id, type, name, phone, clean(d.vehicle), seats, fuel, clean(d.info), area))
         }
 
