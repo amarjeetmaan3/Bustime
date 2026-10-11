@@ -491,7 +491,7 @@ async function sbFetch(path, opts) {
   if (sbToken) headers.Authorization = 'Bearer ' + sbToken;
   var res = await fetch(base + path, Object.assign({}, opts, { headers: headers }));
   if (!res.ok) {
-    var t = ''; try { t = (await res.json()).error_description || ''; } catch (e) {}
+    var t = ''; try { var j = await res.json(); t = j.error_description || j.message || j.hint || ''; } catch (e) {}
     throw new Error('Supabase ' + res.status + (t ? ': ' + t : ''));
   }
   return res.status === 204 ? null : res.json();
@@ -534,6 +534,7 @@ function viewReview() {
     var stops = (s.stops || []).map(function (st) {
       var offset = Number(st.day_offset || 0), dayText = offset ? ' <span class="badge">Day +' + offset + '</span>' : '';
       var stopName = st.name || (pname(placeById(st.place)) || st.place || '');
+      if (st.name && st.after_place) dayText += ' <span class="badge">NEW stop after ' + esc(pname(placeById(st.after_place)) || st.after_place) + '</span>';
       return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><span class="grow">' + esc(stopName) + dayText +
         '</span><input type="time" class="sub_t" data-place="' + esc(st.place || '') + '" data-name="' + esc(st.name || '') + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '></div>';
     }).join('');
@@ -573,9 +574,17 @@ async function loadCommunity() {
     ['busSubmissions','bus_operator_submissions'],
     ['operators','bus_operators']
   ];
+  var failed = [];
   for (var i = 0; i < specs.length; i++) {
-    community[specs[i][0]] = await sbFetch('/rest/v1/' + specs[i][1] + '?select=*&order=created_at.desc&limit=500');
+    try {
+      community[specs[i][0]] = await sbFetch('/rest/v1/' + specs[i][1] + '?select=*&order=created_at.desc&limit=500');
+    } catch (e) {
+      community[specs[i][0]] = [];
+      failed.push(specs[i][1] + ' (' + e.message + ')');
+    }
   }
+  community._failed = failed;
+  if (failed.length) toast('Some tables could not load: ' + failed.join('; ') + '. Run supabase/fix_app_admin_sync.sql in Supabase SQL Editor, then Refresh.');
 }
 function viewCommunity() {
   if (!sbToken) return viewReview();
@@ -589,6 +598,7 @@ function viewCommunity() {
   var counts = { pending:0, approved:0, rejected:0 };
   all.forEach(function (x) { if (counts[x.status] !== undefined) counts[x.status]++; });
   var html = '<div class="toolbar"><span class="grow muted">Each request is a separate record, including multiple requests for the same route. No deduplication is performed.</span><button class="btn" data-act="community-refresh">Refresh</button></div>';
+  if (community._failed && community._failed.length) html = '<div class="card" style="border-color:#c0392b"><b>Some tables failed to load:</b><br>' + community._failed.map(esc).join('<br>') + '<br><span class="muted">Run supabase/fix_app_admin_sync.sql in Supabase → SQL Editor, then press Refresh.</span></div>' + html;
   html += '<div class="toolbar">' + ['pending','approved','rejected'].map(function(st){ return '<button class="btn '+(communityStatus===st?'primary':'')+'" data-act="community-status" data-status="'+st+'">'+st[0].toUpperCase()+st.slice(1)+' ('+counts[st]+')</button>'; }).join('') + '</div>';
   var filtered = all.filter(function(x){return x.status===communityStatus;});
   if (!filtered.length) html += '<div class="card"><p class="muted">No '+esc(communityStatus)+' community requests.</p></div>';
@@ -909,7 +919,7 @@ document.addEventListener('click', async function (e) {
       var arrive = null, mid = [];
       v.stops.forEach(function (st) {
         var stopPlace = st.place;
-        if (isFreeText && st.name) stopPlace = ensureSubmittedPlace(st.name);
+        if (st.name) stopPlace = ensureSubmittedPlace(st.name);
         if (stopPlace === toId) arrive = st.time;
         else if (stopPlace && stopPlace !== fromId && placeById(stopPlace)) { var o = { place:stopPlace }; if (st.time) o.time = st.time; if (st.day_offset != null) o.day_offset = st.day_offset; mid.push(o); }
       });
@@ -934,12 +944,13 @@ document.addEventListener('click', async function (e) {
         if (kind === 'corrections') applyApprovedCorrection(record);
         if (kind === 'vehicles') {
           var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name, phone:record.phone, area:record.area_name || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.details || '') };
-          if (record.vehicle_type==='auto') driver.fuel='oil';
+          if (record.vehicle_type==='auto') driver.fuel=(record.fuel==='ev'?'ev':'oil');
+          if (record.union_name) driver.union_name=record.union_name;
           if (record.seats) driver.seats = record.seats;
           data.drivers.push(driver); setDirty(true);
         }
         if (kind === 'busSubmissions') {
-          await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.operator_name,service_name:record.service_name||null,bus_type:record.bus_type||'Ordinary',custom_category:record.custom_category||null,seat_type:record.seat_type||null,sleeper_count:record.sleeper_count,seater_count:record.seater_count,from_text:record.from_text||null,to_text:record.to_text||null,location:record.location||null,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
+          await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.operator_name,service_name:record.service_name||null,bus_type:record.bus_type||'Ordinary',seat_type:record.seat_type||null,sleeper_count:record.sleeper_count,seater_count:record.seater_count,from_text:record.from_text||null,to_text:record.to_text||null,location:record.location||null,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
         }
       } else if (!confirm('Reject this request?')) return;
       await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({status:act==='community-approve'?'approved':'rejected'}) });
