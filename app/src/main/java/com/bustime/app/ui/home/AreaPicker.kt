@@ -63,7 +63,7 @@ object AreaPicker {
         fun load(text: String) {
             job?.cancel()
             job = owner.lifecycleScope.launch {
-                shown = repo.searchPlaces(text, false, 80, allowEmpty = true)
+                shown = repo.searchAreaPlaces(text, 80, allowEmpty = true)
                 adapter.clear()
                 adapter.add(ctx.getString(R.string.all_areas))
                 adapter.addAll(shown.map { it.displayName(lang) })
