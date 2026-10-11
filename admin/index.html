@@ -136,7 +136,7 @@ var sbToken = null, subs = null, subsError = '';   // Supabase login lives only 
 var reviewStatus = 'pending';
 var community = { corrections:null, vehicles:null, feedback:null, busSubmissions:null, operators:null };
 var communityStatus = 'pending';
-var communitySection = 'corrections';
+var communitySection = 'all';
 var editing = null;
 var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
@@ -607,6 +607,7 @@ function viewCommunity() {
     (community[pair[0]] || []).forEach(function (x) { x._kind = pair[0]; x._label = pair[1]; all.push(x); });
   });
   var sections = [
+    ['all','All requests'],
     ['corrections','Route corrections'],
     ['vehicles','Taxi / Auto submissions'],
     ['feedback','Feedback & vehicle corrections'],
@@ -617,11 +618,11 @@ function viewCommunity() {
   all.forEach(function(x){ if(counts[x._kind] && counts[x._kind][x.status] !== undefined) counts[x._kind][x.status]++; });
   var html = '<div class="toolbar"><span class="grow muted">Requests are separated by purpose. Similar-looking entries are kept unless verified duplicates.</span><button class="btn" data-act="community-refresh">Refresh</button></div>';
   html += '<div class="chips">' + sections.map(function(p){return '<button class="btn '+(communitySection===p[0]?'primary':'')+'" data-act="community-section" data-section="'+p[0]+'">'+p[1]+' ('+((community[p[0]]||[]).length)+')</button>';}).join('') + '</div>';
-  if (community._failed && community._failed.length) html = '<div class="card" style="border-color:#c0392b"><b>Some tables failed to load:</b><br>' + community._failed.map(esc).join('<br>') + '<br><span class="muted">Run supabase/fix_app_admin_sync.sql in Supabase → SQL Editor, then press Refresh.</span></div>' + html;
-  var selectedCounts = counts[communitySection] || {pending:0,approved:0,rejected:0};
+  if (community._failed && community._failed.length) html = '<div class="card" style="border-color:#c0392b"><b>Some tables failed to load:</b><br>' + community._failed.map(esc).join('<br>') + '<br><span class="muted">These tables are missing from Supabase. Run supabase/fix_app_admin_sync.sql in SQL Editor, confirm Success, then press Refresh.</span></div>' + html;
+  var selectedCounts = communitySection === 'all' ? all.reduce(function(total,x){ if(total[x.status] !== undefined) total[x.status]++; return total; }, {pending:0,approved:0,rejected:0}) : (counts[communitySection] || {pending:0,approved:0,rejected:0});
   html += '<div class="toolbar">' + ['pending','approved','rejected'].map(function(st){ return '<button class="btn '+(communityStatus===st?'primary':'')+'" data-act="community-status" data-status="'+st+'">'+st[0].toUpperCase()+st.slice(1)+' ('+selectedCounts[st]+')</button>'; }).join('') + '</div>';
-  var filtered = all.filter(function(x){return x._kind===communitySection && x.status===communityStatus;});
-  if (!filtered.length) html += '<div class="card"><p class="muted">No '+esc(communityStatus)+' community requests.</p></div>';
+  var filtered = all.filter(function(x){return (communitySection==='all' || x._kind===communitySection) && x.status===communityStatus;});
+  if (!filtered.length) html += '<div class="card"><p class="muted">No '+esc(communityStatus)+' requests match this filter.</p></div>';
   filtered.forEach(function(x){
     var details = '';
     if (x._kind === 'corrections') {
