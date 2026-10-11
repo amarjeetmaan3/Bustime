@@ -32,8 +32,12 @@ object AreaPicker {
     }
 
     suspend fun label(ctx: Context, repo: AppRepository): String {
-        val area = savedId(ctx) ?: return ctx.getString(R.string.select_area)
-        return "$area  ▾"
+        val areaId = savedId(ctx) ?: return ctx.getString(R.string.select_area)
+        val place = repo.getPlacesById(listOf(areaId))[areaId]
+        val name = place?.displayName(com.bustime.app.utils.LanguageHelper.current())
+            ?.takeIf { it.isNotBlank() }
+            ?: areaId.removePrefix("place_").replace('_', ' ').replaceFirstChar { it.uppercase() }
+        return "$name  ▾"
     }
 
     /** No "All areas" option: the user must choose a driver service area. */
@@ -41,8 +45,8 @@ object AreaPicker {
         val view = LayoutInflater.from(ctx).inflate(R.layout.dialog_area_picker, null)
         val etSearch = view.findViewById<EditText>(R.id.etAreaSearch)
         val list = view.findViewById<ListView>(R.id.listAreas)
-        var allAreas: List<String> = emptyList()
-        var shown: List<String> = emptyList()
+        var allAreas: List<Pair<String, String>> = emptyList()
+        var shown: List<Pair<String, String>> = emptyList()
         val adapter = ArrayAdapter<String>(ctx, android.R.layout.simple_list_item_1, ArrayList())
         list.adapter = adapter
         val dialog = AlertDialog.Builder(ctx)
@@ -53,9 +57,11 @@ object AreaPicker {
 
         fun filter(text: String) {
             val q = text.trim().lowercase(Locale.ROOT)
-            shown = if (q.isEmpty()) allAreas else allAreas.filter { it.lowercase(Locale.ROOT).contains(q) }
+            shown = if (q.isEmpty()) allAreas else allAreas.filter {
+                it.second.lowercase(Locale.ROOT).contains(q) || it.first.lowercase(Locale.ROOT).contains(q)
+            }
             adapter.clear()
-            adapter.addAll(shown)
+            adapter.addAll(shown.map { it.second })
             adapter.notifyDataSetChanged()
         }
         var job: Job? = null
@@ -70,7 +76,7 @@ object AreaPicker {
             override fun afterTextChanged(s: Editable?) { filter(s?.toString().orEmpty()) }
         })
         list.setOnItemClickListener { _, _, position, _ ->
-            save(ctx, shown.getOrNull(position))
+            save(ctx, shown.getOrNull(position)?.first)
             dialog.dismiss()
             onChosen()
         }
