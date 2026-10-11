@@ -41,8 +41,8 @@ class VehicleAdapter(private var driverList: MutableList<String>) :
         val driverName = driverList[position]
         
         holder.tvName.text = driverName
-        holder.tvTiming.text = "Departure: 10:30 AM"
-        holder.tvPrice.text = "Price: ₹50 - ₹80"
+        holder.tvTiming.text = holder.itemView.context.getString(com.bustime.app.R.string.bb_departure, "10:30 AM")
+        holder.tvPrice.text = holder.itemView.context.getString(com.bustime.app.R.string.bb_price_range, "₹50 - ₹80")
         
         holder.btnShowNumber.setOnClickListener {
             contactHelper?.playDisclaimerAndShowNumber(driverName, "+91-9876543210")
