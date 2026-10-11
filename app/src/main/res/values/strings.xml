@@ -108,4 +108,6 @@
     <string name="ar_pick_route">Please choose a route</string>
     <string name="ar_need_time">Please give at least one time</string>
     <string name="no_areas_yet">No areas available yet. Areas appear after drivers with an area are added.</string>
+    <string name="ar_stop_name_required">Every stop needs a name</string>
+    <string name="ar_min_stops">A route must keep at least two stops</string>
 </resources>
