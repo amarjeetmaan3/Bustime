@@ -48,5 +48,6 @@ data class DriverDto(
     val seats: Int?,
     val fuel: String?,
     val info: String?,
-    val area: String?
+    val area: String?,
+    val unionName: String?
 )
