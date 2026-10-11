@@ -51,7 +51,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll)
-        text("${title}\nYour submission will be reviewed by the admin before it affects the public app.", 18f)
+        text("${title}\n${getString(com.bustime.app.R.string.community_review_notice)}", 18f)
         when (mode) {
             "correction" -> loadCorrectionForm()
             "vehicle" -> vehicleForm()
@@ -62,14 +62,14 @@ class CommunityRequestActivity : AppCompatActivity() {
     }
 
     private fun loadCorrectionForm() {
-        if (!CommunitySupabase.isConfigured()) { text("Online submissions are not configured yet.", 14f); return }
+        if (!CommunitySupabase.isConfigured()) { text(getString(com.bustime.app.R.string.community_online_not_configured), 14f); return }
         lifecycleScope.launch {
             routes = AppRepository.getInstance(this@CommunityRequestActivity).getAllRoutes()
-            if (routes.isEmpty()) { text("No bus routes are available yet.", 14f); return@launch }
+            if (routes.isEmpty()) { text(getString(com.bustime.app.R.string.community_no_routes), 14f); return@launch }
             val repo = AppRepository.getInstance(this@CommunityRequestActivity)
             allPlaces = repo.getAllPlaces()
             placeNames = allPlaces.associate { it.id to it.displayName(LanguageHelper.current()) }
-            routeSpinner = spinner("Choose bus route", routes.map { routeLabel(it) })
+            routeSpinner = spinner(getString(com.bustime.app.R.string.community_choose_route), routes.map { routeLabel(it) })
             val requestedRouteId = intent.getStringExtra("route_id")
             routeSpinner?.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -81,21 +81,21 @@ class CommunityRequestActivity : AppCompatActivity() {
                 val requestedIndex = routes.indexOfFirst { it.id == requestedRouteId }
                 if (requestedIndex >= 0) routeSpinner?.setSelection(requestedIndex)
             }
-            heading("What needs correction?")
-            missingCheck = CheckBox(this@CommunityRequestActivity).apply { text = "Missing Stop"; isChecked = true }
-            timeCheck = CheckBox(this@CommunityRequestActivity).apply { text = "Correct Time" }
+            heading(getString(com.bustime.app.R.string.community_what_correction))
+            missingCheck = CheckBox(this@CommunityRequestActivity).apply { text = getString(com.bustime.app.R.string.community_missing_stop); isChecked = true }
+            timeCheck = CheckBox(this@CommunityRequestActivity).apply { text = getString(com.bustime.app.R.string.community_correct_time) }
             root.addView(missingCheck); root.addView(timeCheck)
-            heading("Missing Stop details")
-            text("Choose the existing stops between which the missing stop belongs. You can select a known place or type a new place name.", 14f)
-            stopOne = spinner("Stop before missing stop", emptyList())
-            stopTwo = spinner("Stop after missing stop", emptyList())
-            missingExisting = spinner("Choose existing place (optional)", listOf("— Type a new place below —"))
-            field("missing_place", "Or type missing place name")
-            field("missing_time", "Missing stop time (HH:MM, optional)")
-            heading("Correct Time details")
-            correctedStop = spinner("Choose stop to correct", emptyList())
-            field("corrected_time", "Correct time (HH:MM)")
-            field("correction_note", "Extra details (optional)")
+            heading(getString(com.bustime.app.R.string.community_missing_stop_details))
+            text(getString(com.bustime.app.R.string.community_missing_stop_help), 14f)
+            stopOne = spinner(getString(com.bustime.app.R.string.community_stop_before), emptyList())
+            stopTwo = spinner(getString(com.bustime.app.R.string.community_stop_after), emptyList())
+            missingExisting = spinner(getString(com.bustime.app.R.string.community_choose_place_optional), listOf(getString(com.bustime.app.R.string.community_type_new_place)))
+            field("missing_place", getString(com.bustime.app.R.string.community_missing_place_hint))
+            field("missing_time", getString(com.bustime.app.R.string.community_missing_time_hint))
+            heading(getString(com.bustime.app.R.string.community_correct_time_details))
+            correctedStop = spinner(getString(com.bustime.app.R.string.community_choose_stop), emptyList())
+            field("corrected_time", getString(com.bustime.app.R.string.community_correct_time_hint))
+            field("correction_note", getString(com.bustime.app.R.string.community_extra_details))
             button("Send correction request") { submitCorrection() }
         }
     }
