@@ -486,10 +486,10 @@ function viewAnalytics() {
     '<option value="today">Today</option><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="custom">Custom range</option></select>' +
     '<input type="date" id="analyticsFrom" aria-label="Start date" style="max-width:180px;display:none">' +
     '<input type="date" id="analyticsTo" aria-label="End date" style="max-width:180px;display:none"></div>' +
-    '<div class="stats">' +
-    analyticsStat('—','App users','Not tracked yet') + analyticsStat('—','Bus searches','Not tracked yet') +
-    analyticsStat('—','Taxi activity','Not tracked yet') + analyticsStat('—','Auto activity','Not tracked yet') +
-    analyticsStat('—','Contact actions','Not tracked yet') + analyticsStat('—','Ad earnings','AdMob reporting not connected') + '</div>' +
+    '<div class="stats" id="analyticsCards">' +
+    analyticsStat('—','App users','Waiting for analytics data') + analyticsStat('—','Bus searches','Waiting for analytics data') +
+    analyticsStat('—','Taxi activity','Waiting for analytics data') + analyticsStat('—','Auto activity','Waiting for analytics data') +
+    analyticsStat('—','Contact actions','Waiting for analytics data') + analyticsStat('—','Ad earnings','AdMob reporting not connected') + '</div>' +
     '<div class="row2"><div class="card"><h2>Activity over time</h2><p class="muted">Daily app events</p><div class="analytics-empty"><div class="analytics-bars">' +
     '<i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>Tracking not configured</b><p class="muted">Bars will show real daily totals after the app sends analytics events.</p></div></div>' +
     '<div class="card"><h2>Usage by section</h2><p class="muted">Bus, Taxi and Auto comparisons</p><div class="analytics-empty"><div class="analytics-bars horizontal">' +
@@ -500,7 +500,63 @@ function viewAnalytics() {
     '<div><b>Submissions</b><p class="muted">Add Route, corrections and vehicle submissions by pending/approved/rejected status.</p></div>' +
     '<div><b>Coverage &amp; quality</b><p class="muted">Areas with low service coverage and frequently corrected information.</p></div>' +
     '<div><b>Ads performance</b><p class="muted">Impressions, clicks and estimated earnings when AdMob reporting is integrated.</p></div></div>' +
-    '<div class="alert warn">This page is the Analytics &amp; Stats entry point. Live usage charts require Android event tracking, a secure analytics endpoint and database reporting; AdMob figures require a separate reporting integration.</div></div>';
+    '<div class="alert warn">Usage cards and charts load recorded app events. AdMob earnings require a separate official reporting integration.</div></div>';
+}
+async function loadAnalytics() {
+  var cards = document.getElementById('analyticsCards');
+  if (!cards) return;
+  var period = document.getElementById('analyticsPeriod');
+  var fromInput = document.getElementById('analyticsFrom');
+  var toInput = document.getElementById('analyticsTo');
+  var now = new Date(), start = new Date(now);
+  if (period && period.value === 'today') start.setHours(0,0,0,0);
+  else if (period && period.value === '30') start.setDate(start.getDate()-29);
+  else if (period && period.value === 'custom') {
+    if (!fromInput.value || !toInput.value) return;
+    start = new Date(fromInput.value + 'T00:00:00');
+    now = new Date(toInput.value + 'T23:59:59');
+  } else start.setDate(start.getDate()-6);
+  if (period && period.value !== 'custom') start.setHours(0,0,0,0);
+  var daily = document.getElementById('analyticsDaily'), sections = document.getElementById('analyticsSections');
+  if (!sbToken) {
+    cards.innerHTML = analyticsStat('—','App users','Admin sign-in required') + analyticsStat('—','Bus searches','Admin sign-in required') + analyticsStat('—','Taxi activity','Admin sign-in required') + analyticsStat('—','Auto activity','Admin sign-in required') + analyticsStat('—','Contact actions','Admin sign-in required') + analyticsStat('—','Ad earnings','AdMob reporting not connected');
+    if (daily) daily.innerHTML = '<b>Sign in to view analytics</b>';
+    if (sections) sections.innerHTML = '<b>Sign in to view analytics</b>';
+    return;
+  }
+  try {
+    var url = '/rest/v1/analytics_events?select=created_at,event_name,section,session_id,properties&created_at=gte.' + encodeURIComponent(start.toISOString()) + '&created_at=lte.' + encodeURIComponent(now.toISOString()) + '&order=created_at.asc&limit=5000';
+    var events = await sbFetch(url) || [];
+    var unique = {};
+    events.forEach(function(e){ unique[e.session_id] = true; });
+    function count(fn) { return events.filter(fn).length; }
+    var bus = count(function(e){return e.section==='bus' && /search/.test(e.event_name);});
+    var taxi = count(function(e){return e.section==='taxi';});
+    var auto = count(function(e){return e.section==='auto';});
+    var contacts = count(function(e){return /contact|call|whatsapp/.test(e.event_name);});
+    cards.innerHTML = analyticsStat(Object.keys(unique).length,'App sessions','Unique random app sessions in selected period') +
+      analyticsStat(bus,'Bus searches','From–To and stand searches') +
+      analyticsStat(taxi,'Taxi activity','Recorded Taxi events') +
+      analyticsStat(auto,'Auto activity','Recorded Auto events') +
+      analyticsStat(contacts,'Contact actions','Recorded contact taps') +
+      analyticsStat('—','Ad earnings','Connect official AdMob reporting');
+    if (daily) {
+      var buckets = {}, cursor = new Date(start); cursor.setHours(0,0,0,0);
+      while (cursor <= now) { var key = cursor.getFullYear()+'-'+String(cursor.getMonth()+1).padStart(2,'0')+'-'+String(cursor.getDate()).padStart(2,'0'); buckets[key]=0; cursor.setDate(cursor.getDate()+1); }
+      events.forEach(function(e){var d=new Date(e.created_at), k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); if (buckets[k] != null) buckets[k]++;});
+      var vals=Object.keys(buckets).map(function(k){return {day:k,total:buckets[k]};}), max=Math.max(1,...vals.map(function(v){return v.total;}));
+      daily.innerHTML = '<div class="analytics-bars">' + vals.slice(-14).map(function(v){return '<div title="'+esc(v.day+': '+v.total)+' events" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;flex:1;min-width:5px"><i style="height:'+Math.max(3,Math.round(v.total/max*100))+'%;width:100%;background:#4F7EDB;border-radius:4px 4px 0 0"></i></div>';}).join('') + '</div><b>'+events.length+' events</b><p class="muted">Recorded events by day; newest dates at right</p>';
+    }
+    if (sections) {
+      var by=[{name:'Bus',n:count(function(e){return e.section==='bus';})},{name:'Taxi',n:taxi},{name:'Auto',n:auto}], maxSection=Math.max(1,...by.map(function(x){return x.n;}));
+      sections.innerHTML=by.map(function(x){return '<div style="width:100%;text-align:left;margin:10px 0"><div style="display:flex;justify-content:space-between"><b>'+x.name+'</b><span>'+x.n+'</span></div><div style="height:12px;background:#EEF2F8;border-radius:8px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+Math.round(x.n/maxSection*100)+'%;background:#4F7EDB;border-radius:8px"></div></div></div>';}).join('') + '<p class="muted">Counts are recorded events, not unique people.</p>';
+    }
+    if (!events.length && daily) daily.innerHTML='<b>No events recorded for this period</b><p class="muted">New events appear after users run an updated app build.</p>';
+    toast('Analytics updated: '+events.length+' events');
+  } catch (err) {
+    if (daily) daily.innerHTML='<b>Could not load analytics</b><p class="muted">'+esc(err.message)+'</p>';
+    toast('Analytics error: '+err.message);
+  }
 }
 function analyticsStat(value, label, note) {
   return '<div class="stat"><b>' + esc(value) + '</b><span>' + esc(label) + '</span><p class="muted" style="margin:7px 0 0">' + esc(note) + '</p></div>';
@@ -966,7 +1022,8 @@ document.addEventListener('input', function (e) {
   if (el) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (x) {} }
 });
 document.addEventListener('change', function (e) {
-  if (e.target.id === 'analyticsPeriod') { var custom = e.target.value === 'custom'; document.getElementById('analyticsFrom').style.display = custom ? 'block' : 'none'; document.getElementById('analyticsTo').style.display = custom ? 'block' : 'none'; }
+  if (e.target.id === 'analyticsPeriod') { var custom = e.target.value === 'custom'; document.getElementById('analyticsFrom').style.display = custom ? 'block' : 'none'; document.getElementById('analyticsTo').style.display = custom ? 'block' : 'none'; if (!custom) loadAnalytics(); }
+  if (e.target.id === 'analyticsFrom' || e.target.id === 'analyticsTo') { if (document.getElementById('analyticsPeriod') && document.getElementById('analyticsPeriod').value === 'custom' && document.getElementById('analyticsFrom').value && document.getElementById('analyticsTo').value) loadAnalytics(); }
   if (e.target.id === 'fd_type') {
     var taxi = e.target.value === 'taxi';
     $('#seatRow').style.display = taxi ? 'block' : 'none';
@@ -1003,9 +1060,10 @@ document.addEventListener('click', async function (e) {
   if (!b) return;
   var act = b.getAttribute('data-act'), i = parseInt(b.getAttribute('data-i'), 10);
   try {
-    if (act === 'analytics-refresh') { toast('Analytics UI refreshed. Live event tracking is not connected yet.'); render(); }
+    if (act === 'analytics-refresh') { loadAnalytics(); }
     else if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; publishOpen = false; render();
+      if (tab === 'analytics' && sbToken) { loadAnalytics(); }
       if (['review','busRequests','taxiReview','autoReview','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
     else if (act === 'close') { editing = null; publishOpen = false; render(); }
