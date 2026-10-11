@@ -35,7 +35,7 @@ import org.json.JSONObject
  * (कोई Long Route चेकबॉक्स या तारीख नहीं)। सब कुछ पहले एडमिन के रिव्यू में जाता है।
  */
 class AddRouteActivity : AppCompatActivity() {
-    private class ExistingStop(val placeId: String, val timeView: TextView, var time: String? = null)
+    private class ExistingStop(val placeId: String?, val timeView: TextView, var time: String? = null, val nameEdit: EditText? = null, var line: View? = null)
     private class NewStop(val name: EditText, val timeView: TextView, var time: String? = null)
 
     private lateinit var repo: AppRepository
@@ -110,7 +110,18 @@ class AddRouteActivity : AppCompatActivity() {
             val lang = LanguageHelper.current()
             stopsBox.removeAllViews(); existingRows.clear()
             val pad = (10 * resources.displayMetrics.density).toInt()
-            // पहला पड़ाव = चलने की जगह (उसका समय ऊपर "चलने का समय" है), इसलिए उसे छोड़ते हैं
+            // पहला पड़ाव = चलने की जगह (उसका समय ऊपर "चलने का समय" है): समय नहीं, पर उसके बाद "+" से नया पड़ाव जोड़ सकते हैं
+            stops.firstOrNull()?.let { first ->
+                val line = LinearLayout(this@AddRouteActivity).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, pad / 2, 0, pad / 2) }
+                val name = TextView(this@AddRouteActivity).apply {
+                    text = names[first.placeId]?.displayName(lang) ?: first.placeId
+                    textSize = 16f
+                    setTextColor(getColor(R.color.textSecondary))
+                    layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+                }
+                line.addView(name); line.addView(plusButton { insertStopAfter(line, null) })
+                stopsBox.addView(line)
+            }
             for (stop in stops.drop(1)) {
                 val line = LinearLayout(this@AddRouteActivity).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, pad / 2, 0, pad / 2) }
                 val name = TextView(this@AddRouteActivity).apply {
@@ -120,15 +131,53 @@ class AddRouteActivity : AppCompatActivity() {
                     layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
                 }
                 val time = timeBox()
-                val row = ExistingStop(stop.placeId, time)
+                val row = ExistingStop(stop.placeId, time, line = line)
                 time.setOnClickListener {
                     pickTime(row.time) { t ->
                         if (t == null || fitsOrder(existingRow = row, existingTime = t)) { row.time = t; showTime(time, t) }
                     }
                 }
-                line.addView(name); line.addView(time); stopsBox.addView(line); existingRows.add(row)
+                line.addView(name); line.addView(time); line.addView(plusButton { insertStopAfter(line, row) })
+                stopsBox.addView(line); existingRows.add(row)
             }
         }
+    }
+
+    private fun plusButton(onClick: () -> Unit): Button = Button(this).apply {
+        text = "+"
+        textSize = 18f
+        minWidth = 0; minimumWidth = 0
+        setOnClickListener { onClick() }
+    }
+
+    /** मौजूदा रूट के दो पड़ावों के बीच नया पड़ाव (नाम किसी भी भाषा में + समय) */
+    private fun insertStopAfter(anchorLine: View, anchorRow: ExistingStop?) {
+        val pad = (8 * resources.displayMetrics.density).toInt()
+        val line = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(pad * 2, pad, 0, pad) }
+        val name = EditText(this).apply {
+            hint = getString(R.string.ar_custom_stop_name)
+            setSingleLine(true)
+            textSize = 16f
+            filters = arrayOf(android.text.InputFilter.LengthFilter(80))
+            setBackgroundResource(R.drawable.bg_input)
+            setPadding(pad * 2, pad, pad * 2, pad)
+        }
+        val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, pad, 0, 0) }
+        val time = timeBox()
+        val row = ExistingStop(null, time, nameEdit = name, line = line)
+        time.setOnClickListener {
+            pickTime(row.time) { t ->
+                if (t == null || fitsOrder(existingRow = row, existingTime = t)) { row.time = t; showTime(time, t) }
+            }
+        }
+        val remove = Button(this).apply { text = "−"; setOnClickListener { existingRows.remove(row); stopsBox.removeView(line) } }
+        val plus = plusButton { insertStopAfter(line, row) }
+        controls.addView(time, LinearLayout.LayoutParams(0, -2, 1f)); controls.addView(plus); controls.addView(remove)
+        line.addView(name); line.addView(controls)
+        val viewIndex = stopsBox.indexOfChild(anchorLine) + 1
+        stopsBox.addView(line, viewIndex)
+        val rowIndex = if (anchorRow == null) 0 else existingRows.indexOf(anchorRow) + 1
+        existingRows.add(rowIndex, row)
     }
 
     private fun addNewStop() {
@@ -223,9 +272,20 @@ class AddRouteActivity : AppCompatActivity() {
                 }
             }
         } else {
+            var prevPlace: String = route!!.fromId
             for (row in existingRows) {
-                if (row.time != null) anyTime = true
-                stops.put(JSONObject().put("place", row.placeId).put("time", row.time ?: JSONObject.NULL))
+                if (row.placeId != null) {
+                    prevPlace = row.placeId
+                    if (row.time != null) anyTime = true
+                    stops.put(JSONObject().put("place", row.placeId).put("time", row.time ?: JSONObject.NULL))
+                } else {
+                    // बीच में जोड़ा नया पड़ाव: नाम + किस पड़ाव के बाद (क्रम सूची के क्रम में भी है)
+                    val nm = row.nameEdit?.text?.toString()?.trim().orEmpty()
+                    if (nm.isNotBlank()) {
+                        if (row.time != null) anyTime = true
+                        stops.put(JSONObject().put("name", nm).put("after_place", prevPlace).put("time", row.time ?: JSONObject.NULL))
+                    }
+                }
             }
         }
         if (!anyTime) { Toast.makeText(this, R.string.ar_need_time, Toast.LENGTH_LONG).show(); return }
