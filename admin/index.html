@@ -85,7 +85,7 @@
   #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1F2933; color:#fff; padding:11px 20px; border-radius:24px; display:none; z-index:50; max-width:92%; font-size:14px; }
 
 
-  .workspace-nav { position:sticky; top:0; z-index:4; display:flex; flex-direction:row; align-items:center; gap:8px; overflow-x:auto; white-space:nowrap; padding:10px 24px; background:#fff; border-bottom:1px solid var(--line); box-shadow:0 3px 12px rgba(22,34,55,.035); scrollbar-width:thin; }
+  .workspace-nav { position:sticky; top:57px; z-index:4; display:flex; flex-direction:row; align-items:center; gap:8px; overflow-x:auto; white-space:nowrap; padding:10px 24px; background:#fff; border-bottom:1px solid var(--line); box-shadow:0 3px 12px rgba(22,34,55,.035); scrollbar-width:thin; }
   .workspace-tabs { display:contents; }
   .workspace-tab { flex:0 0 auto; border:0; border-radius:8px; background:transparent; color:#526176; padding:11px 16px; font-size:13px; font-weight:700; cursor:pointer; }
   .workspace-tab:hover { background:#F2F5FB; color:var(--brand-d); }
@@ -233,7 +233,7 @@ var TITLES = {
   dashboard:'Dashboard', bus:'Bus', taxi:'Taxi', auto:'Auto', places:'Bus · Places',
   routes:'Bus · Routes', busRequests:'Bus · Route Requests', addBus:'Bus · Add Your Bus',
   taxiReview:'Taxi · Submissions', autoReview:'Auto · Submissions', seats:'Taxi · Seat Options',
-  drivers:'Taxi / Auto · Directory', corrections:'Review Center · Corrections',
+  drivers:'Taxi · Directory', autoDrivers:'Auto · Directory', corrections:'Review Center · Corrections',
   feedbackReview:'Review Center · Feedback', review:'Review Center', settings:'Settings'
 };
 
@@ -404,9 +404,9 @@ function render() {
   }).join('');
   refreshChrome();
   var v = $('#view');
-  var dataTabs = ['dashboard','bus','taxi','auto','places','routes','seats','drivers'];
+  var dataTabs = ['dashboard','bus','taxi','auto','places','routes','seats','drivers','autoDrivers'];
   var views = { dashboard:viewDashboard, bus:viewBusHome, taxi:viewTaxiHome, auto:viewAutoHome,
-    places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers,
+    places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers, autoDrivers:viewDrivers,
     busRequests:viewBusRequests, taxiReview:function(){return viewCommunity('taxi');},
     autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
     corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, settings:viewSettings };
@@ -433,9 +433,9 @@ function refreshWorkspaceNav() {
   } else if (['taxi','taxiReview','seats','drivers'].indexOf(tab) >= 0) {
     items = [['taxiReview','Taxi Submissions'],['seats','Seat Options'],['drivers','Taxi Directory']];
     active = ['taxiReview','seats','drivers'].indexOf(tab) >= 0 ? tab : 'taxi';
-  } else if (['auto','autoReview','drivers'].indexOf(tab) >= 0 && (tab==='auto'||tab==='autoReview'||tab==='drivers')) {
-    items = [['autoReview','Auto Submissions'],['drivers','Auto Directory']];
-    active = tab==='auto' ? 'auto' : tab;
+  } else if (['auto','autoReview','autoDrivers'].indexOf(tab) >= 0) {
+    items = [['autoReview','Auto Submissions'],['autoDrivers','Auto Directory']];
+    active = tab;
   } else if (tab==='review' || tab==='corrections' || tab==='feedbackReview') {
     items = [['review','Overview'],['corrections','Corrections'],['feedbackReview','Feedback']];
     active = tab;
@@ -444,19 +444,13 @@ function refreshWorkspaceNav() {
   host.style.display = items.length ? 'flex' : 'none';
 }
 function viewBusHome() {
-  var sub = ['places','routes','busRequests','addBus'].indexOf(tab) >= 0 ? tab : 'places';
-  return workspaceTabs([['places','Places & Bus Stands'],['routes','Bus Routes'],['busRequests','Route Requests'],['addBus','Add Your Bus']],sub)+
-    (sub==='places'?viewPlaces():sub==='routes'?viewRoutes():sub==='busRequests'?viewBusRequests():viewCommunity('bus'));
+  return viewPlaces();
 }
 function viewTaxiHome() {
-  var sub = ['taxiReview','seats','drivers'].indexOf(tab) >= 0 ? tab : 'taxiReview';
-  return workspaceTabs([['taxiReview','Taxi Submissions'],['seats','Seat Options'],['drivers','Taxi Directory']],sub)+
-    (sub==='taxiReview'?viewCommunity('taxi'):sub==='seats'?viewSeats():viewDrivers());
+  return viewCommunity('taxi');
 }
 function viewAutoHome() {
-  var sub = ['autoReview','drivers'].indexOf(tab) >= 0 ? tab : 'autoReview';
-  return workspaceTabs([['autoReview','Auto Submissions'],['drivers','Auto Directory']],sub)+
-    (sub==='autoReview'?viewCommunity('auto'):viewDrivers());
+  return viewCommunity('auto');
 }
 
 function viewDashboard() {
