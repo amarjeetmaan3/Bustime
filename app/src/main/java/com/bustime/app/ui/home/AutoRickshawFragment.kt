@@ -19,15 +19,14 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
         super.onViewCreated(view, savedInstanceState)
         val repo = AppRepository.getInstance(requireContext())
 
-        view.findViewById<android.widget.Button>(R.id.btnCorrectAuto).setOnClickListener {
-            startActivity(android.content.Intent(requireContext(), com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "auto_correction"))
-        }
-
         val recycler = view.findViewById<RecyclerView>(R.id.recyclerViewAutos)
         recycler.layoutManager = LinearLayoutManager(requireContext())
         val adapter = DriverAdapter()
         recycler.adapter = adapter
         val tvEmpty = view.findViewById<TextView>(R.id.tvEmptyAuto)
+        view.findViewById<android.widget.Button>(R.id.btnAddAuto).setOnClickListener {
+            startActivity(android.content.Intent(requireContext(), com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "vehicle").putExtra("vehicle_type", "auto"))
+        }
 
         fun load(fuel: String?) {
             viewLifecycleOwner.lifecycleScope.launch {

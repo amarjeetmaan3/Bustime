@@ -50,8 +50,8 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
         }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
         view.findViewById<Button>(R.id.btnBackSeats).setOnClickListener { showSeaters() }
-        view.findViewById<Button>(R.id.btnCorrectTaxi).setOnClickListener {
-            startActivity(android.content.Intent(requireContext(), com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "taxi_correction"))
+        view.findViewById<Button>(R.id.btnAddTaxi).setOnClickListener {
+            startActivity(android.content.Intent(requireContext(), com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "vehicle").putExtra("vehicle_type", "taxi"))
         }
 
         showSeaters()

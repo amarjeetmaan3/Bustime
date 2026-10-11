@@ -29,6 +29,7 @@ class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
         val tvMeta: TextView = view.findViewById(R.id.tvDriverMeta)
         val tvInfo: TextView = view.findViewById(R.id.tvDriverInfo)
         val btnShow: Button = view.findViewById(R.id.btnShowNumber)
+        val btnCorrect: Button = view.findViewById(R.id.btnCorrectDriver)
         val tvNotice: TextView = view.findViewById(R.id.tvNumberNotice)
         val layoutRevealed: View = view.findViewById(R.id.layoutRevealed)
         val tvNumber: TextView = view.findViewById(R.id.tvDriverNumber)
@@ -60,6 +61,20 @@ class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
         holder.tvName.text = d.name
         setOptional(holder.tvVehicle, d.vehicle)
         setOptional(holder.tvInfo, d.info)
+        holder.btnCorrect.text = if (d.type.equals("taxi", true)) "Correction Taxi" else "Correction Auto"
+        holder.btnCorrect.setOnClickListener {
+            val type = if (d.type.equals("taxi", true)) "taxi" else "auto"
+            it.context.startActivity(android.content.Intent(it.context, com.bustime.app.ui.community.CommunityRequestActivity::class.java)
+                .putExtra("mode", "vehicle_correction")
+                .putExtra("vehicle_type", type)
+                .putExtra("driver_id", d.id)
+                .putExtra("driver_name", d.name)
+                .putExtra("driver_vehicle", d.vehicle.orEmpty())
+                .putExtra("driver_phone", d.phone)
+                .putExtra("driver_seats", d.seats ?: -1)
+                .putExtra("driver_fuel", d.fuel.orEmpty())
+                .putExtra("driver_info", d.info.orEmpty()))
+        }
 
         val seats = d.seats
         val meta = when {
