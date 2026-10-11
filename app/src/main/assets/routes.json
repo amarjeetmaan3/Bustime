@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 15,
+  "dataVersion": 16,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -492,7 +492,8 @@
       "name": "Sample Driver A",
       "phone": "9000000001",
       "seats": 4,
-      "vehicle": "Sample Sedan, white"
+      "vehicle": "Sample Sedan, white",
+      "area": "Sadulshahar"
     },
     {
       "id": "t2",
@@ -500,7 +501,8 @@
       "name": "Sample Driver B",
       "phone": "9000000002",
       "seats": 5,
-      "vehicle": "Sample SUV, grey"
+      "vehicle": "Sample SUV, grey",
+      "area": "Sadulshahar"
     },
     {
       "id": "t3",
@@ -508,7 +510,8 @@
       "name": "Sample Driver C",
       "phone": "9000000003",
       "seats": 7,
-      "vehicle": "Sample Van, white"
+      "vehicle": "Sample Van, white",
+      "area": "SRI ganganagar"
     },
     {
       "id": "a1",
@@ -516,7 +519,8 @@
       "name": "Sample Auto 1",
       "phone": "9000000004",
       "fuel": "ev",
-      "vehicle": "E-rickshaw"
+      "vehicle": "E-rickshaw",
+      "area": "Sadulshahar"
     },
     {
       "id": "a2",
@@ -524,7 +528,8 @@
       "name": "Sample Auto 2",
       "phone": "9000000005",
       "fuel": "oil",
-      "vehicle": "CNG auto"
+      "vehicle": "CNG auto",
+      "area": "Sadulshahar"
     },
     {
       "id": "a3",
