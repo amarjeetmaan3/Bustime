@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 14,
+  "dataVersion": 15,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -393,7 +393,6 @@
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
       "time": "20:50",
-      "longRoute": false,
       "arrive": "22:51",
       "stops": [
         {
@@ -542,7 +541,8 @@
       "phone": "9638527412",
       "vehicle": "Sss",
       "seats": 4,
-      "info": "Sadul Shahar"
+      "info": "Sadul Shahar",
+      "area": "place_sadulshahar"
     },
     {
       "id": "t5",
