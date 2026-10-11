@@ -13,6 +13,7 @@ import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.ui.updater.GitHubUpdateChecker
 import com.bustime.app.utils.LanguageHelper
+import com.bustime.app.utils.AnalyticsHelper
 import kotlinx.coroutines.launch
 
 class HomeActivity : AppCompatActivity() {
@@ -22,6 +23,7 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+        AnalyticsHelper.logAppOpened(this)
 
         // भाषा बदलने पर स्क्रीन दोबारा बनती है: जो टैब खुला था वही खुला रहे
         currentTab = savedInstanceState?.getInt("TAB", 0) ?: 0
