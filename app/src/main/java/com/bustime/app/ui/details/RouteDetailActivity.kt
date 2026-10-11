@@ -5,6 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
+import android.view.ViewGroup
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -30,8 +32,21 @@ class RouteDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_route_detail)
 
-        findViewById<Button>(R.id.btnBackDetail).setOnClickListener { finish() }
-        findViewById<Button>(R.id.btnRouteCorrection).setOnClickListener {
+        findViewById<Button>(R.id.btnBackDetail).visibility = View.GONE
+        // Keep route correction fixed at the bottom while the stops list scrolls.
+        val scroll = (findViewById<android.view.ViewGroup>(android.R.id.content).getChildAt(0) as? ScrollView)
+        val correctionButton = findViewById<Button>(R.id.btnRouteCorrection)
+        if (scroll != null && scroll.childCount > 0 && correctionButton.parent is ViewGroup) {
+            val page = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            (scroll.parent as? ViewGroup)?.removeView(scroll)
+            (correctionButton.parent as ViewGroup).removeView(correctionButton)
+            page.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+            correctionButton.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            correctionButton.setPadding(16, 12, 16, 12)
+            page.addView(correctionButton)
+            setContentView(page)
+        }
+        correctionButton.setOnClickListener {
             val id = intent.getStringExtra("ROUTE_ID") ?: return@setOnClickListener
             startActivity(android.content.Intent(this, com.bustime.app.ui.community.CommunityRequestActivity::class.java)
                 .putExtra("mode", "correction")
@@ -85,6 +100,10 @@ class RouteDetailActivity : AppCompatActivity() {
                 val row = inflater.inflate(R.layout.item_stop, container, false)
                 row.findViewById<TextView>(R.id.tvStopTime).text = TimeFormat.format(s.time)
                 row.findViewById<TextView>(R.id.tvStopName).text = name(s.placeId)
+                if (i == 0) {
+                    row.findViewById<TextView>(R.id.tvStopTime).textSize = 18f
+                    row.findViewById<TextView>(R.id.tvStopName).textSize = 18f
+                }
                 row.findViewById<View>(R.id.lineTop).visibility = if (i == 0) View.INVISIBLE else View.VISIBLE
                 row.findViewById<View>(R.id.lineBottom).visibility = if (i == stops.size - 1) View.INVISIBLE else View.VISIBLE
                 val day = days[i]
