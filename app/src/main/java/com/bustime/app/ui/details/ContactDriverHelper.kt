@@ -32,12 +32,12 @@ class ContactDriverHelper(private val context: Context) : TextToSpeech.OnInitLis
         if (isInitialized) {
             // आवाज़ प्ले करें
             tts?.speak(disclaimerText, TextToSpeech.QUEUE_FLUSH, null, null)
-            Toast.makeText(context, "Playing AI Disclaimer...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.bustime.app.R.string.contact_ai_disclaimer), Toast.LENGTH_SHORT).show()
             
             // (भविष्य का काम: यहाँ हम आवाज़ खत्म होने के बाद नंबर स्क्रीन पर दिखाएंगे या डायलर खोलेंगे)
             
         } else {
-            Toast.makeText(context, "Voice engine is loading, please try again...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.bustime.app.R.string.contact_voice_loading), Toast.LENGTH_SHORT).show()
         }
     }
     
