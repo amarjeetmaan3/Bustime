@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
 import com.bustime.app.models.Driver
 import com.bustime.app.utils.ContactActions
+import com.bustime.app.utils.AnalyticsHelper
 
 /**
  * टैक्सी और ऑटो की लिस्ट। मोबाइल नंबर पहले छिपा रहता है:
@@ -93,8 +94,8 @@ class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
                 holder.tvNotice.visibility = View.GONE
                 holder.layoutRevealed.visibility = View.VISIBLE
                 holder.tvNumber.text = "${d.name}  ·  ${d.phone}"
-                holder.btnCall.setOnClickListener { ContactActions.dial(it.context, d.phone) }
-                holder.btnWhatsApp.setOnClickListener { ContactActions.whatsapp(it.context, d.phone) }
+                holder.btnCall.setOnClickListener { AnalyticsHelper.logEvent(it.context, "contact_call_tap", d.type); ContactActions.dial(it.context, d.phone) }
+                holder.btnWhatsApp.setOnClickListener { AnalyticsHelper.logEvent(it.context, "contact_whatsapp_tap", d.type); ContactActions.whatsapp(it.context, d.phone) }
             }
             d.id in pending -> {
                 holder.btnShow.visibility = View.GONE
@@ -105,7 +106,7 @@ class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
                 holder.btnShow.visibility = View.VISIBLE
                 holder.tvNotice.visibility = View.GONE
                 holder.layoutRevealed.visibility = View.GONE
-                holder.btnShow.setOnClickListener { startReveal(d.id) }
+                holder.btnShow.setOnClickListener { AnalyticsHelper.logEvent(it.context, "contact_reveal_tap", d.type); startReveal(d.id) }
             }
         }
     }
