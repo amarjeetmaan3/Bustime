@@ -86,6 +86,14 @@
 
 
   /* Professional console refresh */
+  .nav button { line-height:1.25; }
+  .bus-route-stats { grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); }
+  .bus-route-stat { align-items:flex-start; }
+  .bus-route-stat .btn { display:block; margin-top:10px; }
+  .bus-page-head .btn { white-space:nowrap; }
+  .request-card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  @media (max-width:860px) { .bus-route-stats { grid-template-columns:1fr; } }
+
   :root { --brand:#2458D3; --brand-d:#173B91; --brand-l:#EAF0FF; --bg:#F5F7FB; --line:#E5EAF2; --text:#182230; --muted:#66758A; }
   body { background:var(--bg); color:var(--text); font-size:14px; letter-spacing:.005em; }
   .app { min-height:100vh; }
@@ -211,9 +219,17 @@ var editing = null;
 var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
-var NAV = [['dashboard','Dashboard'], ['places','Places'], ['routes','Bus Routes'],
-           ['seats','Taxi Seats'], ['drivers','Drivers'], ['review','Review Center'], ['settings','Settings']];
-var TITLES = { dashboard:'Dashboard', places:'Places', routes:'Bus Routes', seats:'Taxi Seats', drivers:'Drivers', review:'Review Center', settings:'Settings' };
+var NAV = [
+  ['dashboard','Dashboard'], ['places','Places'], ['routes','Bus Routes'],
+  ['busRequests','Bus Route Requests'], ['taxiReview','Taxi'], ['autoReview','Auto'],
+  ['addBus','Add Bus'], ['corrections','Corrections'], ['review','Review Center'],
+  ['seats','Taxi Seats'], ['drivers','Drivers'], ['settings','Settings']
+];
+var TITLES = {
+  dashboard:'Dashboard', places:'Places', routes:'Bus Routes', busRequests:'Bus Route Requests',
+  taxiReview:'Taxi Requests', autoReview:'Auto Requests', addBus:'Add Bus',
+  corrections:'Corrections', review:'Review Center', seats:'Taxi Seats', drivers:'Drivers', settings:'Settings'
+};
 
 // ============ Helpers ============
 function $(s) { return document.querySelector(s); }
@@ -381,12 +397,16 @@ function render() {
   }).join('');
   refreshChrome();
   var v = $('#view');
-  if (tab !== 'settings' && !data) {
-    v.innerHTML = '<div class="card"><h2>No data loaded</h2><p class="muted">Open Settings and load the data from GitHub first.</p>' +
-      '<button class="btn primary" data-act="tab" data-t="settings">Go to Settings</button></div>';
+  var dataTabs = ['dashboard','places','routes','seats','drivers'];
+  if (dataTabs.indexOf(tab) >= 0 && !data) {
+    v.innerHTML = '<div class="card"><h2>Load route data first</h2><p class="muted">Open Settings and load the data from GitHub. Submission review tabs can be opened independently after Supabase sign-in.</p>' +
+      '<button class="btn primary" data-act="tab" data-t="settings">Open Settings</button></div>';
   } else {
-    v.innerHTML = { dashboard: viewDashboard, places: viewPlaces, routes: viewRoutes,
-                    seats: viewSeats, drivers: viewDrivers, review: viewReview, settings: viewSettings }[tab]();
+    var views = { dashboard:viewDashboard, places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers,
+      busRequests:viewBusRequests, taxiReview:function(){return viewCommunity('taxi');},
+      autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
+      corrections:function(){return viewCommunity('corrections');}, review:viewReview, settings:viewSettings };
+    v.innerHTML = (views[tab] || viewDashboard)();
   }
   renderModal();
 }
@@ -685,8 +705,32 @@ async function loadCommunity() {
   community._failed = failed;
   if (failed.length) toast('Some tables could not load: ' + failed.join('; ') + '. Run supabase/fix_app_admin_sync.sql in Supabase SQL Editor, then Refresh.');
 }
-function viewCommunity() {
-  if (!sbToken) return viewReview();
+function viewSupabaseSignIn() {
+  return '<div class="bus-page-head"><div><h2>Supabase sign-in</h2><p class="muted">Sign in with the admin account to load and review submitted information.</p></div></div>' +
+    '<div class="card" style="max-width:680px"><label>Project URL</label><input id="sb_url" value="' + esc(cfg.sbUrl) + '" placeholder="https://xxxx.supabase.co">' +
+    '<label>Anon (public) key</label><input id="sb_key" value="' + esc(cfg.sbKey) + '">' +
+    '<div class="row2"><div><label>Email</label><input id="sb_email" value="' + esc(cfg.sbEmail) + '"></div><div><label>Password</label><input id="sb_pass" type="password"></div></div>' +
+    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="sb-login">Sign in</button></div></div>';
+}
+function viewBusRequests() {
+  if (!sbToken) return viewSupabaseSignIn();
+  if (!subs) return '<div class="card"><p class="muted">Loading bus route submissions…</p><button class="btn" data-act="sb-refresh">Refresh</button></div>';
+  var counts={pending:0,approved:0,rejected:0};
+  subs.forEach(function(x){if(counts[x.status]!==undefined) counts[x.status]++;});
+  var html='<div class="bus-page-head"><div><h2>Bus Route Requests</h2><p class="muted">New public route submissions are reviewed here. Approval updates route data; publish when you are ready to make approved changes live.</p></div><div><button class="btn" data-act="sb-refresh">Refresh</button> <button class="btn" data-act="sb-logout">Sign out</button></div></div>';
+  html+='<div class="chips">'+['pending','approved','rejected'].map(function(st){return '<button class="btn '+(reviewStatus===st?'primary':'')+'" data-act="review-status" data-status="'+st+'">'+st[0].toUpperCase()+st.slice(1)+' <span class="badge gray">'+counts[st]+'</span></button>';}).join('')+'</div>';
+  var rows=subs.map(function(x,i){return {s:x,index:i};}).filter(function(x){return x.s.status===reviewStatus;});
+  if(!rows.length) return html+'<div class="card"><h2>No '+esc(reviewStatus)+' route requests</h2><p class="muted">There are no submissions in this status right now.</p></div>';
+  return html+rows.map(function(x){
+    var r=x.s, from=r.from_text||pname(placeById(r.from_id))||r.from_id||'Missing start', to=r.to_text||pname(placeById(r.to_id))||r.to_id||'Missing destination';
+    return '<div class="card" data-sub="'+x.index+'"><div class="bus-page-head"><div><h2>'+esc(from)+' <span class="muted">→</span> '+esc(to)+'</h2><p class="muted">Submitted '+esc(new Date(r.created_at).toLocaleString())+' · '+esc(r.phone||'No phone')+'</p></div><span class="badge">'+esc(r.status)+'</span></div>'+
+      '<div class="row2"><div><label>Service</label><div>'+(esc(r.service_name||'Not provided'))+'</div></div><div><label>Departure</label><div><b>'+esc(r.start_time||'Not provided')+'</b>'+(r.long_route?' · Long route':'')+'</div></div></div>'+
+      '<label>Stops and timings</label>'+((r.stops||[]).map(function(st){return '<div class="stoprow"><span class="grow">'+esc(st.name||pname(placeById(st.place))||st.place||'Unnamed stop')+'</span><span class="route-time">'+esc(st.time||'Time unknown')+'</span></div>';}).join('')||'<p class="muted">No intermediate stops included.</p>')+
+      '<div class="dlg-foot" style="justify-content:flex-start">'+(r.status==='pending'?'<button class="btn primary" data-act="sb-approve" data-i="'+x.index+'">Approve</button><button class="btn danger" data-act="sb-reject" data-i="'+x.index+'">Reject</button>':'<span class="muted">Request retained for reference.</span>')+'</div></div>';
+  }).join('');
+}
+function viewCommunity(mode) {
+  if (!sbToken) return viewSupabaseSignIn();
   if (!community.corrections || !community.vehicles || !community.feedback || !community.busSubmissions || !community.operators) {
     return '<div class="card"><p class="muted">Loading community requests…</p><button class="btn" data-act="community-refresh">Refresh</button></div>';
   }
@@ -709,7 +753,14 @@ function viewCommunity() {
   if (community._failed && community._failed.length) html = '<div class="card" style="border-color:#c0392b"><b>Some tables failed to load:</b><br>' + community._failed.map(esc).join('<br>') + '<br><span class="muted">These tables are missing from Supabase. Run supabase/fix_app_admin_sync.sql in SQL Editor, confirm Success, then press Refresh.</span></div>' + html;
   var selectedCounts = communitySection === 'all' ? all.reduce(function(total,x){ if(total[x.status] !== undefined) total[x.status]++; return total; }, {pending:0,approved:0,rejected:0}) : (counts[communitySection] || {pending:0,approved:0,rejected:0});
   html += '<div class="toolbar">' + ['pending','approved','rejected'].map(function(st){ return '<button class="btn '+(communityStatus===st?'primary':'')+'" data-act="community-status" data-status="'+st+'">'+st[0].toUpperCase()+st.slice(1)+' ('+selectedCounts[st]+')</button>'; }).join('') + '</div>';
-  var filtered = all.filter(function(x){return (communitySection==='all' || x._kind===communitySection) && x.status===communityStatus;});
+  var filtered = all.filter(function(x){
+    var matchesMode = mode === 'taxi' ? (x._kind === 'vehicles' && x.vehicle_type === 'taxi' || x._kind === 'feedback' && /taxi/i.test((x.category||'')+' '+(x.message||''))) :
+      mode === 'auto' ? (x._kind === 'vehicles' && x.vehicle_type === 'auto' || x._kind === 'feedback' && /auto|rickshaw/i.test((x.category||'')+' '+(x.message||''))) :
+      mode === 'bus' ? x._kind === 'busSubmissions' :
+      mode === 'corrections' ? (x._kind === 'corrections' || x._kind === 'feedback' && /correct/i.test((x.category||'')+' '+(x.message||''))) :
+      (communitySection === 'all' || x._kind === communitySection);
+    return matchesMode && x.status === communityStatus;
+  });
   if (!filtered.length) html += '<div class="card"><p class="muted">No '+esc(communityStatus)+' requests match this filter.</p></div>';
   filtered.forEach(function(x){
     var details = '';
@@ -727,24 +778,39 @@ function viewCommunity() {
     var actions = x.status==='pending' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
     html += '<div class="card"><h2>'+esc(x._label)+' · '+esc(x.request_type||x.vehicle_type||x.category||'Request')+'</h2><p class="muted">'+esc(new Date(x.created_at).toLocaleString())+' · ID '+esc(x.id)+'</p>'+details+'<div class="dlg-foot" style="justify-content:flex-start">'+actions+'</div></div>';
   });
-  html += '<div class="card"><h2>Bus Operator Directory — published listings</h2><p class="muted">This section manages operator profiles only. It is separate from scheduled Bus Routes and is not a customer charter-booking request queue.</p>'+
-    '<div class="row2"><div><label>Operator name</label><input id="op_name"></div><div><label>Service name</label><input id="op_service"></div></div>'+
-    '<div class="row2"><div><label>Bus type / custom category</label><input id="op_type" placeholder="AC / Sleeper / Prime A"></div><div><label>Phone</label><input id="op_phone"></div></div>'+
-    '<div class="row2"><div><label>Seat configuration</label><input id="op_seat_type" placeholder="Sleeper / Seater / Both"></div><div><label>WhatsApp</label><input id="op_whatsapp"></div></div>'+
-    '<div class="row2"><div><label>Sleeper berths</label><input id="op_sleeper_count" type="number" min="0"></div><div><label>Seats</label><input id="op_seater_count" type="number" min="0"></div></div>'+
-    '<div class="row2"><div><label>From</label><input id="op_from"></div><div><label>To</label><input id="op_to"></div></div>'+
-    '<label>Operating area</label><input id="op_location"><label>Details</label><input id="op_details"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-add">Add operator</button></div>';
-  html += '<div class="tablewrap"><table><thead><tr><th>Operator</th><th>Service / type</th><th>Route</th><th>Phone</th><th>Visibility</th><th></th></tr></thead><tbody>' +
-    community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||'-')+' / '+esc(o.bus_type)+'</td><td>'+esc(o.from_text||'-')+' → '+esc(o.to_text||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
+  if (mode === 'bus') {
+    html += '<div class="card"><h2>Published Bus Operator Directory</h2><p class="muted">Public operator information only. This is separate from scheduled routes and is not a booking queue.</p>'+
+      '<div class="row2"><div><label>Operator name</label><input id="op_name"></div><div><label>Service name</label><input id="op_service"></div></div>'+
+      '<div class="row2"><div><label>Bus type / custom category</label><input id="op_type" placeholder="AC / Sleeper / Prime A"></div><div><label>Phone</label><input id="op_phone"></div></div>'+
+      '<div class="row2"><div><label>Seat configuration</label><input id="op_seat_type" placeholder="Sleeper / Seater / Both"></div><div><label>WhatsApp</label><input id="op_whatsapp"></div></div>'+
+      '<div class="row2"><div><label>Sleeper berths</label><input id="op_sleeper_count" type="number" min="0"></div><div><label>Seats</label><input id="op_seater_count" type="number" min="0"></div></div>'+
+      '<div class="row2"><div><label>From</label><input id="op_from"></div><div><label>To</label><input id="op_to"></div></div>'+
+      '<label>Operating area</label><input id="op_location"><label>Details</label><input id="op_details"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-add">Add operator</button></div></div>';
+    html += '<div class="card"><h2>Published operator listings <span class="badge gray">' + community.operators.length + '</span></h2><div class="tablewrap"><table><thead><tr><th>Operator</th><th>Service / type</th><th>Route</th><th>Phone</th><th>Visibility</th><th></th></tr></thead><tbody>' +
+      community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||'-')+' / '+esc(o.bus_type)+'</td><td>'+esc(o.from_text||'-')+' → '+esc(o.to_text||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
+  }
   return html;
-}
 function viewReview() {
-  if (!sbToken) return viewRouteReview();
-  var routeHtml = viewRouteReview();
-  var communityHtml = viewCommunity();
-  return '<div class="card review-intro"><h2>Review Center</h2><p class="muted">All incoming route submissions, corrections, taxi/auto listings, bus operator listings and feedback are reviewed here. Published data remains managed in its own section.</p></div>' +
-    '<section class="review-group"><h2 class="review-group-title">Bus route submissions</h2>' + routeHtml + '</section>' +
-    '<section class="review-group"><h2 class="review-group-title">Other requests & feedback</h2>' + communityHtml + '</section>';
+  if (!sbToken) return viewSupabaseSignIn();
+  var all = [];
+  [['corrections','Route corrections'],['vehicles','Taxi / Auto submissions'],['feedback','Feedback'],['busSubmissions','Add Bus']].forEach(function(pair){
+    (community[pair[0]]||[]).forEach(function(x){all.push(x);});
+  });
+  var pendingRoutes=(subs||[]).filter(function(x){return x.status==='pending';}).length;
+  var pendingCorrections=all.filter(function(x){return x.status==='pending' && (x._kind==='corrections' || x._kind==='feedback' && /correct/i.test((x.category||'')+' '+(x.message||'')));}).length;
+  var pendingTaxi=all.filter(function(x){return x.status==='pending' && (x._kind==='vehicles' && x.vehicle_type==='taxi' || x._kind==='feedback' && /taxi/i.test((x.category||'')+' '+(x.message||'')));}).length;
+  var pendingAuto=all.filter(function(x){return x.status==='pending' && (x._kind==='vehicles' && x.vehicle_type==='auto' || x._kind==='feedback' && /auto|rickshaw/i.test((x.category||'')+' '+(x.message||'')));}).length;
+  var pendingBus=all.filter(function(x){return x.status==='pending' && x._kind==='busSubmissions';}).length;
+  var pendingFeedback=all.filter(function(x){return x.status==='pending' && x._kind==='feedback';}).length;
+  return '<div class="bus-page-head"><div><h2>Review Center</h2><p class="muted">A clear overview of incoming information. Open the relevant section to review each request type; nothing here is a booking queue.</p></div><button class="btn" data-act="community-refresh">Refresh all</button></div>'+
+    '<div class="bus-route-stats">'+
+    '<div class="bus-route-stat"><div class="iconbox">↗</div><div><strong>'+pendingRoutes+'</strong><span>Pending bus route requests</span><button class="btn sm" data-act="tab" data-t="busRequests">Open requests →</button></div></div>'+
+    '<div class="bus-route-stat"><div class="iconbox">✓</div><div><strong>'+pendingCorrections+'</strong><span>Pending corrections</span><button class="btn sm" data-act="tab" data-t="corrections">Review corrections →</button></div></div>'+
+    '<div class="bus-route-stat"><div class="iconbox">T</div><div><strong>'+pendingTaxi+'</strong><span>Pending taxi items</span><button class="btn sm" data-act="tab" data-t="taxiReview">Open taxi →</button></div></div>'+
+    '<div class="bus-route-stat"><div class="iconbox">A</div><div><strong>'+pendingAuto+'</strong><span>Pending auto items</span><button class="btn sm" data-act="tab" data-t="autoReview">Open auto →</button></div></div>'+
+    '<div class="bus-route-stat"><div class="iconbox">B</div><div><strong>'+pendingBus+'</strong><span>Pending Add Bus submissions</span><button class="btn sm" data-act="tab" data-t="addBus">Open Add Bus →</button></div></div>'+
+    '<div class="bus-route-stat"><div class="iconbox">✉</div><div><strong>'+pendingFeedback+'</strong><span>Pending feedback</span><button class="btn sm" data-act="tab" data-t="corrections">Open review →</button></div></div>'+
+    '</div><div class="card"><h2>How requests are organized</h2><p class="muted">Bus route submissions, taxi and auto submissions, corrections, and Add Bus operator submissions now have separate navigation tabs. Review Center is an overview instead of a long mixed list.</p></div>';
 }
 function communityTable(kind) { return kind==='corrections'?'correction_submissions':kind==='vehicles'?'vehicle_submissions':kind==='busSubmissions'?'bus_operator_submissions':'feedback_submissions'; }
 function applyApprovedCorrection(x) {
@@ -851,7 +917,7 @@ document.addEventListener('click', async function (e) {
   try {
     if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; publishOpen = false; render();
-      if (tab === 'review' && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
+      if (['review','busRequests','taxiReview','autoReview','addBus','corrections'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
     else if (act === 'close') { editing = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
