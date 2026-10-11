@@ -94,13 +94,14 @@ class BookBusActivity : AppCompatActivity() {
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) { renderArea("") }
             }
             renderArea("")
+            // Keep Add Your Bus outside results because renderArea() clears results on each area selection.
             val addBus = com.google.android.material.button.MaterialButton(this@BookBusActivity).apply {
                 text = "Add Your Bus"
                 setOnClickListener {
                     startActivity(Intent(this@BookBusActivity, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "bus_operator"))
                 }
             }
-            results.addView(addBus, LinearLayout.LayoutParams(-1, -2).apply { topMargin = 16 })
+            root.addView(addBus, LinearLayout.LayoutParams(-1, -2).apply { topMargin = 16 })
         }
     }
 }
