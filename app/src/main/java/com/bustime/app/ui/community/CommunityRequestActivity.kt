@@ -212,7 +212,6 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("operator_name", operator)
                 .put("service_name", value("service_name").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("bus_type", if (category == "Custom") custom else category)
-                .put("custom_category", custom.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("seat_type", seatsType ?: JSONObject.NULL)
                 .put("sleeper_count", sleeper ?: JSONObject.NULL)
                 .put("seater_count", seater ?: JSONObject.NULL)
@@ -296,7 +295,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             val results = withContext(Dispatchers.IO) { bodies.map { CommunitySupabase.insert(table, it) } }
             root.isEnabled = true
             if (results.all { it }) { toast(success); finish() }
-            else toast("Could not send all requests. Check internet and try again; no request was merged with another.")
+            else toast("Could not send all requests. Check internet and try again.\n" + CommunitySupabase.lastError)
         }
     }
 
