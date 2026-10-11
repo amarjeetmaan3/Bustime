@@ -113,8 +113,11 @@ object SnapshotImporter {
                 driverSeats.add(seats)
             }
             val fuel = if (type == "auto") clean(d.fuel)?.lowercase()?.takeIf { it == "ev" || it == "oil" } else null
-            val area = clean(d.area)?.takeIf { places.containsKey(it) }
-            drivers.add(Driver(id, type, name, phone, clean(d.vehicle), seats, fuel, listOfNotNull(clean(d.info), clean(d.unionName)?.let { "Union: $it" }).joinToString(" · ").ifBlank { null }, area))
+            // Driver area is an independent free-text service area, not a bus Place ID.
+            // Old records containing a bus-place ID are deliberately ignored until corrected.
+            val rawArea = clean(d.area)
+            val area = rawArea?.takeUnless { places.containsKey(it) }
+            drivers.add(Driver(id, type, name, phone, clean(d.vehicle), seats, fuel, clean(d.info), area))
         }
 
         // सीटर के विकल्प वही दिखेंगे जो तुमने taxiSeaters में लिखे हैं (जिस सीटर की गाड़ी नहीं, उसे सूची से हटा दो)।
