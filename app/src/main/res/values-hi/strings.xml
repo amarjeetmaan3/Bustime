@@ -90,4 +90,16 @@
     <string name="bb_whatsapp">व्हाट्सऐप</string>
     <string name="bb_call_error">फ़ोन डायलर नहीं खुल सका</string>
     <string name="bb_whatsapp_error">व्हाट्सऐप नहीं खुल सका</string>
+
+    <!-- Area picker, Add Route tabs, route dates -->
+    <string name="select_area">अपना शहर और इलाका चुनें</string>
+    <string name="all_areas">सारे इलाके</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="next_day_format">अगला दिन · %1$s</string>
+    <string name="ar_mode_existing">मौजूदा रूट</string>
+    <string name="ar_mode_new">नया रूट</string>
+    <string name="ar_existing_route_intro">ऐप में पहले से मौजूद रूट पर दूसरी बस या अलग समय। रूट चुनें और जो समय पता हो भरें।</string>
+    <string name="ar_time_order">यह समय पिछले पड़ाव से पहले का है। आधी रात के बाद का समय तभी ठीक है जब पूरा सफ़र 16 घंटे के अंदर हो; कृपया समय जाँचें।</string>
+    <string name="ar_pick_route">कृपया एक रूट चुनें</string>
+    <string name="ar_need_time">कम से कम एक समय दें</string>
 </resources>
