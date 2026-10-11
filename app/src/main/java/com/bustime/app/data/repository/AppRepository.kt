@@ -39,11 +39,6 @@ class AppRepository private constructor(context: Context) {
         else dao.searchPlaces(q, if (standsOnly) "stand" else null, limit)
     }
 
-    suspend fun searchAreaPlaces(text: String, limit: Int = 80, allowEmpty: Boolean = false): List<Place> = query {
-        val q = TextNormalizer.normalize(text)
-        if (q.isEmpty() && !allowEmpty) emptyList() else dao.searchAreaPlaces(q, limit)
-    }
-
     suspend fun getPlacesById(ids: Collection<String>): Map<String, Place> = query {
         if (ids.isEmpty()) emptyMap() else dao.getPlaces(ids.toList()).associateBy { it.id }
     }
@@ -65,7 +60,10 @@ class AppRepository private constructor(context: Context) {
     // ---------- टैक्सी / ऑटो ----------
     suspend fun getSeaterGroups(): List<Int> = query { dao.getSeaterGroups() }
 
-    // areaId: null = सारे इलाके, वरना सिर्फ़ उसी शहर/इलाके की गाड़ियाँ
+    /** Areas are taken only from Taxi/Auto driver records, not from bus stops. */
+    suspend fun getDriverAreas(): List<String> = query { dao.getDriverAreas() }
+
+    // areaId: null = no area selected; UI must show no drivers until an area is selected.
     suspend fun getTaxis(seats: Int, areaId: String? = null): List<Driver> = query { dao.getDrivers("taxi", seats, null, areaId) }
 
     // fuel: null = सारे, "ev" या "oil"
