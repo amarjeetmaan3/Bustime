@@ -47,22 +47,15 @@ class CommunityRequestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mode = intent.getStringExtra("mode") ?: "feedback"
-        title = when (mode) {
-            "correction" -> "Bus Route Correction"
-            "auto_correction" -> "Auto Correction"
-            "taxi_correction" -> "Taxi Correction"
-            "vehicle" -> "List Auto / Taxi"
-            else -> "Feedback"
-        }
+        title = when (mode) { "correction" -> "Route Correction"; "vehicle" -> "Add Auto / Taxi"; "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") "Taxi Correction" else "Auto Correction"; else -> "Feedback" }
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll)
         text("${title}\nYour submission will be reviewed by the admin before it affects the public app.", 18f)
         when (mode) {
             "correction" -> loadCorrectionForm()
-            "auto_correction" -> vehicleCorrectionForm("Auto")
-            "taxi_correction" -> vehicleCorrectionForm("Taxi")
             "vehicle" -> vehicleForm()
+            "vehicle_correction" -> vehicleCorrectionForm()
             else -> feedbackForm()
         }
     }
@@ -76,11 +69,16 @@ class CommunityRequestActivity : AppCompatActivity() {
             allPlaces = repo.getAllPlaces()
             placeNames = allPlaces.associate { it.id to it.displayName(LanguageHelper.current()) }
             routeSpinner = spinner("Choose bus route", routes.map { routeLabel(it) })
+            val requestedRouteId = intent.getStringExtra("route_id")
             routeSpinner?.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                     lifecycleScope.launch { loadStopsFor(routes[position]) }
                 }
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            }
+            if (requestedRouteId != null) {
+                val requestedIndex = routes.indexOfFirst { it.id == requestedRouteId }
+                if (requestedIndex >= 0) routeSpinner?.setSelection(requestedIndex)
             }
             heading("What needs correction?")
             missingCheck = CheckBox(this@CommunityRequestActivity).apply { text = "Missing Stop"; isChecked = true }
@@ -153,40 +151,11 @@ class CommunityRequestActivity : AppCompatActivity() {
         sendRequests(jobs.map { it.second }, "correction_submissions", "Correction request(s) sent for admin review.")
     }
 
-    private fun vehicleCorrectionForm(vehicleType: String) {
-        text("Report incorrect or outdated $vehicleType details. Your request will be reviewed by the admin.", 14f)
-        field("correction_driver", "Driver / contact name (optional)")
-        field("correction_vehicle", "Vehicle name / model (optional)")
-        field("correction_location", "Location / stand / service area (optional)")
-        field("correction_old_phone", "Existing mobile number (optional)")
-        field("correction_problem", "What needs to be corrected? (required)")
-        field("correction_new_phone", "Correct mobile number (optional)")
-        button("Send $vehicleType correction") {
-            val problem = value("correction_problem")
-            if (problem.length < 4) {
-                toast("Please describe what needs correction.")
-                return@button
-            }
-            val message = buildString {
-                append("Vehicle type: ").append(vehicleType).append("\n")
-                append("Driver/contact: ").append(value("correction_driver").ifBlank { "Not provided" }).append("\n")
-                append("Vehicle/model: ").append(value("correction_vehicle").ifBlank { "Not provided" }).append("\n")
-                append("Location/stand: ").append(value("correction_location").ifBlank { "Not provided" }).append("\n")
-                append("Existing mobile: ").append(value("correction_old_phone").ifBlank { "Not provided" }).append("\n")
-                append("Requested correction: ").append(problem).append("\n")
-                append("Correct mobile (if applicable): ").append(value("correction_new_phone").ifBlank { "Not provided" })
-            }
-            val body = JSONObject()
-                .put("category", "$vehicleType correction")
-                .put("related_route", JSONObject.NULL)
-                .put("message", message)
-                .put("contact", digits(value("correction_new_phone")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-            sendRequests(listOf(body), "feedback_submissions", "$vehicleType correction sent for admin review.")
-        }
-    }
-
     private fun vehicleForm() {
-        spinner("Vehicle type", listOf("Auto", "Taxi"), "vehicle_type")
+        val requestedType = intent.getStringExtra("vehicle_type")
+        val typeSpinner = spinner("Vehicle type", listOf("Auto", "Taxi"), "vehicle_type")
+        if (requestedType == "taxi") typeSpinner.setSelection(1)
+        if (requestedType == "auto" || requestedType == "taxi") typeSpinner.visibility = View.GONE
         field("person_name", "Driver / contact person name")
         field("vehicle_name", "Vehicle name / model")
         field("seats", "Number of seats (if applicable)")
@@ -202,6 +171,54 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("seats", seats ?: JSONObject.NULL).put("location", value("location"))
                 .put("phone", phone).put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             sendRequests(listOf(body), "vehicle_submissions", "Listing sent for admin review.")
+        }
+    }
+
+    private fun vehicleCorrectionForm() {
+        val type = intent.getStringExtra("vehicle_type")?.takeIf { it == "taxi" || it == "auto" } ?: "auto"
+        val driverId = intent.getStringExtra("driver_id").orEmpty()
+        val driverName = intent.getStringExtra("driver_name").orEmpty()
+        val driverVehicle = intent.getStringExtra("driver_vehicle").orEmpty()
+        val driverPhone = intent.getStringExtra("driver_phone").orEmpty()
+        val driverSeats = intent.getIntExtra("driver_seats", -1)
+        val driverFuel = intent.getStringExtra("driver_fuel").orEmpty()
+        val driverInfo = intent.getStringExtra("driver_info").orEmpty()
+        text("Correct details for this ${type.uppercase(Locale.ROOT)} listing. Your request will be reviewed by the admin.", 14f)
+        text("Driver: $driverName · Vehicle: $driverVehicle", 16f, true)
+        field("correction_name", "Correct driver / contact name").setText(driverName)
+        field("correction_vehicle", "Correct vehicle name / model").setText(driverVehicle)
+        field("correction_phone", "Correct mobile number").setText(driverPhone)
+        if (type == "taxi") field("correction_seats", "Correct number of seats").setText(if (driverSeats > 0) driverSeats.toString() else "")
+        else field("correction_fuel", "Correct fuel type (EV or Oil)").setText(driverFuel)
+        field("correction_info", "Correct other details").setText(driverInfo)
+        field("correction_note", "Explain what needs correction")
+        button("Send correction request") {
+            val name = value("correction_name")
+            val vehicle = value("correction_vehicle")
+            val phone = digits(value("correction_phone"))
+            val detail = value("correction_note")
+            if (name.isBlank() || vehicle.isBlank() || phone.length !in 10..13 || detail.length < 4) {
+                toast("Enter corrected name, vehicle, valid phone and explain the correction."); return@button
+            }
+            val details = buildString {
+                append("Vehicle correction request\nType: ").append(type)
+                append("\nDriver ID: ").append(driverId)
+                append("\nCurrent name: ").append(driverName)
+                append("\nProposed name: ").append(name)
+                append("\nCurrent vehicle: ").append(driverVehicle)
+                append("\nProposed vehicle: ").append(vehicle)
+                append("\nCurrent phone: ").append(driverPhone)
+                append("\nProposed phone: ").append(phone)
+                if (type == "taxi") append("\nProposed seats: ").append(value("correction_seats"))
+                else append("\nProposed fuel: ").append(value("correction_fuel"))
+                append("\nProposed other details: ").append(value("correction_info"))
+                append("\nRequested correction: ").append(detail)
+            }
+            val body = JSONObject().put("category", if (type == "taxi") "Taxi correction" else "Auto correction")
+                .put("related_route", driverId.ifBlank { driverName })
+                .put("message", details)
+                .put("contact", phone)
+            sendRequests(listOf(body), "feedback_submissions", "Correction request sent for admin review.")
         }
     }
 
@@ -234,7 +251,7 @@ class CommunityRequestActivity : AppCompatActivity() {
     private fun routeLabel(route: Route): String = "${placeNames[route.fromId] ?: route.fromId} → ${placeNames[route.toId] ?: route.toId} (${route.time})"
     private fun heading(s: String) { text(s, 16f, true) }
     private fun text(s: String, size: Float, bold: Boolean = false) { root.addView(TextView(this).apply { text = s; textSize = size; if (bold) setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, dp(10), 0, dp(5)) }) }
-    private fun field(key: String, hint: String) { val e = EditText(this).apply { this.hint = hint; textSize = 16f; setPadding(dp(12), dp(10), dp(12), dp(10)) }; fields[key] = e; root.addView(e) }
+    private fun field(key: String, hint: String): EditText { val e = EditText(this).apply { this.hint = hint; textSize = 16f; setPadding(dp(12), dp(10), dp(12), dp(10)) }; fields[key] = e; root.addView(e); return e }
     private fun spinner(hint: String, options: List<String>, key: String? = null): Spinner {
         val s = Spinner(this); s.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (options.isEmpty()) listOf("Loading stops…") else options)
         root.addView(s); if (key != null) spinners[key] = s; return s
