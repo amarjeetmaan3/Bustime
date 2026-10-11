@@ -60,10 +60,11 @@ class AppRepository private constructor(context: Context) {
     // ---------- टैक्सी / ऑटो ----------
     suspend fun getSeaterGroups(): List<Int> = query { dao.getSeaterGroups() }
 
-    suspend fun getTaxis(seats: Int): List<Driver> = query { dao.getDrivers("taxi", seats, null) }
+    // areaId: null = सारे इलाके, वरना सिर्फ़ उसी शहर/इलाके की गाड़ियाँ
+    suspend fun getTaxis(seats: Int, areaId: String? = null): List<Driver> = query { dao.getDrivers("taxi", seats, null, areaId) }
 
     // fuel: null = सारे, "ev" या "oil"
-    suspend fun getAutos(fuel: String? = null): List<Driver> = query { dao.getDrivers("auto", null, fuel) }
+    suspend fun getAutos(fuel: String? = null, areaId: String? = null): List<Driver> = query { dao.getDrivers("auto", null, fuel, areaId) }
 
     companion object {
         @Volatile
