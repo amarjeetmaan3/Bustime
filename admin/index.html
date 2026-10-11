@@ -131,6 +131,17 @@
   tbody tr:hover { background:#FAFBFE; }
   td.actions .btn { margin-left:4px; }
   .stats { gap:14px; }
+  .analytics-empty { min-height:190px; border:1px dashed #CFD8E8; border-radius:12px; padding:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .analytics-bars { height:78px; width:100%; max-width:320px; display:flex; align-items:flex-end; justify-content:center; gap:12px; margin-bottom:18px; opacity:.45; }
+  .analytics-bars i { display:block; width:22px; height:22%; background:#A8BCEB; border-radius:5px 5px 0 0; }
+  .analytics-bars i:nth-child(2) { height:45%; } .analytics-bars i:nth-child(3) { height:32%; }
+  .analytics-bars i:nth-child(4) { height:68%; } .analytics-bars i:nth-child(5) { height:52%; }
+  .analytics-bars i:nth-child(6) { height:82%; } .analytics-bars i:nth-child(7) { height:60%; }
+  .analytics-bars.horizontal { height:auto; flex-direction:column; align-items:stretch; gap:10px; opacity:.55; }
+  .analytics-bars.horizontal i { height:12px; width:35%; border-radius:6px; }
+  .analytics-bars.horizontal i:nth-child(2) { width:58%; } .analytics-bars.horizontal i:nth-child(3) { width:24%; }
+  #analyticsPeriod { min-width:170px; }
+
   .stat { border-radius:14px; padding:19px; box-shadow:0 4px 16px rgba(22,34,55,.03); }
   .stat b { font-size:30px; letter-spacing:-.04em; }
   .badge { border-radius:7px; padding:4px 8px; font-size:11px; }
@@ -226,11 +237,11 @@ var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
 var NAV = [
-  ['dashboard','Dashboard'], ['bus','Bus'], ['taxi','Taxi'],
+  ['dashboard','Dashboard'], ['analytics','▮ Analytics & Stats'], ['bus','Bus'], ['taxi','Taxi'],
   ['auto','Auto'], ['review','Review Center'], ['settings','Settings']
 ];
 var TITLES = {
-  dashboard:'Dashboard', bus:'Bus', taxi:'Taxi', auto:'Auto', places:'Bus · Places',
+  dashboard:'Dashboard', analytics:'Analytics & Stats', bus:'Bus', taxi:'Taxi', auto:'Auto', places:'Bus · Places',
   routes:'Bus · Routes', busRequests:'Bus · Route Requests', addBus:'Bus · Add Your Bus',
   taxiReview:'Taxi · Submissions', autoReview:'Auto · Submissions', seats:'Taxi · Seat Options',
   drivers:'Taxi · Directory', autoDrivers:'Auto · Directory', corrections:'Review Center · Corrections',
@@ -405,7 +416,7 @@ function render() {
   refreshChrome();
   var v = $('#view');
   var dataTabs = ['dashboard','bus','taxi','auto','places','routes','seats','drivers','autoDrivers'];
-  var views = { dashboard:viewDashboard, bus:viewBusHome, taxi:viewTaxiHome, auto:viewAutoHome,
+  var views = { dashboard:viewDashboard, analytics:viewAnalytics, bus:viewBusHome, taxi:viewTaxiHome, auto:viewAutoHome,
     places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers, autoDrivers:viewDrivers,
     busRequests:viewBusRequests, taxiReview:function(){return viewCommunity('taxi');},
     autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
@@ -467,6 +478,34 @@ function viewDashboard() {
     'The app picks up the new data the next time it opens. No new APK is needed for data changes.</p></div>';
 }
 function stat(n, label) { return '<div class="stat"><b>' + n + '</b><span>' + esc(label) + '</span></div>'; }
+
+function viewAnalytics() {
+  return '<div class="bus-page-head"><div><h2>Analytics &amp; Stats</h2><p class="muted">App usage reports will appear here after event tracking is connected. Existing route/operator counts are not user activity.</p></div>' +
+    '<button class="btn" data-act="analytics-refresh">↻ Refresh</button></div>' +
+    '<div class="toolbar"><label style="margin:0">Report period</label><select id="analyticsPeriod" aria-label="Report period">' +
+    '<option value="today">Today</option><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="custom">Custom range</option></select>' +
+    '<input type="date" id="analyticsFrom" aria-label="Start date" style="max-width:180px;display:none">' +
+    '<input type="date" id="analyticsTo" aria-label="End date" style="max-width:180px;display:none"></div>' +
+    '<div class="stats">' +
+    analyticsStat('—','App users','Not tracked yet') + analyticsStat('—','Bus searches','Not tracked yet') +
+    analyticsStat('—','Taxi activity','Not tracked yet') + analyticsStat('—','Auto activity','Not tracked yet') +
+    analyticsStat('—','Contact actions','Not tracked yet') + analyticsStat('—','Ad earnings','AdMob reporting not connected') + '</div>' +
+    '<div class="row2"><div class="card"><h2>Activity over time</h2><p class="muted">Daily app events</p><div class="analytics-empty"><div class="analytics-bars">' +
+    '<i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>Tracking not configured</b><p class="muted">Bars will show real daily totals after the app sends analytics events.</p></div></div>' +
+    '<div class="card"><h2>Usage by section</h2><p class="muted">Bus, Taxi and Auto comparisons</p><div class="analytics-empty"><div class="analytics-bars horizontal">' +
+    '<i></i><i></i><i></i></div><b>Waiting for real data</b><p class="muted">No activity figures are fabricated or shown as zero.</p></div></div></div>' +
+    '<div class="card"><h2>Planned reports</h2><div class="row2"><div><b>Bus</b><p class="muted">From–To searches, stand searches, popular routes, no-result searches and route detail views.</p></div>' +
+    '<div><b>Taxi</b><p class="muted">Area selections, seat filters, driver views and contact taps.</p></div>' +
+    '<div><b>Auto</b><p class="muted">Area selections, All/EV/Oil filters, driver views and contact taps.</p></div>' +
+    '<div><b>Submissions</b><p class="muted">Add Route, corrections and vehicle submissions by pending/approved/rejected status.</p></div>' +
+    '<div><b>Coverage &amp; quality</b><p class="muted">Areas with low service coverage and frequently corrected information.</p></div>' +
+    '<div><b>Ads performance</b><p class="muted">Impressions, clicks and estimated earnings when AdMob reporting is integrated.</p></div></div>' +
+    '<div class="alert warn">This page is the Analytics &amp; Stats entry point. Live usage charts require Android event tracking, a secure analytics endpoint and database reporting; AdMob figures require a separate reporting integration.</div></div>';
+}
+function analyticsStat(value, label, note) {
+  return '<div class="stat"><b>' + esc(value) + '</b><span>' + esc(label) + '</span><p class="muted" style="margin:7px 0 0">' + esc(note) + '</p></div>';
+}
+
 
 function viewPlaces() {
   var q = filters.places.toLowerCase(), k = filters.placeKind;
