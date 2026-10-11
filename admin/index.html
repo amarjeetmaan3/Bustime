@@ -220,15 +220,15 @@ var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
 var NAV = [
-  ['dashboard','Dashboard'], ['places','Places'], ['routes','Bus Routes'],
-  ['busRequests','Bus Route Requests'], ['taxiReview','Taxi'], ['autoReview','Auto'],
-  ['addBus','Add Bus'], ['corrections','Corrections'], ['feedbackReview','Feedback'], ['review','Review Center'],
-  ['seats','Taxi Seats'], ['drivers','Drivers'], ['settings','Settings']
+  ['dashboard','Dashboard'], ['bus','Bus'], ['taxi','Taxi'],
+  ['auto','Auto'], ['review','Review Center'], ['settings','Settings']
 ];
 var TITLES = {
-  dashboard:'Dashboard', places:'Places', routes:'Bus Routes', busRequests:'Bus Route Requests',
-  taxiReview:'Taxi Requests', autoReview:'Auto Requests', addBus:'Add Bus',
-  corrections:'Corrections', feedbackReview:'Feedback', review:'Review Center', seats:'Taxi Seats', drivers:'Drivers', settings:'Settings'
+  dashboard:'Dashboard', bus:'Bus', taxi:'Taxi', auto:'Auto', places:'Bus · Places',
+  routes:'Bus · Routes', busRequests:'Bus · Route Requests', addBus:'Bus · Add Your Bus',
+  taxiReview:'Taxi · Submissions', autoReview:'Auto · Submissions', seats:'Taxi · Seat Options',
+  drivers:'Taxi / Auto · Directory', corrections:'Review Center · Corrections',
+  feedbackReview:'Review Center · Feedback', review:'Review Center', settings:'Settings'
 };
 
 // ============ Helpers ============
@@ -397,18 +397,47 @@ function render() {
   }).join('');
   refreshChrome();
   var v = $('#view');
-  var dataTabs = ['dashboard','places','routes','seats','drivers'];
+  var dataTabs = ['dashboard','bus','taxi','auto','places','routes','seats','drivers'];
   if (dataTabs.indexOf(tab) >= 0 && !data) {
     v.innerHTML = '<div class="card"><h2>Load route data first</h2><p class="muted">Open Settings and load the data from GitHub. Submission review tabs can be opened independently after Supabase sign-in.</p>' +
       '<button class="btn primary" data-act="tab" data-t="settings">Open Settings</button></div>';
   } else {
-    var views = { dashboard:viewDashboard, places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers,
+    var views = { dashboard:viewDashboard, bus:viewBusHome, taxi:viewTaxiHome, auto:viewAutoHome,
+      places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers,
       busRequests:viewBusRequests, taxiReview:function(){return viewCommunity('taxi');},
       autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
       corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, settings:viewSettings };
     v.innerHTML = (views[tab] || viewDashboard)();
   }
   renderModal();
+}
+
+function workspaceCard(title, description, target, label) {
+  return '<div class="card"><h2>'+title+'</h2><p class="muted">'+description+'</p><button class="btn primary" data-act="tab" data-t="'+target+'">'+label+' →</button></div>';
+}
+function viewBusHome() {
+  return '<div class="bus-page-head"><div><h2>Bus workspace</h2><p class="muted">All bus-related tools are grouped here. Scheduled public routes and operator contact listings remain separate.</p></div></div>'+
+    '<div class="workspace-grid">'+
+    workspaceCard('Places & Bus Stands','Manage place names, translations and bus stands.','places','Manage places')+
+    workspaceCard('Bus Routes','Add and edit routes, stops, departure times and timings; publish approved changes.','routes','Manage routes')+
+    workspaceCard('Bus Route Requests','Review new route submissions from users.','busRequests','Review route requests')+
+    workspaceCard('Add Your Bus','Review bus operator submissions and manage the published operator directory.','addBus','Manage bus listings')+
+    '</div>';
+}
+function viewTaxiHome() {
+  return '<div class="bus-page-head"><div><h2>Taxi workspace</h2><p class="muted">Taxi submissions, seating options and published taxi/driver details.</p></div></div>'+
+    '<div class="workspace-grid">'+
+    workspaceCard('Taxi Submissions','Review submitted taxi listings and taxi-related feedback.','taxiReview','Review taxi submissions')+
+    workspaceCard('Taxi Seat Options','Manage the seat filters shown in the app.','seats','Manage seat options')+
+    workspaceCard('Taxi Directory','Search, add, edit or remove published taxi and auto directory entries.','drivers','Open directory')+
+    '</div>';
+}
+function viewAutoHome() {
+  return '<div class="bus-page-head"><div><h2>Auto workspace</h2><p class="muted">Review auto submissions and manage the published auto directory and fuel types.</p></div></div>'+
+    '<div class="workspace-grid">'+
+    workspaceCard('Auto Submissions','Review submitted auto listings and auto-related feedback.','autoReview','Review auto submissions')+
+    workspaceCard('Auto Directory','Search, add, edit or remove published auto directory entries.','drivers','Open directory')+
+    '</div>';
 }
 
 function viewDashboard() {
