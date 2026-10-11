@@ -102,4 +102,5 @@
     <string name="ar_time_order">यह समय पिछले पड़ाव से पहले का है। आधी रात के बाद का समय तभी ठीक है जब पूरा सफ़र 16 घंटे के अंदर हो; कृपया समय जाँचें।</string>
     <string name="ar_pick_route">कृपया एक रूट चुनें</string>
     <string name="ar_need_time">कम से कम एक समय दें</string>
+    <string name="no_areas_yet">अभी कोई इलाका उपलब्ध नहीं है। जिन ड्राइवरों में इलाका भरा है उनके जुड़ने पर यहाँ दिखेगा।</string>
 </resources>
