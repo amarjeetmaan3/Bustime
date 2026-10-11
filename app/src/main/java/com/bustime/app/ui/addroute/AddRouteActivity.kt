@@ -54,7 +54,7 @@ class AddRouteActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_route)
         repo = AppRepository.getInstance(this)
-        findViewById<Button>(R.id.btnBackAdd).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btnBackAdd).visibility = View.GONE
         tvStart = findViewById(R.id.tvStartTime)
         stopsBox = findViewById(R.id.stopsBox)
         newStopsBox = findViewById(R.id.newStopsBox)
