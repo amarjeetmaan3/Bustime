@@ -1,6 +1,6 @@
 {
   "_note": "यह नमूना डेटा है। असली डेटा भरने के बाद dataVersion की संख्या बढ़ाना ज़रूरी है, वरना ऐप बदलाव नहीं लेगा।",
-  "dataVersion": 16,
+  "dataVersion": 17,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -453,29 +453,6 @@
           "place": "place_miraa_chowk_sri_ganganagar"
         }
       ]
-    },
-    {
-      "id": "r4",
-      "from": "place_user_zgc",
-      "to": "place_user_dhc",
-      "time": "14:00",
-      "stops": [
-        {
-          "place": "place_user_fhcc",
-          "time": "14:00"
-        },
-        {
-          "place": "place_user_ujcn",
-          "time": "03:00",
-          "day_offset": 1
-        }
-      ]
-    },
-    {
-      "id": "r5",
-      "from": "place_user_sds",
-      "to": "place_user_sdft",
-      "time": "08:00"
     }
   ],
   "taxiSeaters": [
@@ -537,26 +514,8 @@
       "name": "Sample Auto 3",
       "phone": "9000000006",
       "fuel": "ev",
-      "vehicle": "E-rickshaw"
-    },
-    {
-      "id": "t4",
-      "type": "taxi",
-      "name": "Amarjeet",
-      "phone": "9638527412",
-      "vehicle": "Sss",
-      "seats": 4,
-      "info": "Sadul Shahar",
-      "area": "place_sadulshahar"
-    },
-    {
-      "id": "t5",
-      "type": "taxi",
-      "name": "Aj",
-      "phone": "9685858585",
-      "vehicle": "Swiftly",
-      "seats": 8,
-      "info": "Sds"
+      "vehicle": "E-rickshaw",
+      "area": "Sadulshahar"
     }
   ]
 }
