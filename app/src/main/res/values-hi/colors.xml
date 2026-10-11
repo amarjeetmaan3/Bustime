@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#90CAF9</color>
+    <color name="colorPrimaryDark">#1E3A5F</color>
+    <color name="colorOnPrimary">#0B2540</color>
+    <color name="colorAccent">#FF80AB</color>
+    <color name="priceGreen">#81C784</color>
+
+    <color name="bgScreen">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="surfaceVariant">#262B33</color>
+    <color name="divider">#3A3F47</color>
+    <color name="noticeBg">#3A331A</color>
+    <color name="textPrimary">#ECEFF4</color>
+    <color name="textSecondary">#AEB7C2</color>
+    <color name="textGreen">#81C784</color>
+</resources>
