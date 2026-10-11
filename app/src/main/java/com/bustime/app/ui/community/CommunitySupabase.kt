@@ -14,7 +14,7 @@ object CommunitySupabase {
         !Constants.SUPABASE_URL.contains("YOUR-") && !Constants.SUPABASE_ANON_KEY.contains("YOUR-")
 
     fun insert(table: String, body: JSONObject): Boolean {
-        if (table !in setOf("correction_submissions", "vehicle_submissions", "feedback_submissions")) {
+        if (table !in setOf("correction_submissions", "vehicle_submissions", "feedback_submissions", "bus_operator_submissions")) {
             lastError = "Unsupported submission table: $table"
             return false
         }
@@ -62,7 +62,7 @@ object CommunitySupabase {
     }
 
     fun getPublicOperators(): String? {
-        val conn = URL(Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/bus_operators?select=id,operator_name,service_name,bus_type,from_text,to_text,phone,details&active=eq.true&order=operator_name.asc")
+        val conn = URL(Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/bus_operators?select=id,operator_name,service_name,bus_type,seat_type,sleeper_count,seater_count,from_text,to_text,location,phone,whatsapp,details&active=eq.true&order=operator_name.asc")
             .openConnection() as HttpURLConnection
         return try {
             conn.requestMethod = "GET"
