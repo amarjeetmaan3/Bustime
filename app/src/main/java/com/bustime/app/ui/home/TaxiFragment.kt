@@ -95,7 +95,8 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     private fun showDrivers(seats: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
             val ctx = context ?: return@launch
-            val list = repo.getTaxis(seats, AreaPicker.savedId(ctx)).shuffled()
+            val selectedArea = AreaPicker.savedId(ctx)
+            val list = if (selectedArea == null) emptyList() else repo.getTaxis(seats, selectedArea).shuffled()
             currentSeats = seats
             adapter.submit(list)
             tvNoDrivers.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
@@ -109,6 +110,8 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
         viewLifecycleOwner.lifecycleScope.launch {
             val ctx = context ?: return@launch
             btnArea.text = AreaPicker.label(ctx, repo)
+            if (AreaPicker.savedId(ctx) == null) tvNoDrivers.text = "Select your area first to see drivers."
+            else tvNoDrivers.text = "No drivers found for this area and seat type."
         }
     }
 }

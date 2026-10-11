@@ -35,8 +35,10 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
             currentFuel = fuel
             viewLifecycleOwner.lifecycleScope.launch {
                 val ctx = context ?: return@launch
-                val list = repo.getAutos(fuel, AreaPicker.savedId(ctx)).shuffled()   // हर बार क्रम बदलकर, सबको बराबर मौका
+                val selectedArea = AreaPicker.savedId(ctx)
+                val list = if (selectedArea == null) emptyList() else repo.getAutos(fuel, selectedArea).shuffled()
                 adapter.submit(list)
+                tvEmpty.text = if (selectedArea == null) "Select your area first to see drivers." else "No drivers found for this area and filter."
                 tvEmpty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
             }
         }
