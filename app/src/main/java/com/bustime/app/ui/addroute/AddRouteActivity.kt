@@ -143,7 +143,7 @@ class AddRouteActivity : AppCompatActivity() {
                     text = "−"
                     setOnClickListener {
                         if (existingRows.size <= 2) {
-                            Toast.makeText(this@AddRouteActivity, "Route must keep at least two stops", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@AddRouteActivity, R.string.ar_min_stops, Toast.LENGTH_SHORT).show()
                         } else {
                             existingRows.remove(row)
                             stopsBox.removeView(line)
@@ -295,7 +295,7 @@ class AddRouteActivity : AppCompatActivity() {
             for (row in existingRows) {
                 val nm = row.nameEdit?.text?.toString()?.trim().orEmpty()
                 if (nm.isBlank()) {
-                    Toast.makeText(this, "Every stop needs a name", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, R.string.ar_stop_name_required, Toast.LENGTH_SHORT).show()
                     return
                 }
                 if (row.time != null) anyTime = true
