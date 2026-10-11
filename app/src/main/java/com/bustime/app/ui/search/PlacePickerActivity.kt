@@ -33,7 +33,7 @@ class PlacePickerActivity : AppCompatActivity() {
         et.hint = intent.getStringExtra("HINT") ?: getString(R.string.type_place_hint)
         val list = findViewById<LinearLayout>(R.id.pickerList)
         val tvEmpty = findViewById<TextView>(R.id.tvPickerEmpty)
-        findViewById<Button>(R.id.btnBackPicker).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btnBackPicker).visibility = View.GONE
 
         val repo = AppRepository.getInstance(this)
         val lang = LanguageHelper.current()

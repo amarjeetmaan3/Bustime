@@ -29,7 +29,7 @@ class SearchActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
 
-        findViewById<Button>(R.id.btnBackSearch).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btnBackSearch).visibility = View.GONE
 
         val mode = intent.getStringExtra("MODE")
         if (mode == null) {
