@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
 import com.google.android.material.button.MaterialButton
+import com.bustime.app.utils.AnalyticsHelper
 import kotlinx.coroutines.launch
 
 /** पहले सीटर चुनो (4, 5, 6, 7...), फिर उसी सीटर के ड्राइवरों की नई लिस्ट */
@@ -33,6 +34,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         repo = AppRepository.getInstance(requireContext())
+        AnalyticsHelper.logEvent(requireContext(), "section_open", "taxi")
 
         layoutSeaters = view.findViewById(R.id.layoutSeaters)
         layoutDrivers = view.findViewById(R.id.layoutDrivers)
@@ -82,7 +84,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
                 val button = MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
                     text = getString(R.string.seater_format, n)
                     textSize = 18f
-                    setOnClickListener { showDrivers(n) }
+                    setOnClickListener { AnalyticsHelper.logEvent(requireContext(), "taxi_seat_filter", "taxi", org.json.JSONObject().put("seats", n)) ; showDrivers(n) }
                 }
                 val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 lp.bottomMargin = margin
@@ -96,6 +98,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
         viewLifecycleOwner.lifecycleScope.launch {
             val ctx = context ?: return@launch
             val selectedArea = AreaPicker.savedId(ctx)
+            AnalyticsHelper.logEvent(ctx, "taxi_list_view", "taxi", org.json.JSONObject().put("seats", seats).put("area_selected", selectedArea != null))
             val list = if (selectedArea == null) emptyList() else repo.getTaxis(seats, selectedArea).shuffled()
             currentSeats = seats
             adapter.submit(list)
