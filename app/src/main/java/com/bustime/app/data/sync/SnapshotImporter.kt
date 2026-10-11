@@ -113,7 +113,8 @@ object SnapshotImporter {
                 driverSeats.add(seats)
             }
             val fuel = if (type == "auto") clean(d.fuel)?.lowercase()?.takeIf { it == "ev" || it == "oil" } else null
-            drivers.add(Driver(id, type, name, phone, clean(d.vehicle), seats, fuel, clean(d.info)))
+            val area = clean(d.area)?.takeIf { places.containsKey(it) }
+            drivers.add(Driver(id, type, name, phone, clean(d.vehicle), seats, fuel, clean(d.info), area))
         }
 
         // सीटर के विकल्प वही दिखेंगे जो तुमने taxiSeaters में लिखे हैं (जिस सीटर की गाड़ी नहीं, उसे सूची से हटा दो)।
