@@ -15,6 +15,7 @@ import com.bustime.app.ui.details.RouteDetailActivity
 import com.bustime.app.ui.home.BusAdapter
 import com.bustime.app.ui.home.BusItem
 import com.bustime.app.utils.LanguageHelper
+import com.bustime.app.utils.AnalyticsHelper
 import com.bustime.app.utils.TimeFormat
 import kotlinx.coroutines.launch
 
@@ -60,6 +61,7 @@ class SearchActivity : AppCompatActivity() {
                     finish()
                     return@launch
                 }
+                AnalyticsHelper.logStandSearch(this@SearchActivity, standId)
                 val results = repo.busesAtStand(standId)
                 val names = repo.getPlacesById(results.flatMap { listOf(it.routeFromId, it.routeToId) }.toSet())
                 fun name(id: String) = names[id]?.displayName(lang) ?: id
@@ -82,6 +84,7 @@ class SearchActivity : AppCompatActivity() {
                     finish()
                     return@launch
                 }
+                AnalyticsHelper.logSearchEvent(this@SearchActivity, fromId, toId, "bus")
                 val results = repo.searchBusRoutes(fromId, toId)
                 val names = repo.getPlacesById(
                     results.flatMap { listOf(it.routeFromId, it.routeToId) }.toSet() + fromId + toId
