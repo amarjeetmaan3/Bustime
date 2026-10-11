@@ -44,11 +44,6 @@ class AppRepository private constructor(context: Context) {
         if (q.isEmpty() && !allowEmpty) emptyList() else dao.searchAreaPlaces(q, limit)
     }
 
-    suspend fun searchAreaPlaces(text: String, limit: Int = 80, allowEmpty: Boolean = false): List<Place> = query {
-        val q = TextNormalizer.normalize(text)
-        if (q.isEmpty() && !allowEmpty) emptyList() else dao.searchAreaPlaces(q, limit)
-    }
-
     suspend fun getPlacesById(ids: Collection<String>): Map<String, Place> = query {
         if (ids.isEmpty()) emptyMap() else dao.getPlaces(ids.toList()).associateBy { it.id }
     }
