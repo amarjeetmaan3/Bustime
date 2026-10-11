@@ -703,7 +703,8 @@ function viewRouteReview() {
       s.status === 'rejected' ? '<button class="btn danger" data-act="sb-delete" data-i="' + i + '">Delete rejected request</button>' : '<span class="badge">Approved · retained</span>';
     var fromLabel = s.from_text || pname(placeById(s.from_id)) || s.from_id || '(missing From)';
     var toLabel = s.to_text || pname(placeById(s.to_id)) || s.to_id || '(missing To)';
-    return '<div class="card" data-sub="' + i + '"><h2>' + esc(fromLabel) + ' &rarr; ' + esc(toLabel) + (s.submission_type === 'new_route' ? ' <span class="badge">New free-text route</span>' : '') + '</h2>' +
+    var requestTitle = s.submission_type === 'edit_existing_route' ? ' <span class="badge">Edit existing route #' + esc(s.route_id) + '</span>' : (s.submission_type === 'new_route' ? ' <span class="badge">New free-text route</span>' : '');
+    return '<div class="card" data-sub="' + i + '"><h2>' + esc(fromLabel) + ' &rarr; ' + esc(toLabel) + requestTitle + '</h2>' +
       '<p class="muted">Sent ' + esc(new Date(s.created_at).toLocaleString()) + ' · Phone <b>' + esc(s.phone) + '</b>' +
       (s.service_name ? ' · Service: ' + esc(s.service_name) : '') + (s.long_route ? ' · <b>Long route</b> · Start date ' + esc(s.start_date || '-') : '') + '</p>' +
       '<label>Start time</label><input type="time" class="sub_start" value="' + esc(s.start_time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
@@ -1128,6 +1129,51 @@ document.addEventListener('click', async function (e) {
     }
     else if (act === 'sb-approve') {
       var sub = subs[i], v = subCardValues(i);
+      if (sub.submission_type === 'edit_existing_route') {
+        var targetRoute = data.routes.find(function (r) { return String(r.id) === String(sub.route_id); });
+        if (!targetRoute) { toast('The selected route no longer exists. Refresh and review this request.'); return; }
+        if (v.stops.length < 2) { toast('An edited route must have at least a start and destination stop.'); return; }
+        var resolvedStops = [];
+        for (var esi = 0; esi < v.stops.length; esi++) {
+          var es = v.stops[esi], submittedName = String(es.name || '').trim();
+          var resolvedId = submittedName ? ensureSubmittedPlace(submittedName) : es.place;
+          if (!resolvedId || !placeById(resolvedId)) { toast('Every stop must have a valid name.'); return; }
+          resolvedStops.push({ place: resolvedId, time: es.time });
+        }
+        var editStart = TIME_RE.test(v.start) ? v.start : '';
+        if (!editStart) { toast('Add a departure time before approving.'); return; }
+        var prevEditTime = editStart, editDay = 0, editTimeInvalid = false;
+        resolvedStops.slice(1).forEach(function (st) {
+          if (st.time && st.time < prevEditTime) {
+            if (!targetRoute.longRoute) editTimeInvalid = true;
+            else editDay++;
+          }
+          if (st.time) prevEditTime = st.time;
+          st.day_offset = editDay;
+        });
+        if (editTimeInvalid) { toast('A stop time is earlier than the previous time. Check the times before approving.'); return; }
+        targetRoute.from = resolvedStops[0].place;
+        targetRoute.to = resolvedStops[resolvedStops.length - 1].place;
+        targetRoute.time = editStart;
+        var finalArrival = resolvedStops[resolvedStops.length - 1].time;
+        if (finalArrival) targetRoute.arrive = finalArrival; else delete targetRoute.arrive;
+        var editedMidStops = resolvedStops.slice(1, -1).map(function (st) {
+          var item = { place: st.place };
+          if (st.time) item.time = st.time;
+          if (st.day_offset) item.day_offset = st.day_offset;
+          return item;
+        });
+        if (editedMidStops.length) targetRoute.stops = editedMidStops; else delete targetRoute.stops;
+        if (sub.service_name) targetRoute.service = sub.service_name;
+        setDirty(true);
+        await sbFetch('/rest/v1/route_submissions?id=eq.' + encodeURIComponent(sub.id), {
+          method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'approved' })
+        });
+        subs[i].status = 'approved';
+        toast('Existing route updated. Press Publish to make the changes live.');
+        render();
+        return;
+      }
       var isFreeText = sub.submission_type === 'new_route' || (!!sub.from_text && !!sub.to_text);
       var effectiveStart = TIME_RE.test(v.start) ? v.start : (v.stops.find(function(st){ return TIME_RE.test(st.time || ''); }) || {}).time;
       if (!TIME_RE.test(effectiveStart || '')) { toast('Add at least one time before approving'); return; }
