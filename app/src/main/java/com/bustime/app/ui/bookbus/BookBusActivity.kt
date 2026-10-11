@@ -31,7 +31,7 @@ class BookBusActivity : AppCompatActivity() {
             if (rows.length() == 0) { root.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_none); textSize = 16f }); return@launch }
             for (i in 0 until rows.length()) {
                 val item = rows.getJSONObject(i)
-                val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(0xFFF3F6FA.toInt()); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
+                val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(getColor(com.bustime.app.R.color.surfaceVariant)); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
                 val name = item.optString("operator_name", "Bus Operator")
                 card.addView(TextView(this@BookBusActivity).apply { text = name; textSize = 19f; setTypeface(null, android.graphics.Typeface.BOLD) })
                 val routeSummary = "${item.optString("from_text", "-")} → ${item.optString("to_text", "-")}"
@@ -46,7 +46,7 @@ class BookBusActivity : AppCompatActivity() {
                 card.addView(detailBox)
                 val phone = item.optString("phone", "").filter { it.isDigit() || it == '+' }
                 if (phone.isNotBlank()) card.addView(TextView(this@BookBusActivity).apply {
-                    text = "☎  ${getString(com.bustime.app.R.string.bb_contact)}: $phone"; textSize = 16f; setTextColor(0xFF0D47A1.toInt()); gravity = Gravity.CENTER_VERTICAL; setPadding(0, 12, 0, 2)
+                    text = "☎  ${getString(com.bustime.app.R.string.bb_contact)}: $phone"; textSize = 16f; setTextColor(getColor(com.bustime.app.R.color.colorPrimary)); gravity = Gravity.CENTER_VERTICAL; setPadding(0, 12, 0, 2)
                     setOnClickListener { try { startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))) } catch (_: Exception) { Toast.makeText(this@BookBusActivity, com.bustime.app.R.string.bb_call_error, Toast.LENGTH_SHORT).show() } }
                 })
                 val whatsapp = item.optString("whatsapp", phone).filter { it.isDigit() || it == '+' }
