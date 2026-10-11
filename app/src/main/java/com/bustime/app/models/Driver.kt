@@ -13,5 +13,6 @@ data class Driver(
     val vehicle: String?,        // गाड़ी की डिटेल
     val seats: Int?,             // सिर्फ़ टैक्सी के लिए (4, 5, 6, 7...)
     val fuel: String?,           // सिर्फ़ ऑटो के लिए: "ev" या "oil"
-    val info: String?
+    val info: String?,
+    val areaId: String? = null   // वह शहर/इलाका जहाँ यह गाड़ी मिलती है (जगह की id)
 )
