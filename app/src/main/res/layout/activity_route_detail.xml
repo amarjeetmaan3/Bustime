@@ -50,6 +50,14 @@
             android:textSize="15sp" />
 
         <Button
+            android:id="@+id/btnRouteCorrection"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Correct this route" />
+
+        <Button
             android:id="@+id/btnRouteCall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

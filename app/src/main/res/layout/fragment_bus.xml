@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F5F5"
-    android:fillViewport="true">
+    android:orientation="vertical">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -124,13 +130,32 @@
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
-
-        <LinearLayout
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="14dp" android:orientation="vertical">
-            <Button android:id="@+id/btnAddRoute" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/add_route" />
-            <Button android:id="@+id/btnCorrectRoute" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/correction_route" />
-            <Button android:id="@+id/btnBookBus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/book_bus" />
-        </LinearLayout>
     </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <Button
+            android:id="@+id/btnAddBusRoute"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:text="Add Route" />
+
+        <Button
+            android:id="@+id/btnBookBus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:text="Book Bus" />
+    </LinearLayout>
+</LinearLayout>

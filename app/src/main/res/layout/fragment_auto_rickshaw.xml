@@ -6,15 +6,6 @@
     android:background="#F5F5F5"
     android:orientation="vertical">
 
-    <Button
-        android:id="@+id/btnCorrectAuto"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:text="Correction Auto" />
-
     <!-- Filters (All, EV, Oil) -->
     <HorizontalScrollView
         android:layout_width="match_parent"
@@ -71,4 +62,14 @@
         android:layout_weight="1"
         android:clipToPadding="false"
         android:paddingBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnAddAuto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="6dp"
+        android:text="Add Auto" />
 </LinearLayout>

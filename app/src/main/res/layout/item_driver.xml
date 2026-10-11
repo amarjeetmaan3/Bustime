@@ -45,6 +45,14 @@
             android:textSize="14sp" />
 
         <Button
+            android:id="@+id/btnCorrectDriver"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Correct details" />
+
+        <Button
             android:id="@+id/btnShowNumber"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
