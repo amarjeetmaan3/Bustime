@@ -95,4 +95,16 @@
     <string name="bb_whatsapp">WhatsApp</string>
     <string name="bb_call_error">Could not open phone dialer</string>
     <string name="bb_whatsapp_error">Could not open WhatsApp</string>
+
+    <!-- Area picker, Add Route tabs, route dates -->
+    <string name="select_area">Select your city and area</string>
+    <string name="all_areas">All areas</string>
+    <string name="cancel">Cancel</string>
+    <string name="next_day_format">Next day · %1$s</string>
+    <string name="ar_mode_existing">Existing Route</string>
+    <string name="ar_mode_new">New Route</string>
+    <string name="ar_existing_route_intro">Another bus or a different timing on a route that is already in the app. Choose the route and fill the times you know.</string>
+    <string name="ar_time_order">This time is earlier than the previous stop. After midnight is fine only if the trip stays within 16 hours; please check the times.</string>
+    <string name="ar_pick_route">Please choose a route</string>
+    <string name="ar_need_time">Please give at least one time</string>
 </resources>
