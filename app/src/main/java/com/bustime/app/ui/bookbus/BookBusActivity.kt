@@ -57,7 +57,6 @@ class BookBusActivity : AppCompatActivity() {
                 val matching = allRows.filter { it.optString("location").trim().equals(selectedArea, ignoreCase = true) }
                 if (matching.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = "No bus options available in $selectedArea."; textSize = 16f })
                 for (item in matching) {
-                val item = rows.getJSONObject(i)
                 val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(getColor(com.bustime.app.R.color.surfaceVariant)); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
                 val name = item.optString("operator_name", "Bus Operator")
                 card.addView(TextView(this@BookBusActivity).apply { text = name; textSize = 19f; setTypeface(null, android.graphics.Typeface.BOLD) })
