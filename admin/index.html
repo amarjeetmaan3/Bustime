@@ -494,7 +494,17 @@ async function sbFetch(path, opts) {
     var t = ''; try { var j = await res.json(); t = j.error_description || j.message || j.hint || ''; } catch (e) {}
     throw new Error('Supabase ' + res.status + (t ? ': ' + t : ''));
   }
-  return res.status === 204 ? null : res.json();
+  if (res.status === 204) return null;
+  // PostgREST may return an empty body even with a 2xx status (Prefer: return=minimal).
+  // Do not call response.json() on an empty string: it throws "Unexpected end of JSON input".
+  var raw = await res.text();
+  if (!raw || !raw.trim()) return null;
+  var contentType = res.headers.get('content-type') || '';
+  if (contentType.indexOf('json') >= 0) {
+    try { return JSON.parse(raw); }
+    catch (e) { throw new Error('Supabase returned invalid JSON (' + res.status + ').'); }
+  }
+  return raw;
 }
 async function sbLogin(email, password) {
   var base = cfg.sbUrl.replace(/\/+$/, '');
