@@ -75,9 +75,10 @@ abstract class TransportDao {
         "SELECT * FROM drivers WHERE type = :type " +
         "AND (:seats IS NULL OR seats = :seats) " +
         "AND (:fuel IS NULL OR fuel = :fuel) " +
+        "AND (:areaId IS NULL OR areaId = :areaId) " +
         "ORDER BY name"
     )
-    abstract suspend fun getDrivers(type: String, seats: Int?, fuel: String?): List<Driver>
+    abstract suspend fun getDrivers(type: String, seats: Int?, fuel: String?, areaId: String?): List<Driver>
 
     // ---------- सिंक ----------
 

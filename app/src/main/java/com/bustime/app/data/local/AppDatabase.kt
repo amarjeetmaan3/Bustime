@@ -13,7 +13,7 @@ import com.bustime.app.models.SeaterGroup
 
 @Database(
     entities = [Place::class, Route::class, RouteStop::class, Driver::class, SeaterGroup::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
