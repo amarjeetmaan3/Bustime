@@ -85,6 +85,10 @@
   #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1F2933; color:#fff; padding:11px 20px; border-radius:24px; display:none; z-index:50; max-width:92%; font-size:14px; }
 
 
+  .workspace-tabs { display:flex; flex-direction:row; align-items:center; gap:8px; overflow-x:auto; white-space:nowrap; padding:7px; margin:0 0 22px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 3px 12px rgba(22,34,55,.035); scrollbar-width:thin; }
+  .workspace-tab { flex:0 0 auto; border:0; border-radius:8px; background:transparent; color:#526176; padding:11px 16px; font-size:13px; font-weight:700; cursor:pointer; }
+  .workspace-tab:hover { background:#F2F5FB; color:var(--brand-d); }
+  .workspace-tab.active { background:var(--brand); color:#fff; box-shadow:0 3px 8px rgba(36,88,211,.16); }
   /* Professional console refresh */
   .nav button { line-height:1.25; }
   .bus-route-stats { grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); }
@@ -398,46 +402,38 @@ function render() {
   refreshChrome();
   var v = $('#view');
   var dataTabs = ['dashboard','bus','taxi','auto','places','routes','seats','drivers'];
+  var views = { dashboard:viewDashboard, bus:viewBusHome, taxi:viewTaxiHome, auto:viewAutoHome,
+    places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers,
+    busRequests:viewBusRequests, taxiReview:function(){return viewCommunity('taxi');},
+    autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
+    corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, settings:viewSettings };
   if (dataTabs.indexOf(tab) >= 0 && !data) {
-    v.innerHTML = '<div class="card"><h2>Load route data first</h2><p class="muted">Open Settings and load the data from GitHub. Submission review tabs can be opened independently after Supabase sign-in.</p>' +
-      '<button class="btn primary" data-act="tab" data-t="settings">Open Settings</button></div>';
+    v.innerHTML = '<div class="card"><h2>Load route data first</h2><p class="muted">Open Settings and load the data from GitHub. Submission review tabs can be opened independently after Supabase sign-in.</p><button class="btn primary" data-act="tab" data-t="settings">Open Settings</button></div>';
   } else {
-    var views = { dashboard:viewDashboard, bus:viewBusHome, taxi:viewTaxiHome, auto:viewAutoHome,
-      places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers,
-      busRequests:viewBusRequests, taxiReview:function(){return viewCommunity('taxi');},
-      autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
-      corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, settings:viewSettings };
     v.innerHTML = (views[tab] || viewDashboard)();
   }
   renderModal();
 }
 
-function workspaceCard(title, description, target, label) {
-  return '<div class="card"><h2>'+title+'</h2><p class="muted">'+description+'</p><button class="btn primary" data-act="tab" data-t="'+target+'">'+label+' →</button></div>';
+function workspaceTabs(items, active) {
+  return '<div class="workspace-tabs" role="navigation" aria-label="Workspace sections">'+items.map(function(item){
+    return '<button class="workspace-tab '+(active===item[0]?'active':'')+'" data-act="tab" data-t="'+item[0]+'">'+item[1]+'</button>';
+  }).join('')+'</div>';
 }
 function viewBusHome() {
-  return '<div class="bus-page-head"><div><h2>Bus workspace</h2><p class="muted">All bus-related tools are grouped here. Scheduled public routes and operator contact listings remain separate.</p></div></div>'+
-    '<div class="workspace-grid">'+
-    workspaceCard('Places & Bus Stands','Manage place names, translations and bus stands.','places','Manage places')+
-    workspaceCard('Bus Routes','Add and edit routes, stops, departure times and timings; publish approved changes.','routes','Manage routes')+
-    workspaceCard('Bus Route Requests','Review new route submissions from users.','busRequests','Review route requests')+
-    workspaceCard('Add Your Bus','Review bus operator submissions and manage the published operator directory.','addBus','Manage bus listings')+
-    '</div>';
+  var sub = ['places','routes','busRequests','addBus'].indexOf(tab) >= 0 ? tab : 'places';
+  return workspaceTabs([['places','Places & Bus Stands'],['routes','Bus Routes'],['busRequests','Route Requests'],['addBus','Add Your Bus']],sub)+
+    (sub==='places'?viewPlaces():sub==='routes'?viewRoutes():sub==='busRequests'?viewBusRequests():viewCommunity('bus'));
 }
 function viewTaxiHome() {
-  return '<div class="bus-page-head"><div><h2>Taxi workspace</h2><p class="muted">Taxi submissions, seating options and published taxi/driver details.</p></div></div>'+
-    '<div class="workspace-grid">'+
-    workspaceCard('Taxi Submissions','Review submitted taxi listings and taxi-related feedback.','taxiReview','Review taxi submissions')+
-    workspaceCard('Taxi Seat Options','Manage the seat filters shown in the app.','seats','Manage seat options')+
-    workspaceCard('Taxi Directory','Search, add, edit or remove published taxi and auto directory entries.','drivers','Open directory')+
-    '</div>';
+  var sub = ['taxiReview','seats','drivers'].indexOf(tab) >= 0 ? tab : 'taxiReview';
+  return workspaceTabs([['taxiReview','Taxi Submissions'],['seats','Seat Options'],['drivers','Taxi Directory']],sub)+
+    (sub==='taxiReview'?viewCommunity('taxi'):sub==='seats'?viewSeats():viewDrivers());
 }
 function viewAutoHome() {
-  return '<div class="bus-page-head"><div><h2>Auto workspace</h2><p class="muted">Review auto submissions and manage the published auto directory and fuel types.</p></div></div>'+
-    '<div class="workspace-grid">'+
-    workspaceCard('Auto Submissions','Review submitted auto listings and auto-related feedback.','autoReview','Review auto submissions')+
-    workspaceCard('Auto Directory','Search, add, edit or remove published auto directory entries.','drivers','Open directory')+
-    '</div>';
+  var sub = ['autoReview','drivers'].indexOf(tab) >= 0 ? tab : 'autoReview';
+  return workspaceTabs([['autoReview','Auto Submissions'],['drivers','Auto Directory']],sub)+
+    (sub==='autoReview'?viewCommunity('auto'):viewDrivers());
 }
 
 function viewDashboard() {
