@@ -103,4 +103,6 @@
     <string name="ar_pick_route">ਕਿਰਪਾ ਕਰਕੇ ਇੱਕ ਰੂਟ ਚੁਣੋ</string>
     <string name="ar_need_time">ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਮਾਂ ਦਿਓ</string>
     <string name="no_areas_yet">ਹਾਲੇ ਕੋਈ ਇਲਾਕਾ ਉਪਲਬਧ ਨਹੀਂ। ਇਲਾਕੇ ਵਾਲੇ ਡਰਾਈਵਰ ਜੁੜਨ ਤੇ ਇੱਥੇ ਦਿਖੇਗਾ।</string>
+    <string name="ar_stop_name_required">ਹਰ ਪੜਾਅ ਦਾ ਨਾਮ ਭਰੋ</string>
+    <string name="ar_min_stops">ਰੂਟ ਵਿੱਚ ਘੱਟੋ-ਘੱਟ ਦੋ ਪੜਾਅ ਹੋਣੇ ਚਾਹੀਦੇ ਹਨ</string>
 </resources>
