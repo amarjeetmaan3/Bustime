@@ -110,8 +110,8 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
         viewLifecycleOwner.lifecycleScope.launch {
             val ctx = context ?: return@launch
             btnArea.text = AreaPicker.label(ctx, repo)
-            if (AreaPicker.savedId(ctx) == null) tvNoDrivers.text = "Select your area first to see drivers."
-            else tvNoDrivers.text = "No drivers found for this area and seat type."
+            if (AreaPicker.savedId(ctx) == null) tvNoDrivers.text = getString(R.string.taxi_area_required)
+            else tvNoDrivers.text = getString(R.string.taxi_no_area_drivers)
         }
     }
 }
