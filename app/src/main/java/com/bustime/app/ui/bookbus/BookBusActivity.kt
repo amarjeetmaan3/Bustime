@@ -5,6 +5,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.LinearLayout
+import android.widget.Button
+import android.widget.Button
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -23,7 +25,9 @@ class BookBusActivity : AppCompatActivity() {
         title = getString(com.bustime.app.R.string.book_bus)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(18, 12, 18, 18) }
         root.addView(TextView(this).apply { text = getString(com.bustime.app.R.string.bb_intro); textSize = 15f; setPadding(0, 8, 0, 16) })
-        val scroll = ScrollView(this).apply { addView(root) }; setContentView(scroll)
+        val scroll = ScrollView(this).apply { addView(root) }
+        val page = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f)); addView(Button(this@BookBusActivity).apply { text = "Add Your Bus"; setOnClickListener { startActivity(Intent(this@BookBusActivity, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "bus_operator")) } }, LinearLayout.LayoutParams(-1, -2)) }
+        setContentView(page)
         lifecycleScope.launch {
             val raw = withContext(Dispatchers.IO) { CommunitySupabase.getPublicOperators() }
             if (raw == null) { root.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_load_failed) }); return@launch }
@@ -39,7 +43,7 @@ class BookBusActivity : AppCompatActivity() {
                 val seatType = item.optString("seat_type", "").ifBlank { getString(com.bustime.app.R.string.bb_seat_unspecified) }
                 card.addView(TextView(this@BookBusActivity).apply { text = "${item.optString("service_name", getString(com.bustime.app.R.string.bb_service))} · $busType · $seatType"; textSize = 15f; setPadding(0, 6, 0, 3) })
                 card.addView(TextView(this@BookBusActivity).apply { text = "${getString(com.bustime.app.R.string.bb_route)}: $routeSummary"; textSize = 14f; setPadding(0, 2, 0, 5) })
-                val detailLines = listOf("Service: ${item.optString("service_name", "-")}", "Bus type: $busType", "Seat type: $seatType", "${getString(com.bustime.app.R.string.bb_route)}: $routeSummary", "${getString(com.bustime.app.R.string.bb_location)}: ${item.optString("location", "-" )}", item.optString("details", "")).filter { it.isNotBlank() }
+                val detailLines = listOf("Service: ${item.optString("service_name", "-")}", "Bus type: $busType", "Seat type: $seatType", "Sleeper berths: ${item.optString("sleeper_count", "-")}", "Seats: ${item.optString("seater_count", "-")}", "${getString(com.bustime.app.R.string.bb_route)}: $routeSummary", "${getString(com.bustime.app.R.string.bb_location)}: ${item.optString("location", "-" )}", item.optString("details", "")).filter { it.isNotBlank() }
                 val detailBox = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; visibility = android.view.View.GONE }
                 detailLines.forEach { line -> detailBox.addView(TextView(this@BookBusActivity).apply { text = line; textSize = 14f; setPadding(0, 5, 0, 0) }) }
                 card.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_expand); textSize = 13f; setPadding(0, 8, 0, 4); setOnClickListener { detailBox.visibility = if (detailBox.visibility == android.view.View.VISIBLE) android.view.View.GONE else android.view.View.VISIBLE } })
