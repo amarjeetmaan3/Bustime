@@ -103,4 +103,6 @@
     <string name="ar_pick_route">कृपया एक रूट चुनें</string>
     <string name="ar_need_time">कम से कम एक समय दें</string>
     <string name="no_areas_yet">अभी कोई इलाका उपलब्ध नहीं है। जिन ड्राइवरों में इलाका भरा है उनके जुड़ने पर यहाँ दिखेगा।</string>
+    <string name="ar_stop_name_required">हर पड़ाव का नाम भरें</string>
+    <string name="ar_min_stops">रूट में कम-से-कम दो पड़ाव होने चाहिए</string>
 </resources>
