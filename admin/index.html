@@ -222,13 +222,13 @@ var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 var NAV = [
   ['dashboard','Dashboard'], ['places','Places'], ['routes','Bus Routes'],
   ['busRequests','Bus Route Requests'], ['taxiReview','Taxi'], ['autoReview','Auto'],
-  ['addBus','Add Bus'], ['corrections','Corrections'], ['review','Review Center'],
+  ['addBus','Add Bus'], ['corrections','Corrections'], ['feedbackReview','Feedback'], ['review','Review Center'],
   ['seats','Taxi Seats'], ['drivers','Drivers'], ['settings','Settings']
 ];
 var TITLES = {
   dashboard:'Dashboard', places:'Places', routes:'Bus Routes', busRequests:'Bus Route Requests',
   taxiReview:'Taxi Requests', autoReview:'Auto Requests', addBus:'Add Bus',
-  corrections:'Corrections', review:'Review Center', seats:'Taxi Seats', drivers:'Drivers', settings:'Settings'
+  corrections:'Corrections', feedbackReview:'Feedback', review:'Review Center', seats:'Taxi Seats', drivers:'Drivers', settings:'Settings'
 };
 
 // ============ Helpers ============
@@ -405,7 +405,7 @@ function render() {
     var views = { dashboard:viewDashboard, places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers,
       busRequests:viewBusRequests, taxiReview:function(){return viewCommunity('taxi');},
       autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
-      corrections:function(){return viewCommunity('corrections');}, review:viewReview, settings:viewSettings };
+      corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, settings:viewSettings };
     v.innerHTML = (views[tab] || viewDashboard)();
   }
   renderModal();
@@ -748,19 +748,22 @@ function viewCommunity(mode) {
   var counts = {};
   sections.forEach(function(p){ counts[p[0]] = {pending:0,approved:0,rejected:0}; });
   all.forEach(function(x){ if(counts[x._kind] && counts[x._kind][x.status] !== undefined) counts[x._kind][x.status]++; });
-  var html = '<div class="toolbar"><span class="grow muted">Requests are separated by purpose. Similar-looking entries are kept unless verified duplicates.</span><button class="btn" data-act="community-refresh">Refresh</button></div>';
-  html += '<div class="chips">' + sections.map(function(p){return '<button class="btn '+(communitySection===p[0]?'primary':'')+'" data-act="community-section" data-section="'+p[0]+'">'+p[1]+' ('+((community[p[0]]||[]).length)+')</button>';}).join('') + '</div>';
-  if (community._failed && community._failed.length) html = '<div class="card" style="border-color:#c0392b"><b>Some tables failed to load:</b><br>' + community._failed.map(esc).join('<br>') + '<br><span class="muted">These tables are missing from Supabase. Run supabase/fix_app_admin_sync.sql in SQL Editor, confirm Success, then press Refresh.</span></div>' + html;
-  var selectedCounts = communitySection === 'all' ? all.reduce(function(total,x){ if(total[x.status] !== undefined) total[x.status]++; return total; }, {pending:0,approved:0,rejected:0}) : (counts[communitySection] || {pending:0,approved:0,rejected:0});
+  function matchesMode(x) {
+    var textValue = (x.category||'') + ' ' + (x.message||'');
+    if (mode === 'taxi') return (x._kind === 'vehicles' && x.vehicle_type === 'taxi') || (x._kind === 'feedback' && /taxi/i.test(textValue));
+    if (mode === 'auto') return (x._kind === 'vehicles' && x.vehicle_type === 'auto') || (x._kind === 'feedback' && /auto|rickshaw/i.test(textValue));
+    if (mode === 'bus') return x._kind === 'busSubmissions';
+    if (mode === 'corrections') return x._kind === 'corrections';
+    if (mode === 'feedback') return x._kind === 'feedback' && !/correct/i.test(textValue) && !/taxi|auto|rickshaw/i.test(textValue);
+    return communitySection === 'all' || x._kind === communitySection;
+  }
+  var html = '<div class="toolbar"><span class="grow muted">' + esc(mode === 'taxi' ? 'Taxi listings and taxi-related corrections.' : mode === 'auto' ? 'Auto listings and auto-related corrections.' : mode === 'bus' ? 'Review Add Bus submissions and manage published operator details.' : mode === 'corrections' ? 'Route correction requests only.' : mode === 'feedback' ? 'General feedback not classified as a vehicle or route correction.' : 'Requests grouped by category.') + '</span><button class="btn" data-act="community-refresh">Refresh</button>' + (sbToken ? '<button class="btn" data-act="sb-logout">Sign out</button>' : '') + '</div>';
+  if (!mode) html += '<div class="chips">' + sections.map(function(p){return '<button class="btn '+(communitySection===p[0]?'primary':'')+'" data-act="community-section" data-section="'+p[0]+'">'+p[1]+' ('+((community[p[0]]||[]).length)+')</button>';}).join('') + '</div>';
+  if (community._failed && community._failed.length) html = '<div class="card" style="border-color:#c0392b"><b>Some tables failed to load:</b><br>' + community._failed.map(esc).join('<br>') + '<br><span class="muted">Tables failed to load: ' + community._failed.map(esc).join(', ') + '. Check the error and refresh.</span></div>' + html;
+  var scoped = all.filter(matchesMode);
+  var selectedCounts = scoped.reduce(function(total,x){ if(total[x.status] !== undefined) total[x.status]++; return total; }, {pending:0,approved:0,rejected:0});
   html += '<div class="toolbar">' + ['pending','approved','rejected'].map(function(st){ return '<button class="btn '+(communityStatus===st?'primary':'')+'" data-act="community-status" data-status="'+st+'">'+st[0].toUpperCase()+st.slice(1)+' ('+selectedCounts[st]+')</button>'; }).join('') + '</div>';
-  var filtered = all.filter(function(x){
-    var matchesMode = mode === 'taxi' ? (x._kind === 'vehicles' && x.vehicle_type === 'taxi' || x._kind === 'feedback' && /taxi/i.test((x.category||'')+' '+(x.message||''))) :
-      mode === 'auto' ? (x._kind === 'vehicles' && x.vehicle_type === 'auto' || x._kind === 'feedback' && /auto|rickshaw/i.test((x.category||'')+' '+(x.message||''))) :
-      mode === 'bus' ? x._kind === 'busSubmissions' :
-      mode === 'corrections' ? (x._kind === 'corrections' || x._kind === 'feedback' && /correct/i.test((x.category||'')+' '+(x.message||''))) :
-      (communitySection === 'all' || x._kind === communitySection);
-    return matchesMode && x.status === communityStatus;
-  });
+  var filtered = scoped.filter(function(x){ return x.status === communityStatus; });
   if (!filtered.length) html += '<div class="card"><p class="muted">No '+esc(communityStatus)+' requests match this filter.</p></div>';
   filtered.forEach(function(x){
     var details = '';
@@ -917,7 +920,7 @@ document.addEventListener('click', async function (e) {
   try {
     if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; publishOpen = false; render();
-      if (['review','busRequests','taxiReview','autoReview','addBus','corrections'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
+      if (['review','busRequests','taxiReview','autoReview','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
     else if (act === 'close') { editing = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
