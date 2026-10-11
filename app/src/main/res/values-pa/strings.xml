@@ -102,4 +102,5 @@
     <string name="ar_time_order">ਇਹ ਸਮਾਂ ਪਿਛਲੇ ਪੜਾਅ ਤੋਂ ਪਹਿਲਾਂ ਦਾ ਹੈ। ਅੱਧੀ ਰਾਤ ਤੋਂ ਬਾਅਦ ਦਾ ਸਮਾਂ ਤਾਂ ਹੀ ਠੀਕ ਹੈ ਜੇ ਪੂਰਾ ਸਫ਼ਰ 16 ਘੰਟਿਆਂ ਦੇ ਅੰਦਰ ਹੋਵੇ; ਕਿਰਪਾ ਕਰਕੇ ਸਮਾਂ ਜਾਂਚੋ।</string>
     <string name="ar_pick_route">ਕਿਰਪਾ ਕਰਕੇ ਇੱਕ ਰੂਟ ਚੁਣੋ</string>
     <string name="ar_need_time">ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਮਾਂ ਦਿਓ</string>
+    <string name="no_areas_yet">ਹਾਲੇ ਕੋਈ ਇਲਾਕਾ ਉਪਲਬਧ ਨਹੀਂ। ਇਲਾਕੇ ਵਾਲੇ ਡਰਾਈਵਰ ਜੁੜਨ ਤੇ ਇੱਥੇ ਦਿਖੇਗਾ।</string>
 </resources>
