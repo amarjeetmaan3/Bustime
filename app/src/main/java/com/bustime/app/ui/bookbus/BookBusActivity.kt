@@ -22,21 +22,41 @@ class BookBusActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         title = getString(com.bustime.app.R.string.book_bus)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(18, 12, 18, 18) }
-        root.addView(TextView(this).apply { text = getString(com.bustime.app.R.string.bb_intro); textSize = 15f; setPadding(0, 8, 0, 16) })
+        root.addView(TextView(this).apply { text = getString(com.bustime.app.R.string.bb_intro); textSize = 15f; setPadding(0, 8, 0, 10) })
+        val areaLabel = TextView(this).apply { text = "Select your area (required)"; textSize = 16f; setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, 8, 0, 6) }
+        root.addView(areaLabel)
+        val areaSpinner = android.widget.Spinner(this)
+        areaSpinner.isEnabled = false
+        root.addView(areaSpinner, LinearLayout.LayoutParams(-1, -2))
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 12, 0, 0) }
+        root.addView(results)
         val scroll = ScrollView(this).apply { addView(root) }; setContentView(scroll)
         lifecycleScope.launch {
             val raw = withContext(Dispatchers.IO) { CommunitySupabase.getPublicOperators() }
             if (raw == null) {
+                results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_load_failed) })
                 root.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_load_failed) })
-                root.addView(com.google.android.material.button.MaterialButton(this@BookBusActivity).apply {
+                results.addView(com.google.android.material.button.MaterialButton(this@BookBusActivity).apply {
                     text = "Add Your Bus"
                     setOnClickListener { startActivity(Intent(this@BookBusActivity, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "bus_operator")) }
                 })
                 return@launch
             }
             val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
-            if (rows.length() == 0) { root.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_none); textSize = 16f }) }
-            for (i in 0 until rows.length()) {
+            val allRows = (0 until rows.length()).map { rows.getJSONObject(it) }
+            val areas = allRows.map { it.optString("location").trim() }.filter { it.isNotBlank() }.distinct().sorted()
+            areaSpinner.adapter = android.widget.ArrayAdapter(this@BookBusActivity, android.R.layout.simple_spinner_dropdown_item, listOf("Choose an area") + areas)
+            areaSpinner.isEnabled = areas.isNotEmpty()
+            if (areas.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = "No service areas are available yet. Admin must add an operating area to each operator." })
+            fun renderArea(selectedArea: String) {
+                results.removeAllViews()
+                if (selectedArea.isBlank()) {
+                    results.addView(TextView(this@BookBusActivity).apply { text = "Select an area above to view matching bus options."; textSize = 15f; setPadding(0, 8, 0, 8) })
+                    return
+                }
+                val matching = allRows.filter { it.optString("location").trim().equals(selectedArea, ignoreCase = true) }
+                if (matching.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = "No bus options available in $selectedArea."; textSize = 16f })
+                for (item in matching) {
                 val item = rows.getJSONObject(i)
                 val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(getColor(com.bustime.app.R.color.surfaceVariant)); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
                 val name = item.optString("operator_name", "Bus Operator")
@@ -65,15 +85,23 @@ class BookBusActivity : AppCompatActivity() {
                     text = "${getString(com.bustime.app.R.string.bb_whatsapp)}: $whatsapp"; textSize = 16f; setTextColor(0xFF128C7E.toInt()); setPadding(0, 8, 0, 2)
                     setOnClickListener { try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/${whatsapp.filter { c -> c.isDigit() }}"))) } catch (_: Exception) { Toast.makeText(this@BookBusActivity, com.bustime.app.R.string.bb_whatsapp_error, Toast.LENGTH_SHORT).show() } }
                 })
-                root.addView(card)
+                results.addView(card)
+                }
             }
+            areaSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                    renderArea(if (position == 0) "" else areas[position - 1])
+                }
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) { renderArea("") }
+            }
+            renderArea("")
             val addBus = com.google.android.material.button.MaterialButton(this@BookBusActivity).apply {
                 text = "Add Your Bus"
                 setOnClickListener {
                     startActivity(Intent(this@BookBusActivity, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "bus_operator"))
                 }
             }
-            root.addView(addBus, LinearLayout.LayoutParams(-1, -2).apply { topMargin = 16 })
+            results.addView(addBus, LinearLayout.LayoutParams(-1, -2).apply { topMargin = 16 })
         }
     }
 }
