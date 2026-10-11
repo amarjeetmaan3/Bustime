@@ -33,9 +33,6 @@ abstract class TransportDao {
     @Query("SELECT * FROM places ORDER BY searchText")
     abstract suspend fun getAllPlaces(): List<Place>
 
-    @Query("SELECT * FROM places WHERE lower(kind) != 'stand' AND searchText LIKE '%' || :query || '%' ORDER BY CASE WHEN searchText LIKE :query || '%' THEN 0 ELSE 1 END, searchText LIMIT :limit")
-    abstract suspend fun searchAreaPlaces(query: String, limit: Int): List<Place>
-
     // From → To: वो रूट जिनमें From वाली जगह To वाली से पहले आती है, समय के क्रम में
     @Query(
         "SELECT r.id AS routeId, r.fromId AS routeFromId, r.toId AS routeToId, " +
@@ -73,6 +70,10 @@ abstract class TransportDao {
 
     @Query("SELECT seats FROM seater_groups ORDER BY seats")
     abstract suspend fun getSeaterGroups(): List<Int>
+
+    /** Independent Taxi/Auto service areas; never sourced from bus places or route stops. */
+    @Query("SELECT DISTINCT areaId FROM drivers WHERE areaId IS NOT NULL AND TRIM(areaId) <> '' ORDER BY areaId COLLATE NOCASE")
+    abstract suspend fun getDriverAreas(): List<String>
 
     @Query(
         "SELECT * FROM drivers WHERE type = :type " +
