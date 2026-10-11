@@ -148,7 +148,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="6dp"
-            android:text="Add Route" />
+            android:text="@string/add_route" />
 
         <Button
             android:id="@+id/btnBookBus"
@@ -156,6 +156,6 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="6dp"
-            android:text="Book Bus" />
+            android:text="@string/book_bus" />
     </LinearLayout>
 </LinearLayout>
