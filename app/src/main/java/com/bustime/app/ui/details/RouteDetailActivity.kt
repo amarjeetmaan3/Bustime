@@ -14,6 +14,7 @@ import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.utils.ContactActions
 import com.bustime.app.utils.LanguageHelper
+import com.bustime.app.utils.AnalyticsHelper
 import com.bustime.app.utils.TimeFlow
 import com.bustime.app.utils.TimeFormat
 import kotlinx.coroutines.launch
@@ -31,6 +32,7 @@ class RouteDetailActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_route_detail)
+        intent.getStringExtra("ROUTE_ID")?.let { AnalyticsHelper.logEvent(this, "route_detail_view", "bus", org.json.JSONObject().put("route_id", it)) }
 
         findViewById<Button>(R.id.btnBackDetail).visibility = View.GONE
         // Keep route correction fixed at the bottom while the stops list scrolls.
