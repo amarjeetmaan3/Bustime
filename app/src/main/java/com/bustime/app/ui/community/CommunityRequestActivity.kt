@@ -47,7 +47,7 @@ class CommunityRequestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mode = intent.getStringExtra("mode") ?: "feedback"
-        title = when (mode) { "correction" -> "Route Correction"; "vehicle" -> "Add Auto / Taxi"; "bus_operator" -> "Add Your Bus"; "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") "Taxi Correction" else "Auto Correction"; else -> "Feedback" }
+        title = when (mode) { "correction" -> "Route Correction"; "vehicle" -> "Add Auto / Taxi"; "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") "Taxi Correction" else "Auto Correction"; else -> "Feedback" }
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll)
@@ -160,9 +160,9 @@ class CommunityRequestActivity : AppCompatActivity() {
         field("person_name", "Driver / contact person name")
         field("vehicle_name", "Vehicle name / model")
         field("seats", "Number of seats (if applicable)")
-        field("location", "City / area (not bus stand)")
-        if (requestedType == "auto") spinner("Fuel type", listOf("EV", "Oil"), "vehicle_fuel")
-        field("union_name", "Taxi / auto union name (optional)")
+        field("location", "Location / address")
+        field("area_name", "Service area (e.g. Sadhusar / Sri Ganganagar)")
+        field("union_name", "Union name (optional)")
         field("phone", "Mobile number")
         field("details", "Other information (optional)")
         button("Submit listing for admin review") {
@@ -170,48 +170,61 @@ class CommunityRequestActivity : AppCompatActivity() {
             val name = value("person_name"); val vehicle = value("vehicle_name"); val phone = digits(value("phone"))
             val seats = value("seats").toIntOrNull()
             if (name.isBlank() || vehicle.isBlank() || value("location").isBlank() || phone.length !in 10..13 || (type == "taxi" && (seats == null || seats < 1))) { toast("Enter name, vehicle, location and valid mobile number. Taxi listings also need seat count."); return@button }
+            val area = value("area_name")
+            if (area.isBlank()) { toast("Enter the driver's service area. This is separate from bus stands."); return@button }
             val body = JSONObject().put("vehicle_type", type).put("person_name", name).put("vehicle_name", vehicle)
                 .put("seats", seats ?: JSONObject.NULL).put("location", value("location"))
-                .put("fuel", if (type == "auto") if (spinners["vehicle_fuel"]?.selectedItemPosition == 0) "ev" else "oil" else JSONObject.NULL)
+                .put("area_name", area)
                 .put("union_name", value("union_name").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("phone", phone).put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             sendRequests(listOf(body), "vehicle_submissions", "Listing sent for admin review.")
         }
     }
 
-
     private fun busOperatorForm() {
-        field("operator_name", "Bus operator / owner name")
-        field("service_name", "Service name (optional)")
-        spinner("Bus category", listOf("Ordinary", "Luxury", "Sleeper", "Seater", "Sleeper + Seater", "Other / custom"), "bus_category")
-        field("custom_category", "Custom category name (optional)")
-        spinner("Seat layout", listOf("Sleeper", "Seater", "Sleeper + Seater", "Other / custom"), "seat_layout")
-        field("sleeper_count", "Number of sleeper berths (if applicable)")
-        field("seater_count", "Number of seats (if applicable)")
-        field("operator_from", "From city")
-        field("operator_to", "To city")
-        field("location", "Operating city / area")
+        heading("Add Your Bus")
+        text("Submit bus details for admin verification. The listing becomes public only after approval.", 14f)
+        field("operator_name", "Bus owner / operator name")
+        field("service_name", "Service name")
+        spinner("Bus category", listOf("Ordinary", "Luxury", "Sleeper", "Seater", "Sleeper + Seater", "Custom"), "bus_type")
+        field("custom_category", "Custom category name (if Custom, e.g. Prime A)")
+        spinner("Seat configuration", listOf("Not specified", "Sleeper", "Seater", "Sleeper + Seater"), "seat_type")
+        field("sleeper_count", "Number of sleeper berths")
+        field("seater_count", "Number of seats")
+        field("from_text", "Starting city / area")
+        field("to_text", "Destination city / area")
+        field("location", "Operating area (optional)")
         field("phone", "Contact mobile number")
         field("whatsapp", "WhatsApp number (optional)")
-        field("details", "Bus facilities / other details (optional)")
-        button("Submit bus for admin verification") {
-            val name = value("operator_name"); val phone = digits(value("phone"))
-            val category = if (spinners["bus_category"]?.selectedItemPosition == 5 && value("custom_category").isNotBlank()) value("custom_category") else spinners["bus_category"]?.selectedItem?.toString().orEmpty()
-            if (name.isBlank() || phone.length !in 10..13) { toast("Enter operator name and a valid phone number."); return@button }
-            val body = JSONObject().put("operator_name", name).put("service_name", value("service_name").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("bus_type", category).put("seat_type", spinners["seat_layout"]?.selectedItem?.toString())
-                .put("sleeper_count", value("sleeper_count").toIntOrNull() ?: JSONObject.NULL)
-                .put("seater_count", value("seater_count").toIntOrNull() ?: JSONObject.NULL)
-                .put("from_text", value("operator_from").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("to_text", value("operator_to").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+        field("details", "Additional details (optional)")
+        button("Submit bus for admin review") {
+            val operator = value("operator_name")
+            val phone = digits(value("phone"))
+            val category = spinners["bus_type"]?.selectedItem?.toString() ?: "Ordinary"
+            val custom = value("custom_category")
+            val seatsType = spinners["seat_type"]?.selectedItem?.toString()?.takeUnless { it == "Not specified" }
+            val sleeper = value("sleeper_count").toIntOrNull()
+            val seater = value("seater_count").toIntOrNull()
+            if (operator.isBlank() || phone.length !in 10..13) { toast("Enter operator name and a valid mobile number."); return@button }
+            if (category == "Custom" && custom.isBlank()) { toast("Enter your custom bus category."); return@button }
+            if ((sleeper != null && sleeper < 0) || (seater != null && seater < 0)) { toast("Seat counts cannot be negative."); return@button }
+            val body = JSONObject()
+                .put("operator_name", operator)
+                .put("service_name", value("service_name").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("bus_type", if (category == "Custom") custom else category)
+                .put("custom_category", custom.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("seat_type", seatsType ?: JSONObject.NULL)
+                .put("sleeper_count", sleeper ?: JSONObject.NULL)
+                .put("seater_count", seater ?: JSONObject.NULL)
+                .put("from_text", value("from_text").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("to_text", value("to_text").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("location", value("location").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("phone", phone).put("whatsapp", digits(value("whatsapp")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("phone", phone)
+                .put("whatsapp", digits(value("whatsapp")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             sendRequests(listOf(body), "bus_operator_submissions", "Bus submitted for admin verification.")
         }
     }
-
-
 
     private fun vehicleCorrectionForm() {
         val type = intent.getStringExtra("vehicle_type")?.takeIf { it == "taxi" || it == "auto" } ?: "auto"
