@@ -793,6 +793,8 @@ function viewCommunity(mode) {
       community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||'-')+' / '+esc(o.bus_type)+'</td><td>'+esc(o.from_text||'-')+' → '+esc(o.to_text||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
   }
   return html;
+}
+
 function viewReview() {
   if (!sbToken) return viewSupabaseSignIn();
   var all = [];
