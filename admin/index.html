@@ -84,6 +84,76 @@
   .dlg-foot { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
   #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1F2933; color:#fff; padding:11px 20px; border-radius:24px; display:none; z-index:50; max-width:92%; font-size:14px; }
 
+
+  /* Professional console refresh */
+  :root { --brand:#2458D3; --brand-d:#173B91; --brand-l:#EAF0FF; --bg:#F5F7FB; --line:#E5EAF2; --text:#182230; --muted:#66758A; }
+  body { background:var(--bg); color:var(--text); font-size:14px; letter-spacing:.005em; }
+  .app { min-height:100vh; }
+  aside { width:248px; padding:22px 14px; background:#101C36; border-right:0; color:#fff; box-shadow:8px 0 24px rgba(16,28,54,.05); }
+  .brand { color:#fff; font-size:21px; letter-spacing:-.04em; padding:5px 12px 28px; }
+  .brand small { color:#A7B5D0; margin-top:5px; letter-spacing:.02em; }
+  .nav { gap:5px; }
+  .nav button { color:#B9C6DE; padding:12px 13px; border-radius:10px; font-size:14px; transition:background .15s,color .15s; }
+  .nav button:hover { background:rgba(255,255,255,.08); color:#fff; }
+  .nav button.on { background:#244A9B; color:#fff; box-shadow:inset 3px 0 #8FB3FF; }
+  .nav .count { background:rgba(255,255,255,.12); color:#DCE7FF; }
+  .nav button.on .count { background:rgba(255,255,255,.16); color:#fff; }
+  header.top { padding:17px 30px; gap:14px; border-bottom:1px solid var(--line); box-shadow:0 3px 14px rgba(20,35,65,.025); }
+  header.top h1 { font-size:21px; font-weight:750; letter-spacing:-.035em; }
+  main { max-width:1500px; padding:28px 30px 44px; }
+  .btn { border-color:#D8E0EC; border-radius:9px; padding:9px 13px; font-size:13px; font-weight:650; transition:all .15s ease; }
+  .btn:hover { border-color:#B7C7E3; background:#F6F8FC; transform:translateY(-1px); }
+  .btn.primary { background:var(--brand); border-color:var(--brand); box-shadow:0 3px 8px rgba(36,88,211,.15); }
+  .btn.primary:hover { background:var(--brand-d); }
+  .btn.danger { color:#B42318; border-color:#F1C8C4; background:#FFFAF9; }
+  .card { border-color:var(--line); border-radius:15px; padding:22px; box-shadow:0 4px 16px rgba(22,34,55,.035); }
+  .card h2 { font-size:16px; font-weight:750; letter-spacing:-.02em; }
+  .muted { color:var(--muted); }
+  .toolbar { gap:10px; margin-bottom:16px; }
+  input, select { border-color:#D8E0EC; border-radius:10px; min-height:41px; }
+  .tablewrap { border-color:var(--line); border-radius:14px; box-shadow:0 4px 16px rgba(22,34,55,.03); }
+  table { min-width:760px; }
+  th { padding:14px 16px; background:#F7F9FC; color:#69788E; font-size:10px; letter-spacing:.09em; }
+  td { padding:15px 16px; border-bottom-color:#EDF1F6; }
+  tbody tr:hover { background:#FAFBFE; }
+  td.actions .btn { margin-left:4px; }
+  .stats { gap:14px; }
+  .stat { border-radius:14px; padding:19px; box-shadow:0 4px 16px rgba(22,34,55,.03); }
+  .stat b { font-size:30px; letter-spacing:-.04em; }
+  .badge { border-radius:7px; padding:4px 8px; font-size:11px; }
+  .bus-page-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:22px; }
+  .bus-page-head h2 { margin:0 0 7px; font-size:25px; line-height:1.2; letter-spacing:-.045em; }
+  .bus-page-head p { margin:0; max-width:650px; }
+  .bus-route-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin:0 0 20px; }
+  .bus-route-stat { background:#fff; border:1px solid var(--line); border-radius:13px; padding:16px 18px; display:flex; align-items:center; gap:13px; }
+  .bus-route-stat .iconbox { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; background:#EAF0FF; color:#2458D3; font-weight:800; font-size:18px; flex:0 0 auto; }
+  .bus-route-stat strong { display:block; font-size:23px; line-height:1.1; letter-spacing:-.04em; }
+  .bus-route-stat span { display:block; color:var(--muted); font-size:12px; margin-top:5px; }
+  .bus-route-toolbar { display:flex; align-items:center; gap:12px; padding:14px; background:#fff; border:1px solid var(--line); border-radius:13px 13px 0 0; border-bottom:0; }
+  .bus-route-toolbar .searchbox { flex:1; min-width:180px; position:relative; }
+  .bus-route-toolbar .searchbox input { padding-left:39px; }
+  .bus-route-toolbar .searchmark { position:absolute; left:14px; top:10px; color:#8A98AC; font-size:17px; }
+  .bus-route-table { border-radius:0 0 13px 13px; }
+  .bus-route-table table { min-width:850px; }
+  .route-time { display:inline-flex; align-items:center; background:#EAF7EF; color:#187447; border:1px solid #D3EBDD; border-radius:8px; padding:6px 9px; font-weight:800; font-size:13px; white-space:nowrap; }
+  .route-line { display:flex; align-items:center; gap:9px; min-width:230px; }
+  .route-line .endpoint { font-weight:750; color:#202C3D; }
+  .route-line .arrow { color:#8C9BB0; font-size:16px; }
+  .route-subline { color:#78869A; font-size:11px; margin-top:5px; }
+  .route-count { display:inline-flex; align-items:center; justify-content:center; min-width:30px; height:27px; padding:0 8px; border-radius:8px; background:#F0F3F8; color:#45546A; font-weight:750; }
+  .bus-table-caption { display:flex; justify-content:space-between; gap:10px; padding:11px 15px; background:#fff; border:1px solid var(--line); border-top:0; border-radius:0 0 13px 13px; color:var(--muted); font-size:12px; }
+  .bus-table-caption strong { color:#344054; }
+  @media (max-width:860px) {
+    aside { background:#101C36; }
+    .nav { gap:4px; }
+    .nav button { padding:10px 12px; }
+    header.top, main { padding:14px; }
+    .bus-page-head { flex-direction:column; }
+    .bus-route-stats { grid-template-columns:1fr; gap:9px; }
+    .bus-route-toolbar { flex-wrap:wrap; }
+    .bus-route-toolbar .searchbox { flex-basis:100%; }
+  }
+
   @media (max-width:860px) {
     .app { flex-direction:column; }
     aside { width:100%; height:auto; position:static; padding:8px; border-right:0; border-bottom:1px solid var(--line); }
@@ -370,22 +440,40 @@ function placeFormHtml() {
 }
 
 function viewRoutes() {
-  var q = filters.routes.toLowerCase();
-  var rows = data.routes.map(function (r, i) { return { r: r, i: i }; }).filter(function (x) {
-    var t = (pname(placeById(x.r.from)) + ' ' + pname(placeById(x.r.to)) + ' ' + (x.r.service || '')).toLowerCase();
+  var q = filters.routes.toLowerCase().trim();
+  var rows = data.routes.map(function (r, i) { return { r:r, i:i }; }).filter(function (x) {
+    var from = pname(placeById(x.r.from)), to = pname(placeById(x.r.to));
+    var t = (from + ' ' + to + ' ' + (x.r.service || '') + ' ' + x.r.time + ' ' + x.r.from + ' ' + x.r.to).toLowerCase();
     return !q || t.indexOf(q) >= 0;
   });
-  return '<div class="toolbar"><input class="grow" id="f_routes" data-filter="routes" placeholder="Search routes" value="' + esc(filters.routes) + '">' +
-    '<button class="btn primary" data-act="new-route">+ Add route</button></div>' +
-    '<div class="tablewrap"><table><thead><tr><th>Departs</th><th>Route</th><th>Service</th><th>Stops</th><th></th></tr></thead><tbody>' +
+  var withService = data.routes.filter(function(r){return !!String(r.service || '').trim();}).length;
+  var totalStops = data.routes.reduce(function(n,r){return n + (r.stops || []).length + 2;},0);
+  return '<div class="bus-page-head"><div><h2>Bus Routes</h2><p class="muted">Manage scheduled public transport routes, departure times and intermediate stops from one place. Changes remain local until you publish.</p></div>' +
+    '<button class="btn primary" data-act="new-route">＋ Add bus route</button></div>' +
+    '<div class="bus-route-stats">' +
+      '<div class="bus-route-stat"><div class="iconbox">↗</div><div><strong>' + data.routes.length + '</strong><span>Total scheduled routes</span></div></div>' +
+      '<div class="bus-route-stat"><div class="iconbox">◷</div><div><strong>' + totalStops + '</strong><span>Stop points across routes</span></div></div>' +
+      '<div class="bus-route-stat"><div class="iconbox">▤</div><div><strong>' + withService + '</strong><span>Routes with service name</span></div></div>' +
+    '</div>' +
+    '<div class="bus-route-toolbar"><div class="searchbox"><span class="searchmark">⌕</span><input id="f_routes" data-filter="routes" placeholder="Search from, to, service, or departure time…" value="' + esc(filters.routes) + '"></div>' +
+    '<span class="badge gray">' + rows.length + ' of ' + data.routes.length + ' routes</span>' +
+    '<button class="btn" data-act="tab" data-t="settings">Data settings</button></div>' +
+    '<div class="tablewrap bus-route-table"><table><thead><tr><th>DEPARTURE</th><th>ROUTE / STOPS</th><th>SERVICE</th><th>STOP COUNT</th><th style="text-align:right">ACTIONS</th></tr></thead><tbody>' +
     (rows.map(function (x) {
-      var r = x.r;
-      return '<tr><td><b>' + fmtTime(r.time) + '</b></td><td>' + esc(pname(placeById(r.from))) + ' &rarr; ' + esc(pname(placeById(r.to))) + '</td>' +
-        '<td>' + esc(r.service || '-') + '</td><td>' + ((r.stops || []).length + 2) + '</td><td class="actions">' +
-        '<button class="btn sm" data-act="reverse-route" data-i="' + x.i + '">Create return</button>' +
+      var r=x.r, from=pname(placeById(r.from)) || r.from || 'Unknown start', to=pname(placeById(r.to)) || r.to || 'Unknown destination';
+      var stopCount=(r.stops || []).length + 2;
+      return '<tr><td><span class="route-time">' + esc(fmtTime(r.time)) + '</span>' +
+        (r.arrive ? '<div class="route-subline">Arrival ' + esc(fmtTime(r.arrive)) + '</div>' : '') + '</td>' +
+        '<td><div class="route-line"><span class="endpoint">' + esc(from) + '</span><span class="arrow">→</span><span class="endpoint">' + esc(to) + '</span></div>' +
+        '<div class="route-subline">' + esc(r.from || '') + ' · ' + esc(r.to || '') + (r.longRoute ? ' · Long route' : '') + '</div></td>' +
+        '<td>' + (r.service ? '<b>' + esc(r.service) + '</b>' : '<span class="muted">No service name</span>') +
+        (r.contact ? '<div class="route-subline">Contact: ' + esc(r.contact) + '</div>' : '') + '</td>' +
+        '<td><span class="route-count">' + stopCount + '</span><div class="route-subline">' + (r.stops || []).length + ' intermediate</div></td>' +
+        '<td class="actions"><button class="btn sm" data-act="reverse-route" data-i="' + x.i + '" title="Create return route">↔ Return</button>' +
         '<button class="btn sm" data-act="edit-route" data-i="' + x.i + '">Edit</button>' +
         '<button class="btn sm danger" data-act="del-route" data-i="' + x.i + '">Delete</button></td></tr>';
-    }).join('') || '<tr><td colspan="5" class="empty">No routes found</td></tr>') + '</tbody></table></div>';
+    }).join('') || '<tr><td colspan="5" class="empty">' + (q ? 'No routes match this search. Try a different place or service name.' : 'No bus routes yet. Add your first route to get started.') + '</td></tr>') +
+    '</tbody></table></div><div class="bus-table-caption"><span>Showing <strong>' + rows.length + '</strong> route records</span><span>' + (dirty ? '● Unpublished edits' : '✓ Data loaded') + '</span></div>';
 }
 function placeOptions(sel) {
   var list = data.places.slice().sort(function (a, b) { return pname(a).localeCompare(pname(b)); });
