@@ -1136,7 +1136,13 @@ document.addEventListener('click', async function (e) {
         var resolvedStops = [];
         for (var esi = 0; esi < v.stops.length; esi++) {
           var es = v.stops[esi], submittedName = String(es.name || '').trim();
-          var resolvedId = submittedName ? ensureSubmittedPlace(submittedName) : es.place;
+          var originalPlace = es.place ? placeById(es.place) : null;
+          var originalNames = originalPlace ? Object.keys(originalPlace.name || {}).map(function (k) {
+            return String(originalPlace.name[k] || '').trim().toLowerCase().replace(/\\s+/g, ' ');
+          }) : [];
+          var normalizedSubmittedName = submittedName.toLowerCase().replace(/\\s+/g, ' ');
+          var resolvedId = !submittedName ? es.place :
+            (originalPlace && originalNames.indexOf(normalizedSubmittedName) >= 0 ? es.place : ensureSubmittedPlace(submittedName));
           if (!resolvedId || !placeById(resolvedId)) { toast('Every stop must have a valid name.'); return; }
           resolvedStops.push({ place: resolvedId, time: es.time });
         }
