@@ -23,7 +23,7 @@ class BookBusActivity : AppCompatActivity() {
         title = getString(com.bustime.app.R.string.book_bus)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(18, 12, 18, 18) }
         root.addView(TextView(this).apply { text = getString(com.bustime.app.R.string.bb_intro); textSize = 15f; setPadding(0, 8, 0, 10) })
-        val areaLabel = TextView(this).apply { text = "Select your area (required)"; textSize = 16f; setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, 8, 0, 6) }
+        val areaLabel = TextView(this).apply { text = getString(com.bustime.app.R.string.bb_select_area_required); textSize = 16f; setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, 8, 0, 6) }
         root.addView(areaLabel)
         val areaSpinner = android.widget.Spinner(this)
         areaSpinner.isEnabled = false
@@ -37,7 +37,7 @@ class BookBusActivity : AppCompatActivity() {
                 results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_load_failed) })
                 root.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_load_failed) })
                 results.addView(com.google.android.material.button.MaterialButton(this@BookBusActivity).apply {
-                    text = "Add Your Bus"
+                    text = getString(com.bustime.app.R.string.bb_add_your_bus)
                     setOnClickListener { startActivity(Intent(this@BookBusActivity, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "bus_operator")) }
                 })
                 return@launch
@@ -45,17 +45,17 @@ class BookBusActivity : AppCompatActivity() {
             val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
             val allRows = (0 until rows.length()).map { rows.getJSONObject(it) }
             val areas = allRows.map { it.optString("location").trim() }.filter { it.isNotBlank() }.distinct().sorted()
-            areaSpinner.adapter = android.widget.ArrayAdapter(this@BookBusActivity, android.R.layout.simple_spinner_dropdown_item, listOf("Choose an area") + areas)
+            areaSpinner.adapter = android.widget.ArrayAdapter(this@BookBusActivity, android.R.layout.simple_spinner_dropdown_item, listOf(getString(com.bustime.app.R.string.bb_choose_area)) + areas)
             areaSpinner.isEnabled = areas.isNotEmpty()
-            if (areas.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = "No service areas are available yet. Admin must add an operating area to each operator." })
+            if (areas.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_no_areas_admin) })
             fun renderArea(selectedArea: String) {
                 results.removeAllViews()
                 if (selectedArea.isBlank()) {
-                    results.addView(TextView(this@BookBusActivity).apply { text = "Select an area above to view matching bus options."; textSize = 15f; setPadding(0, 8, 0, 8) })
+                    results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_select_area_prompt); textSize = 15f; setPadding(0, 8, 0, 8) })
                     return
                 }
                 val matching = allRows.filter { it.optString("location").trim().equals(selectedArea, ignoreCase = true) }
-                if (matching.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = "No bus options available in $selectedArea."; textSize = 16f })
+                if (matching.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_no_options_area, selectedArea); textSize = 16f })
                 for (item in matching) {
                 val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(getColor(com.bustime.app.R.color.surfaceVariant)); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
                 val name = item.optString("operator_name", "Bus Operator")
