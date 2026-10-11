@@ -62,6 +62,7 @@ object AreaPicker {
         job = owner.lifecycleScope.launch {
             allAreas = repo.getDriverAreas().distinctBy { it.trim().lowercase(Locale.ROOT) }
             filter(etSearch.text?.toString().orEmpty())
+            if (allAreas.isEmpty()) android.widget.Toast.makeText(ctx, R.string.no_areas_yet, android.widget.Toast.LENGTH_LONG).show()
         }
         etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
