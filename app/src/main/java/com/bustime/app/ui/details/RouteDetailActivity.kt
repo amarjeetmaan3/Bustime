@@ -26,6 +26,12 @@ class RouteDetailActivity : AppCompatActivity() {
         setContentView(R.layout.activity_route_detail)
 
         findViewById<Button>(R.id.btnBackDetail).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btnRouteCorrection).setOnClickListener {
+            val id = intent.getStringExtra("ROUTE_ID") ?: return@setOnClickListener
+            startActivity(android.content.Intent(this, com.bustime.app.ui.community.CommunityRequestActivity::class.java)
+                .putExtra("mode", "correction")
+                .putExtra("route_id", id))
+        }
 
         val routeId = intent.getStringExtra("ROUTE_ID")
         if (routeId == null) {
