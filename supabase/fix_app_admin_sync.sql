@@ -53,3 +53,56 @@ alter table public.vehicle_submissions add column if not exists fuel text;
 
 -- 4) Tell the API to reload its table list (fixes 404 / PGRST204)
 notify pgrst, 'reload schema';
+
+
+-- 5) Community tab: route corrections
+create table if not exists public.correction_submissions (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  route_id text,
+  request_type text not null,
+  stop_id text,
+  corrected_time text,
+  before_stop_id text,
+  after_stop_id text,
+  missing_place_id text,
+  missing_place_name text,
+  missing_time text,
+  notes text,
+  phone text,
+  status text not null default 'pending' check (status in ('pending','approved','rejected'))
+);
+alter table public.correction_submissions enable row level security;
+revoke all on public.correction_submissions from anon, authenticated;
+grant insert on public.correction_submissions to anon;
+grant select, update, delete on public.correction_submissions to authenticated;
+drop policy if exists "public submit route correction" on public.correction_submissions;
+create policy "public submit route correction" on public.correction_submissions
+  for insert to anon with check (status = 'pending');
+drop policy if exists "admin manage route corrections" on public.correction_submissions;
+create policy "admin manage route corrections" on public.correction_submissions
+  for all to authenticated using (true) with check (true);
+
+-- 6) Community feedback and Taxi/Auto correction requests
+create table if not exists public.feedback_submissions (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  category text,
+  related_route text,
+  message text not null,
+  contact text,
+  status text not null default 'pending' check (status in ('pending','approved','rejected'))
+);
+alter table public.feedback_submissions enable row level security;
+revoke all on public.feedback_submissions from anon, authenticated;
+grant insert on public.feedback_submissions to anon;
+grant select, update, delete on public.feedback_submissions to authenticated;
+drop policy if exists "public submit feedback" on public.feedback_submissions;
+create policy "public submit feedback" on public.feedback_submissions
+  for insert to anon with check (status = 'pending');
+drop policy if exists "admin manage feedback" on public.feedback_submissions;
+create policy "admin manage feedback" on public.feedback_submissions
+  for all to authenticated using (true) with check (true);
+
+-- Reload PostgREST's schema cache after creating the missing tables.
+notify pgrst, 'reload schema';
