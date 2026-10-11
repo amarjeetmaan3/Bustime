@@ -142,8 +142,8 @@ var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
 var NAV = [['dashboard','Dashboard'], ['places','Places'], ['routes','Bus Routes'],
-           ['seats','Taxi Seats'], ['drivers','Drivers'], ['review','Review'], ['community','Community'], ['settings','Settings']];
-var TITLES = { dashboard:'Dashboard', places:'Places', routes:'Bus Routes', seats:'Taxi Seats', drivers:'Drivers', review:'Review submissions', community:'Community requests & bus operators', settings:'Settings' };
+           ['seats','Taxi Seats'], ['drivers','Drivers'], ['review','Review Center'], ['settings','Settings']];
+var TITLES = { dashboard:'Dashboard', places:'Places', routes:'Bus Routes', seats:'Taxi Seats', drivers:'Drivers', review:'Review Center', settings:'Settings' };
 
 // ============ Helpers ============
 function $(s) { return document.querySelector(s); }
@@ -316,7 +316,7 @@ function render() {
       '<button class="btn primary" data-act="tab" data-t="settings">Go to Settings</button></div>';
   } else {
     v.innerHTML = { dashboard: viewDashboard, places: viewPlaces, routes: viewRoutes,
-                    seats: viewSeats, drivers: viewDrivers, review: viewReview, community: viewCommunity, settings: viewSettings }[tab]();
+                    seats: viewSeats, drivers: viewDrivers, review: viewReview, settings: viewSettings }[tab]();
   }
   renderModal();
 }
@@ -520,7 +520,7 @@ async function sbLogin(email, password) {
 async function loadSubs() {
   subs = await sbFetch('/rest/v1/route_submissions?select=*&order=created_at.desc&limit=300');
 }
-function viewReview() {
+function viewRouteReview() {
   if (!sbToken) {
     return '<div class="card"><h2>Supabase sign-in</h2><p class="muted">Sign in with the admin user you created in Supabase (Authentication → Users). The password is never stored.</p>' +
       '<label>Project URL</label><input id="sb_url" value="' + esc(cfg.sbUrl) + '" placeholder="https://xxxx.supabase.co">' +
@@ -649,6 +649,14 @@ function viewCommunity() {
     community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||'-')+' / '+esc(o.bus_type)+'</td><td>'+esc(o.from_text||'-')+' → '+esc(o.to_text||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
   return html;
 }
+function viewReview() {
+  if (!sbToken) return viewRouteReview();
+  var routeHtml = viewRouteReview();
+  var communityHtml = viewCommunity();
+  return '<div class="card review-intro"><h2>Review Center</h2><p class="muted">All incoming route submissions, corrections, taxi/auto listings, bus operator listings and feedback are reviewed here. Published data remains managed in its own section.</p></div>' +
+    '<section class="review-group"><h2 class="review-group-title">Bus route submissions</h2>' + routeHtml + '</section>' +
+    '<section class="review-group"><h2 class="review-group-title">Other requests & feedback</h2>' + communityHtml + '</section>';
+}
 function communityTable(kind) { return kind==='corrections'?'correction_submissions':kind==='vehicles'?'vehicle_submissions':kind==='busSubmissions'?'bus_operator_submissions':'feedback_submissions'; }
 function applyApprovedCorrection(x) {
   var r = data.routes.find(function(z){ return z.id === x.route_id; });
@@ -754,8 +762,7 @@ document.addEventListener('click', async function (e) {
   try {
     if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; publishOpen = false; render();
-      if (tab === 'review' && sbToken && !subs) { try { await loadSubs(); } catch (e) { subsError = e.message; } render(); }
-      if (tab === 'community' && sbToken && !community.corrections) { try { await loadCommunity(); } catch (e) { toast(e.message); } render(); }
+      if (tab === 'review' && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
     else if (act === 'close') { editing = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
@@ -901,10 +908,10 @@ document.addEventListener('click', async function (e) {
       cfg.sbUrl = val('sb_url'); cfg.sbKey = val('sb_key'); cfg.sbEmail = val('sb_email'); saveCfg();
       b.disabled = true; b.textContent = 'Signing in...';
       await sbLogin(cfg.sbEmail, document.getElementById('sb_pass').value);
-      subs = null; render(); await loadSubs(); if (tab === 'community') await loadCommunity(); render();
+      subs = null; render(); await Promise.all([loadSubs(), loadCommunity()]); render();
     }
     else if (act === 'sb-logout') { sbToken = null; subs = null; render(); }
-    else if (act === 'sb-refresh') { subs = null; render(); await loadSubs(); if (tab === 'community') await loadCommunity(); render(); }
+    else if (act === 'sb-refresh') { subs = null; render(); await Promise.all([loadSubs(), loadCommunity()]); render(); }
     else if (act === 'review-status') { reviewStatus = b.getAttribute('data-status'); render(); }
     else if (act === 'sb-reject') {
       if (!confirm('Reject this submission?')) return;
