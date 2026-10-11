@@ -1,18 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item
-        android:id="@+id/action_add_route"
-        android:title="@string/add_route"
-        app:showAsAction="never" />
-    <item android:id="@+id/action_route_correction" android:title="Correct a bus route" app:showAsAction="never" />
-    <item android:id="@+id/action_auto_correction" android:title="Correction Auto" app:showAsAction="never" />
-    <item android:id="@+id/action_taxi_correction" android:title="Correction Taxi" app:showAsAction="never" />
-    <item android:id="@+id/action_vehicle_listing" android:title="List Auto / Taxi" app:showAsAction="never" />
-    <item android:id="@+id/action_book_bus" android:title="Book Bus · Contact Operator" app:showAsAction="never" />
     <item android:id="@+id/action_feedback" android:title="Feedback" app:showAsAction="never" />
-    <item
-        android:id="@+id/action_language"
-        android:title="@string/language"
-        app:showAsAction="always" />
+    <item android:id="@+id/action_language" android:title="@string/language" app:showAsAction="always" />
 </menu>
