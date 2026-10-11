@@ -85,7 +85,8 @@
   #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1F2933; color:#fff; padding:11px 20px; border-radius:24px; display:none; z-index:50; max-width:92%; font-size:14px; }
 
 
-  .workspace-tabs { display:flex; flex-direction:row; align-items:center; gap:8px; overflow-x:auto; white-space:nowrap; padding:7px; margin:0 0 22px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 3px 12px rgba(22,34,55,.035); scrollbar-width:thin; }
+  .workspace-nav { position:sticky; top:0; z-index:4; display:flex; flex-direction:row; align-items:center; gap:8px; overflow-x:auto; white-space:nowrap; padding:10px 24px; background:#fff; border-bottom:1px solid var(--line); box-shadow:0 3px 12px rgba(22,34,55,.035); scrollbar-width:thin; }
+  .workspace-tabs { display:contents; }
   .workspace-tab { flex:0 0 auto; border:0; border-radius:8px; background:transparent; color:#526176; padding:11px 16px; font-size:13px; font-weight:700; cursor:pointer; }
   .workspace-tab:hover { background:#F2F5FB; color:var(--brand-d); }
   .workspace-tab.active { background:var(--brand); color:#fff; box-shadow:0 3px 8px rgba(36,88,211,.16); }
@@ -190,6 +191,7 @@
       <span class="pill dirty" id="dirty" style="display:none">Unpublished changes</span>
       <button class="btn primary" data-act="open-publish" id="pubBtn">Publish</button>
     </header>
+    <nav id="workspaceNav" class="workspace-nav" aria-label="Workspace tabs" style="display:none"></nav>
     <main id="view"></main>
   </div>
 </div>
@@ -395,6 +397,7 @@ function refreshChrome() {
 function render() {
   var counts = data ? { places:data.places.length, routes:data.routes.length, seats:data.taxiSeaters.length, drivers:data.drivers.length } : {};
   if (subs) counts.review = subs.length;
+  refreshWorkspaceNav();
   $('#nav').innerHTML = NAV.map(function (n) {
     return '<button data-act="tab" data-t="' + n[0] + '" class="' + (tab === n[0] ? 'on' : '') + '">' + n[1] +
       (counts[n[0]] != null ? '<span class="count">' + counts[n[0]] + '</span>' : '') + '</button>';
@@ -416,9 +419,29 @@ function render() {
 }
 
 function workspaceTabs(items, active) {
-  return '<div class="workspace-tabs" role="navigation" aria-label="Workspace sections">'+items.map(function(item){
+  return items.map(function(item){
     return '<button class="workspace-tab '+(active===item[0]?'active':'')+'" data-act="tab" data-t="'+item[0]+'">'+item[1]+'</button>';
-  }).join('')+'</div>';
+  }).join('');
+}
+function refreshWorkspaceNav() {
+  var host = $('#workspaceNav');
+  if (!host) return;
+  var items = [], active = tab;
+  if (['bus','places','routes','busRequests','addBus'].indexOf(tab) >= 0) {
+    items = [['places','Places & Bus Stands'],['routes','Bus Routes'],['busRequests','Route Requests'],['addBus','Add Your Bus']];
+    active = ['places','routes','busRequests','addBus'].indexOf(tab) >= 0 ? tab : 'bus';
+  } else if (['taxi','taxiReview','seats','drivers'].indexOf(tab) >= 0) {
+    items = [['taxiReview','Taxi Submissions'],['seats','Seat Options'],['drivers','Taxi Directory']];
+    active = ['taxiReview','seats','drivers'].indexOf(tab) >= 0 ? tab : 'taxi';
+  } else if (['auto','autoReview','drivers'].indexOf(tab) >= 0 && (tab==='auto'||tab==='autoReview'||tab==='drivers')) {
+    items = [['autoReview','Auto Submissions'],['drivers','Auto Directory']];
+    active = tab==='auto' ? 'auto' : tab;
+  } else if (tab==='review' || tab==='corrections' || tab==='feedbackReview') {
+    items = [['review','Overview'],['corrections','Corrections'],['feedbackReview','Feedback']];
+    active = tab;
+  }
+  host.innerHTML = items.length ? workspaceTabs(items,active) : '';
+  host.style.display = items.length ? 'flex' : 'none';
 }
 function viewBusHome() {
   var sub = ['places','routes','busRequests','addBus'].indexOf(tab) >= 0 ? tab : 'places';
