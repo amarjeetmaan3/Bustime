@@ -3,7 +3,6 @@ package com.bustime.app.ui.home
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
@@ -25,7 +24,7 @@ class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<
         val tvTime: TextView = view.findViewById(R.id.tvBusTime)
         val tvTitle: TextView = view.findViewById(R.id.tvBusTitle)
         val tvExtra: TextView = view.findViewById(R.id.tvBusExtra)
-        val btnCall: Button = view.findViewById(R.id.btnBusCall)
+        val btnCall: View = view.findViewById(R.id.btnBusCall)
     }
 
     fun submit(list: List<BusItem>) {

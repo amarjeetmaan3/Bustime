@@ -28,9 +28,14 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
             startActivity(android.content.Intent(requireContext(), com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "vehicle").putExtra("vehicle_type", "auto"))
         }
 
+        var currentFuel: String? = null
+        val btnArea = view.findViewById<android.widget.Button>(R.id.btnSelectArea)
+
         fun load(fuel: String?) {
+            currentFuel = fuel
             viewLifecycleOwner.lifecycleScope.launch {
-                val list = repo.getAutos(fuel).shuffled()   // हर बार क्रम बदलकर, सबको बराबर मौका
+                val ctx = context ?: return@launch
+                val list = repo.getAutos(fuel, AreaPicker.savedId(ctx)).shuffled()   // हर बार क्रम बदलकर, सबको बराबर मौका
                 adapter.submit(list)
                 tvEmpty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
             }
@@ -45,6 +50,20 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
                 }
                 load(fuel)
             }
+
+        fun refreshAreaLabel() {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val ctx = context ?: return@launch
+                btnArea.text = AreaPicker.label(ctx, repo)
+            }
+        }
+        refreshAreaLabel()
+        btnArea.setOnClickListener {
+            AreaPicker.show(requireContext(), viewLifecycleOwner, repo) {
+                refreshAreaLabel()
+                load(currentFuel)
+            }
+        }
 
         load(null)
     }

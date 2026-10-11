@@ -58,10 +58,11 @@ class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
         val d = items[position]
         val ctx = holder.itemView.context
 
+        // कार्ड पर सिर्फ़ दो लाइनें: (गाड़ी का नाम + सीटर) और (नंबर दिखाने की पट्टी)
         holder.tvName.text = d.name
-        setOptional(holder.tvVehicle, d.vehicle)
-        setOptional(holder.tvInfo, d.info)
-        holder.btnCorrect.text = if (d.type.equals("taxi", true)) "Correction Taxi" else "Correction Auto"
+        holder.tvVehicle.text = d.vehicle?.takeIf { it.isNotBlank() } ?: d.name
+        holder.tvInfo.visibility = View.GONE
+        holder.btnCorrect.text = ctx.getString(if (d.type.equals("taxi", true)) R.string.correction_taxi else R.string.correction_auto)
         holder.btnCorrect.setOnClickListener {
             val type = if (d.type.equals("taxi", true)) "taxi" else "auto"
             it.context.startActivity(android.content.Intent(it.context, com.bustime.app.ui.community.CommunityRequestActivity::class.java)
@@ -91,7 +92,7 @@ class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
                 holder.btnShow.visibility = View.GONE
                 holder.tvNotice.visibility = View.GONE
                 holder.layoutRevealed.visibility = View.VISIBLE
-                holder.tvNumber.text = d.phone
+                holder.tvNumber.text = "${d.name}  ·  ${d.phone}"
                 holder.btnCall.setOnClickListener { ContactActions.dial(it.context, d.phone) }
                 holder.btnWhatsApp.setOnClickListener { ContactActions.whatsapp(it.context, d.phone) }
             }

@@ -25,7 +25,8 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     private lateinit var layoutDrivers: View
     private lateinit var seatersContainer: LinearLayout
     private lateinit var tvSeatersEmpty: TextView
-    private lateinit var tvHeading: TextView
+    private lateinit var btnArea: Button
+    private var currentSeats: Int? = null   // None = सीटर वाली स्क्रीन खुली है
     private lateinit var tvNoDrivers: TextView
     private lateinit var backCallback: OnBackPressedCallback
 
@@ -37,7 +38,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
         layoutDrivers = view.findViewById(R.id.layoutDrivers)
         seatersContainer = view.findViewById(R.id.seatersContainer)
         tvSeatersEmpty = view.findViewById(R.id.tvSeatersEmpty)
-        tvHeading = view.findViewById(R.id.tvSeatsHeading)
+        btnArea = view.findViewById(R.id.btnSelectArea)
         tvNoDrivers = view.findViewById(R.id.tvNoDrivers)
 
         val recycler = view.findViewById<RecyclerView>(R.id.recyclerViewTaxi)
@@ -49,7 +50,13 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
             override fun handleOnBackPressed() = showSeaters()
         }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
-        view.findViewById<Button>(R.id.btnBackSeats).setOnClickListener { showSeaters() }
+        refreshAreaLabel()
+        btnArea.setOnClickListener {
+            AreaPicker.show(requireContext(), viewLifecycleOwner, repo) {
+                refreshAreaLabel()
+                currentSeats?.let { showDrivers(it) }
+            }
+        }
         view.findViewById<Button>(R.id.btnAddTaxi).setOnClickListener {
             startActivity(android.content.Intent(requireContext(), com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "vehicle").putExtra("vehicle_type", "taxi"))
         }
@@ -60,6 +67,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     // सीटर चुनने वाली स्क्रीन: विकल्प डेटा (routes.json के taxiSeaters) से बनते हैं
     private fun showSeaters() {
         backCallback.isEnabled = false
+        currentSeats = null
         layoutDrivers.visibility = View.GONE
         layoutSeaters.visibility = View.VISIBLE
 
@@ -86,13 +94,21 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     // चुने हुए सीटर के ड्राइवर (हर बार क्रम बदलकर, ताकि सबको बराबर मौका मिले)
     private fun showDrivers(seats: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
-            val list = repo.getTaxis(seats).shuffled()
+            val ctx = context ?: return@launch
+            val list = repo.getTaxis(seats, AreaPicker.savedId(ctx)).shuffled()
+            currentSeats = seats
             adapter.submit(list)
-            tvHeading.text = getString(R.string.seater_format, seats)
             tvNoDrivers.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
             layoutSeaters.visibility = View.GONE
             layoutDrivers.visibility = View.VISIBLE
             backCallback.isEnabled = true
+        }
+    }
+
+    private fun refreshAreaLabel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val ctx = context ?: return@launch
+            btnArea.text = AreaPicker.label(ctx, repo)
         }
     }
 }
