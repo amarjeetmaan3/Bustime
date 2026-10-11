@@ -1,6 +1,7 @@
 package com.bustime.app.ui.details
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -11,14 +12,18 @@ import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.utils.ContactActions
 import com.bustime.app.utils.LanguageHelper
+import com.bustime.app.utils.TimeFlow
 import com.bustime.app.utils.TimeFormat
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
-/** एक रूट की पूरी जानकारी: सर्विस, संपर्क, जानकारी और सारे पड़ाव समय के साथ */
+/**
+ * एक रूट की पूरी जानकारी: सर्विस, संपर्क, जानकारी और सारे पड़ाव समय के साथ।
+ * अगर बस आधी रात पार करती है तो अगले दिन के पड़ावों पर तारीख अपने-आप दिखती है
+ * (कोई अलग "Long Route" चेकबॉक्स नहीं; समय के क्रम से तय होता है)।
+ */
 class RouteDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,8 +58,7 @@ class RouteDetailActivity : AppCompatActivity() {
             fun name(id: String) = names[id]?.displayName(lang) ?: id
 
             findViewById<TextView>(R.id.tvRouteTitle).text = "${name(route.fromId)} → ${name(route.toId)}"
-            findViewById<TextView>(R.id.tvRouteTime).text = getString(R.string.departs_at, TimeFormat.format(route.time)) +
-                if (route.longRoute && !route.startDate.isNullOrBlank()) " · ${route.startDate}" else ""
+            findViewById<TextView>(R.id.tvRouteTime).text = getString(R.string.departs_at, TimeFormat.format(route.time))
 
             setOptional(R.id.tvRouteService, route.serviceName ?: route.routeName)
             setOptional(R.id.tvRouteInfo, route.info)
@@ -68,30 +72,29 @@ class RouteDetailActivity : AppCompatActivity() {
                 btnCall.setOnClickListener { ContactActions.dial(this@RouteDetailActivity, contact) }
             }
 
+            // आधी रात पार होने पर किस पड़ाव का दिन अगला है (आज की तारीख से गिनकर)
+            val flow = TimeFlow.resolve(stops.map { it.time })
+            val days = if (flow.badIndex >= 0) stops.map { null } else flow.days
+            val hasNextDay = days.any { (it ?: 0) > 0 }
+            val dateFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
+
             val container = findViewById<LinearLayout>(R.id.stopsContainer)
             container.removeAllViews()
-            val pad = (8 * resources.displayMetrics.density).toInt()
-            val serviceCalendar = Calendar.getInstance()
-            var hasServiceDate = false
-            if (!route.startDate.isNullOrBlank()) {
-                try {
-                    serviceCalendar.time = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(route.startDate) ?: Date()
-                    hasServiceDate = true
-                } catch (_: Exception) { hasServiceDate = false }
-            }
-            var previousTime: String? = null
-            for (s in stops) {
-                if (route.longRoute && s.time != null && previousTime != null && s.time < previousTime!!) {
-                    serviceCalendar.add(Calendar.DAY_OF_MONTH, 1)
+            val inflater = LayoutInflater.from(this@RouteDetailActivity)
+            for ((i, s) in stops.withIndex()) {
+                val row = inflater.inflate(R.layout.item_stop, container, false)
+                row.findViewById<TextView>(R.id.tvStopTime).text = TimeFormat.format(s.time)
+                row.findViewById<TextView>(R.id.tvStopName).text = name(s.placeId)
+                row.findViewById<View>(R.id.lineTop).visibility = if (i == 0) View.INVISIBLE else View.VISIBLE
+                row.findViewById<View>(R.id.lineBottom).visibility = if (i == stops.size - 1) View.INVISIBLE else View.VISIBLE
+                val day = days[i]
+                if (hasNextDay && day != null) {
+                    val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_MONTH, day) }
+                    val tv = row.findViewById<TextView>(R.id.tvStopDay)
+                    tv.text = if (day > 0) getString(R.string.next_day_format, dateFormat.format(cal.time)) else dateFormat.format(cal.time)
+                    tv.visibility = View.VISIBLE
                 }
-                if (s.time != null) previousTime = s.time
-                val dateLabel = if (route.longRoute && hasServiceDate) "${SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(serviceCalendar.time)}  ·  " else ""
-                val tv = TextView(this@RouteDetailActivity).apply {
-                    text = "$dateLabel${TimeFormat.format(s.time)}     ${name(s.placeId)}"
-                    textSize = 16f
-                    setPadding(0, pad, 0, pad)
-                }
-                container.addView(tv)
+                container.addView(row)
             }
         }
     }
