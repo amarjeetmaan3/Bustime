@@ -60,8 +60,8 @@ class CommunityRequestActivity : AppCompatActivity() {
         text("${title}\nYour submission will be reviewed by the admin before it affects the public app.", 18f)
         when (mode) {
             "correction" -> loadCorrectionForm()
-            "auto_correction" -> vehicleCorrectionForm("auto")
-            "taxi_correction" -> vehicleCorrectionForm("taxi")
+            "auto_correction" -> vehicleCorrectionForm("Auto")
+            "taxi_correction" -> vehicleCorrectionForm("Taxi")
             "vehicle" -> vehicleForm()
             else -> feedbackForm()
         }
@@ -153,34 +153,35 @@ class CommunityRequestActivity : AppCompatActivity() {
         sendRequests(jobs.map { it.second }, "correction_submissions", "Correction request(s) sent for admin review.")
     }
 
-    /** Auto/Taxi corrections are sent to the existing admin-reviewed feedback queue.
-     * This avoids calling a non-existent endpoint/table and keeps them separate from bus-route corrections.
-     */
-    private fun vehicleCorrectionForm(type: String) {
-        text("Report incorrect or outdated ${type.replaceFirstChar { it.uppercase() }} details. The admin will review the request before any public data changes.", 14f)
-        field("vehicle_person", "Driver / contact name (if known)")
-        field("vehicle_model", "Auto / Taxi name or vehicle model")
-        field("vehicle_location", "Location / stand / service area")
-        field("vehicle_phone", "Existing phone number (if known)")
-        field("vehicle_correct", "What needs correction? (required)")
-        field("vehicle_contact", "Your contact number (optional)")
-        button("Send ${type.replaceFirstChar { it.uppercase() }} correction") {
-            val issue = value("vehicle_correct")
-            if (issue.length < 4) { toast("Please describe what is incorrect."); return@button }
-            val details = buildString {
-                append("Vehicle type: ").append(type.uppercase()).append("\n")
-                append("Driver/contact: ").append(value("vehicle_person").ifBlank { "Not provided" }).append("\n")
-                append("Vehicle/model: ").append(value("vehicle_model").ifBlank { "Not provided" }).append("\n")
-                append("Location/stand: ").append(value("vehicle_location").ifBlank { "Not provided" }).append("\n")
-                append("Existing phone: ").append(value("vehicle_phone").ifBlank { "Not provided" }).append("\n")
-                append("Requested correction: ").append(issue)
+    private fun vehicleCorrectionForm(vehicleType: String) {
+        text("Report incorrect or outdated $vehicleType details. Your request will be reviewed by the admin.", 14f)
+        field("correction_driver", "Driver / contact name (optional)")
+        field("correction_vehicle", "Vehicle name / model (optional)")
+        field("correction_location", "Location / stand / service area (optional)")
+        field("correction_old_phone", "Existing mobile number (optional)")
+        field("correction_problem", "What needs to be corrected? (required)")
+        field("correction_new_phone", "Correct mobile number (optional)")
+        button("Send $vehicleType correction") {
+            val problem = value("correction_problem")
+            if (problem.length < 4) {
+                toast("Please describe what needs correction.")
+                return@button
+            }
+            val message = buildString {
+                append("Vehicle type: ").append(vehicleType).append("\n")
+                append("Driver/contact: ").append(value("correction_driver").ifBlank { "Not provided" }).append("\n")
+                append("Vehicle/model: ").append(value("correction_vehicle").ifBlank { "Not provided" }).append("\n")
+                append("Location/stand: ").append(value("correction_location").ifBlank { "Not provided" }).append("\n")
+                append("Existing mobile: ").append(value("correction_old_phone").ifBlank { "Not provided" }).append("\n")
+                append("Requested correction: ").append(problem).append("\n")
+                append("Correct mobile (if applicable): ").append(value("correction_new_phone").ifBlank { "Not provided" })
             }
             val body = JSONObject()
-                .put("category", "${type.replaceFirstChar { it.uppercase() }} correction")
+                .put("category", "$vehicleType correction")
                 .put("related_route", JSONObject.NULL)
-                .put("message", details)
-                .put("contact", digits(value("vehicle_contact")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-            sendRequests(listOf(body), "feedback_submissions", "${type.replaceFirstChar { it.uppercase() }} correction sent for admin review.")
+                .put("message", message)
+                .put("contact", digits(value("correction_new_phone")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+            sendRequests(listOf(body), "feedback_submissions", "$vehicleType correction sent for admin review.")
         }
     }
 
