@@ -103,6 +103,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             correctedStop = spinnerIn(timeSection!!, getString(com.bustime.app.R.string.community_choose_stop), emptyList())
             timePickerFieldIn(timeSection!!, "corrected_time", getString(com.bustime.app.R.string.community_correct_time_hint))
             field("correction_note", getString(com.bustime.app.R.string.community_extra_details))
+            field("phone", "Mobile number (required)")
             val updateSections = {
                 missingSection?.visibility = if (missingCheck?.isChecked == true) View.VISIBLE else View.GONE
                 timeSection?.visibility = if (timeCheck?.isChecked == true) View.VISIBLE else View.GONE
@@ -135,6 +136,8 @@ class CommunityRequestActivity : AppCompatActivity() {
         val sendTime = timeCheck?.isChecked == true
         if (!sendMissing && !sendTime) { toast("Select Missing Stop, Correct Time, or both."); return }
         val note = value("correction_note")
+        val phone = digits(value("phone"))
+        if (phone.length !in 10..13) { toast("Enter a valid mobile number before submitting a correction."); return }
         val jobs = mutableListOf<Pair<String, JSONObject>>()
         if (sendMissing) {
             val before = routeStops.getOrNull(stopOne?.selectedItemPosition ?: -1)
@@ -152,6 +155,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("missing_place_name", missing).put("missing_place_id", JSONObject.NULL)
                 .put("missing_time", t.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("notes", note.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("phone", phone)
         }
         if (sendTime) {
             val stop = routeStops.getOrNull(correctedStop?.selectedItemPosition ?: -1)
