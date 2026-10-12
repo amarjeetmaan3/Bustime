@@ -269,4 +269,12 @@
     <string name="update_downloading">Downloading update</string>
     <string name="install">Install</string>
     <string name="open_settings">Open settings</string>
+    <string name="bb_bus_operator">Bus Operator</string>
+    <string name="bb_bus">Bus</string>
+    <string name="bb_service_label">Service: %1$s</string>
+    <string name="bb_bus_type_label">Bus type: %1$s</string>
+    <string name="bb_bus_variant_label">Bus variant: %1$s</string>
+    <string name="bb_seat_type_label">Seat type: %1$s</string>
+    <string name="bb_sleeper_berths_format">%1$d sleeper berths</string>
+    <string name="bb_seats_format">%1$d seats</string>
 </resources>
