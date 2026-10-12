@@ -65,7 +65,6 @@ class BookBusActivity : AppCompatActivity() {
                 val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(getColor(com.bustime.app.R.color.surfaceVariant)); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
                 val name = item.optString("operator_name", "Bus Operator")
                 card.addView(TextView(this@BookBusActivity).apply { text = name; textSize = 19f; setTypeface(null, android.graphics.Typeface.BOLD) })
-                val routeSummary = "${item.optString("from_text", "-")} → ${item.optString("to_text", "-")}"
                 val busType = item.optString("bus_type", "Bus")
                 val variant = item.optString("custom_category", "")
                 val seatType = item.optString("seat_type", "").ifBlank { getString(com.bustime.app.R.string.bb_seat_unspecified) }
@@ -74,8 +73,7 @@ class BookBusActivity : AppCompatActivity() {
                     if (!item.isNull("seater_count")) item.optInt("seater_count").takeIf { it >= 0 }?.let { "$it seats" } else null
                 ).joinToString(" · ")
                 card.addView(TextView(this@BookBusActivity).apply { text = "${item.optString("service_name", getString(com.bustime.app.R.string.bb_service))} · $busType" + (if (variant.isNotBlank()) " · $variant" else "") + " · $seatType" + (if (capacity.isNotBlank()) " · $capacity" else ""); textSize = 15f; setPadding(0, 6, 0, 3) })
-                card.addView(TextView(this@BookBusActivity).apply { text = "${getString(com.bustime.app.R.string.bb_route)}: $routeSummary"; textSize = 14f; setPadding(0, 2, 0, 5) })
-                val detailLines = listOf("Service: ${item.optString("service_name", "-")}", "Bus type: $busType", "Bus variant: $variant", "Seat type: $seatType", "${getString(com.bustime.app.R.string.bb_route)}: $routeSummary", "${getString(com.bustime.app.R.string.bb_location)}: ${item.optString("location", "-" )}", item.optString("details", "")).filter { it.isNotBlank() }
+                val detailLines = listOf("Service: ${item.optString("service_name", "-")}", "Bus type: $busType", "Bus variant: $variant", "Seat type: $seatType, "${getString(com.bustime.app.R.string.bb_location)}: ${item.optString("location", "-" )}", item.optString("details", "")).filter { it.isNotBlank() }
                 val detailBox = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; visibility = android.view.View.GONE }
                 detailLines.forEach { line -> detailBox.addView(TextView(this@BookBusActivity).apply { text = line; textSize = 14f; setPadding(0, 5, 0, 0) }) }
                 card.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_expand); textSize = 13f; setPadding(0, 8, 0, 4); setOnClickListener { detailBox.visibility = if (detailBox.visibility == android.view.View.VISIBLE) android.view.View.GONE else android.view.View.VISIBLE } })
