@@ -277,4 +277,5 @@
     <string name="bb_seat_type_label">Seat type: %1$s</string>
     <string name="bb_sleeper_berths_format">%1$d sleeper berths</string>
     <string name="bb_seats_format">%1$d seats</string>
+    <string name="bb_not_specified">Not specified</string>
 </resources>
