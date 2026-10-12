@@ -28,7 +28,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.util.Locale
 
-/** Independent, append-only community request forms. Each correction is a separate database row. */
+/** Community request forms; route corrections submit a complete proposed ordered stop list. */
 class CommunityRequestActivity : AppCompatActivity() {
     private lateinit var root: LinearLayout
     private val fields = linkedMapOf<String, EditText>()
@@ -68,132 +68,219 @@ class CommunityRequestActivity : AppCompatActivity() {
         }
     }
 
+
+    private var correctionEditor: LinearLayout? = null
+    private var correctionRoute: Route? = null
+    private val correctionDrafts = mutableListOf<JSONObject>()
+
     private fun loadCorrectionForm() {
         if (!CommunitySupabase.isConfigured()) { text(getString(com.bustime.app.R.string.community_online_not_configured), 14f); return }
         lifecycleScope.launch {
-            routes = AppRepository.getInstance(this@CommunityRequestActivity).getAllRoutes()
-            if (routes.isEmpty()) { text(getString(com.bustime.app.R.string.community_no_routes), 14f); return@launch }
             val repo = AppRepository.getInstance(this@CommunityRequestActivity)
+            routes = repo.getAllRoutes()
+            if (routes.isEmpty()) { text(getString(com.bustime.app.R.string.community_no_routes), 14f); return@launch }
             allPlaces = repo.getAllPlaces()
-            placeNames = allPlaces.associate { it.id to it.displayName(LanguageHelper.current()) }
             routeSpinner = spinner(getString(com.bustime.app.R.string.community_choose_route), routes.map { routeLabel(it) })
-            val requestedRouteId = intent.getStringExtra("route_id")
             routeSpinner?.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                     lifecycleScope.launch { loadStopsFor(routes[position]) }
                 }
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
             }
-            if (requestedRouteId != null) {
-                val requestedIndex = routes.indexOfFirst { it.id == requestedRouteId }
-                if (requestedIndex >= 0) routeSpinner?.setSelection(requestedIndex)
+            val requested = intent.getStringExtra("route_id")
+            if (requested != null) {
+                val i = routes.indexOfFirst { it.id == requested }
+                if (i >= 0) routeSpinner?.setSelection(i)
             }
-            heading(getString(com.bustime.app.R.string.community_what_correction))
-            missingCheck = CheckBox(this@CommunityRequestActivity).apply { text = getString(com.bustime.app.R.string.community_missing_stop); isChecked = false }
-            timeCheck = CheckBox(this@CommunityRequestActivity).apply { text = getString(com.bustime.app.R.string.community_correct_time) }
-            root.addView(missingCheck); root.addView(timeCheck)
-            missingSection = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
-            root.addView(missingSection!!)
-            headingIn(missingSection!!, "Where are stops missing?")
-            textIn(missingSection!!, "Add missing stops at the beginning, between existing stops, or at the end. For several consecutive stops, enter one stop name per line, in travel order.", 14f)
-            missingPosition = spinnerIn(missingSection!!, "Missing stop location", listOf("Before the first listed stop", "Between existing stops", "After the last listed stop"))
-            stopOne = spinnerIn(missingSection!!, "Existing stop before the missing stops", emptyList())
-            stopTwo = spinnerIn(missingSection!!, "Existing stop after the missing stops", emptyList())
-            val missingNamesBox = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
-            missingSection!!.addView(missingNamesBox)
-            addMissingPlaceField(missingNamesBox)
-            buttonIn(missingSection!!, "+ Add another missing stop") { addMissingPlaceField(missingNamesBox) }
-            timePickerFieldIn(missingSection!!, "missing_time", "Time of first missing stop (optional)")
-            missingPosition?.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    stopOne?.visibility = if (position == 0) View.GONE else View.VISIBLE
-                    stopTwo?.visibility = if (position == 2) View.GONE else View.VISIBLE
-                    if (position == 0) stopTwo?.setSelection(0)
-                    if (position == 2) stopOne?.setSelection((routeStops.size - 1).coerceAtLeast(0))
-                }
-                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-            }
-            timeSection = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
-            root.addView(timeSection!!)
-            headingIn(timeSection!!, getString(com.bustime.app.R.string.community_correct_time_details))
-            correctedStop = spinnerIn(timeSection!!, getString(com.bustime.app.R.string.community_choose_stop), emptyList())
-            timePickerFieldIn(timeSection!!, "corrected_time", getString(com.bustime.app.R.string.community_correct_time_hint))
-            field("correction_note", getString(com.bustime.app.R.string.community_extra_details))
+            heading("Complete route correction")
+            text("Edit the entire route below. Green + adds a stop; red − removes it. Rename stops, change times, and move stops up or down. Changes go to Admin for approval first.", 14f)
+            correctionEditor = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
+            root.addView(correctionEditor!!)
+            field("correction_note", "Extra note for admin (optional)")
             field("phone", "Mobile number (required)")
-            val updateSections = {
-                missingSection?.visibility = if (missingCheck?.isChecked == true) View.VISIBLE else View.GONE
-                timeSection?.visibility = if (timeCheck?.isChecked == true) View.VISIBLE else View.GONE
-            }
-            missingCheck?.setOnCheckedChangeListener { _, _ -> updateSections() }
-            timeCheck?.setOnCheckedChangeListener { _, _ -> updateSections() }
-            updateSections()
-            button("Send correction request") { submitCorrection() }
+            button("Submit complete route correction") { submitCorrection() }
+            loadStopsFor(routes.getOrNull(routeSpinner?.selectedItemPosition ?: 0) ?: routes.first())
         }
     }
 
     private suspend fun loadStopsFor(route: Route) {
-        routeStops = AppRepository.getInstance(this).getRouteStops(route.id)
-        val allIds = routeStops.map { it.placeId }.toSet()
-        val places = AppRepository.getInstance(this).getPlacesById(allIds)
+        correctionRoute = route
+        routeStops = AppRepository.getInstance(this).getRouteStops(route.id).sortedBy { it.stopOrder }
+        val places = AppRepository.getInstance(this).getPlacesById(routeStops.map { it.placeId }.toSet())
         placeNames = places.mapValues { it.value.displayName(LanguageHelper.current()) }
-        val labels = routeStops.mapIndexed { i, s -> "${i + 1}. ${placeNames[s.placeId] ?: s.placeId}" }
-        fun update(target: Spinner?, values: List<String>) {
-            target?.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, values)
+        correctionDrafts.clear()
+        routeStops.forEach { stop ->
+            correctionDrafts.add(JSONObject().put("place_id", stop.placeId).put("name", placeNames[stop.placeId] ?: stop.placeId)
+                .put("language", LanguageHelper.current()).put("time", stop.time ?: JSONObject.NULL))
         }
-        update(stopOne, labels)
-        update(stopTwo, labels)
-        update(correctedStop, labels)
-        stopOne?.setSelection(0)
-        stopTwo?.setSelection((labels.size - 1).coerceAtLeast(0))
+        renderCorrectionList()
+    }
 
+    private fun renderCorrectionList() {
+        val box = correctionEditor ?: return
+        box.removeAllViews()
+        correctionDrafts.toList().forEachIndexed { index, draft ->
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(10), dp(8), dp(10), dp(10))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.rgb(246, 248, 252))
+                    cornerRadius = dp(12).toFloat()
+                    setStroke(dp(1), android.graphics.Color.rgb(220, 226, 235))
+                }
+            }
+            textIn(card, (index + 1).toString() + ". " + if (index == 0) "START" else if (index == correctionDrafts.lastIndex) "DESTINATION" else "STOP", 13f, true)
+            val name = AutoCompleteTextView(this).apply {
+                hint = "Stop name — ਪੰਜਾਬੀ / हिंदी / English"
+                threshold = 1
+                setText(draft.optString("name"))
+                textSize = 16f
+                setPadding(dp(10), dp(8), dp(10), dp(8))
+            }
+            val language = draft.optString("language", LanguageHelper.current())
+            val matching = allPlaces.filter { p ->
+                val q = draft.optString("name")
+                p.names.values.any { it.equals(q, true) }
+            }.toMutableList()
+            val suggestionPlaces = allPlaces.toList()
+            fun label(p: Place): String {
+                val order = when (language) { "pa" -> listOf("pa", "hi", "en"); "hi" -> listOf("hi", "en", "pa"); else -> listOf("en", "hi", "pa") }
+                return order.mapNotNull { p.names[it]?.trim()?.takeIf { n -> n.isNotBlank() } }.distinct().joinToString(" • ")
+            }
+            val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, suggestionPlaces.map { label(it) })
+            name.setAdapter(adapter)
+            name.addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    val q = s?.toString().orEmpty()
+                    draft.put("name", q).put("place_id", JSONObject.NULL)
+                    val lang = when {
+                        q.any { it.code in 0x0A00..0x0A7F } -> "pa"
+                        q.any { it.code in 0x0900..0x097F } -> "hi"
+                        q.any { it in 'a'..'z' || it in 'A'..'Z' } -> "en"
+                        else -> LanguageHelper.current()
+                    }
+                    draft.put("language", lang)
+                    val filtered = allPlaces.filter { p -> q.isBlank() || p.names.values.any { it.contains(q, true) } }
+                    adapter.clear()
+                    adapter.addAll(filtered.map { p ->
+                        val order = when (lang) { "pa" -> listOf("pa", "hi", "en"); "hi" -> listOf("hi", "en", "pa"); else -> listOf("en", "hi", "pa") }
+                        order.mapNotNull { p.names[it]?.trim()?.takeIf { n -> n.isNotBlank() } }.distinct().joinToString(" • ")
+                    })
+                    adapter.notifyDataSetChanged()
+                }
+                override fun afterTextChanged(s: android.text.Editable?) {}
+            })
+            name.setOnItemClickListener { _, _, pos, _ ->
+                val q = name.text.toString()
+                val filtered = allPlaces.filter { p -> q.isBlank() || p.names.values.any { it.contains(q, true) } }
+                val p = filtered.getOrNull(pos) ?: suggestionPlaces.getOrNull(pos)
+                if (p != null) {
+                    draft.put("place_id", p.id).put("name", p.displayName(draft.optString("language", LanguageHelper.current())))
+                    name.setText(p.displayName(draft.optString("language", LanguageHelper.current())), false)
+                }
+            }
+            card.addView(name)
+            val time = EditText(this).apply {
+                hint = "Time (optional) — tap to choose"
+                setText(if (draft.isNull("time")) "" else draft.optString("time"))
+                isFocusable = false; isClickable = true; textSize = 16f
+                setPadding(dp(10), dp(8), dp(10), dp(8))
+                setOnClickListener {
+                    val cal = java.util.Calendar.getInstance()
+                    val parts = text.toString().split(":")
+                    val h = parts.getOrNull(0)?.toIntOrNull() ?: cal.get(java.util.Calendar.HOUR_OF_DAY)
+                    val m = parts.getOrNull(1)?.toIntOrNull() ?: cal.get(java.util.Calendar.MINUTE)
+                    TimePickerDialog(this@CommunityRequestActivity, { _, hh, mm ->
+                        setText(String.format(Locale.ROOT, "%02d:%02d", hh, mm))
+                        draft.put("time", text.toString())
+                    }, h, m, true).show()
+                }
+            }
+            card.addView(time)
+            val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            fun addAction(label: String, color: Int, enabled: Boolean = true, run: () -> Unit) {
+                controls.addView(Button(this@CommunityRequestActivity).apply {
+                    text = label; isEnabled = enabled; setTextColor(android.graphics.Color.WHITE)
+                    backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+                    setOnClickListener {
+                        draft.put("name", name.text.toString().trim())
+                        draft.put("time", time.text.toString().trim())
+                        run()
+                    }
+                }, LinearLayout.LayoutParams(0, dp(44), 1f).apply { setMargins(dp(2), dp(4), dp(2), dp(2)) })
+            }
+            addAction("＋ Add", android.graphics.Color.rgb(30, 142, 72)) {
+                correctionDrafts.add(index + 1, JSONObject().put("place_id", JSONObject.NULL).put("name", "").put("language", LanguageHelper.current()).put("time", JSONObject.NULL))
+                renderCorrectionList()
+            }
+            addAction("↑", android.graphics.Color.rgb(65, 90, 145), index > 0) {
+                if (index > 0) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index - 1, v); renderCorrectionList() }
+            }
+            addAction("↓", android.graphics.Color.rgb(65, 90, 145), index < correctionDrafts.lastIndex) {
+                if (index < correctionDrafts.lastIndex) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index + 1, v); renderCorrectionList() }
+            }
+            addAction("− Remove", android.graphics.Color.rgb(196, 48, 48)) {
+                android.app.AlertDialog.Builder(this@CommunityRequestActivity).setTitle("Remove this stop?")
+                    .setMessage("This only changes your proposed route. The live route stays unchanged until Admin approval.")
+                    .setNegativeButton("Cancel", null).setPositiveButton("Remove") { _, _ -> correctionDrafts.removeAt(index); renderCorrectionList() }.show()
+            }
+            card.addView(controls)
+            box.addView(card, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, dp(5), 0, dp(5)) })
+        }
+        val addEnds = Button(this).apply {
+            text = "＋ Add at beginning / end"
+            setTextColor(android.graphics.Color.WHITE)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.rgb(30, 142, 72))
+            setOnClickListener {
+                android.app.AlertDialog.Builder(this@CommunityRequestActivity).setTitle("Add stop where?")
+                    .setItems(arrayOf("At beginning", "At end")) { _, which ->
+                        val d = JSONObject().put("place_id", JSONObject.NULL).put("name", "").put("language", LanguageHelper.current()).put("time", JSONObject.NULL)
+                        if (which == 0) correctionDrafts.add(0, d) else correctionDrafts.add(d)
+                        renderCorrectionList()
+                    }.show()
+            }
+        }
+        box.addView(addEnds)
     }
 
     private fun submitCorrection() {
-        val route = routes.getOrNull(routeSpinner?.selectedItemPosition ?: -1) ?: return
-        val sendMissing = missingCheck?.isChecked == true
-        val sendTime = timeCheck?.isChecked == true
-        if (!sendMissing && !sendTime) { toast("Select Missing Stop, Correct Time, or both."); return }
-        val note = value("correction_note")
+        val route = correctionRoute ?: routes.getOrNull(routeSpinner?.selectedItemPosition ?: -1) ?: return
         val phone = digits(value("phone"))
-        if (phone.length !in 10..13) { toast("Enter a valid mobile number before submitting a correction."); return }
-        val jobs = mutableListOf<Pair<String, JSONObject>>()
-        if (sendMissing) {
-            val missingNames = missingPlaceFields.map { it.text.toString().trim() }.filter { it.isNotBlank() }
-            if (missingNames.isEmpty()) { toast("Enter at least one missing stop name."); return }
-            val position = missingPosition?.selectedItemPosition ?: 1
-            val before: RouteStop?
-            val after: RouteStop?
-            when (position) {
-                0 -> { before = null; after = routeStops.firstOrNull() }
-                2 -> { before = routeStops.lastOrNull(); after = null }
-                else -> {
-                    before = routeStops.getOrNull(stopOne?.selectedItemPosition ?: -1)
-                    after = routeStops.getOrNull(stopTwo?.selectedItemPosition ?: -1)
-                    if (before == null || after == null || after.stopOrder <= before.stopOrder) { toast("Choose existing stops in the correct order."); return }
-                }
-            }
-            if (routeStops.isEmpty() || (position == 0 && after == null) || (position == 2 && before == null)) { toast("This route has no existing stops to anchor the correction."); return }
-            val firstTime = value("missing_time")
-            if (firstTime.isNotBlank() && !firstTime.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Enter time as HH:MM."); return }
-            val positionLabel = when (position) { 0 -> "before first stop"; 2 -> "after last stop"; else -> "between existing stops" }
-            missingNames.forEachIndexed { index, missingName ->
-                val noteWithOrder = listOfNotNull(note.takeIf { it.isNotBlank() }, "Insertion position: $positionLabel", "Added stop order: ${index + 1} of ${missingNames.size}").joinToString(" | ")
-                jobs += "missing_stop" to JSONObject().put("route_id", route.id).put("request_type", "missing_stop")
-                    .put("before_stop_id", before?.placeId ?: JSONObject.NULL).put("after_stop_id", after?.placeId ?: JSONObject.NULL)
-                    .put("missing_place_name", missingName).put("missing_place_id", JSONObject.NULL)
-                    .put("missing_time", if (index == 0 && firstTime.isNotBlank()) firstTime else JSONObject.NULL)
-                    .put("notes", noteWithOrder).put("phone", phone)
-            }
+        if (phone.length !in 10..13) { toast("Enter a valid mobile number before submitting."); return }
+        if (correctionDrafts.size < 2) { toast("A route needs at least a start and destination stop."); return }
+        val proposed = org.json.JSONArray()
+        val seen = mutableMapOf<String, Int>()
+        correctionDrafts.forEachIndexed { index, d ->
+            val name = d.optString("name").trim()
+            if (name.isBlank()) { toast("Enter a name for stop " + (index + 1) + "."); return }
+            val t = d.optString("time").trim()
+            if (t.isNotBlank() && !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Stop " + (index + 1) + " has an invalid time."); return }
+            val id = if (d.isNull("place_id")) "" else d.optString("place_id")
+            val key = (id.ifBlank { name }).lowercase(Locale.ROOT)
+            seen[key] = (seen[key] ?: 0) + 1
+            proposed.put(JSONObject().put("place_id", id.ifBlank { JSONObject.NULL }).put("name", name)
+                .put("language", d.optString("language", LanguageHelper.current()))
+                .put("time", t.ifBlank { JSONObject.NULL }).put("position", index))
         }
-        if (sendTime) {
-            val stop = routeStops.getOrNull(correctedStop?.selectedItemPosition ?: -1)
-            val t = value("corrected_time")
-            if (stop == null || !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Choose a stop and enter the corrected time as HH:MM."); return }
-            jobs += "correct_time" to JSONObject().put("route_id", route.id).put("request_type", "correct_time")
-                .put("stop_id", stop.placeId).put("corrected_time", t).put("notes", note.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("phone", phone)
+        if (seen.values.any { it > 1 }) {
+            android.app.AlertDialog.Builder(this).setTitle("Repeated stop detected")
+                .setMessage("The same stop appears more than once. This may be correct for some routes. Submit anyway?")
+                .setNegativeButton("Review list", null).setPositiveButton("Submit anyway") { _, _ -> sendRouteEdit(route, proposed, phone) }.show()
+        } else sendRouteEdit(route, proposed, phone)
+    }
+
+    private fun sendRouteEdit(route: Route, proposed: org.json.JSONArray, phone: String) {
+        val original = org.json.JSONArray()
+        routeStops.sortedBy { it.stopOrder }.forEachIndexed { index, stop ->
+            original.put(JSONObject().put("place_id", stop.placeId).put("time", stop.time ?: JSONObject.NULL).put("position", index))
         }
-        sendRequests(jobs.map { it.second }, "correction_submissions", "Correction request(s) sent for admin review.")
+        val body = JSONObject().put("route_id", route.id).put("request_type", "route_edit")
+            .put("original_stops", original).put("proposed_stops", proposed)
+            .put("change_summary", "Complete route list edited by user")
+            .put("notes", value("correction_note").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+            .put("phone", phone)
+        sendRequests(listOf(body), "correction_submissions", "Complete route correction sent for admin review.")
     }
 
     private fun vehicleForm() {
