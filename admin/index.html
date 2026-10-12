@@ -801,15 +801,18 @@ function viewRouteReview() {
     var requestTitle = s.submission_type === 'edit_existing_route' ? ' <span class="badge">Edit existing route #' + esc(s.route_id) + '</span>' : (s.submission_type === 'new_route' ? ' <span class="badge">New free-text route</span>' : '');
     return '<div class="card" data-sub="' + i + '"><h2>' + esc(fromLabel) + ' &rarr; ' + esc(toLabel) + requestTitle + '</h2>' +
       '<p class="muted">Sent ' + esc(new Date(s.created_at).toLocaleString()) + ' · Phone <b>' + esc(s.phone) + '</b>' +
-      (s.service_name ? ' · Service: ' + esc(s.service_name) : '') + (s.long_route ? ' · <b>Long route</b> · Start date ' + esc(s.start_date || '-') : '') + '</p>' +
-      '<label>Start time</label><input type="time" class="sub_start" value="' + esc(s.start_time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
-      '<label>Stop times (blank = unknown)</label>' + stops + '<div class="dlg-foot" style="justify-content:flex-start;gap:8px">' + actions + '</div></div>';
+      (s.long_route ? ' · <b>Long route</b> · Start date ' + esc(s.start_date || '-') : '') + '</p>' +
+      '<label>From / starting place</label><input class="sub_from" value="' + esc(fromLabel === '(missing From)' ? '' : fromLabel) + '" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
+      '<label>To / destination</label><input class="sub_to" value="' + esc(toLabel === '(missing To)' ? '' : toLabel) + '" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
+      '<label>Service name</label><input class="sub_service" value="' + esc(s.service_name || '') + '" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
+      '<label>Departure time</label><input type="time" class="sub_start" value="' + esc(s.start_time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
+      '<label>Stop names and times (blank time = unknown)</label>' + stops + '<div class="dlg-foot" style="justify-content:flex-start;gap:8px">' + actions + '</div></div>';
   }).join('');
 }
 function subCardValues(i) {
   var card = document.querySelector('[data-sub="' + i + '"]'), times = [];
   card.querySelectorAll('.sub_t').forEach(function (el) { var row=el.closest('.stoprow'), nameInput=row ? row.querySelector('.sub_name') : null; times.push({ place:el.getAttribute('data-place'), name:nameInput ? nameInput.value.trim() : '', time:TIME_RE.test(el.value) ? el.value : null }); });
-  return { start:card.querySelector('.sub_start').value, stops:times };
+  return { start:card.querySelector('.sub_start').value, from:card.querySelector('.sub_from').value.trim(), to:card.querySelector('.sub_to').value.trim(), service:card.querySelector('.sub_service').value.trim(), stops:times };
 }
 function ensureSubmittedPlace(rawName) {
   var name = String(rawName || '').trim();
