@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.textfield.TextInputLayout
 import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.models.Place
@@ -60,7 +61,7 @@ class BusFragment : Fragment(R.layout.fragment_bus) {
         }
 
         view.findViewById<View>(R.id.btnSearchRoute).setOnClickListener { searchRoutes() }
-        view.findViewById<View>(R.id.btnSearchStand).setOnClickListener {
+        view.findViewById<TextInputLayout>(R.id.tilStand).setEndIconOnClickListener {
             val lastStand = standPlace
             if (lastStand != null) openStandResults(lastStand)
             else openPicker("stand", getString(R.string.stand_hint), true)
