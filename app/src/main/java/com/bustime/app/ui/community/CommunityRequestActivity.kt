@@ -217,8 +217,6 @@ class CommunityRequestActivity : AppCompatActivity() {
         field("custom_category", "Describe your specific bus type / variant (required for every category)").apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
         field("sleeper_count", "Number of sleeper berths")
         field("seater_count", "Number of seater seats")
-        field("from_text", "Starting area / city")
-        field("to_text", "Destination area / city")
         field("location", "Operating area / city (required)")
         field("phone", "Operator mobile number")
         field("whatsapp", "WhatsApp number (optional)")
@@ -232,16 +230,15 @@ class CommunityRequestActivity : AppCompatActivity() {
             val sleeper = value("sleeper_count").toIntOrNull()
             val seater = value("seater_count").toIntOrNull()
             if (service.isBlank() || operator.isBlank() || phone.length !in 10..13 || category.isBlank() || variant.isBlank() ||
-                sleeper == null || sleeper < 0 || seater == null || seater < 0 || value("from_text").isBlank() ||
-                value("to_text").isBlank() || value("location").isBlank()) {
-                toast("Fill every required field, including bus variant, berth/seat counts and all three areas."); return@button
+                sleeper == null || sleeper < 0 || seater == null || seater < 0 || value("location").isBlank()) {
+                toast("Fill every required field, including bus variant, berth/seat counts and operating area."); return@button
             }
             val body = JSONObject()
                 .put("operator_name", operator).put("service_name", service)
                 .put("bus_type", category).put("custom_category", variant)
                 .put("seat_type", if (sleeper > 0 && seater > 0) "Sleeper + Seater" else if (sleeper > 0) "Sleeper" else if (seater > 0) "Seater" else "Not specified")
                 .put("sleeper_count", sleeper).put("seater_count", seater)
-                .put("from_text", value("from_text")).put("to_text", value("to_text"))
+                .put("from_text", JSONObject.NULL).put("to_text", JSONObject.NULL)
                 .put("location", value("location")).put("phone", phone)
                 .put("whatsapp", digits(value("whatsapp")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
