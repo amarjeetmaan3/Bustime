@@ -90,7 +90,8 @@ class AddRouteActivity : AppCompatActivity() {
             ?: item.fallbackName
         return item.copy(
             selectedName = selected,
-            label = (orderedNames.ifEmpty { listOf(selected) }).joinToString(" • ")
+            // Show only the name matching the script currently being typed.
+            label = selected
         )
     }
 
@@ -238,7 +239,10 @@ class AddRouteActivity : AppCompatActivity() {
         setMode(true)
 
         findViewById<Button>(R.id.btnAddNewStop).setOnClickListener { addNewStop() }
-        findViewById<Button>(R.id.btnUseExistingRoute).setOnClickListener { setMode(false) }
+        findViewById<Button>(R.id.btnUseExistingRoute).setOnClickListener {
+            setMode(false)
+            loadSelectedRoute()
+        }
         findViewById<Button>(R.id.btnUseNewRoute).setOnClickListener { setMode(true) }
         tvStart.setOnClickListener {
             pickTime(startTime) { t ->
@@ -259,12 +263,7 @@ class AddRouteActivity : AppCompatActivity() {
             spinner.adapter = ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_spinner_dropdown_item, labels)
             spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    if (position in routes.indices) {
-                        val route = routes[position]
-                        findViewById<EditText>(R.id.etFromText).setText(names[route.fromId]?.displayName(lang) ?: route.fromId)
-                        findViewById<EditText>(R.id.etToText).setText(names[route.toId]?.displayName(lang) ?: route.toId)
-                        loadStops(route)
-                    }
+                    if (!isNew && position in routes.indices) loadSelectedRoute()
                 }
                 override fun onNothingSelected(parent: AdapterView<*>?) = Unit
             }
@@ -274,12 +273,40 @@ class AddRouteActivity : AppCompatActivity() {
     }
 
     private fun setMode(newMode: Boolean) {
+        val wasNew = isNew
         isNew = newMode
+        if (newMode && !wasNew) {
+            // "Create new" must be a clean draft, not a leftover copy of the route.
+            findViewById<EditText>(R.id.etFromText).text.clear()
+            findViewById<EditText>(R.id.etToText).text.clear()
+            startTime = null
+            selected = null
+            existingRows.clear()
+            newRows.clear()
+            stopsBox.removeAllViews()
+            newStopsBox.removeAllViews()
+            showTime(tvStart, null)
+        }
+        // Keep one shared From/To editor on screen in both modes.
         findViewById<View>(R.id.layoutExisting).visibility = if (newMode) View.GONE else View.VISIBLE
         findViewById<View>(R.id.layoutExistingStops).visibility = if (newMode) View.GONE else View.VISIBLE
-        findViewById<View>(R.id.layoutNew).visibility = if (newMode) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.layoutNew).visibility = View.VISIBLE
         findViewById<View>(R.id.layoutNewStops).visibility = if (newMode) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.btnUseExistingRoute).visibility = if (newMode) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.btnUseNewRoute).visibility = if (newMode) View.GONE else View.VISIBLE
         findViewById<TextView>(R.id.tvModeHint).setText(if (newMode) R.string.ar_new_route_intro else R.string.ar_existing_route_intro)
+    }
+
+    private fun loadSelectedRoute() {
+        val spinner = findViewById<Spinner>(R.id.spRoute)
+        val route = routes.getOrNull(spinner.selectedItemPosition) ?: return
+        lifecycleScope.launch {
+            val names = repo.getPlacesById(setOf(route.fromId, route.toId))
+            val lang = LanguageHelper.current()
+            findViewById<EditText>(R.id.etFromText).setText(names[route.fromId]?.displayName(lang) ?: route.fromId)
+            findViewById<EditText>(R.id.etToText).setText(names[route.toId]?.displayName(lang) ?: route.toId)
+            loadStops(route)
+        }
     }
 
     private fun loadStops(route: Route) {
@@ -480,12 +507,17 @@ class AddRouteActivity : AppCompatActivity() {
                     .put("time", row.time ?: JSONObject.NULL))
             }
         }
-        val anyTime = startTime != null || if (isNew) newRows.any { it.time != null } else existingRows.any { it.time != null }
+        val anyTime = !startTime.isNullOrBlank() ||
+            if (isNew) newRows.any { !it.time.isNullOrBlank() } else existingRows.any { !it.time.isNullOrBlank() }
         if (!anyTime) {
             Toast.makeText(this, R.string.ar_need_time, Toast.LENGTH_LONG).show()
             return
         }
-        if (TimeFlow.resolve(orderedTimes()).badIndex >= 0) { Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show(); return }
+        // Validate order among only real, non-empty times; blank stop times are optional.
+        if (TimeFlow.resolve(orderedTimes().filterNotNull().filter { it.isNotBlank() }).badIndex >= 0) {
+            Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show()
+            return
+        }
 
         val body = JSONObject()
             .put("submission_type", "new_route")
