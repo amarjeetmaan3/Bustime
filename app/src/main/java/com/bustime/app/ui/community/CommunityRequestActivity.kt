@@ -163,6 +163,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             if (stop == null || !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Choose a stop and enter the corrected time as HH:MM."); return }
             jobs += "correct_time" to JSONObject().put("route_id", route.id).put("request_type", "correct_time")
                 .put("stop_id", stop.placeId).put("corrected_time", t).put("notes", note.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("phone", phone)
         }
         sendRequests(jobs.map { it.second }, "correction_submissions", "Correction request(s) sent for admin review.")
     }
