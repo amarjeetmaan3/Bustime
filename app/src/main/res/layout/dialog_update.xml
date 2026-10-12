@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Update Available!"
+        android:text="@string/update_title"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="@color/textPrimary"/>
@@ -18,7 +18,7 @@
         android:id="@+id/tvNewVersion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Version: v1.0.X"
+        android:text="@string/update_new_version"
         android:layout_marginTop="12dp"
         android:textColor="@color/textGreen"
         android:textStyle="bold"
@@ -28,7 +28,7 @@
         android:id="@+id/tvCurrentVersion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="You have: v1.0.X"
+        android:text="@string/update_current_version"
         android:layout_marginTop="4dp"
         android:textColor="@color/textSecondary"
         android:textSize="14sp"/>
@@ -38,12 +38,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Download Update" />
+        android:text="@string/update_download" />
 
     <Button
         android:id="@+id/btnLater"
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Later" />
+        android:text="@string/later" />
 </LinearLayout>
