@@ -93,7 +93,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                 if (i >= 0) routeSpinner?.setSelection(i)
             }
             heading("Complete route correction")
-            text("Edit the entire route below. Green + adds a stop; red − removes it. Rename stops, change times, and move stops up or down. Changes go to Admin for approval first.", 14f)
+            text("Replace an incorrect stop by selecting the correct place. Add a new start at the top or add stops between/at the end. Time is optional. Changes go to Admin for approval first.", 14f)
             correctionEditor = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
             root.addView(correctionEditor!!)
             field("correction_note", "Extra note for admin (optional)")
@@ -127,6 +127,16 @@ class CommunityRequestActivity : AppCompatActivity() {
         val textColor = fg.data
 
         // Compact, theme-aware rows: no large white cards and no four-button toolbar per stop.
+        val addStart = Button(this).apply {
+            text = "＋ Add Start"
+            setTextColor(android.graphics.Color.WHITE)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.rgb(32, 145, 75))
+            setOnClickListener {
+                correctionDrafts.add(0, JSONObject().put("place_id", JSONObject.NULL).put("name", "").put("language", LanguageHelper.current()).put("time", JSONObject.NULL))
+                renderCorrectionList()
+            }
+        }
+        box.addView(addStart, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(8) })
         correctionDrafts.forEachIndexed { index, draft ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -183,7 +193,10 @@ class CommunityRequestActivity : AppCompatActivity() {
                         else -> LanguageHelper.current()
                     }
                     draft.put("language", lang)
-                    filteredPlaces = allPlaces.filter { p -> q.isBlank() || p.names.values.any { it.contains(q, true) } }
+                    filteredPlaces = allPlaces.filter { p ->
+                        (q.isBlank() || p.names.values.any { it.contains(q, true) }) &&
+                            correctionDrafts.none { other -> other !== draft && !other.isNull("place_id") && other.optString("place_id") == p.id }
+                    }
                     adapter.clear()
                     adapter.addAll(filteredPlaces.map { suggestionLabel(it, lang) })
                     adapter.notifyDataSetChanged()
@@ -309,10 +322,10 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("time", t.ifBlank { JSONObject.NULL }).put("position", index))
         }
         if (seen.values.any { it > 1 }) {
-            android.app.AlertDialog.Builder(this).setTitle("Repeated stop detected")
-                .setMessage("The same stop appears more than once. This may be correct for some routes. Submit anyway?")
-                .setNegativeButton("Review list", null).setPositiveButton("Submit anyway") { _, _ -> sendRouteEdit(route, proposed, phone) }.show()
-        } else sendRouteEdit(route, proposed, phone)
+            toast("A stop is repeated in this route. Please choose a different stop or remove the duplicate before submitting.")
+            return
+        }
+        sendRouteEdit(route, proposed, phone)
     }
 
     private fun sendRouteEdit(route: Route, proposed: org.json.JSONArray, phone: String) {
