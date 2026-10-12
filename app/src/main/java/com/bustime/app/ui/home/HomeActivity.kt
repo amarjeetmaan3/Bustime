@@ -1,6 +1,8 @@
 package com.bustime.app.ui.home
 
-import android.os.Bundle\nimport android.view.MotionEvent\nimport android.view.View
+import android.os.Bundle
+import android.view.MotionEvent
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
