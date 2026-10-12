@@ -45,7 +45,12 @@ class PlacePickerActivity : AppCompatActivity() {
             tvEmpty.visibility = if (places.isEmpty()) View.VISIBLE else View.GONE
             for (p in places) {
                 val tv = TextView(this).apply {
-                    text = p.displayName(lang)
+                    text = listOf(lang, if (lang == "hi") "en" else "hi", "pa", "en")
+                        .distinct()
+                        .mapNotNull { code -> p.names[code]?.trim()?.takeIf { it.isNotBlank() } }
+                        .distinct()
+                        .joinToString(" • ")
+                        .ifBlank { p.displayName(lang) }
                     textSize = 18f
                     setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt())
                     setBackgroundResource(android.R.drawable.list_selector_background)
