@@ -811,8 +811,29 @@ function viewRouteReview() {
 }
 function subCardValues(i) {
   var card = document.querySelector('[data-sub="' + i + '"]'), times = [];
-  card.querySelectorAll('.sub_t').forEach(function (el) { var row=el.closest('.stoprow'), nameInput=row ? row.querySelector('.sub_name') : null; times.push({ place:el.getAttribute('data-place'), name:nameInput ? nameInput.value.trim() : '', time:TIME_RE.test(el.value) ? el.value : null }); });
-  return { start:card.querySelector('.sub_start').value, from:card.querySelector('.sub_from').value.trim(), to:card.querySelector('.sub_to').value.trim(), service:card.querySelector('.sub_service').value.trim(), stops:times };
+  // The list can be re-rendered while a review click is being handled. Never
+  // dereference a missing card/control; show a recoverable message instead.
+  if (!card) return null;
+  function fieldValue(selector) {
+    var field = card.querySelector(selector);
+    return field && typeof field.value === 'string' ? field.value : '';
+  }
+  card.querySelectorAll('.sub_t').forEach(function (el) {
+    var row = el.closest('.stoprow'), nameInput = row ? row.querySelector('.sub_name') : null;
+    var timeValue = typeof el.value === 'string' ? el.value : '';
+    times.push({
+      place: el.getAttribute('data-place'),
+      name: nameInput && typeof nameInput.value === 'string' ? nameInput.value.trim() : '',
+      time: TIME_RE.test(timeValue) ? timeValue : null
+    });
+  });
+  return {
+    start: fieldValue('.sub_start'),
+    from: fieldValue('.sub_from').trim(),
+    to: fieldValue('.sub_to').trim(),
+    service: fieldValue('.sub_service').trim(),
+    stops: times
+  };
 }
 function nearSubmittedPlaces(rawName) {
   var normalize = function (v) { return String(v || '').toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^\\p{L}\\p{N}]+/gu, ' ').trim().replace(/\\s+/g, ' '); };
@@ -1239,7 +1260,11 @@ document.addEventListener('click', async function (e) {
       subs.splice(i, 1); toast('Rejected request deleted'); render();
     }
     else if (act === 'sb-approve') {
-      var sub = subs[i], v = subCardValues(i);
+      var sub = subs && subs[i], v = subCardValues(i);
+      if (!sub || !v) {
+        toast('This request form is no longer available. Refresh the submissions list and try again.');
+        return;
+      }
       if (sub.submission_type === 'edit_existing_route') {
         var targetRoute = data.routes.find(function (r) { return String(r.id) === String(sub.route_id); });
         if (!targetRoute) { toast('The selected route no longer exists. Refresh and review this request.'); return; }
