@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 20,
+  "dataVersion": 21,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -206,48 +206,6 @@
         "en": "Hunmangarh",
         "hi": "हुनमनगढ़",
         "pa": "ਹੁਨਮੰਗਗੜ"
-      }
-    },
-    {
-      "id": "place_user_zgc",
-      "kind": "place",
-      "name": {
-        "en": "Zgc"
-      }
-    },
-    {
-      "id": "place_user_dhc",
-      "kind": "place",
-      "name": {
-        "en": "Dhc"
-      }
-    },
-    {
-      "id": "place_user_fhcc",
-      "kind": "place",
-      "name": {
-        "en": "fhcc"
-      }
-    },
-    {
-      "id": "place_user_ujcn",
-      "kind": "place",
-      "name": {
-        "en": "ujcn"
-      }
-    },
-    {
-      "id": "place_user_sds",
-      "kind": "place",
-      "name": {
-        "en": "Sds"
-      }
-    },
-    {
-      "id": "place_user_sdft",
-      "kind": "place",
-      "name": {
-        "en": "Sdft"
       }
     }
   ],
