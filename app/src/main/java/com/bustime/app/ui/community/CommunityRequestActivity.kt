@@ -90,7 +90,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                 return@launch
             }
 
-            heading("Route: ${routeLabel(route)}")
+            heading(getString(com.bustime.app.R.string.community_route_label, routeLabel(route)))
             text(getString(com.bustime.app.R.string.community_complete_route_correction), 16f, true)
             text(getString(com.bustime.app.R.string.community_complete_route_help), 14f)
             correctionEditor = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
@@ -246,7 +246,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                     setColor(android.graphics.Color.rgb(32, 145, 75))
                     cornerRadius = dp(7).toFloat()
                 }
-                contentDescription = "Add stop below"
+                contentDescription = getString(com.bustime.app.R.string.ar_add_stop_below)
                 setOnClickListener {
                     draft.put("name", name.text.toString().trim())
                     val newStop = JSONObject().put("place_id", JSONObject.NULL).put("name", "").put("language", LanguageHelper.current()).put("time", JSONObject.NULL)
@@ -261,17 +261,17 @@ class CommunityRequestActivity : AppCompatActivity() {
                 textSize = 23f
                 gravity = android.view.Gravity.CENTER
                 setTextColor(textColor)
-                contentDescription = "More stop actions"
+                contentDescription = getString(com.bustime.app.R.string.ar_more_stop_actions)
                 setOnClickListener { anchor ->
                     draft.put("name", name.text.toString().trim())
                     val menu = android.widget.PopupMenu(this@CommunityRequestActivity, anchor)
-                    menu.menu.add("Move up").isEnabled = index > 0
-                    menu.menu.add("Move down").isEnabled = index < correctionDrafts.lastIndex
-                    menu.menu.add("Remove stop").setIcon(android.R.drawable.ic_menu_delete)
+                    menu.menu.add(getString(com.bustime.app.R.string.ar_move_up)).isEnabled = index > 0
+                    menu.menu.add(getString(com.bustime.app.R.string.ar_move_down)).isEnabled = index < correctionDrafts.lastIndex
+                    menu.menu.add(getString(com.bustime.app.R.string.ar_remove_stop)).setIcon(android.R.drawable.ic_menu_delete)
                     menu.setOnMenuItemClickListener { item ->
                         when (item.title.toString()) {
-                            "Move up" -> if (index > 0) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index - 1, v); renderCorrectionList() }
-                            "Move down" -> if (index < correctionDrafts.lastIndex) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index + 1, v); renderCorrectionList() }
+                            getString(com.bustime.app.R.string.ar_move_up) -> if (index > 0) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index - 1, v); renderCorrectionList() }
+                            getString(com.bustime.app.R.string.ar_move_down) -> if (index < correctionDrafts.lastIndex) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index + 1, v); renderCorrectionList() }
                             getString(com.bustime.app.R.string.ar_remove_stop) -> android.app.AlertDialog.Builder(this@CommunityRequestActivity)
                                 .setTitle(getString(com.bustime.app.R.string.community_remove_stop_question))
                                 .setMessage(getString(com.bustime.app.R.string.community_remove_stop_warning))
@@ -309,10 +309,10 @@ class CommunityRequestActivity : AppCompatActivity() {
         val seen = mutableMapOf<String, Int>()
         correctionDrafts.forEachIndexed { index, d ->
             val name = d.optString("name").trim()
-            if (name.isBlank()) { toast("Enter a name for stop " + (index + 1) + "."); return }
+            if (name.isBlank()) { toast(getString(com.bustime.app.R.string.community_enter_stop_name, index + 1)); return }
             // JSONObject.NULL can stringify to "null"; treat it as an empty optional time.
             val t = if (d.isNull("time")) "" else d.optString("time").trim().takeUnless { it == "null" }.orEmpty()
-            if (t.isNotBlank() && !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Stop " + (index + 1) + " has an invalid time."); return }
+            if (t.isNotBlank() && !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast(getString(com.bustime.app.R.string.community_stop_invalid_time, index + 1)); return }
             var id = if (d.isNull("place_id")) "" else d.optString("place_id")
             // Resolve a manually typed alias to the canonical place record, regardless
             // of whether the user typed its English, Hindi, or Punjabi name.
@@ -330,7 +330,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("time", t.ifBlank { JSONObject.NULL }).put("position", index))
         }
         if (seen.values.any { it > 1 }) {
-            toast("A stop is repeated in this route. Please choose a different stop or remove the duplicate before submitting.")
+            toast(getString(com.bustime.app.R.string.community_duplicate_stop))
             return
         }
         sendRouteEdit(route, proposed, phone)
@@ -378,10 +378,22 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("vehicle_model_number", value("vehicle_model_number")).put("vehicle_number", value("vehicle_number"))
                 .put("seats", seats).put("location", area).put("area_name", area)
                 .put("union_name", value("union_name")).put("phone", phone)
-                .put("fuel_type", if (type == "auto") spinners["fuel_type"]?.selectedItem?.toString()?.lowercase(Locale.ROOT) else JSONObject.NULL)
+                .put("fuel_type", if (type == "auto") listOf("ev", "oil", "cng", "other").getOrNull(spinners["fuel_type"]?.selectedItemPosition ?: -1) else JSONObject.NULL)
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             sendRequests(listOf(body), "vehicle_submissions", getString(com.bustime.app.R.string.community_listing_sent))
         }
+    }
+
+    private fun busCategoryLabel(value: String): String = when (value.trim().lowercase(Locale.ROOT)) {
+        "ordinary" -> getString(com.bustime.app.R.string.bus_category_ordinary)
+        "luxury" -> getString(com.bustime.app.R.string.bus_category_luxury)
+        "sleeper" -> getString(com.bustime.app.R.string.bus_category_sleeper)
+        "sleeper plus" -> getString(com.bustime.app.R.string.bus_category_sleeper_plus)
+        "seater plus" -> getString(com.bustime.app.R.string.bus_category_seater_plus)
+        "seater" -> getString(com.bustime.app.R.string.bus_category_seater)
+        "sleeper + seater" -> getString(com.bustime.app.R.string.bus_category_sleeper_seater)
+        "custom" -> getString(com.bustime.app.R.string.bus_category_custom)
+        else -> value
     }
 
     private fun busOperatorForm() {
@@ -390,12 +402,14 @@ class CommunityRequestActivity : AppCompatActivity() {
         field("service_name", getString(com.bustime.app.R.string.community_service_name))
         field("operator_name", getString(com.bustime.app.R.string.community_bus_owner))
         val defaultCategories = listOf("Ordinary", "Luxury", "Sleeper", "Sleeper Plus", "Seater Plus", "Seater", "Sleeper + Seater", "Custom")
-        val categorySpinner = spinner(getString(com.bustime.app.R.string.community_bus_category), defaultCategories, "bus_type")
+        var categoryValues = defaultCategories
+        val categorySpinner = spinner(getString(com.bustime.app.R.string.community_bus_category), defaultCategories.map(::busCategoryLabel), "bus_type")
         lifecycleScope.launch {
             val categories = withContext(Dispatchers.IO) { CommunitySupabase.getBusCategories() }
             if (categories.isNotEmpty()) {
-                val selected = categorySpinner.selectedItem?.toString()
-                categorySpinner.adapter = ArrayAdapter(this@CommunityRequestActivity, android.R.layout.simple_spinner_dropdown_item, categories)
+                val selected = categoryValues.getOrNull(categorySpinner.selectedItemPosition)
+                categoryValues = categories
+                categorySpinner.adapter = ArrayAdapter(this@CommunityRequestActivity, android.R.layout.simple_spinner_dropdown_item, categories.map(::busCategoryLabel))
                 val index = categories.indexOf(selected)
                 if (index >= 0) categorySpinner.setSelection(index)
             }
@@ -410,7 +424,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             val operator = value("operator_name")
             val service = value("service_name")
             val phone = digits(value("phone"))
-            val category = spinners["bus_type"]?.selectedItem?.toString().orEmpty()
+            val category = categoryValues.getOrNull(spinners["bus_type"]?.selectedItemPosition ?: -1).orEmpty()
             val variant = value("custom_category")
             val sleeper = value("sleeper_count").toIntOrNull()
             val seater = value("seater_count").toIntOrNull()
@@ -487,7 +501,8 @@ class CommunityRequestActivity : AppCompatActivity() {
         button(getString(com.bustime.app.R.string.community_send_feedback)) {
             val message = value("feedback_text")
             if (message.length < 4) { toast(getString(com.bustime.app.R.string.community_please_feedback)); return@button }
-            val body = JSONObject().put("category", spinners["feedback_category"]?.selectedItem?.toString() ?: "Other")
+            val feedbackCategories = listOf("Suggestion", "Incorrect information", "App problem", "Other")
+            val body = JSONObject().put("category", feedbackCategories.getOrNull(spinners["feedback_category"]?.selectedItemPosition ?: -1) ?: "Other")
                 .put("related_route", value("related_route").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("message", message).put("contact", digits(value("contact")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             sendRequests(listOf(body), "feedback_submissions", getString(com.bustime.app.R.string.community_thanks_feedback))
@@ -596,7 +611,7 @@ class CommunityRequestActivity : AppCompatActivity() {
     private fun text(s: String, size: Float, bold: Boolean = false) { root.addView(TextView(this).apply { text = s; textSize = size; if (bold) setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, dp(10), 0, dp(5)) }) }
     private fun field(key: String, hint: String): EditText { val e = EditText(this).apply { this.hint = hint; textSize = 16f; setPadding(dp(12), dp(10), dp(12), dp(10)) }; fields[key] = e; root.addView(e); return e }
     private fun spinner(hint: String, options: List<String>, key: String? = null): Spinner {
-        val s = Spinner(this); s.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (options.isEmpty()) listOf("Loading stops…") else options)
+        val s = Spinner(this); s.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (options.isEmpty()) listOf(getString(com.bustime.app.R.string.community_loading_stops)) else options)
         s.setOnTouchListener { v, event ->
             if (event.action == android.view.MotionEvent.ACTION_DOWN) {
                 (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0)
