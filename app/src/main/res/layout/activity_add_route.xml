@@ -29,13 +29,14 @@
             android:textSize="22sp"
             android:textStyle="bold" />
 
-        <!-- ऊपर दो विकल्प: पहले से बना रूट / बिल्कुल नया रूट -->
+        <!-- Single flow: every submission is a new route for admin review -->
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/toggleMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            app:checkedButton="@+id/btnModeExisting"
+            android:visibility="gone"
+            app:checkedButton="@+id/btnModeNew"
             app:selectionRequired="true"
             app:singleSelection="true">
 
