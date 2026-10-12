@@ -5,7 +5,7 @@ create table if not exists public.correction_submissions (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
   route_id text not null,
-  request_type text not null check (request_type in ('missing_stop','correct_time')),
+  request_type text not null check (request_type in ('missing_stop','correct_time','route_edit')),
   before_stop_id text,
   after_stop_id text,
   missing_place_name text,
@@ -18,6 +18,9 @@ create table if not exists public.correction_submissions (
 );
 alter table public.correction_submissions add column if not exists missing_place_id text;
 alter table public.correction_submissions add column if not exists phone text;
+alter table public.correction_submissions add column if not exists original_stops jsonb not null default '[]'::jsonb;
+alter table public.correction_submissions add column if not exists proposed_stops jsonb not null default '[]'::jsonb;
+alter table public.correction_submissions add column if not exists change_summary text;
 create index if not exists correction_submissions_status_idx on public.correction_submissions(status, created_at desc);
 
 create table if not exists public.vehicle_submissions (
