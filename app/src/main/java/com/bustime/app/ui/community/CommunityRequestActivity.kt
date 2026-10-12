@@ -3,6 +3,8 @@ package com.bustime.app.ui.community
 import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.content.Context
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
@@ -43,6 +45,8 @@ class CommunityRequestActivity : AppCompatActivity() {
     private var missingCheck: CheckBox? = null
     private var timeCheck: CheckBox? = null
     private var longRouteName = ""
+    private var missingSection: LinearLayout? = null
+    private var timeSection: LinearLayout? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,17 +89,27 @@ class CommunityRequestActivity : AppCompatActivity() {
             missingCheck = CheckBox(this@CommunityRequestActivity).apply { text = getString(com.bustime.app.R.string.community_missing_stop); isChecked = true }
             timeCheck = CheckBox(this@CommunityRequestActivity).apply { text = getString(com.bustime.app.R.string.community_correct_time) }
             root.addView(missingCheck); root.addView(timeCheck)
-            heading(getString(com.bustime.app.R.string.community_missing_stop_details))
-            text(getString(com.bustime.app.R.string.community_missing_stop_help), 14f)
-            stopOne = spinner(getString(com.bustime.app.R.string.community_stop_before), emptyList())
-            stopTwo = spinner(getString(com.bustime.app.R.string.community_stop_after), emptyList())
-            missingExisting = spinner(getString(com.bustime.app.R.string.community_choose_place_optional), listOf(getString(com.bustime.app.R.string.community_type_new_place)))
-            field("missing_place", getString(com.bustime.app.R.string.community_missing_place_hint))
-            field("missing_time", getString(com.bustime.app.R.string.community_missing_time_hint))
-            heading(getString(com.bustime.app.R.string.community_correct_time_details))
-            correctedStop = spinner(getString(com.bustime.app.R.string.community_choose_stop), emptyList())
-            field("corrected_time", getString(com.bustime.app.R.string.community_correct_time_hint))
+            missingSection = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
+            root.addView(missingSection)
+            headingIn(missingSection!!, getString(com.bustime.app.R.string.community_missing_stop_details))
+            textIn(missingSection!!, getString(com.bustime.app.R.string.community_missing_stop_help), 14f)
+            stopOne = spinnerIn(missingSection!!, getString(com.bustime.app.R.string.community_stop_before), emptyList())
+            stopTwo = spinnerIn(missingSection!!, getString(com.bustime.app.R.string.community_stop_after), emptyList())
+            fieldIn(missingSection!!, "missing_place", getString(com.bustime.app.R.string.community_missing_place_hint))
+            timePickerFieldIn(missingSection!!, "missing_time", "Missing stop time (optional)")
+            timeSection = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
+            root.addView(timeSection)
+            headingIn(timeSection!!, getString(com.bustime.app.R.string.community_correct_time_details))
+            correctedStop = spinnerIn(timeSection!!, getString(com.bustime.app.R.string.community_choose_stop), emptyList())
+            timePickerFieldIn(timeSection!!, "corrected_time", getString(com.bustime.app.R.string.community_correct_time_hint))
             field("correction_note", getString(com.bustime.app.R.string.community_extra_details))
+            val updateSections = {
+                missingSection?.visibility = if (missingCheck?.isChecked == true) View.VISIBLE else View.GONE
+                timeSection?.visibility = if (timeCheck?.isChecked == true) View.VISIBLE else View.GONE
+            }
+            missingCheck?.setOnCheckedChangeListener { _, _ -> updateSections() }
+            timeCheck?.setOnCheckedChangeListener { _, _ -> updateSections() }
+            updateSections()
             button("Send correction request") { submitCorrection() }
         }
     }
@@ -112,7 +126,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         update(stopOne, labels.dropLast(1).ifEmpty { labels })
         update(stopTwo, labels.drop(1).ifEmpty { labels })
         update(correctedStop, labels)
-        update(missingExisting, listOf("— Type a new place below —") + allPlaces.map { it.displayName(LanguageHelper.current()) })
+
     }
 
     private fun submitCorrection() {
@@ -126,11 +140,8 @@ class CommunityRequestActivity : AppCompatActivity() {
             val before = routeStops.getOrNull(stopOne?.selectedItemPosition ?: -1)
             val afterIndex = (stopTwo?.selectedItemPosition ?: -1) + 1
             val after = routeStops.getOrNull(afterIndex)
-            val existingIndex = (missingExisting?.selectedItemPosition ?: 0) - 1
             val typed = value("missing_place")
-            val existingPlace = allPlaces.getOrNull(existingIndex)
-            val existingName = existingPlace?.displayName(LanguageHelper.current()).orEmpty()
-            val missing = typed.ifBlank { existingName }
+            val missing = typed
             if (before == null || after == null || after.stopOrder != before.stopOrder + 1 || missing.isBlank()) {
                 toast("Choose the stops around the missing stop and select/type its name."); return
             }
@@ -138,7 +149,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             if (t.isNotBlank() && !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Enter missing-stop time as HH:MM."); return }
             jobs += "missing_stop" to JSONObject().put("route_id", route.id).put("request_type", "missing_stop")
                 .put("before_stop_id", before.placeId).put("after_stop_id", after.placeId)
-                .put("missing_place_name", missing).put("missing_place_id", if (typed.isBlank()) existingPlace?.id ?: JSONObject.NULL else JSONObject.NULL)
+                .put("missing_place_name", missing).put("missing_place_id", JSONObject.NULL)
                 .put("missing_time", t.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("notes", note.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
         }
@@ -157,68 +168,72 @@ class CommunityRequestActivity : AppCompatActivity() {
         val typeSpinner = spinner("Vehicle type", listOf("Auto", "Taxi"), "vehicle_type")
         if (requestedType == "taxi") typeSpinner.setSelection(1)
         if (requestedType == "auto" || requestedType == "taxi") typeSpinner.visibility = View.GONE
-        field("person_name", "Driver / contact person name")
-        field("vehicle_name", "Vehicle name / model")
-        field("seats", "Number of seats (if applicable)")
-        field("location", "Location / address")
-        field("area_name", "Service area (e.g. Sadhusar / Sri Ganganagar)")
-        field("union_name", "Union name (optional)")
+        field("person_name", "Driver name")
+        field("vehicle_name", "Vehicle name")
+        field("vehicle_model_number", "Vehicle model number")
+        field("seats", "Number of seats")
+        field("vehicle_number", "Vehicle registration number")
+        field("location", "Location address / service area (enter once)")
+        field("union_name", "Union name (required; admin will review)")
         field("phone", "Mobile number")
+        val fuelSpinner = spinner("Auto fuel type", listOf("EV", "Oil", "CNG", "Other"), "fuel_type")
+        if (requestedType != "auto") fuelSpinner.visibility = View.GONE
         field("details", "Other information (optional)")
         button("Submit listing for admin review") {
-            val type = if (spinners["vehicle_type"]?.selectedItemPosition == 0) "auto" else "taxi"
+            val type = if (requestedType == "auto" || (requestedType == null && spinners["vehicle_type"]?.selectedItemPosition == 0)) "auto" else "taxi"
             val name = value("person_name"); val vehicle = value("vehicle_name"); val phone = digits(value("phone"))
             val seats = value("seats").toIntOrNull()
-            if (name.isBlank() || vehicle.isBlank() || value("location").isBlank() || phone.length !in 10..13 || (type == "taxi" && (seats == null || seats < 1))) { toast("Enter name, vehicle, location and valid mobile number. Taxi listings also need seat count."); return@button }
-            val area = value("area_name")
-            if (area.isBlank()) { toast("Enter the driver's service area. This is separate from bus stands."); return@button }
+            val area = value("location")
+            if (name.isBlank() || vehicle.isBlank() || value("vehicle_model_number").isBlank() || value("vehicle_number").isBlank() ||
+                area.isBlank() || value("union_name").isBlank() || phone.length !in 10..13 || seats == null || seats < 1) {
+                toast("Complete all required fields, including seat count, vehicle number, service area and union name."); return@button
+            }
             val body = JSONObject().put("vehicle_type", type).put("person_name", name).put("vehicle_name", vehicle)
-                .put("seats", seats ?: JSONObject.NULL).put("location", value("location"))
-                .put("area_name", area)
-                .put("union_name", value("union_name").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("phone", phone).put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("vehicle_model_number", value("vehicle_model_number")).put("vehicle_number", value("vehicle_number"))
+                .put("seats", seats).put("location", area).put("area_name", area)
+                .put("union_name", value("union_name")).put("phone", phone)
+                .put("fuel_type", if (type == "auto") spinners["fuel_type"]?.selectedItem?.toString()?.lowercase(Locale.ROOT) else JSONObject.NULL)
+                .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             sendRequests(listOf(body), "vehicle_submissions", "Listing sent for admin review.")
         }
     }
 
     private fun busOperatorForm() {
         heading("Add Your Bus")
-        text("Submit bus details for admin verification. The listing becomes public only after approval.", 14f)
-        field("operator_name", "Bus owner / operator name")
+        text("Enter bus details for admin review. Your listing appears publicly only after approval.", 14f)
         field("service_name", "Service name")
-        spinner("Bus category", listOf("Ordinary", "Luxury", "Sleeper", "Seater", "Sleeper + Seater", "Custom"), "bus_type")
-        field("custom_category", "Custom category name (if Custom, e.g. Prime A)")
-        spinner("Seat configuration", listOf("Not specified", "Sleeper", "Seater", "Sleeper + Seater"), "seat_type")
+        field("operator_name", "Bus owner name")
+        val categories = CommunitySupabase.getBusCategories().ifEmpty { listOf("Ordinary", "Luxury", "Sleeper", "Sleeper Plus", "Seater Plus", "Seater", "Sleeper + Seater", "Custom") }
+        spinner("Bus category", categories, "bus_type")
+        field("custom_category", "Describe your specific bus type / variant (required for every category)")
         field("sleeper_count", "Number of sleeper berths")
-        field("seater_count", "Number of seats")
-        field("from_text", "Starting city / area")
-        field("to_text", "Destination city / area")
-        field("location", "Operating area (optional)")
-        field("phone", "Contact mobile number")
+        field("seater_count", "Number of seater seats")
+        field("from_text", "Starting area / city")
+        field("to_text", "Destination area / city")
+        field("location", "Operating area / city (required)")
+        field("phone", "Operator mobile number")
         field("whatsapp", "WhatsApp number (optional)")
-        field("details", "Additional details (optional)")
+        field("details", "Additional information (optional)")
         button("Submit bus for admin review") {
             val operator = value("operator_name")
+            val service = value("service_name")
             val phone = digits(value("phone"))
-            val category = spinners["bus_type"]?.selectedItem?.toString() ?: "Ordinary"
-            val custom = value("custom_category")
-            val seatsType = spinners["seat_type"]?.selectedItem?.toString()?.takeUnless { it == "Not specified" }
+            val category = spinners["bus_type"]?.selectedItem?.toString().orEmpty()
+            val variant = value("custom_category")
             val sleeper = value("sleeper_count").toIntOrNull()
             val seater = value("seater_count").toIntOrNull()
-            if (operator.isBlank() || phone.length !in 10..13) { toast("Enter operator name and a valid mobile number."); return@button }
-            if (category == "Custom" && custom.isBlank()) { toast("Enter your custom bus category."); return@button }
-            if ((sleeper != null && sleeper < 0) || (seater != null && seater < 0)) { toast("Seat counts cannot be negative."); return@button }
+            if (service.isBlank() || operator.isBlank() || phone.length !in 10..13 || category.isBlank() || variant.isBlank() ||
+                sleeper == null || sleeper < 0 || seater == null || seater < 0 || value("from_text").isBlank() ||
+                value("to_text").isBlank() || value("location").isBlank()) {
+                toast("Fill every required field, including bus variant, berth/seat counts and all three areas."); return@button
+            }
             val body = JSONObject()
-                .put("operator_name", operator)
-                .put("service_name", value("service_name").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("bus_type", if (category == "Custom") custom else category)
-                .put("seat_type", seatsType ?: JSONObject.NULL)
-                .put("sleeper_count", sleeper ?: JSONObject.NULL)
-                .put("seater_count", seater ?: JSONObject.NULL)
-                .put("from_text", value("from_text").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("to_text", value("to_text").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("location", value("location").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("phone", phone)
+                .put("operator_name", operator).put("service_name", service)
+                .put("bus_type", category).put("custom_category", variant)
+                .put("seat_type", category)
+                .put("sleeper_count", sleeper).put("seater_count", seater)
+                .put("from_text", value("from_text")).put("to_text", value("to_text"))
+                .put("location", value("location")).put("phone", phone)
                 .put("whatsapp", digits(value("whatsapp")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             sendRequests(listOf(body), "bus_operator_submissions", "Bus submitted for admin verification.")
@@ -297,6 +312,31 @@ class CommunityRequestActivity : AppCompatActivity() {
             if (results.all { it }) { toast(success); finish() }
             else toast("Could not send all requests. Check internet and try again.\n" + CommunitySupabase.lastError)
         }
+    }
+
+    private fun headingIn(target: LinearLayout, s: String) { textIn(target, s, 16f, true) }
+    private fun textIn(target: LinearLayout, s: String, size: Float, bold: Boolean = false) {
+        target.addView(TextView(this).apply { text = s; textSize = size; if (bold) setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, dp(10), 0, dp(5)) })
+    }
+    private fun fieldIn(target: LinearLayout, key: String, hint: String): EditText {
+        val e = EditText(this).apply { this.hint = hint; textSize = 16f; setPadding(dp(12), dp(10), dp(12), dp(10)) }
+        fields[key] = e; target.addView(e); return e
+    }
+    private fun spinnerIn(target: LinearLayout, hint: String, options: List<String>): Spinner {
+        val s = Spinner(this); s.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (options.isEmpty()) listOf("Loading stops…") else options)
+        s.contentDescription = hint; target.addView(s); return s
+    }
+    private fun timePickerFieldIn(target: LinearLayout, key: String, hint: String): EditText {
+        val e = fieldIn(target, key, hint)
+        e.isFocusable = false; e.isClickable = true
+        e.setOnClickListener {
+            val now = java.util.Calendar.getInstance()
+            TimePickerDialog(this, { _, hour, minute ->
+                e.setText(String.format(Locale.ROOT, "%02d:%02d", hour, minute))
+                (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(e.windowToken, 0)
+            }, now.get(java.util.Calendar.HOUR_OF_DAY), now.get(java.util.Calendar.MINUTE), true).show()
+        }
+        return e
     }
 
     private fun routeLabel(route: Route): String = "${placeNames[route.fromId] ?: route.fromId} → ${placeNames[route.toId] ?: route.toId} (${route.time})"
