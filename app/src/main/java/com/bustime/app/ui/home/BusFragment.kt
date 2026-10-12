@@ -30,6 +30,7 @@ class BusFragment : Fragment(R.layout.fragment_bus) {
 
     private var fromPlace: Place? = null
     private var toPlace: Place? = null
+    private var standPlace: Place? = null
     private var pickTarget = ""   // "from", "to" या "stand"
 
     private val pickLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -59,6 +60,11 @@ class BusFragment : Fragment(R.layout.fragment_bus) {
         }
 
         view.findViewById<View>(R.id.btnSearchRoute).setOnClickListener { searchRoutes() }
+        view.findViewById<View>(R.id.btnSearchStand).setOnClickListener {
+            val lastStand = standPlace
+            if (lastStand != null) openStandResults(lastStand)
+            else openPicker("stand", getString(R.string.stand_hint), true)
+        }
         view.findViewById<View>(R.id.btnAddBusRoute).setOnClickListener {
             startActivity(Intent(requireContext(), com.bustime.app.ui.addroute.AddRouteActivity::class.java))
         }
@@ -69,12 +75,15 @@ class BusFragment : Fragment(R.layout.fragment_bus) {
         // भाषा बदलने पर स्क्रीन दोबारा बनती है: चुनी हुई जगहें वापस भरो
         val savedFrom = savedInstanceState?.getString("FROM_ID")
         val savedTo = savedInstanceState?.getString("TO_ID")
-        if (savedFrom != null || savedTo != null) {
+        val savedStand = savedInstanceState?.getString("STAND_ID")
+        if (savedFrom != null || savedTo != null || savedStand != null) {
             viewLifecycleOwner.lifecycleScope.launch {
-                val ids = listOfNotNull(savedFrom, savedTo).toSet()
+                val ids = listOfNotNull(savedFrom, savedTo, savedStand).toSet()
                 val found = repo.getPlacesById(ids)
                 fromPlace = savedFrom?.let { found[it] }
                 toPlace = savedTo?.let { found[it] }
+                standPlace = savedStand?.let { found[it] }
+                standPlace?.let { etStand.setText(it.displayName(LanguageHelper.current())) }
                 showTexts()
             }
         }
@@ -84,6 +93,7 @@ class BusFragment : Fragment(R.layout.fragment_bus) {
         super.onSaveInstanceState(outState)
         outState.putString("FROM_ID", fromPlace?.id)
         outState.putString("TO_ID", toPlace?.id)
+        outState.putString("STAND_ID", standPlace?.id)
     }
 
     private fun openPicker(target: String, hint: String, standsOnly: Boolean) {
@@ -102,6 +112,7 @@ class BusFragment : Fragment(R.layout.fragment_bus) {
                 "from" -> fromPlace = place
                 "to" -> toPlace = place
                 "stand" -> {
+                    standPlace = place
                     etStand.setText(place.displayName(LanguageHelper.current()))
                     openStandResults(place)
                 }
