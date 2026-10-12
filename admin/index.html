@@ -958,7 +958,7 @@ function viewCommunity(mode) {
     if (x._kind === 'corrections') {
       details = '<p><b>Route:</b> '+esc(x.route_id)+' · <b>Type:</b> '+esc(x.request_type)+'</p>' +
         (x.request_type==='missing_stop' ? '<p><b>Between:</b> '+esc(x.before_stop_id)+' → '+esc(x.after_stop_id)+' · <b>Missing:</b> '+esc(x.missing_place_name)+' · <b>Time:</b> '+esc(x.missing_time||'-')+'</p>' : '<p><b>Stop:</b> '+esc(x.stop_id)+' · <b>Correct time:</b> '+esc(x.corrected_time)+'</p>') +
-        '<p class="muted">'+esc(x.notes||'')+'</p>';
+        '<p><b>Mobile:</b> '+esc(x.phone||'-')+'</p><p class="muted">'+esc(x.notes||'')+'</p>';
     } else if (x._kind === 'vehicles') {
       details = '<p><b>'+esc(x.vehicle_type)+'</b> · '+esc(x.person_name)+' · '+esc(x.vehicle_name)+' · Model '+esc(x.vehicle_model_number||'-')+' · Vehicle No. '+esc(x.vehicle_number||'-')+' · Seats '+esc(x.seats||'-')+'</p><p><b>Service area:</b> '+esc(x.area_name||x.location||'-')+' · <b>Union:</b> '+esc(x.union_name||'-')+' · <b>Fuel:</b> '+esc(x.fuel_type||'-')+'</p><p>'+esc(x.phone)+'</p><p>'+esc(x.details||'')+'</p>';
     } else if (x._kind === 'busSubmissions') {
@@ -1049,8 +1049,21 @@ function reviewNameInputs(key, names) {
 function routeReviewEditorHtml() {
   var i = routeReviewEditor.index, sub = subs && subs[i], v = subCardValues(i);
   if (!sub || !v) return '<p class="alert err">This request form is unavailable. Close and refresh submissions.</p>';
-  var fromNames = reviewNamesForPlace(sub.from_id, v.from || sub.from_text);
-  var toNames = reviewNamesForPlace(sub.to_id, v.to || sub.to_text);
+  // The current Bus Requests screen is a summary card, while the legacy review
+  // screen has inline inputs. Fall back to the actual Supabase record when those
+  // editable inputs are not present so the editor is always fully prefilled.
+  v.from = v.from || sub.from_text || (placeById(sub.from_id) ? pname(placeById(sub.from_id)) : '');
+  v.to = v.to || sub.to_text || (placeById(sub.to_id) ? pname(placeById(sub.to_id)) : '');
+  v.start = v.start || sub.start_time || '';
+  v.service = v.service || sub.service_name || '';
+  if (!v.stops.length && Array.isArray(sub.stops)) {
+    v.stops = sub.stops.map(function(st) {
+      var place = st.place ? placeById(st.place) : null;
+      return {place:st.place || null,name:st.name || (place ? pname(place) : ''),time:TIME_RE.test(st.time || '') ? st.time : null};
+    });
+  }
+  var fromNames = reviewNamesForPlace(sub.from_id, v.from);
+  var toNames = reviewNamesForPlace(sub.to_id, v.to);
   var stopHtml = v.stops.map(function(st, index) {
     return '<div class="card" style="padding:12px;margin:12px 0" data-rv-stop="' + index + '" data-place="' + esc(st.place || '') + '"><b>Stop ' + (index + 1) + '</b>' +
       reviewNameInputs('stop-' + index, reviewNamesForPlace(st.place, st.name)) +
