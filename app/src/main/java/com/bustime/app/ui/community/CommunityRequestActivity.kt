@@ -208,7 +208,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                 setTextColor(if (t.isBlank()) textColor else android.graphics.Color.rgb(58, 133, 190))
                 setPadding(dp(5), dp(4), dp(5), dp(4))
                 background = android.graphics.drawable.GradientDrawable().apply {
-                    setColor(if (t.isBlank()) android.graphics.Color.TRANSPARENT else if (android.os.Build.VERSION.SDK_INT >= 29 && resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES) 0xFF263746.toInt() else 0xFFEAF3FA.toInt()
+                    setColor(if (t.isBlank()) android.graphics.Color.TRANSPARENT else if ((resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES) 0xFF263746.toInt() else 0xFFEAF3FA.toInt()
                     cornerRadius = dp(6).toFloat()
                 }
                 setOnClickListener {
