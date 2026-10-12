@@ -29,6 +29,7 @@ alter table public.route_submissions add column if not exists from_text text;
 alter table public.route_submissions add column if not exists to_text text;
 alter table public.route_submissions add column if not exists route_text text;
 alter table public.route_submissions add column if not exists submission_type text not null default 'route';
+alter table public.route_submissions add column if not exists route_id text;
 
 alter table public.route_submissions alter column from_id drop not null;
 alter table public.route_submissions alter column to_id drop not null;
