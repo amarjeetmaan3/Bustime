@@ -11,7 +11,7 @@ import com.bustime.app.utils.ContactActions
 data class BusItem(
     val routeId: String,
     val time: String,        // दिखाने वाला समय, जैसे "6:30 AM"
-    val title: String,       // "From → To"
+    val title: String,       // ctx.getString(R.string.bus_from_to)
     val extra: String?,      // पहुँचने का समय, सर्विस का नाम
     val contact: String?
 )

@@ -10,13 +10,13 @@
         android:layout_width="80dp"
         android:layout_height="80dp"
         android:src="@android:drawable/ic_dialog_alert"
-        android:contentDescription="No Internet" />
+        android:contentDescription="@string/network_no_internet" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Internet Required"
+        android:text="@string/network_required"
         android:textSize="24sp"
         android:textStyle="bold" />
 
@@ -24,7 +24,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Please turn on your internet connection to use the app and support us through ads."
+        android:text="@string/network_support_ads"
         android:textAlignment="center"
         android:textSize="16sp" />
 
@@ -33,5 +33,5 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="Retry" />
+        android:text="@string/retry" />
 </LinearLayout>

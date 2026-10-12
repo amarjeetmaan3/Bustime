@@ -18,6 +18,26 @@ import org.json.JSONArray
 
 /** Lists admin-published operators; contact is direct and there is no in-app booking/payment. */
 class BookBusActivity : AppCompatActivity() {
+    private fun localizedCategory(value: String): String = when (value.trim().lowercase(java.util.Locale.ROOT)) {
+        "ordinary" -> getString(com.bustime.app.R.string.bus_category_ordinary)
+        "luxury" -> getString(com.bustime.app.R.string.bus_category_luxury)
+        "sleeper" -> getString(com.bustime.app.R.string.bus_category_sleeper)
+        "sleeper plus" -> getString(com.bustime.app.R.string.bus_category_sleeper_plus)
+        "seater plus" -> getString(com.bustime.app.R.string.bus_category_seater_plus)
+        "seater" -> getString(com.bustime.app.R.string.bus_category_seater)
+        "sleeper + seater" -> getString(com.bustime.app.R.string.bus_category_sleeper_seater)
+        "custom" -> getString(com.bustime.app.R.string.bus_category_custom)
+        else -> value
+    }
+
+    private fun localizedSeatType(value: String): String = when (value.trim().lowercase(java.util.Locale.ROOT)) {
+        "sleeper + seater" -> getString(com.bustime.app.R.string.bus_category_sleeper_seater)
+        "sleeper" -> getString(com.bustime.app.R.string.bus_category_sleeper)
+        "seater" -> getString(com.bustime.app.R.string.bus_category_seater)
+        "not specified" -> getString(com.bustime.app.R.string.bb_not_specified)
+        else -> value
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         title = getString(com.bustime.app.R.string.book_bus)
@@ -44,20 +64,20 @@ class BookBusActivity : AppCompatActivity() {
             }
             val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
             val allRows = (0 until rows.length()).map { rows.getJSONObject(it) }
-            if (allRows.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = "No approved bus operators are listed yet."; textSize = 15f; setPadding(0, 8, 0, 8) })
+            if (allRows.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_no_operators); textSize = 15f; setPadding(0, 8, 0, 8) })
             for (item in allRows) {
                 val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(getColor(com.bustime.app.R.color.surfaceVariant)); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
-                val name = item.optString("operator_name", "Bus Operator")
+                val name = item.optString("operator_name", getString(com.bustime.app.R.string.bb_bus_operator))
                 card.addView(TextView(this@BookBusActivity).apply { text = name; textSize = 19f; setTypeface(null, android.graphics.Typeface.BOLD) })
-                val busType = item.optString("bus_type", "Bus")
+                val busType = localizedCategory(item.optString("bus_type", getString(com.bustime.app.R.string.bb_bus)))
                 val variant = item.optString("custom_category", "")
-                val seatType = item.optString("seat_type", "").ifBlank { getString(com.bustime.app.R.string.bb_seat_unspecified) }
+                val seatType = localizedSeatType(item.optString("seat_type", "").ifBlank { getString(com.bustime.app.R.string.bb_not_specified) })
                 val capacity = listOfNotNull(
-                    if (!item.isNull("sleeper_count")) item.optInt("sleeper_count").takeIf { it >= 0 }?.let { "$it sleeper berths" } else null,
-                    if (!item.isNull("seater_count")) item.optInt("seater_count").takeIf { it >= 0 }?.let { "$it seats" } else null
+                    if (!item.isNull("sleeper_count")) item.optInt("sleeper_count").takeIf { it >= 0 }?.let { getString(com.bustime.app.R.string.bb_sleeper_berths_format, it) } else null,
+                    if (!item.isNull("seater_count")) item.optInt("seater_count").takeIf { it >= 0 }?.let { getString(com.bustime.app.R.string.bb_seats_format, it) } else null
                 ).joinToString(" · ")
                 card.addView(TextView(this@BookBusActivity).apply { text = "${item.optString("service_name", getString(com.bustime.app.R.string.bb_service))} · $busType" + (if (variant.isNotBlank()) " · $variant" else "") + " · $seatType" + (if (capacity.isNotBlank()) " · $capacity" else ""); textSize = 15f; setPadding(0, 6, 0, 3) })
-                val detailLines = listOf("Service: ${item.optString("service_name", "-")}", "Bus type: $busType", "Bus variant: $variant", "Seat type: $seatType", item.optString("details", "")).filter { it.isNotBlank() }
+                val detailLines = listOf(getString(com.bustime.app.R.string.bb_service_label, item.optString("service_name", "-")), getString(com.bustime.app.R.string.bb_bus_type_label, busType), getString(com.bustime.app.R.string.bb_bus_variant_label, variant), getString(com.bustime.app.R.string.bb_seat_type_label, seatType), item.optString("details", "")).filter { it.isNotBlank() }
                 val detailBox = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; visibility = android.view.View.GONE }
                 detailLines.forEach { line -> detailBox.addView(TextView(this@BookBusActivity).apply { text = line; textSize = 14f; setPadding(0, 5, 0, 0) }) }
                 card.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_expand); textSize = 13f; setPadding(0, 8, 0, 4); setOnClickListener { detailBox.visibility = if (detailBox.visibility == android.view.View.VISIBLE) android.view.View.GONE else android.view.View.VISIBLE } })

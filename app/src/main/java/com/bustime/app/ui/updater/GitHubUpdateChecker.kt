@@ -103,8 +103,8 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
 
     private fun showUpdateDialog(latest: LatestRelease) {
         val view = activity.layoutInflater.inflate(R.layout.dialog_update, null)
-        view.findViewById<TextView>(R.id.tvNewVersion).text = "New Version: v${latest.version}"
-        view.findViewById<TextView>(R.id.tvCurrentVersion).text = "You have: v${currentVersion()}"
+        view.findViewById<TextView>(R.id.tvNewVersion).text = activity.getString(R.string.update_new_version, "v${latest.version}")
+        view.findViewById<TextView>(R.id.tvCurrentVersion).text = activity.getString(R.string.update_current_version, "v${currentVersion()}")
 
         val dialog = AlertDialog.Builder(activity)
             .setView(view)
@@ -129,7 +129,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             try {
                 activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(latest.downloadUrl)))
             } catch (e: Exception) {
-                Toast.makeText(activity, "Browser not found", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, activity.getString(R.string.update_browser_not_found), Toast.LENGTH_SHORT).show()
             }
             return
         }
@@ -145,7 +145,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             val fileName = "Bustime-v${latest.version}.apk"
             val request = DownloadManager.Request(Uri.parse(latest.downloadUrl))
                 .setTitle("Bustime v${latest.version}")
-                .setDescription("Downloading update")
+                .setDescription(activity.getString(R.string.update_downloading))
                 .setMimeType("application/vnd.android.package-archive")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setAllowedOverMetered(true)
@@ -156,9 +156,9 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
                 .putLong(KEY_DL_ID, id)
                 .putString(KEY_DL_VERSION, latest.version)
                 .apply()
-            Toast.makeText(activity, "Download started. See the notification.", Toast.LENGTH_LONG).show()
+            Toast.makeText(activity, activity.getString(R.string.update_download_started), Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
-            Toast.makeText(activity, "Could not start download", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.update_download_start_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -192,7 +192,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             DownloadManager.STATUS_SUCCESSFUL -> showInstallDialog(version)
             DownloadManager.STATUS_FAILED -> {
                 clearPending()
-                Toast.makeText(activity, "Download failed. Please try again.", Toast.LENGTH_LONG).show()
+                Toast.makeText(activity, activity.getString(R.string.update_download_failed), Toast.LENGTH_LONG).show()
             }
             -1 -> clearPending()   // यूज़र ने डाउनलोड हटा दिया
             else -> Unit           // अभी चल रहा है
@@ -205,11 +205,11 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
         updateDialog?.dismiss()
 
         installDialog = AlertDialog.Builder(activity)
-            .setTitle("Update ready")
-            .setMessage("Bustime v$version is downloaded. Install now?")
+            .setTitle(activity.getString(R.string.update_ready))
+            .setMessage(activity.getString(R.string.update_install_prompt, version))
             .setCancelable(true)
-            .setPositiveButton("Install") { _, _ -> installApk(version) }
-            .setNegativeButton("Later", null)
+            .setPositiveButton(activity.getString(R.string.install)) { _, _ -> installApk(version) }
+            .setNegativeButton(activity.getString(R.string.later), null)
             .create()
         installDialog?.show()
     }
@@ -218,14 +218,14 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
         // Android 8+: "इस ऐप से इंस्टॉल की अनुमति" एक बार देनी पड़ती है
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !activity.packageManager.canRequestPackageInstalls()) {
             AlertDialog.Builder(activity)
-                .setTitle("Permission needed")
-                .setMessage("Allow Bustime to install updates, then come back to the app.")
-                .setPositiveButton("Open settings") { _, _ ->
+                .setTitle(activity.getString(R.string.update_permission_needed))
+                .setMessage(activity.getString(R.string.update_permission_help))
+                .setPositiveButton(activity.getString(R.string.open_settings)) { _, _ ->
                     activity.startActivity(
                         Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${activity.packageName}"))
                     )
                 }
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(activity.getString(R.string.cancel), null)
                 .show()
             return
         }
@@ -233,7 +233,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
         val file = apkFile(version)
         if (file == null || !file.exists()) {
             clearPending()
-            Toast.makeText(activity, "Update file not found. Please download again.", Toast.LENGTH_LONG).show()
+            Toast.makeText(activity, activity.getString(R.string.update_file_missing), Toast.LENGTH_LONG).show()
             return
         }
 
@@ -244,7 +244,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             activity.startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(activity, "Could not open installer", Toast.LENGTH_LONG).show()
+            Toast.makeText(activity, activity.getString(R.string.update_installer_failed), Toast.LENGTH_LONG).show()
         }
     }
 

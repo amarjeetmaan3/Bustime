@@ -15,7 +15,7 @@ import com.bustime.app.utils.AnalyticsHelper
 
 /**
  * टैक्सी और ऑटो की लिस्ट। मोबाइल नंबर पहले छिपा रहता है:
- * "Show number" दबाओ -> छोटा संदेश -> 3 सेकंड बाद नंबर + Call / WhatsApp।
+ * ctx.getString(R.string.show_number_short) दबाओ -> छोटा संदेश -> 3 सेकंड बाद नंबर + Call / WhatsApp।
  */
 class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
 

@@ -40,7 +40,7 @@ object AreaPicker {
         return "$name  ▾"
     }
 
-    /** No "All areas" option: the user must choose a driver service area. */
+    /** No context.getString(R.string.home_all_areas) option: the user must choose a driver service area. */
     fun show(ctx: Context, owner: LifecycleOwner, repo: AppRepository, onChosen: () -> Unit) {
         val view = LayoutInflater.from(ctx).inflate(R.layout.dialog_area_picker, null)
         val etSearch = view.findViewById<EditText>(R.id.etAreaSearch)

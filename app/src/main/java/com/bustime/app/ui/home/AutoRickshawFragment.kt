@@ -42,7 +42,7 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
                 AnalyticsHelper.logEvent(ctx, "auto_list_view", "auto", org.json.JSONObject().put("fuel", fuel ?: "all").put("area_selected", selectedArea != null))
                 val list = if (selectedArea == null) emptyList() else repo.getAutos(fuel, selectedArea).shuffled()
                 adapter.submit(list)
-                tvEmpty.text = if (selectedArea == null) "Select your area first to see drivers." else "No drivers found for this area and filter."
+                tvEmpty.text = if (selectedArea == null) getString(R.string.auto_select_area_first) else getString(R.string.auto_no_drivers_filter)
                 tvEmpty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
             }
         }
