@@ -237,7 +237,7 @@ var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
 var NAV = [
-  ['dashboard','Dashboard'], ['analytics','▮ Analytics & Stats'], ['bus','Bus'], ['taxi','Taxi'],
+  ['dashboard','Dashboard'], ['analytics','Analytics & Stats'], ['bus','Bus'], ['taxi','Taxi'],
   ['auto','Auto'], ['review','Review Center'], ['settings','Settings']
 ];
 var TITLES = {
@@ -406,8 +406,7 @@ function refreshChrome() {
   $('#pageTitle').textContent = TITLES[tab] || '';
 }
 function render() {
-  var counts = data ? { places:data.places.length, routes:data.routes.length, seats:data.taxiSeaters.length, drivers:data.drivers.length } : {};
-  if (subs) counts.review = subs.length;
+  var counts = data ? { places:data.places.length, routes:data.routes.length, seats:data.taxiSeaters.length, drivers:data.drivers.filter(function(d){return d.type==='taxi';}).length, autoDrivers:data.drivers.filter(function(d){return d.type==='auto';}).length } : {};
   refreshWorkspaceNav();
   $('#nav').innerHTML = NAV.map(function (n) {
     return '<button data-act="tab" data-t="' + n[0] + '" class="' + (tab === n[0] ? 'on' : '') + '">' + n[1] +
@@ -677,14 +676,13 @@ function viewSeats() {
 }
 
 function viewDrivers() {
-  var q = filters.drivers.toLowerCase(), t = filters.driverType;
+  var q = filters.drivers.toLowerCase(), t = (tab === 'autoDrivers' ? 'auto' : tab === 'drivers' ? 'taxi' : filters.driverType);
   var rows = data.drivers.map(function (d, i) { return { d: d, i: i }; }).filter(function (x) {
     if (t && x.d.type !== t) return false;
     return !q || (String(x.d.name) + ' ' + x.d.phone + ' ' + (x.d.vehicle || '')).toLowerCase().indexOf(q) >= 0;
   });
   return '<div class="toolbar"><input class="grow" id="f_drivers" data-filter="drivers" placeholder="Search by name, number or vehicle" value="' + esc(filters.drivers) + '">' +
-    '<select id="f_dtype"><option value="">Taxi and auto</option><option value="taxi"' + (t === 'taxi' ? ' selected' : '') + '>Taxi</option>' +
-    '<option value="auto"' + (t === 'auto' ? ' selected' : '') + '>Auto</option></select>' +
+    '<span class="badge gray">' + (t === 'auto' ? 'Auto directory' : 'Taxi directory') + '</span>' +
     '<button class="btn primary" data-act="new-driver">+ Add driver</button></div>' +
     '<div class="tablewrap"><table><thead><tr><th>Name</th><th>Type</th><th>Vehicle</th><th>Details</th><th>Mobile</th><th></th></tr></thead><tbody>' +
     (rows.map(function (x) {
@@ -1330,7 +1328,7 @@ document.addEventListener('click', async function (e) {
       if (act === 'community-approve') {
         if (kind === 'corrections') applyApprovedCorrection(record);
         if (kind === 'vehicles') {
-          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name + (record.vehicle_model_number ? ' · '+record.vehicle_model_number : ''), phone:record.phone, area:record.area_name || record.location || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.vehicle_number ? 'Vehicle No: '+record.vehicle_number+' · ' : '') + (record.details || '') };
+          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name + (record.vehicle_model_number ? ' · '+record.vehicle_model_number : ''), phone:record.phone, areaId:record.area_name || record.location || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.vehicle_number ? 'Vehicle No: '+record.vehicle_number+' · ' : '') + (record.details || '') };
           if (record.vehicle_type==='auto') driver.fuel=(record.fuel_type||record.fuel||'oil').toLowerCase();
           if (record.union_name) driver.union_name=record.union_name;
           if (record.seats) driver.seats = record.seats;
