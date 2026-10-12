@@ -165,7 +165,7 @@
     <string name="community_title_taxi_correction">Taxi Correction</string>
     <string name="community_title_auto_correction">Auto Correction</string>
     <string name="community_title_feedback">Feedback</string>
-    <string name="community_open_route_details">Open Route Correction from a specific route\'s details page so the correct route stays selected.</string>
+    <string name="community_open_route_details">Open Route Correction from a specific route's details page so the correct route stays selected.</string>
     <string name="community_complete_route_correction">Complete route correction</string>
     <string name="community_complete_route_help">Replace an incorrect stop by selecting the correct place. Add a new start at the top or add stops between/at the end. Time is optional. Changes go to Admin for approval first.</string>
     <string name="community_extra_admin_note">Extra note for admin (optional)</string>
@@ -244,4 +244,14 @@
     <string name="home_all_areas">All areas</string>
     <string name="bus_from_to">From → To</string>
     <string name="show_number_short">Show number</string>
+    <string name="community_duplicate_stop">A stop is repeated in this route. Please choose a different stop or remove the duplicate before submitting.</string>
+    <string name="community_route_label">Route: %1$s</string>
+    <string name="bus_category_ordinary">Ordinary</string>
+    <string name="bus_category_luxury">Luxury</string>
+    <string name="bus_category_sleeper">Sleeper</string>
+    <string name="bus_category_sleeper_plus">Sleeper Plus</string>
+    <string name="bus_category_seater_plus">Seater Plus</string>
+    <string name="bus_category_seater">Seater</string>
+    <string name="bus_category_sleeper_seater">Sleeper + Seater</string>
+    <string name="bus_category_custom">Custom</string>
 </resources>
