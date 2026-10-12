@@ -23,6 +23,9 @@ import kotlinx.coroutines.launch
 class HomeActivity : AppCompatActivity() {
 
     private var currentTab = 0
+    private var swipeStartX = 0f
+    private var swipeStartY = 0f
+    private var swipeStartedInContent = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
