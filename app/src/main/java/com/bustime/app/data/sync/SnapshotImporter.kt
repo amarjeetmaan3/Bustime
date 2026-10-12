@@ -63,6 +63,7 @@ object SnapshotImporter {
         val stops = ArrayList<RouteStop>()
         val routeIds = HashSet<String>()
         for (r in dto.routes.orEmpty()) {
+            if (r.hidden == true) continue
             val id = clean(r.id)
             val from = clean(r.from)
             val to = clean(r.to)
@@ -95,6 +96,7 @@ object SnapshotImporter {
         val drivers = ArrayList<Driver>()
         val driverIds = HashSet<String>()
         for (d in dto.drivers.orEmpty()) {
+            if (d.hidden == true) continue
             val id = clean(d.id)
             val type = clean(d.type)?.lowercase() ?: ""
             val name = clean(d.name)
