@@ -107,7 +107,7 @@
                     android:orientation="vertical"
                     android:visibility="gone">
 
-                    <EditText
+                    <AutoCompleteTextView
                         android:id="@+id/etFromText"
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
@@ -118,7 +118,7 @@
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp" />
 
-                    <EditText
+                    <AutoCompleteTextView
                         android:id="@+id/etToText"
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
