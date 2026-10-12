@@ -264,4 +264,12 @@
     <string name="update_downloading">ਅੱਪਡੇਟ ਡਾਊਨਲੋਡ ਹੋ ਰਿਹਾ ਹੈ</string>
     <string name="install">ਇੰਸਟਾਲ ਕਰੋ</string>
     <string name="open_settings">ਸੈਟਿੰਗਾਂ ਖੋਲ੍ਹੋ</string>
+    <string name="bb_bus_operator">ਬੱਸ ਆਪਰੇਟਰ</string>
+    <string name="bb_bus">ਬੱਸ</string>
+    <string name="bb_service_label">ਸੇਵਾ: %1$s</string>
+    <string name="bb_bus_type_label">ਬੱਸ ਦੀ ਕਿਸਮ: %1$s</string>
+    <string name="bb_bus_variant_label">ਬੱਸ ਦਾ ਵੈਰੀਐਂਟ: %1$s</string>
+    <string name="bb_seat_type_label">ਸੀਟਾਂ ਦੀ ਕਿਸਮ: %1$s</string>
+    <string name="bb_sleeper_berths_format">%1$d ਸਲੀਪਰ ਬਰਥਾਂ</string>
+    <string name="bb_seats_format">%1$d ਸੀਟਾਂ</string>
 </resources>
