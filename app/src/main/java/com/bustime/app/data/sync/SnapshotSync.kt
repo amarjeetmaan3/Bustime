@@ -94,8 +94,9 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         }
 
         val data = SnapshotImporter.build(dto)
-        // टूटी/खाली फाइल से पूरा डेटा मिट न जाए
-        if (data.places.isEmpty() || (data.routes.isEmpty() && data.drivers.isEmpty())) return false
+        // Places must exist, but routes/drivers are allowed to be empty:
+        // an intentional admin reset must remove old local records immediately.
+        if (data.places.isEmpty()) return false
 
         dao.replaceAll(data.places, data.routes, data.stops, data.drivers, data.seaters)
         prefs.edit()
