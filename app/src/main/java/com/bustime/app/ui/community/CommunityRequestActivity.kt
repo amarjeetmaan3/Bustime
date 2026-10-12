@@ -123,8 +123,8 @@ class CommunityRequestActivity : AppCompatActivity() {
         val fg = android.util.TypedValue()
         theme.resolveAttribute(android.R.attr.colorBackground, bg, true)
         theme.resolveAttribute(android.R.attr.textColorPrimary, fg, true)
-        val surfaceColor = if (bg.resourceId != 0) androidx.core.content.ContextCompat.getColor(this, bg.resourceId) else bg.data
-        val textColor = if (fg.resourceId != 0) androidx.core.content.ContextCompat.getColor(this, fg.resourceId) else fg.data
+        val surfaceColor = bg.data
+        val textColor = fg.data
 
         // Compact, theme-aware rows: no large white cards and no four-button toolbar per stop.
         correctionDrafts.forEachIndexed { index, draft ->
