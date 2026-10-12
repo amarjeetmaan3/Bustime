@@ -7,9 +7,11 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
+import android.widget.BaseAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Filter
+import android.widget.Filterable
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
@@ -57,20 +59,36 @@ class AddRouteActivity : AppCompatActivity() {
     }
 
     /**
-     * ArrayAdapter's default filter checks the rendered label from its beginning.
-     * Search every saved language/alias instead, while still rendering one compact row.
+     * Dedicated read-only adapter for multilingual place suggestions.
+     * It never mutates ArrayAdapter's backing collection while Android's Filter is
+     * publishing results, which keeps dynamically-created stop fields safe.
      */
     private inner class PlaceSuggestionAdapter(items: List<PlaceSuggestion>) :
-        ArrayAdapter<PlaceSuggestion>(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, items) {
-        private val allItems = items.toList()
+        BaseAdapter(), Filterable {
+        private val allItems: List<PlaceSuggestion> = items.toList()
+
+        @Volatile
+        private var displayedItems: List<PlaceSuggestion> = allItems
+
+        override fun getCount(): Int = displayedItems.size
+
+        override fun getItem(position: Int): PlaceSuggestion = displayedItems[position]
+
+        override fun getItemId(position: Int): Long = position.toLong()
+
+        override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup?): View {
+            val row = (convertView as? TextView)
+                ?: layoutInflater.inflate(android.R.layout.simple_dropdown_item_1line, parent, false) as TextView
+            row.text = getItem(position).label
+            return row
+        }
 
         override fun getFilter(): Filter = object : Filter() {
             override fun performFiltering(constraint: CharSequence?): FilterResults {
-                val query = constraint?.toString()?.trim()?.lowercase()?.replace(Regex("\\s+"), " ").orEmpty()
+                val query = constraint?.toString()?.trim()?.lowercase()
+                    ?.replace(Regex("\\s+"), " ").orEmpty()
                 val matches = if (query.isBlank()) allItems else allItems.filter { item ->
-                    item.searchableNames.any { name ->
-                        name.lowercase().contains(query)
-                    }
+                    item.searchableNames.any { name -> name.lowercase().contains(query) }
                 }
                 return FilterResults().apply {
                     values = matches
@@ -80,9 +98,7 @@ class AddRouteActivity : AppCompatActivity() {
 
             @Suppress("UNCHECKED_CAST")
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                clear()
-                val matches = results?.values as? List<PlaceSuggestion> ?: emptyList()
-                addAll(matches)
+                displayedItems = (results?.values as? List<PlaceSuggestion>).orEmpty()
                 notifyDataSetChanged()
             }
 
@@ -91,8 +107,7 @@ class AddRouteActivity : AppCompatActivity() {
         }
     }
 
-    private fun placeSuggestionAdapter(): ArrayAdapter<PlaceSuggestion> =
-        PlaceSuggestionAdapter(placeSuggestions)
+    private fun placeSuggestionAdapter(): BaseAdapter = PlaceSuggestionAdapter(placeSuggestions)
 
     private fun attachPlaceSuggestions(field: AutoCompleteTextView) {
         field.threshold = 1
