@@ -29,7 +29,7 @@
 
     <string name="auto_all">सभी</string>
     <string name="auto_ev">EV (इलेक्ट्रिक)</string>
-    <string name="auto_oil">Oil (पेट्रोल/CNG)</string>
+    <string name="auto_oil">पेट्रोल / CNG</string>
     <string name="no_autos">कोई ऑटो उपलब्ध नहीं है</string>
 
     <string name="show_number">ड्राइवर का नंबर देखें</string>
@@ -273,4 +273,5 @@
     <string name="bb_sleeper_berths_format">%1$d स्लीपर बर्थ</string>
     <string name="bb_seats_format">%1$d सीटें</string>
     <string name="bb_not_specified">निर्दिष्ट नहीं</string>
+    <string name="fuel_oil">पेट्रोल / CNG</string>
 </resources>
