@@ -54,7 +54,7 @@ class CommunityRequestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mode = intent.getStringExtra("mode") ?: "feedback"
-        title = when (mode) { "correction" -> "Route Correction"; "vehicle" -> "Add Auto / Taxi"; "bus_operator" -> "Add Your Bus"; "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") "Taxi Correction" else "Auto Correction"; else -> "Feedback" }
+        title = when (mode) { "correction" -> getString(com.bustime.app.R.string.community_title_correction); "vehicle" -> getString(com.bustime.app.R.string.community_title_vehicle); "bus_operator" -> getString(com.bustime.app.R.string.community_title_bus); "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") getString(com.bustime.app.R.string.community_title_taxi_correction) else getString(com.bustime.app.R.string.community_title_auto_correction); else -> getString(com.bustime.app.R.string.community_title_feedback) }
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll)
@@ -86,18 +86,18 @@ class CommunityRequestActivity : AppCompatActivity() {
             val requested = intent.getStringExtra("route_id")
             val route = routes.firstOrNull { it.id == requested }
             if (route == null) {
-                text("Open Route Correction from a specific route's details page so the correct route stays selected.", 14f)
+                text(getString(com.bustime.app.R.string.community_open_route_details), 14f)
                 return@launch
             }
 
             heading("Route: ${routeLabel(route)}")
-            text("Complete route correction", 16f, true)
-            text("Replace an incorrect stop by selecting the correct place. Add a new start at the top or add stops between/at the end. Time is optional. Changes go to Admin for approval first.", 14f)
+            text(getString(com.bustime.app.R.string.community_complete_route_correction), 16f, true)
+            text(getString(com.bustime.app.R.string.community_complete_route_help), 14f)
             correctionEditor = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
             root.addView(correctionEditor!!)
-            field("correction_note", "Extra note for admin (optional)")
-            field("phone", "Mobile number (required)")
-            button("Submit complete route correction") { submitCorrection() }
+            field("correction_note", getString(com.bustime.app.R.string.community_extra_admin_note))
+            field("phone", getString(com.bustime.app.R.string.community_mobile_required))
+            button(getString(com.bustime.app.R.string.community_submit_route_correction)) { submitCorrection() }
             loadStopsFor(route)
         }
     }
@@ -126,7 +126,7 @@ class CommunityRequestActivity : AppCompatActivity() {
 
         // Compact, theme-aware rows: no large white cards and no four-button toolbar per stop.
         val addStart = Button(this).apply {
-            text = "＋ Add Start"
+            text = getString(com.bustime.app.R.string.community_add_start)
             setTextColor(android.graphics.Color.WHITE)
             backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.rgb(32, 145, 75))
             setOnClickListener {
@@ -161,7 +161,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             row.addView(number, LinearLayout.LayoutParams(dp(30), dp(28)).apply { marginEnd = dp(5) })
 
             val name = AutoCompleteTextView(this).apply {
-                hint = if (index == 0) "Start stop" else if (index == correctionDrafts.lastIndex) "Destination" else "Stop name"
+                hint = if (index == 0) getString(com.bustime.app.R.string.community_start_stop) else if (index == correctionDrafts.lastIndex) getString(com.bustime.app.R.string.community_destination) else getString(com.bustime.app.R.string.community_stop_name)
                 threshold = 1
                 textSize = 14f
                 setSingleLine(true)
@@ -213,7 +213,7 @@ class CommunityRequestActivity : AppCompatActivity() {
 
             val time = TextView(this).apply {
                 val t = if (draft.isNull("time")) "" else draft.optString("time")
-                text = if (t.isBlank()) "＋ time" else t
+                text = if (t.isBlank()) "＋ ${getString(com.bustime.app.R.string.ar_tap_time)}" else t
                 textSize = 12f
                 gravity = android.view.Gravity.CENTER
                 setTextColor(if (t.isBlank()) textColor else android.graphics.Color.rgb(58, 133, 190))
@@ -272,11 +272,11 @@ class CommunityRequestActivity : AppCompatActivity() {
                         when (item.title.toString()) {
                             "Move up" -> if (index > 0) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index - 1, v); renderCorrectionList() }
                             "Move down" -> if (index < correctionDrafts.lastIndex) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index + 1, v); renderCorrectionList() }
-                            "Remove stop" -> android.app.AlertDialog.Builder(this@CommunityRequestActivity)
-                                .setTitle("Remove stop?")
-                                .setMessage("This removes it only from your proposed correction. The live route stays unchanged until Admin approval.")
-                                .setNegativeButton("Cancel", null)
-                                .setPositiveButton("Remove") { _, _ -> correctionDrafts.removeAt(index); renderCorrectionList() }.show()
+                            getString(com.bustime.app.R.string.ar_remove_stop) -> android.app.AlertDialog.Builder(this@CommunityRequestActivity)
+                                .setTitle(getString(com.bustime.app.R.string.community_remove_stop_question))
+                                .setMessage(getString(com.bustime.app.R.string.community_remove_stop_warning))
+                                .setNegativeButton(getString(com.bustime.app.R.string.cancel), null)
+                                .setPositiveButton(getString(com.bustime.app.R.string.remove)) { _, _ -> correctionDrafts.removeAt(index); renderCorrectionList() }.show()
                         }
                         true
                     }
@@ -289,7 +289,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             box.addView(divider, LinearLayout.LayoutParams(-1, dp(1)))
         }
         val addAtEnd = Button(this).apply {
-            text = "＋ Add stop at end"
+            text = getString(com.bustime.app.R.string.community_add_stop_end)
             setTextColor(android.graphics.Color.WHITE)
             backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.rgb(32, 145, 75))
             setOnClickListener {
@@ -303,8 +303,8 @@ class CommunityRequestActivity : AppCompatActivity() {
     private fun submitCorrection() {
         val route = correctionRoute ?: routes.getOrNull(routeSpinner?.selectedItemPosition ?: -1) ?: return
         val phone = digits(value("phone"))
-        if (phone.length !in 10..13) { toast("Enter a valid mobile number before submitting."); return }
-        if (correctionDrafts.size < 2) { toast("A route needs at least a start and destination stop."); return }
+        if (phone.length !in 10..13) { toast(getString(com.bustime.app.R.string.community_enter_valid_mobile)); return }
+        if (correctionDrafts.size < 2) { toast(getString(com.bustime.app.R.string.community_route_two_stops)); return }
         val proposed = org.json.JSONArray()
         val seen = mutableMapOf<String, Int>()
         correctionDrafts.forEachIndexed { index, d ->
@@ -346,33 +346,33 @@ class CommunityRequestActivity : AppCompatActivity() {
             .put("change_summary", "Complete route list edited by user")
             .put("notes", value("correction_note").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             .put("phone", phone)
-        sendRequests(listOf(body), "correction_submissions", "Complete route correction sent for admin review.")
+        sendRequests(listOf(body), "correction_submissions", getString(com.bustime.app.R.string.community_route_correction_sent))
     }
 
     private fun vehicleForm() {
         val requestedType = intent.getStringExtra("vehicle_type")
-        val typeSpinner = spinner("Vehicle type", listOf("Auto", "Taxi"), "vehicle_type")
+        val typeSpinner = spinner(getString(com.bustime.app.R.string.community_vehicle_type), listOf(getString(com.bustime.app.R.string.community_auto), getString(com.bustime.app.R.string.community_taxi)), "vehicle_type")
         if (requestedType == "taxi") typeSpinner.setSelection(1)
         if (requestedType == "auto" || requestedType == "taxi") typeSpinner.visibility = View.GONE
-        field("person_name", "Driver name")
-        field("vehicle_name", "Vehicle name")
-        field("vehicle_model_number", "Vehicle model number")
-        field("seats", "Number of seats")
-        field("vehicle_number", "Vehicle registration number")
-        field("location", "Location address / service area (enter once)")
-        field("union_name", "Union name (required; admin will review)")
-        field("phone", "Mobile number")
-        val fuelSpinner = spinner("Auto fuel type", listOf("EV", "Oil", "CNG", "Other"), "fuel_type")
+        field("person_name", getString(com.bustime.app.R.string.community_driver_name))
+        field("vehicle_name", getString(com.bustime.app.R.string.community_vehicle_name))
+        field("vehicle_model_number", getString(com.bustime.app.R.string.community_vehicle_model))
+        field("seats", getString(com.bustime.app.R.string.community_seat_count))
+        field("vehicle_number", getString(com.bustime.app.R.string.community_vehicle_registration))
+        field("location", getString(com.bustime.app.R.string.community_location_area))
+        field("union_name", getString(com.bustime.app.R.string.community_union_name))
+        field("phone", getString(com.bustime.app.R.string.community_mobile_number))
+        val fuelSpinner = spinner(getString(com.bustime.app.R.string.community_auto_fuel_type), listOf("EV", "Oil", "CNG", getString(com.bustime.app.R.string.community_other)), "fuel_type")
         if (requestedType != "auto") fuelSpinner.visibility = View.GONE
-        field("details", "Other information (optional)").apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
-        button("Submit listing for admin review") {
+        field("details", getString(com.bustime.app.R.string.community_other_info)).apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
+        button(getString(com.bustime.app.R.string.community_submit_listing)) {
             val type = if (requestedType == "auto" || (requestedType == null && spinners["vehicle_type"]?.selectedItemPosition == 0)) "auto" else "taxi"
             val name = value("person_name"); val vehicle = value("vehicle_name"); val phone = digits(value("phone"))
             val seats = value("seats").toIntOrNull()
             val area = value("location")
             if (name.isBlank() || vehicle.isBlank() || value("vehicle_model_number").isBlank() || value("vehicle_number").isBlank() ||
                 area.isBlank() || value("union_name").isBlank() || phone.length !in 10..13 || seats == null || seats < 1) {
-                toast("Complete all required fields, including seat count, vehicle number, service area and union name."); return@button
+                toast(getString(com.bustime.app.R.string.community_fill_vehicle_required)); return@button
             }
             val body = JSONObject().put("vehicle_type", type).put("person_name", name).put("vehicle_name", vehicle)
                 .put("vehicle_model_number", value("vehicle_model_number")).put("vehicle_number", value("vehicle_number"))
@@ -380,17 +380,17 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("union_name", value("union_name")).put("phone", phone)
                 .put("fuel_type", if (type == "auto") spinners["fuel_type"]?.selectedItem?.toString()?.lowercase(Locale.ROOT) else JSONObject.NULL)
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-            sendRequests(listOf(body), "vehicle_submissions", "Listing sent for admin review.")
+            sendRequests(listOf(body), "vehicle_submissions", getString(com.bustime.app.R.string.community_listing_sent))
         }
     }
 
     private fun busOperatorForm() {
-        heading("Add Your Bus")
-        text("Enter bus details for admin review. Your listing appears publicly only after approval.", 14f)
-        field("service_name", "Service name")
-        field("operator_name", "Bus owner name")
+        heading(getString(com.bustime.app.R.string.community_title_bus))
+        text(getString(com.bustime.app.R.string.community_bus_form_intro), 14f)
+        field("service_name", getString(com.bustime.app.R.string.community_service_name))
+        field("operator_name", getString(com.bustime.app.R.string.community_bus_owner))
         val defaultCategories = listOf("Ordinary", "Luxury", "Sleeper", "Sleeper Plus", "Seater Plus", "Seater", "Sleeper + Seater", "Custom")
-        val categorySpinner = spinner("Bus category", defaultCategories, "bus_type")
+        val categorySpinner = spinner(getString(com.bustime.app.R.string.community_bus_category), defaultCategories, "bus_type")
         lifecycleScope.launch {
             val categories = withContext(Dispatchers.IO) { CommunitySupabase.getBusCategories() }
             if (categories.isNotEmpty()) {
@@ -400,13 +400,13 @@ class CommunityRequestActivity : AppCompatActivity() {
                 if (index >= 0) categorySpinner.setSelection(index)
             }
         }
-        field("custom_category", "Describe your specific bus type / variant (required for every category)").apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
-        field("sleeper_count", "Number of sleeper berths")
-        field("seater_count", "Number of seater seats")
-        field("phone", "Operator mobile number")
-        field("whatsapp", "WhatsApp number (optional)")
-        field("details", "Additional information (optional)").apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
-        button("Submit bus for admin review") {
+        field("custom_category", getString(com.bustime.app.R.string.community_custom_bus_type)).apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
+        field("sleeper_count", getString(com.bustime.app.R.string.community_sleeper_berths))
+        field("seater_count", getString(com.bustime.app.R.string.community_seater_seats))
+        field("phone", getString(com.bustime.app.R.string.community_operator_mobile))
+        field("whatsapp", getString(com.bustime.app.R.string.community_whatsapp_optional))
+        field("details", getString(com.bustime.app.R.string.community_other_info)).apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
+        button(getString(com.bustime.app.R.string.community_add_bus_submit)) {
             val operator = value("operator_name")
             val service = value("service_name")
             val phone = digits(value("phone"))
@@ -416,7 +416,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             val seater = value("seater_count").toIntOrNull()
             if (service.isBlank() || operator.isBlank() || phone.length !in 10..13 || category.isBlank() || variant.isBlank() ||
                 sleeper == null || sleeper < 0 || seater == null || seater < 0 ) {
-                toast("Fill every required field, including bus variant, berth/seat counts and mobile number."); return@button
+                toast(getString(com.bustime.app.R.string.community_fill_bus_required)); return@button
             }
             val body = JSONObject()
                 .put("operator_name", operator).put("service_name", service)
@@ -427,7 +427,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("phone", phone)
                 .put("whatsapp", digits(value("whatsapp")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-            sendRequests(listOf(body), "bus_operator_submissions", "Bus submitted for admin verification.")
+            sendRequests(listOf(body), "bus_operator_submissions", getString(com.bustime.app.R.string.community_bus_submitted))
         }
     }
 
@@ -440,22 +440,22 @@ class CommunityRequestActivity : AppCompatActivity() {
         val driverSeats = intent.getIntExtra("driver_seats", -1)
         val driverFuel = intent.getStringExtra("driver_fuel").orEmpty()
         val driverInfo = intent.getStringExtra("driver_info").orEmpty()
-        text("Correct details for this ${type.uppercase(Locale.ROOT)} listing. Your request will be reviewed by the admin.", 14f)
-        text("Driver: $driverName · Vehicle: $driverVehicle", 16f, true)
-        field("correction_name", "Correct driver / contact name").setText(driverName)
-        field("correction_vehicle", "Correct vehicle name / model").setText(driverVehicle)
-        field("correction_phone", "Correct mobile number").setText(driverPhone)
-        if (type == "taxi") field("correction_seats", "Correct number of seats").setText(if (driverSeats > 0) driverSeats.toString() else "")
-        else field("correction_fuel", "Correct fuel type (EV or Oil)").setText(driverFuel)
-        field("correction_info", "Correct other details").setText(driverInfo)
-        field("correction_note", "Explain what needs correction")
-        button("Send correction request") {
+        text(getString(com.bustime.app.R.string.community_correction_intro, type.uppercase(Locale.ROOT)), 14f)
+        text(getString(com.bustime.app.R.string.community_driver_vehicle, driverName, driverVehicle), 16f, true)
+        field("correction_name", getString(com.bustime.app.R.string.community_correction_driver_name)).setText(driverName)
+        field("correction_vehicle", getString(com.bustime.app.R.string.community_correction_vehicle)).setText(driverVehicle)
+        field("correction_phone", getString(com.bustime.app.R.string.community_correct_mobile)).setText(driverPhone)
+        if (type == "taxi") field("correction_seats", getString(com.bustime.app.R.string.community_correct_seats)).setText(if (driverSeats > 0) driverSeats.toString() else "")
+        else field("correction_fuel", getString(com.bustime.app.R.string.community_correct_fuel)).setText(driverFuel)
+        field("correction_info", getString(com.bustime.app.R.string.community_correct_other)).setText(driverInfo)
+        field("correction_note", getString(com.bustime.app.R.string.community_explain_correction))
+        button(getString(com.bustime.app.R.string.community_send_correction)) {
             val name = value("correction_name")
             val vehicle = value("correction_vehicle")
             val phone = digits(value("correction_phone"))
             val detail = value("correction_note")
             if (name.isBlank() || vehicle.isBlank() || phone.length !in 10..13 || detail.length < 4) {
-                toast("Enter corrected name, vehicle, valid phone and explain the correction."); return@button
+                toast(getString(com.bustime.app.R.string.community_corrected_details_required)); return@button
             }
             val details = buildString {
                 append("Vehicle correction request\nType: ").append(type)
@@ -475,40 +475,40 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("related_route", driverId.ifBlank { driverName })
                 .put("message", details)
                 .put("contact", phone)
-            sendRequests(listOf(body), "feedback_submissions", "Correction request sent for admin review.")
+            sendRequests(listOf(body), "feedback_submissions", getString(com.bustime.app.R.string.community_vehicle_correction_sent))
         }
     }
 
     private fun feedbackForm() {
-        spinner("Feedback category", listOf("Suggestion", "Incorrect information", "App problem", "Other"), "feedback_category")
-        field("related_route", "Related route (optional)")
-        field("feedback_text", "Describe your feedback")
-        field("contact", "Contact number (optional)")
-        button("Send feedback") {
+        spinner(getString(com.bustime.app.R.string.community_feedback_category), listOf(getString(com.bustime.app.R.string.community_suggestion), getString(com.bustime.app.R.string.community_incorrect_info), getString(com.bustime.app.R.string.community_app_problem), getString(com.bustime.app.R.string.community_other)), "feedback_category")
+        field("related_route", getString(com.bustime.app.R.string.community_related_route))
+        field("feedback_text", getString(com.bustime.app.R.string.community_describe_feedback))
+        field("contact", getString(com.bustime.app.R.string.community_contact_optional))
+        button(getString(com.bustime.app.R.string.community_send_feedback)) {
             val message = value("feedback_text")
-            if (message.length < 4) { toast("Please describe your feedback."); return@button }
+            if (message.length < 4) { toast(getString(com.bustime.app.R.string.community_please_feedback)); return@button }
             val body = JSONObject().put("category", spinners["feedback_category"]?.selectedItem?.toString() ?: "Other")
                 .put("related_route", value("related_route").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("message", message).put("contact", digits(value("contact")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-            sendRequests(listOf(body), "feedback_submissions", "Thank you. Feedback sent.")
+            sendRequests(listOf(body), "feedback_submissions", getString(com.bustime.app.R.string.community_thanks_feedback))
         }
     }
 
     private fun sendRequests(bodies: List<JSONObject>, table: String, success: String) {
-        if (!CommunitySupabase.isConfigured()) { toast("Online submission is not configured."); return }
+        if (!CommunitySupabase.isConfigured()) { toast(getString(com.bustime.app.R.string.community_online_not_configured)); return }
         root.isEnabled = false
         lifecycleScope.launch {
             val results = withContext(Dispatchers.IO) { bodies.map { CommunitySupabase.insert(table, it) } }
             root.isEnabled = true
             if (results.all { it }) { toast(success); finish() }
-            else toast("Could not send all requests. Check internet and try again.\n" + CommunitySupabase.lastError)
+            else toast(getString(com.bustime.app.R.string.community_send_failed) + CommunitySupabase.lastError)
         }
     }
 
 
     private fun addMissingPlaceField(target: LinearLayout) {
         val field = AutoCompleteTextView(this).apply {
-            hint = "Missing stop name (Punjabi / हिंदी / English)"
+            hint = getString(com.bustime.app.R.string.community_missing_stop_name)
             threshold = 1
             textSize = 16f
             setPadding(dp(12), dp(10), dp(12), dp(10))
@@ -570,7 +570,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         fields[key] = e; target.addView(e); return e
     }
     private fun spinnerIn(target: LinearLayout, hint: String, options: List<String>): Spinner {
-        val s = Spinner(this); s.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (options.isEmpty()) listOf("Loading stops…") else options)
+        val s = Spinner(this); s.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (options.isEmpty()) listOf(getString(com.bustime.app.R.string.community_loading_stops)) else options)
         s.contentDescription = hint; target.addView(s); return s
     }
     private fun timePickerFieldIn(target: LinearLayout, key: String, hint: String): EditText {
