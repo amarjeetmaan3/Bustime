@@ -6,6 +6,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.content.Context
 import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -47,6 +48,7 @@ class CommunityRequestActivity : AppCompatActivity() {
     private var longRouteName = ""
     private var missingSection: LinearLayout? = null
     private var timeSection: LinearLayout? = null
+    private var missingPosition: Spinner? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,12 +93,22 @@ class CommunityRequestActivity : AppCompatActivity() {
             root.addView(missingCheck); root.addView(timeCheck)
             missingSection = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
             root.addView(missingSection!!)
-            headingIn(missingSection!!, getString(com.bustime.app.R.string.community_missing_stop_details))
-            textIn(missingSection!!, getString(com.bustime.app.R.string.community_missing_stop_help), 14f)
-            stopOne = spinnerIn(missingSection!!, getString(com.bustime.app.R.string.community_stop_before), emptyList())
-            stopTwo = spinnerIn(missingSection!!, getString(com.bustime.app.R.string.community_stop_after), emptyList())
-            fieldIn(missingSection!!, "missing_place", getString(com.bustime.app.R.string.community_missing_place_hint))
-            timePickerFieldIn(missingSection!!, "missing_time", "Missing stop time (optional)")
+            headingIn(missingSection!!, "Where are stops missing?")
+            textIn(missingSection!!, "Add missing stops at the beginning, between existing stops, or at the end. For several consecutive stops, enter one stop name per line, in travel order.", 14f)
+            missingPosition = spinnerIn(missingSection!!, "Missing stop location", listOf("Before the first listed stop", "Between existing stops", "After the last listed stop"))
+            stopOne = spinnerIn(missingSection!!, "Existing stop before the missing stops", emptyList())
+            stopTwo = spinnerIn(missingSection!!, "Existing stop after the missing stops", emptyList())
+            fieldIn(missingSection!!, "missing_places", "Missing stop name(s), one per line").apply { minLines = 2; maxLines = 6; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
+            timePickerFieldIn(missingSection!!, "missing_time", "Time of first missing stop (optional)")
+            missingPosition?.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    stopOne?.visibility = if (position == 0) View.GONE else View.VISIBLE
+                    stopTwo?.visibility = if (position == 2) View.GONE else View.VISIBLE
+                    if (position == 0) stopTwo?.setSelection(0)
+                    if (position == 2) stopOne?.setSelection((routeStops.size - 1).coerceAtLeast(0))
+                }
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            }
             timeSection = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
             root.addView(timeSection!!)
             headingIn(timeSection!!, getString(com.bustime.app.R.string.community_correct_time_details))
@@ -124,9 +136,11 @@ class CommunityRequestActivity : AppCompatActivity() {
         fun update(target: Spinner?, values: List<String>) {
             target?.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, values)
         }
-        update(stopOne, labels.dropLast(1).ifEmpty { labels })
-        update(stopTwo, labels.drop(1).ifEmpty { labels })
+        update(stopOne, labels)
+        update(stopTwo, labels)
         update(correctedStop, labels)
+        stopOne?.setSelection(0)
+        stopTwo?.setSelection((labels.size - 1).coerceAtLeast(0))
 
     }
 
@@ -140,22 +154,32 @@ class CommunityRequestActivity : AppCompatActivity() {
         if (phone.length !in 10..13) { toast("Enter a valid mobile number before submitting a correction."); return }
         val jobs = mutableListOf<Pair<String, JSONObject>>()
         if (sendMissing) {
-            val before = routeStops.getOrNull(stopOne?.selectedItemPosition ?: -1)
-            val afterIndex = (stopTwo?.selectedItemPosition ?: -1) + 1
-            val after = routeStops.getOrNull(afterIndex)
-            val typed = value("missing_place")
-            val missing = typed
-            if (before == null || after == null || after.stopOrder != before.stopOrder + 1 || missing.isBlank()) {
-                toast("Choose the stops around the missing stop and select/type its name."); return
+            val missingNames = value("missing_places").lines().map { it.trim() }.filter { it.isNotBlank() }
+            if (missingNames.isEmpty()) { toast("Enter at least one missing stop name."); return }
+            val position = missingPosition?.selectedItemPosition ?: 1
+            val before: RouteStop?
+            val after: RouteStop?
+            when (position) {
+                0 -> { before = null; after = routeStops.firstOrNull() }
+                2 -> { before = routeStops.lastOrNull(); after = null }
+                else -> {
+                    before = routeStops.getOrNull(stopOne?.selectedItemPosition ?: -1)
+                    after = routeStops.getOrNull(stopTwo?.selectedItemPosition ?: -1)
+                    if (before == null || after == null || after.stopOrder <= before.stopOrder) { toast("Choose existing stops in the correct order."); return }
+                }
             }
-            val t = value("missing_time")
-            if (t.isNotBlank() && !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Enter missing-stop time as HH:MM."); return }
-            jobs += "missing_stop" to JSONObject().put("route_id", route.id).put("request_type", "missing_stop")
-                .put("before_stop_id", before.placeId).put("after_stop_id", after.placeId)
-                .put("missing_place_name", missing).put("missing_place_id", JSONObject.NULL)
-                .put("missing_time", t.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("notes", note.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("phone", phone)
+            if (routeStops.isEmpty() || (position == 0 && after == null) || (position == 2 && before == null)) { toast("This route has no existing stops to anchor the correction."); return }
+            val firstTime = value("missing_time")
+            if (firstTime.isNotBlank() && !firstTime.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Enter time as HH:MM."); return }
+            val positionLabel = when (position) { 0 -> "before first stop"; 2 -> "after last stop"; else -> "between existing stops" }
+            missingNames.forEachIndexed { index, missingName ->
+                val noteWithOrder = listOfNotNull(note.takeIf { it.isNotBlank() }, "Insertion position: $positionLabel", "Added stop order: ${index + 1} of ${missingNames.size}").joinToString(" | ")
+                jobs += "missing_stop" to JSONObject().put("route_id", route.id).put("request_type", "missing_stop")
+                    .put("before_stop_id", before?.placeId ?: JSONObject.NULL).put("after_stop_id", after?.placeId ?: JSONObject.NULL)
+                    .put("missing_place_name", missingName).put("missing_place_id", JSONObject.NULL)
+                    .put("missing_time", if (index == 0 && firstTime.isNotBlank()) firstTime else JSONObject.NULL)
+                    .put("notes", noteWithOrder).put("phone", phone)
+            }
         }
         if (sendTime) {
             val stop = routeStops.getOrNull(correctedStop?.selectedItemPosition ?: -1)
