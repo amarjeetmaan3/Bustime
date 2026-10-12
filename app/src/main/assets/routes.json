@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 21,
+  "dataVersion": 22,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -237,9 +237,9 @@
       "vehicle": "Swift · desire",
       "phone": "9529403003",
       "area": "Sadulshahar",
-      "info": "Union: sachdev · Vehicle No: Rj 56 2025 · to b end",
+      "info": "Union: sachdev · Union: sachdev · Vehicle No: Rj 56 2025 · to b end",
       "union_name": "sachdev",
-      "seats": 2536
+      "seats": 4
     }
   ]
 }
