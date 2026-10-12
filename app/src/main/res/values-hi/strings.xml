@@ -239,4 +239,14 @@
     <string name="home_all_areas">सभी इलाके</string>
     <string name="bus_from_to">कहाँ से → कहाँ तक</string>
     <string name="show_number_short">नंबर दिखाएँ</string>
+    <string name="community_duplicate_stop">इस रूट में एक पड़ाव दो बार है। कृपया अलग पड़ाव चुनें या भेजने से पहले दोहराया गया पड़ाव हटाएँ।</string>
+    <string name="community_route_label">रूट: %1$s</string>
+    <string name="bus_category_ordinary">साधारण</string>
+    <string name="bus_category_luxury">लक्ज़री</string>
+    <string name="bus_category_sleeper">स्लीपर</string>
+    <string name="bus_category_sleeper_plus">स्लीपर प्लस</string>
+    <string name="bus_category_seater_plus">सीटर प्लस</string>
+    <string name="bus_category_seater">सीटर</string>
+    <string name="bus_category_sleeper_seater">स्लीपर + सीटर</string>
+    <string name="bus_category_custom">अन्य प्रकार</string>
 </resources>
