@@ -249,4 +249,16 @@
     <string name="bus_category_seater">सीटर</string>
     <string name="bus_category_sleeper_seater">स्लीपर + सीटर</string>
     <string name="bus_category_custom">अन्य प्रकार</string>
+    <string name="auto_select_area_first">ड्राइवर देखने के लिए पहले अपना इलाका चुनें।</string>
+    <string name="auto_no_drivers_filter">इस इलाके और फ़िल्टर के लिए कोई ड्राइवर नहीं मिला।</string>
+    <string name="update_browser_not_found">ब्राउज़र नहीं मिला</string>
+    <string name="update_download_started">डाउनलोड शुरू हो गया है। नोटिफ़िकेशन देखें।</string>
+    <string name="update_download_start_failed">डाउनलोड शुरू नहीं हो सका</string>
+    <string name="update_download_failed">डाउनलोड नहीं हुआ। कृपया फिर कोशिश करें।</string>
+    <string name="update_ready">अपडेट तैयार है</string>
+    <string name="update_install_prompt">Bustime v%1$s डाउनलोड हो गया है। अभी इंस्टॉल करें?</string>
+    <string name="update_permission_needed">अनुमति ज़रूरी है</string>
+    <string name="update_permission_help">Bustime को अपडेट इंस्टॉल करने की अनुमति दें, फिर ऐप में वापस आएँ।</string>
+    <string name="update_file_missing">अपडेट फ़ाइल नहीं मिली। कृपया दोबारा डाउनलोड करें।</string>
+    <string name="update_installer_failed">इंस्टॉलर नहीं खुल सका</string>
 </resources>
