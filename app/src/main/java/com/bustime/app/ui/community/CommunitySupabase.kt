@@ -61,6 +61,22 @@ object CommunitySupabase {
         }
     }
 
+
+    fun getBusCategories(): List<String> {
+        var conn: HttpURLConnection? = null
+        return try {
+            conn = URL(Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/bus_categories?select=name&active=eq.true&order=name.asc")
+                .openConnection() as HttpURLConnection
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+            conn.setRequestProperty("apikey", Constants.SUPABASE_ANON_KEY)
+            if (Constants.SUPABASE_ANON_KEY.startsWith("eyJ")) conn.setRequestProperty("Authorization", "Bearer ${Constants.SUPABASE_ANON_KEY}")
+            if (conn.responseCode !in 200..299) return emptyList()
+            val arr = org.json.JSONArray(conn.inputStream.bufferedReader().use { it.readText() })
+            (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.optString("name")?.takeIf { name -> name.isNotBlank() } }
+        } catch (_: Exception) { emptyList() } finally { conn?.disconnect() }
+    }
+
     fun getPublicOperators(): String? {
         val conn = URL(Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/bus_operators?select=id,operator_name,service_name,bus_type,custom_category,seat_type,sleeper_count,seater_count,from_text,to_text,location,phone,whatsapp,details&active=eq.true&order=operator_name.asc")
             .openConnection() as HttpURLConnection
