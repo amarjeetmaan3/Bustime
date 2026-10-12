@@ -72,6 +72,7 @@ create table if not exists public.correction_submissions (
   phone text,
   status text not null default 'pending' check (status in ('pending','approved','rejected'))
 );
+alter table public.correction_submissions add column if not exists phone text;
 alter table public.correction_submissions enable row level security;
 revoke all on public.correction_submissions from anon, authenticated;
 grant insert on public.correction_submissions to anon;
