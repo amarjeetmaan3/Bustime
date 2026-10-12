@@ -312,8 +312,17 @@ class CommunityRequestActivity : AppCompatActivity() {
             if (name.isBlank()) { toast("Enter a name for stop " + (index + 1) + "."); return }
             val t = d.optString("time").trim()
             if (t.isNotBlank() && !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Stop " + (index + 1) + " has an invalid time."); return }
-            val id = if (d.isNull("place_id")) "" else d.optString("place_id")
-            val key = (id.ifBlank { name }).lowercase(Locale.ROOT)
+            var id = if (d.isNull("place_id")) "" else d.optString("place_id")
+            // Resolve a manually typed alias to the canonical place record, regardless
+            // of whether the user typed its English, Hindi, or Punjabi name.
+            val normalizedName = name.trim().lowercase(Locale.ROOT).replace(Regex("\\s+"), " ")
+            val matchingPlace = allPlaces.firstOrNull { place ->
+                place.names.values.any { alias ->
+                    alias.trim().lowercase(Locale.ROOT).replace(Regex("\\s+"), " ") == normalizedName
+                }
+            }
+            if (id.isBlank() && matchingPlace != null) id = matchingPlace.id
+            val key = id.ifBlank { normalizedName }
             seen[key] = (seen[key] ?: 0) + 1
             proposed.put(JSONObject().put("place_id", id.ifBlank { JSONObject.NULL }).put("name", name)
                 .put("language", d.optString("language", LanguageHelper.current()))
