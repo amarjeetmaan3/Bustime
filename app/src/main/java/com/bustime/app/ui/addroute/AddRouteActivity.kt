@@ -337,8 +337,8 @@ class AddRouteActivity : AppCompatActivity() {
                     gravity = Gravity.CENTER_VERTICAL
                 }
                 val time = timeBox()
-                val row = ExistingStop(stop.placeId, time, time = stop.time, nameEdit = name, line = line)
-            val number = rowNumber(index, stops.size)
+                    val row = ExistingStop(stop.placeId, time, time = stop.time, nameEdit = name, line = line)
+                val number = rowNumber(index, stops.size)
                 showTime(time, row.time)
                 time.setOnClickListener {
                     pickTime(row.time) { t ->
@@ -375,6 +375,7 @@ class AddRouteActivity : AppCompatActivity() {
                 stopsBox.addView(line)
                 existingRows.add(row)
             }
+            refreshStopRowNumbers()
             startTime = route.time
             showTime(tvStart, startTime)
         }
@@ -492,6 +493,7 @@ class AddRouteActivity : AppCompatActivity() {
         stopsBox.addView(line, viewIndex)
         val rowIndex = if (anchorRow == null) 0 else existingRows.indexOf(anchorRow) + 1
         existingRows.add(rowIndex, row)
+        refreshStopRowNumbers()
     }
 
     private fun addNewStop() {
