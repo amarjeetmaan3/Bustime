@@ -1291,8 +1291,10 @@ document.addEventListener('click', async function (e) {
       if (!TIME_RE.test(effectiveStart || '')) { toast('Add at least one time before approving'); return; }
       if (!isFreeText && (!placeById(sub.from_id) || !placeById(sub.to_id))) { toast('This route uses a place that no longer exists'); return; }
       // New free-text names become editable place records; translations can be added in Places later.
-      var fromId = isFreeText ? ensureSubmittedPlace(sub.from_text) : sub.from_id;
-      var toId = isFreeText ? ensureSubmittedPlace(sub.to_text) : sub.to_id;
+      var reviewedFrom = String(v.from || '').trim(), reviewedTo = String(v.to || '').trim();
+      if (!reviewedFrom || !reviewedTo) { toast('Enter both From and To before approving.'); return; }
+      var fromId = isFreeText ? ensureSubmittedPlace(reviewedFrom) : sub.from_id;
+      var toId = isFreeText ? ensureSubmittedPlace(reviewedTo) : sub.to_id;
       var previousReviewTime = effectiveStart, invalidReviewTime = false, inferredDayOffset = 0;
       v.stops.forEach(function (st) {
         if (st.time && st.time < previousReviewTime) {
@@ -1313,7 +1315,7 @@ document.addEventListener('click', async function (e) {
       var nr = { id: nextNum('r', data.routes), from: fromId, to: toId, time: effectiveStart };
       if (sub.long_route) { nr.longRoute = true; nr.startDate = sub.start_date; }
       if (arrive) nr.arrive = arrive;
-      if (sub.service_name) nr.service = sub.service_name;
+      if (v.service) nr.service = v.service;
       if (mid.length) nr.stops = mid;
       data.routes.push(nr); setDirty(true);
       await sbFetch('/rest/v1/route_submissions?id=eq.' + sub.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'approved' }) });
