@@ -254,4 +254,16 @@
     <string name="bus_category_seater">Seater</string>
     <string name="bus_category_sleeper_seater">Sleeper + Seater</string>
     <string name="bus_category_custom">Custom</string>
+    <string name="auto_select_area_first">Select your area first to see drivers.</string>
+    <string name="auto_no_drivers_filter">No drivers found for this area and filter.</string>
+    <string name="update_browser_not_found">Browser not found</string>
+    <string name="update_download_started">Download started. See the notification.</string>
+    <string name="update_download_start_failed">Could not start download</string>
+    <string name="update_download_failed">Download failed. Please try again.</string>
+    <string name="update_ready">Update ready</string>
+    <string name="update_install_prompt">Bustime v%1$s is downloaded. Install now?</string>
+    <string name="update_permission_needed">Permission needed</string>
+    <string name="update_permission_help">Allow Bustime to install updates, then come back to the app.</string>
+    <string name="update_file_missing">Update file not found. Please download again.</string>
+    <string name="update_installer_failed">Could not open installer</string>
 </resources>
