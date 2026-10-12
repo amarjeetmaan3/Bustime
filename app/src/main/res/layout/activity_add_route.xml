@@ -86,6 +86,13 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
+                    <Button
+                        android:id="@+id/btnUseNewRoute"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Create a new route instead" />
+
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -106,6 +113,14 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:visibility="gone">
+
+                    <Button
+                        android:id="@+id/btnUseExistingRoute"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:text="Add existing route details" />
 
                     <AutoCompleteTextView
                         android:id="@+id/etFromText"
