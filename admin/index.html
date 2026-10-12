@@ -588,8 +588,8 @@ function placeFormHtml() {
     '<option value="city"' + (p.kind === 'city' ? ' selected' : '') + '>City</option>' +
     '<option value="place"' + (p.kind === 'place' || !p.kind ? ' selected' : '') + '>Other place</option></select>' +
     '<label>Name in English</label><input id="fp_en" value="' + esc(n.en) + '">' +
-    '<label>Name in Hindi (auto-translated when English loses focus)</label><input id="fp_hi" value="' + esc(n.hi) + '">' +
-    '<label>Name in Punjabi (auto-translated when English loses focus)</label><input id="fp_pa" value="' + esc(n.pa) + '">' +
+    '<label>Name in Hindi (editable; leave blank if unknown)</label><input id="fp_hi" value="' + esc(n.hi) + '">' +
+    '<label>Name in Punjabi (editable; leave blank if unknown)</label><input id="fp_pa" value="' + esc(n.pa) + '">' +
     '<label>Alternate spellings (comma separated)</label><input id="fp_alias" value="' + esc((p.aliases || []).join(', ')) + '">' +
     '<div class="row2"><div><label>City</label><input id="fp_city" value="' + esc(p.city) + '"></div>' +
     '<div><label>District</label><input id="fp_dist" value="' + esc(p.district) + '"></div></div>' + foot('save-place');
