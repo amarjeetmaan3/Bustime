@@ -448,12 +448,10 @@ class AddRouteActivity : AppCompatActivity() {
         val service = findViewById<EditText>(R.id.etService).text.toString().trim()
 
         val stops = JSONArray()
-        var anyTime = startTime != null
         if (isNew) {
             for (row in newRows) {
                 val name = row.name.text.toString().trim()
                 if (name.isNotBlank()) {
-                    if (row.time != null) anyTime = true
                     stops.put(JSONObject().put("name", name).put("time", row.time ?: JSONObject.NULL))
                 }
             }
@@ -464,14 +462,12 @@ class AddRouteActivity : AppCompatActivity() {
                     Toast.makeText(this, R.string.ar_stop_name_required, Toast.LENGTH_SHORT).show()
                     return
                 }
-                if (row.time != null) anyTime = true
                 stops.put(JSONObject()
                     .put("place", row.placeId ?: JSONObject.NULL)
                     .put("name", nm)
                     .put("time", row.time ?: JSONObject.NULL))
             }
         }
-        if (!anyTime) { Toast.makeText(this, R.string.ar_need_time, Toast.LENGTH_LONG).show(); return }
         if (TimeFlow.resolve(orderedTimes()).badIndex >= 0) { Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show(); return }
 
         val body = JSONObject()
