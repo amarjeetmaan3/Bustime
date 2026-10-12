@@ -231,8 +231,9 @@ class AddRouteActivity : AppCompatActivity() {
         toggle.addOnButtonCheckedListener { _, checkedId, checked ->
             if (checked) setMode(checkedId == R.id.btnModeNew)
         }
-        // Add Route is intentionally a single "New Route" flow. Preserve the raw
-        // user-entered place name even when it is Hindi or Punjabi.
+        // Default to a new route; users can switch to copying an existing route's
+        // endpoints and stops, then submit the edited details for admin review.
+        // Preserve raw user-entered place names in Hindi, Punjabi, or English.
         toggle.visibility = View.GONE
         setMode(true)
 
