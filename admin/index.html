@@ -956,9 +956,23 @@ function viewCommunity(mode) {
   filtered.forEach(function(x){
     var details = '';
     if (x._kind === 'corrections') {
-      details = '<p><b>Route:</b> '+esc(x.route_id)+' · <b>Type:</b> '+esc(x.request_type)+'</p>' +
-        (x.request_type==='missing_stop' ? '<p><b>Between:</b> '+esc(x.before_stop_id)+' → '+esc(x.after_stop_id)+' · <b>Missing:</b> '+esc(x.missing_place_name)+' · <b>Time:</b> '+esc(x.missing_time||'-')+'</p>' : '<p><b>Stop:</b> '+esc(x.stop_id)+' · <b>Correct time:</b> '+esc(x.corrected_time)+'</p>') +
-        '<p><b>Mobile:</b> '+esc(x.phone||'-')+'</p><p class="muted">'+esc(x.notes||'')+'</p>';
+      if (x.request_type === 'route_edit') {
+        function stopListHtml(items, proposed) {
+          return '<ol style="margin:6px 0 12px;padding-left:24px">' + (items || []).map(function(st, i) {
+            var p = st.place_id ? placeById(st.place_id) : null;
+            var name = proposed ? (st.name || (p && ((p.name||{}).en) ) || 'Unnamed stop') : (p && ((p.name||{}).en || (p.name||{}).hi || (p.name||{}).pa) || st.place_id || 'Unknown stop');
+            return '<li><b>' + esc(name) + '</b> · ' + esc(st.time || 'time not provided') + (proposed && st.place_id ? ' <span class="muted">(' + esc(st.place_id) + ')</span>' : '') + '</li>';
+          }).join('') + '</ol>';
+        }
+        details = '<p><b>Route:</b> ' + esc(x.route_id) + ' · <b>Change:</b> complete route list edit</p>' +
+          '<div class="row2"><div style="border:1px solid #d6dce5;border-radius:10px;padding:10px"><b>Original route</b>' + stopListHtml(x.original_stops, false) + '</div>' +
+          '<div style="border:1px solid #9bd6ad;background:#f2fbf4;border-radius:10px;padding:10px"><b>Proposed route</b>' + stopListHtml(x.proposed_stops, true) + '</div></div>' +
+          '<p><b>Summary:</b> ' + esc(x.change_summary || 'Full route list correction') + '</p>';
+      } else {
+        details = '<p><b>Route:</b> '+esc(x.route_id)+' · <b>Type:</b> '+esc(x.request_type)+'</p>' +
+          (x.request_type==='missing_stop' ? '<p><b>Between:</b> '+esc(x.before_stop_id)+' → '+esc(x.after_stop_id)+' · <b>Missing:</b> '+esc(x.missing_place_name)+' · <b>Time:</b> '+esc(x.missing_time||'-')+'</p>' : '<p><b>Stop:</b> '+esc(x.stop_id)+' · <b>Correct time:</b> '+esc(x.corrected_time)+'</p>');
+      }
+      details += '<p><b>Mobile:</b> '+esc(x.phone||'-')+'</p><p class="muted">'+esc(x.notes||'')+'</p>';
     } else if (x._kind === 'vehicles') {
       details = '<p><b>'+esc(x.vehicle_type)+'</b> · '+esc(x.person_name)+' · '+esc(x.vehicle_name)+' · Model '+esc(x.vehicle_model_number||'-')+' · Vehicle No. '+esc(x.vehicle_number||'-')+' · Seats '+esc(x.seats||'-')+'</p><p><b>Service area:</b> '+esc(x.area_name||x.location||'-')+' · <b>Union:</b> '+esc(x.union_name||'-')+' · <b>Fuel:</b> '+esc(x.fuel_type||'-')+'</p><p>'+esc(x.phone)+'</p><p>'+esc(x.details||'')+'</p>';
     } else if (x._kind === 'busSubmissions') {
@@ -1018,6 +1032,42 @@ function applyApprovedCorrection(x) {
       if (!st) throw new Error('Selected stop was not found in this route; request not approved.');
       st.time = x.corrected_time;
     }
+  } else if (x.request_type === 'route_edit') {
+    var proposed = Array.isArray(x.proposed_stops) ? x.proposed_stops : [];
+    if (proposed.length < 2 || proposed.length > 100) throw new Error('The proposed route must contain a start, destination, and no more than 100 stops.');
+    var ids = [];
+    proposed.forEach(function(st) {
+      var pid = st.place_id || '';
+      if (pid && !placeById(pid)) throw new Error('A selected place no longer exists: ' + pid);
+      if (!pid) {
+        var typed = String(st.name || '').trim();
+        if (!typed) throw new Error('Every proposed stop must have a name.');
+        var found = data.places.find(function(p) {
+          return Object.keys(p.name || {}).some(function(lang) { return String((p.name || {})[lang] || '').trim().toLowerCase() === typed.toLowerCase(); });
+        });
+        if (found) pid = found.id;
+        else {
+          pid = makeId('place_', typed, function(id){return data.places.some(function(p){return p.id===id;});});
+          var lang = ['en','hi','pa'].indexOf(st.language) >= 0 ? st.language : 'en';
+          var names = {}; names[lang] = typed;
+          data.places.push({id:pid,kind:'place',name:names,aliases:[]});
+        }
+      }
+      ids.push(pid);
+    });
+    var times = proposed.map(function(st){return String(st.time || '').trim();});
+    r.from = ids[0];
+    if (times[0]) r.time = times[0];
+    r.to = ids[ids.length - 1];
+    if (times[times.length - 1]) r.arrive = times[times.length - 1]; else delete r.arrive;
+    r.stops = [];
+    for (var ri = 1; ri < ids.length - 1; ri++) {
+      var middle = {place:ids[ri]};
+      if (times[ri]) middle.time = times[ri];
+      r.stops.push(middle);
+    }
+    if (!r.stops.length) delete r.stops;
+    setDirty(true);
   } else if (x.request_type === 'missing_stop') {
     var before = x.before_stop_id, after = x.after_stop_id;
     var placeId = x.missing_place_id || '';
