@@ -791,8 +791,8 @@ function viewRouteReview() {
       var offset = Number(st.day_offset || 0), dayText = offset ? ' <span class="badge">Day +' + offset + '</span>' : '';
       var stopName = st.name || (pname(placeById(st.place)) || st.place || '');
       if (st.name && st.after_place) dayText += ' <span class="badge">NEW stop after ' + esc(pname(placeById(st.after_place)) || st.after_place) + '</span>';
-      return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><span class="grow">' + esc(stopName) + dayText +
-        '</span><input type="time" class="sub_t" data-place="' + esc(st.place || '') + '" data-name="' + esc(st.name || '') + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '></div>';
+      return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><input class="grow sub_name" aria-label="Stop name" data-place="' + esc(st.place || '') + '" value="' + esc(stopName) + '" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' + dayText +
+        '<input type="time" class="sub_t" data-place="' + esc(st.place || '') + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '></div>';
     }).join('');
     var actions = s.status === 'pending' ? '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Approve</button><button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button>' :
       s.status === 'rejected' ? '<button class="btn danger" data-act="sb-delete" data-i="' + i + '">Delete rejected request</button>' : '<span class="badge">Approved · retained</span>';
@@ -808,7 +808,7 @@ function viewRouteReview() {
 }
 function subCardValues(i) {
   var card = document.querySelector('[data-sub="' + i + '"]'), times = [];
-  card.querySelectorAll('.sub_t').forEach(function (el) { times.push({ place:el.getAttribute('data-place'), name:el.getAttribute('data-name'), time:TIME_RE.test(el.value) ? el.value : null }); });
+  card.querySelectorAll('.sub_t').forEach(function (el) { var row=el.closest('.stoprow'), nameInput=row ? row.querySelector('.sub_name') : null; times.push({ place:el.getAttribute('data-place'), name:nameInput ? nameInput.value.trim() : '', time:TIME_RE.test(el.value) ? el.value : null }); });
   return { start:card.querySelector('.sub_start').value, stops:times };
 }
 function ensureSubmittedPlace(rawName) {
