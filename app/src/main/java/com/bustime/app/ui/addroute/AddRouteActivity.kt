@@ -50,9 +50,21 @@ class AddRouteActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val all = withContext(Dispatchers.IO) { repo.getAllPlaces() }
             val lang = LanguageHelper.current()
-            placeSuggestions = all.map { it.displayName(lang) }.filter { it.isNotBlank() }.distinct().sorted()
+            // Include saved translations/aliases so Hindi, English and Punjabi users
+            // can find the same saved place while typing.
+            placeSuggestions = all
+                .flatMap { place -> listOf(place.displayName(lang)) + place.names.values.toList() }
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinctBy { it.lowercase() }
+                .sorted()
+            val adapter = ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, placeSuggestions)
+            findViewById<AutoCompleteTextView>(R.id.etFromText)?.setAdapter(adapter)
+            findViewById<AutoCompleteTextView>(R.id.etToText)?.setAdapter(adapter)
             (newRows.map { it.name } + existingRows.mapNotNull { it.nameEdit }).forEach { field ->
-                if (field is AutoCompleteTextView) field.setAdapter(ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, placeSuggestions))
+                if (field is AutoCompleteTextView) {
+                    field.setAdapter(ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, placeSuggestions))
+                }
             }
         }
     }
@@ -224,8 +236,7 @@ class AddRouteActivity : AppCompatActivity() {
     private fun addNewStop() {
         val pad = (8 * resources.displayMetrics.density).toInt()
         val line = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, pad, 0, pad) }
-        val name = EditText(this).apply {
-            hint = getString(R.string.ar_custom_stop_name)
+        val name = placeAutoComplete(getString(R.string.ar_custom_stop_name)).apply {
             setSingleLine(true)
             textSize = 16f
             maxLines = 1
