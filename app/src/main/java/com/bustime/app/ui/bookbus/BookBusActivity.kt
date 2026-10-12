@@ -34,11 +34,6 @@ class BookBusActivity : AppCompatActivity() {
         root.addView(addBus, LinearLayout.LayoutParams(-1, -2).apply { topMargin = 10; bottomMargin = 12 })
         setContentView(root)
         content.addView(TextView(this).apply { text = getString(com.bustime.app.R.string.bb_intro); textSize = 15f; setPadding(0, 8, 0, 10) })
-        val areaLabel = TextView(this).apply { text = getString(com.bustime.app.R.string.bb_select_area_required); textSize = 16f; setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, 8, 0, 6) }
-        content.addView(areaLabel)
-        val areaSpinner = android.widget.Spinner(this)
-        areaSpinner.isEnabled = false
-        content.addView(areaSpinner, LinearLayout.LayoutParams(-1, -2))
         val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 12, 0, 0) }
         content.addView(results)
         lifecycleScope.launch {
@@ -49,23 +44,11 @@ class BookBusActivity : AppCompatActivity() {
             }
             val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
             val allRows = (0 until rows.length()).map { rows.getJSONObject(it) }
-            val areas = allRows.map { it.optString("location").trim() }.filter { it.isNotBlank() }.distinct().sorted()
-            areaSpinner.adapter = android.widget.ArrayAdapter(this@BookBusActivity, android.R.layout.simple_spinner_dropdown_item, listOf(getString(com.bustime.app.R.string.bb_choose_area)) + areas)
-            areaSpinner.isEnabled = areas.isNotEmpty()
-            if (areas.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_no_areas_admin) })
-            fun renderArea(selectedArea: String) {
-                results.removeAllViews()
-                if (selectedArea.isBlank()) {
-                    results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_select_area_prompt); textSize = 15f; setPadding(0, 8, 0, 8) })
-                    return
-                }
-                val matching = allRows.filter { it.optString("location").trim().equals(selectedArea, ignoreCase = true) }
-                if (matching.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_no_options_area, selectedArea); textSize = 16f })
-                for (item in matching) {
+            if (allRows.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = "No approved bus operators are listed yet."; textSize = 15f; setPadding(0, 8, 0, 8) })
+            for (item in allRows) {
                 val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(getColor(com.bustime.app.R.color.surfaceVariant)); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
                 val name = item.optString("operator_name", "Bus Operator")
                 card.addView(TextView(this@BookBusActivity).apply { text = name; textSize = 19f; setTypeface(null, android.graphics.Typeface.BOLD) })
-                val routeSummary = "${item.optString("from_text", "-")} → ${item.optString("to_text", "-")}"
                 val busType = item.optString("bus_type", "Bus")
                 val variant = item.optString("custom_category", "")
                 val seatType = item.optString("seat_type", "").ifBlank { getString(com.bustime.app.R.string.bb_seat_unspecified) }
@@ -74,8 +57,7 @@ class BookBusActivity : AppCompatActivity() {
                     if (!item.isNull("seater_count")) item.optInt("seater_count").takeIf { it >= 0 }?.let { "$it seats" } else null
                 ).joinToString(" · ")
                 card.addView(TextView(this@BookBusActivity).apply { text = "${item.optString("service_name", getString(com.bustime.app.R.string.bb_service))} · $busType" + (if (variant.isNotBlank()) " · $variant" else "") + " · $seatType" + (if (capacity.isNotBlank()) " · $capacity" else ""); textSize = 15f; setPadding(0, 6, 0, 3) })
-                card.addView(TextView(this@BookBusActivity).apply { text = "${getString(com.bustime.app.R.string.bb_route)}: $routeSummary"; textSize = 14f; setPadding(0, 2, 0, 5) })
-                val detailLines = listOf("Service: ${item.optString("service_name", "-")}", "Bus type: $busType", "Bus variant: $variant", "Seat type: $seatType", "${getString(com.bustime.app.R.string.bb_route)}: $routeSummary", "${getString(com.bustime.app.R.string.bb_location)}: ${item.optString("location", "-" )}", item.optString("details", "")).filter { it.isNotBlank() }
+                val detailLines = listOf("Service: ${item.optString("service_name", "-")}", "Bus type: $busType", "Bus variant: $variant", "Seat type: $seatType", item.optString("details", "")).filter { it.isNotBlank() }
                 val detailBox = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; visibility = android.view.View.GONE }
                 detailLines.forEach { line -> detailBox.addView(TextView(this@BookBusActivity).apply { text = line; textSize = 14f; setPadding(0, 5, 0, 0) }) }
                 card.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_expand); textSize = 13f; setPadding(0, 8, 0, 4); setOnClickListener { detailBox.visibility = if (detailBox.visibility == android.view.View.VISIBLE) android.view.View.GONE else android.view.View.VISIBLE } })
@@ -91,15 +73,7 @@ class BookBusActivity : AppCompatActivity() {
                     setOnClickListener { try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/${whatsapp.filter { c -> c.isDigit() }}"))) } catch (_: Exception) { Toast.makeText(this@BookBusActivity, com.bustime.app.R.string.bb_whatsapp_error, Toast.LENGTH_SHORT).show() } }
                 })
                 results.addView(card)
-                }
             }
-            areaSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                    renderArea(if (position == 0) "" else areas[position - 1])
-                }
-                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) { renderArea("") }
-            }
-            renderArea("")
         }
     }
 }
