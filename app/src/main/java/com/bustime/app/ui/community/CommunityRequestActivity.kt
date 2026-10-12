@@ -310,7 +310,8 @@ class CommunityRequestActivity : AppCompatActivity() {
         correctionDrafts.forEachIndexed { index, d ->
             val name = d.optString("name").trim()
             if (name.isBlank()) { toast("Enter a name for stop " + (index + 1) + "."); return }
-            val t = d.optString("time").trim()
+            // JSONObject.NULL can stringify to "null"; treat it as an empty optional time.
+            val t = if (d.isNull("time")) "" else d.optString("time").trim().takeUnless { it == "null" }.orEmpty()
             if (t.isNotBlank() && !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast("Stop " + (index + 1) + " has an invalid time."); return }
             var id = if (d.isNull("place_id")) "" else d.optString("place_id")
             // Resolve a manually typed alias to the canonical place record, regardless
