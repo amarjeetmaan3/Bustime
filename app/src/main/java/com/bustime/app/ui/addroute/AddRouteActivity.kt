@@ -66,16 +66,9 @@ class AddRouteActivity : AppCompatActivity() {
      * the field is empty or the text has no recognizable script.
      */
     private fun typedLanguage(query: String, fallback: String): String {
-        var punjabi = 0
-        var hindi = 0
-        var english = 0
-        query.codePoints().forEach { codePoint ->
-            when (codePoint) {
-                in 0x0A00..0x0A7F -> punjabi++
-                in 0x0900..0x097F -> hindi++
-                in 0x0041..0x005A, in 0x0061..0x007A -> english++
-            }
-        }
+        val punjabi = query.count { it.code in 0x0A00..0x0A7F }
+        val hindi = query.count { it.code in 0x0900..0x097F }
+        val english = query.count { it in 'A'..'Z' || it in 'a'..'z' }
         return when {
             punjabi > hindi && punjabi > english -> "pa"
             hindi > punjabi && hindi > english -> "hi"
