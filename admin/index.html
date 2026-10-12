@@ -814,6 +814,30 @@ function subCardValues(i) {
   card.querySelectorAll('.sub_t').forEach(function (el) { var row=el.closest('.stoprow'), nameInput=row ? row.querySelector('.sub_name') : null; times.push({ place:el.getAttribute('data-place'), name:nameInput ? nameInput.value.trim() : '', time:TIME_RE.test(el.value) ? el.value : null }); });
   return { start:card.querySelector('.sub_start').value, from:card.querySelector('.sub_from').value.trim(), to:card.querySelector('.sub_to').value.trim(), service:card.querySelector('.sub_service').value.trim(), stops:times };
 }
+function nearSubmittedPlaces(rawName) {
+  var normalize = function (v) { return String(v || '').toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^\\p{L}\\p{N}]+/gu, ' ').trim().replace(/\\s+/g, ' '); };
+  var candidate = normalize(rawName);
+  if (!candidate) return [];
+  return data.places.filter(function (p) {
+    return Object.keys(p.name || {}).some(function (k) {
+      var existing = normalize(p.name[k]);
+      return existing && existing !== candidate && (existing.indexOf(candidate) >= 0 || candidate.indexOf(existing) >= 0 ||
+        (Math.abs(existing.length - candidate.length) <= 2 && existing.split(' ').length === candidate.split(' ').length &&
+         existing.split(' ').some(function (word) { return candidate.split(' ').some(function (other) { return word.length >= 4 && other.length >= 4 && (word.indexOf(other) === 0 || other.indexOf(word) === 0); }); })));
+    });
+  }).slice(0, 5);
+}
+function warnNearSubmittedPlaces(names) {
+  var warnings = [];
+  (names || []).forEach(function (name) {
+    nearSubmittedPlaces(name).forEach(function (p) {
+      var label = pname(p) || p.id;
+      if (warnings.indexOf(String(name) + ' → ' + label) < 0) warnings.push(String(name) + ' → ' + label);
+    });
+  });
+  if (!warnings.length) return true;
+  return confirm('Possible similar place names found. Nothing will be merged automatically.\n\n' + warnings.join('\n') + '\n\nContinue as separate/editable place records?');
+}
 function ensureSubmittedPlace(rawName) {
   var name = String(rawName || '').trim();
   var lower = name.toLowerCase().replace(/\s+/g, ' ');
@@ -1293,6 +1317,7 @@ document.addEventListener('click', async function (e) {
       // New free-text names become editable place records; translations can be added in Places later.
       var reviewedFrom = String(v.from || '').trim(), reviewedTo = String(v.to || '').trim();
       if (!reviewedFrom || !reviewedTo) { toast('Enter both From and To before approving.'); return; }
+      if (isFreeText && !warnNearSubmittedPlaces([reviewedFrom, reviewedTo].concat(v.stops.map(function(st){return st.name;})))) return;
       var fromId = isFreeText ? ensureSubmittedPlace(reviewedFrom) : sub.from_id;
       var toId = isFreeText ? ensureSubmittedPlace(reviewedTo) : sub.to_id;
       var previousReviewTime = effectiveStart, invalidReviewTime = false, inferredDayOffset = 0;
