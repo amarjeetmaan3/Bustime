@@ -267,7 +267,7 @@ class AddRouteActivity : AppCompatActivity() {
         val wasNew = isNew
         isNew = newMode
         if (newMode && !wasNew) {
-            // "Create new" must be a clean draft, not a leftover copy of the route.
+            // getString(R.string.ar_create_new) must be a clean draft, not a leftover copy of the route.
             findViewById<EditText>(R.id.etFromText).text.clear()
             findViewById<EditText>(R.id.etToText).text.clear()
             startTime = null
@@ -381,7 +381,7 @@ class AddRouteActivity : AppCompatActivity() {
             setColor(android.graphics.Color.rgb(32, 145, 75))
             cornerRadius = (7 * resources.displayMetrics.density)
         }
-        contentDescription = "Add stop below"
+        contentDescription = getString(R.string.ar_add_stop_below)
         setOnClickListener { onClick() }
     }
 
@@ -403,13 +403,13 @@ class AddRouteActivity : AppCompatActivity() {
         textSize = 23f
         gravity = Gravity.CENTER
         setTextColor(getColor(R.color.textPrimary))
-        contentDescription = "More stop actions"
+        contentDescription = getString(R.string.ar_more_stop_actions)
         setOnClickListener { anchor ->
             val index = existingRows.indexOf(row)
             val menu = android.widget.PopupMenu(this@AddRouteActivity, anchor)
-            menu.menu.add("Move up").isEnabled = index > 0
-            menu.menu.add("Move down").isEnabled = index in 0 until existingRows.lastIndex
-            menu.menu.add("Remove stop")
+            menu.menu.add(getString(R.string.ar_move_up)).isEnabled = index > 0
+            menu.menu.add(getString(R.string.ar_move_down)).isEnabled = index in 0 until existingRows.lastIndex
+            menu.menu.add(getString(R.string.ar_remove_stop))
             menu.setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
                     "Move up" -> if (index > 0) {
