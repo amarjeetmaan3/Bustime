@@ -105,7 +105,6 @@ class CommunityRequestActivity : AppCompatActivity() {
     private suspend fun loadStopsFor(route: Route) {
         correctionRoute = route
         routeStops = AppRepository.getInstance(this).getRouteStops(route.id).sortedBy { it.stopOrder }
-        val places = AppRepository.getInstance(this).getPlacesById(routeStops.map { it.placeId }.toSet())
         placeNames = allPlaces.associate { it.id to it.displayName(LanguageHelper.current()) }
         correctionDrafts.clear()
         routeStops.forEach { stop ->
