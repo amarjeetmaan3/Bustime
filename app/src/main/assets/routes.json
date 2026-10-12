@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 22,
+  "dataVersion": 23,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -209,7 +209,41 @@
       }
     }
   ],
-  "routes": [],
+  "routes": [
+    {
+      "id": "r1",
+      "from": "stand_sangriya",
+      "to": "stand_sri_ganganagar",
+      "time": "08:00",
+      "service": "Maan",
+      "stops": [
+        {
+          "place": "place_bolanwali"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_amargarh"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_sadulshahar"
+        }
+      ]
+    }
+  ],
   "taxiSeaters": [
     4,
     5,
