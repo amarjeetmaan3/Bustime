@@ -337,7 +337,8 @@ class AddRouteActivity : AppCompatActivity() {
                     gravity = Gravity.CENTER_VERTICAL
                 }
                 val time = timeBox()
-                val row = ExistingStop(stop.placeId, time, time = stop.time, nameEdit = name, line = line)
+                    val row = ExistingStop(stop.placeId, time, time = stop.time, nameEdit = name, line = line)
+                val number = rowNumber(index, stops.size)
                 showTime(time, row.time)
                 time.setOnClickListener {
                     pickTime(row.time) { t ->
@@ -358,24 +359,104 @@ class AddRouteActivity : AppCompatActivity() {
                         }
                     }
                 }
+                controls.addView(number, LinearLayout.LayoutParams((30 * resources.displayMetrics.density).toInt(), (28 * resources.displayMetrics.density).toInt()).apply { marginEnd = (5 * resources.displayMetrics.density).toInt() })
+                name.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                name.textSize = 14f
+                name.setPadding((5 * resources.displayMetrics.density).toInt(), 0, (3 * resources.displayMetrics.density).toInt(), 0)
                 controls.addView(name, LinearLayout.LayoutParams(0, (44 * resources.displayMetrics.density).toInt(), 1f))
-                controls.addView(time, LinearLayout.LayoutParams((62 * resources.displayMetrics.density).toInt(), -2))
-                controls.addView(plusButton { insertStopAfter(line, row) })
-                controls.addView(remove)
+                controls.addView(time, LinearLayout.LayoutParams((56 * resources.displayMetrics.density).toInt(), (36 * resources.displayMetrics.density).toInt()).apply { marginStart = (3 * resources.displayMetrics.density).toInt() })
+                controls.addView(plusButton { insertStopAfter(line, row) }, LinearLayout.LayoutParams((34 * resources.displayMetrics.density).toInt(), (36 * resources.displayMetrics.density).toInt()).apply { marginStart = (4 * resources.displayMetrics.density).toInt() })
+                controls.addView(moreButton(row), LinearLayout.LayoutParams((28 * resources.displayMetrics.density).toInt(), (40 * resources.displayMetrics.density).toInt()).apply { marginStart = (1 * resources.displayMetrics.density).toInt() })
                 line.addView(controls)
+                line.background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.TRANSPARENT)
+                    cornerRadius = (7 * resources.displayMetrics.density)
+                }
                 stopsBox.addView(line)
                 existingRows.add(row)
             }
+            refreshStopRowNumbers()
             startTime = route.time
             showTime(tvStart, startTime)
         }
     }
 
-    private fun plusButton(onClick: () -> Unit): Button = Button(this).apply {
+    private fun plusButton(onClick: () -> Unit): TextView = TextView(this).apply {
         text = "+"
-        textSize = 18f
-        minWidth = 0; minimumWidth = 0
+        textSize = 23f
+        gravity = Gravity.CENTER
+        setTextColor(android.graphics.Color.WHITE)
+        background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(android.graphics.Color.rgb(32, 145, 75))
+            cornerRadius = (7 * resources.displayMetrics.density)
+        }
+        contentDescription = "Add stop below"
         setOnClickListener { onClick() }
+    }
+
+    private fun rowNumber(index: Int, total: Int): TextView = TextView(this).apply {
+        text = (index + 1).toString()
+        textSize = 13f
+        gravity = Gravity.CENTER
+        setTextColor(android.graphics.Color.WHITE)
+        background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(if (index == 0 || index == total - 1) android.graphics.Color.rgb(44, 115, 83) else android.graphics.Color.rgb(83, 91, 108))
+            cornerRadius = (14 * resources.displayMetrics.density)
+        }
+        minWidth = (28 * resources.displayMetrics.density).toInt()
+        setPadding(5, 3, 5, 3)
+    }
+
+    private fun moreButton(row: ExistingStop): TextView = TextView(this).apply {
+        text = "⋮"
+        textSize = 23f
+        gravity = Gravity.CENTER
+        setTextColor(getColor(R.color.textPrimary))
+        contentDescription = "More stop actions"
+        setOnClickListener { anchor ->
+            val index = existingRows.indexOf(row)
+            val menu = android.widget.PopupMenu(this@AddRouteActivity, anchor)
+            menu.menu.add("Move up").isEnabled = index > 0
+            menu.menu.add("Move down").isEnabled = index in 0 until existingRows.lastIndex
+            menu.menu.add("Remove stop")
+            menu.setOnMenuItemClickListener { item ->
+                when (item.title.toString()) {
+                    "Move up" -> if (index > 0) {
+                        val current = existingRows.removeAt(index); existingRows.add(index - 1, current)
+                        reorderStopViews()
+                    }
+                    "Move down" -> if (index < existingRows.lastIndex) {
+                        val current = existingRows.removeAt(index); existingRows.add(index + 1, current)
+                        reorderStopViews()
+                    }
+                    "Remove stop" -> if (existingRows.size > 2) {
+                        existingRows.remove(row); row.line?.let { stopsBox.removeView(it) }; refreshStopRowNumbers()
+                    } else Toast.makeText(this@AddRouteActivity, R.string.ar_min_stops, Toast.LENGTH_SHORT).show()
+                }
+                true
+            }
+            menu.show()
+        }
+    }
+
+    private fun reorderStopViews() {
+        stopsBox.removeAllViews()
+        existingRows.forEach { row -> row.line?.let { stopsBox.addView(it) } }
+        refreshStopRowNumbers()
+    }
+
+    private fun refreshStopRowNumbers() {
+        existingRows.forEachIndexed { index, row ->
+            val line = row.line as? LinearLayout ?: return@forEachIndexed
+            val controls = line.getChildAt(0) as? LinearLayout ?: return@forEachIndexed
+            val number = controls.getChildAt(0) as? TextView
+            number?.text = (index + 1).toString()
+            val drawable = android.graphics.drawable.GradientDrawable().apply {
+                setColor(if (index == 0 || index == existingRows.lastIndex) android.graphics.Color.rgb(44, 115, 83) else android.graphics.Color.rgb(83, 91, 108))
+                cornerRadius = (14 * resources.displayMetrics.density)
+            }
+            number?.background = drawable
+        }
     }
 
     /** मौजूदा रूट के दो पड़ावों के बीच नया पड़ाव (नाम किसी भी भाषा में + समय) */
@@ -399,14 +480,20 @@ class AddRouteActivity : AppCompatActivity() {
         }
         val remove = Button(this).apply { text = "−"; setOnClickListener { existingRows.remove(row); stopsBox.removeView(line) } }
         val plus = plusButton { insertStopAfter(line, row) }
+        controls.addView(rowNumber(existingRows.indexOf(anchorRow).coerceAtLeast(0) + 1, existingRows.size + 1), LinearLayout.LayoutParams((30 * resources.displayMetrics.density).toInt(), (28 * resources.displayMetrics.density).toInt()).apply { marginEnd = (5 * resources.displayMetrics.density).toInt() })
+        name.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        name.textSize = 14f
+        name.setPadding((5 * resources.displayMetrics.density).toInt(), 0, (3 * resources.displayMetrics.density).toInt(), 0)
         controls.addView(name, LinearLayout.LayoutParams(0, (44 * resources.displayMetrics.density).toInt(), 1f))
-        controls.addView(time, LinearLayout.LayoutParams((62 * resources.displayMetrics.density).toInt(), -2))
-        controls.addView(plus); controls.addView(remove)
+        controls.addView(time, LinearLayout.LayoutParams((56 * resources.displayMetrics.density).toInt(), (36 * resources.displayMetrics.density).toInt()).apply { marginStart = (3 * resources.displayMetrics.density).toInt() })
+        controls.addView(plusButton { insertStopAfter(line, row) }, LinearLayout.LayoutParams((34 * resources.displayMetrics.density).toInt(), (36 * resources.displayMetrics.density).toInt()).apply { marginStart = (4 * resources.displayMetrics.density).toInt() })
+        controls.addView(moreButton(row), LinearLayout.LayoutParams((28 * resources.displayMetrics.density).toInt(), (40 * resources.displayMetrics.density).toInt()).apply { marginStart = (1 * resources.displayMetrics.density).toInt() })
         line.addView(controls)
         val viewIndex = stopsBox.indexOfChild(anchorLine) + 1
         stopsBox.addView(line, viewIndex)
         val rowIndex = if (anchorRow == null) 0 else existingRows.indexOf(anchorRow) + 1
         existingRows.add(rowIndex, row)
+        refreshStopRowNumbers()
     }
 
     private fun addNewStop() {
@@ -435,12 +522,17 @@ class AddRouteActivity : AppCompatActivity() {
             }
         }
         val remove = Button(this).apply { text = "−"; setOnClickListener { existingRows.remove(row); stopsBox.removeView(line) } }
+        controls.addView(rowNumber(0, 2), LinearLayout.LayoutParams((30 * resources.displayMetrics.density).toInt(), (28 * resources.displayMetrics.density).toInt()).apply { marginEnd = (5 * resources.displayMetrics.density).toInt() })
+        name.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        name.textSize = 14f
+        name.setPadding((5 * resources.displayMetrics.density).toInt(), 0, (3 * resources.displayMetrics.density).toInt(), 0)
         controls.addView(name, LinearLayout.LayoutParams(0, (44 * resources.displayMetrics.density).toInt(), 1f))
-        controls.addView(time, LinearLayout.LayoutParams((62 * resources.displayMetrics.density).toInt(), -2))
-        controls.addView(plusButton { insertStopAfter(line, row) })
-        controls.addView(remove)
+        controls.addView(time, LinearLayout.LayoutParams((56 * resources.displayMetrics.density).toInt(), (36 * resources.displayMetrics.density).toInt()).apply { marginStart = (3 * resources.displayMetrics.density).toInt() })
+        controls.addView(plusButton { insertStopAfter(line, row) }, LinearLayout.LayoutParams((34 * resources.displayMetrics.density).toInt(), (36 * resources.displayMetrics.density).toInt()).apply { marginStart = (4 * resources.displayMetrics.density).toInt() })
+        controls.addView(moreButton(row), LinearLayout.LayoutParams((28 * resources.displayMetrics.density).toInt(), (40 * resources.displayMetrics.density).toInt()).apply { marginStart = (1 * resources.displayMetrics.density).toInt() })
         line.addView(controls)
         stopsBox.addView(line); existingRows.add(row)
+        refreshStopRowNumbers()
     }
 
     private fun timeBox(): TextView {
