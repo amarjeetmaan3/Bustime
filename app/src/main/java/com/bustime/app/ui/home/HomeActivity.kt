@@ -7,7 +7,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.tabs.TabLayout
 import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
@@ -31,8 +33,17 @@ class HomeActivity : AppCompatActivity() {
         // अपडेटर चेक करना
         GitHubUpdateChecker(this).checkForLatestUpdate()
 
-        // रूट/ड्राइवर का डेटा: पहली बार भरना, फिर बदलाव देखना (बैकग्राउंड में)
-        lifecycleScope.launch { AppRepository.getInstance(this@HomeActivity).syncData() }
+        // डेटा तुरंत sync करो और ऐप foreground में रहने तक हर 60 सेकंड में दोबारा जाँचो।
+        // इससे admin द्वारा publish/delete किए गए routes बिना app restart के भी जल्दी दिखेंगे।
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                val repository = AppRepository.getInstance(this@HomeActivity)
+                while (true) {
+                    repository.syncData()
+                    kotlinx.coroutines.delay(60_000)
+                }
+            }
+        }
 
         // ऊपर "भाषा" का बटन
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
