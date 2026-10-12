@@ -1363,7 +1363,7 @@ document.addEventListener('click', async function (e) {
     else if (act === 'operator-add') {
       var on=val('op_name'), op=val('op_phone').replace(/[^+0-9 -]/g,'');
       if (!on || op.replace(/\D/g,'').length<9) { toast('Enter operator name and valid phone.'); return; }
-      await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:val('op_service')||null,bus_type:val('op_type')||'Bus',seat_type:val('op_seat_type')||null,sleeper_count:parseInt(val('op_sleeper_count'),10)||null,seater_count:parseInt(val('op_seater_count'),10)||null,phone:op,whatsapp:val('op_whatsapp')||null,location:val('op_location')||null,from_text:val('op_from')||null,to_text:null,details:val('op_details')||null,active:true})});
+      await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:val('op_service')||null,bus_type:val('op_type')||'Bus',seat_type:val('op_seat_type')||null,sleeper_count:parseInt(val('op_sleeper_count'),10)||null,seater_count:parseInt(val('op_seater_count'),10)||null,phone:op,whatsapp:val('op_whatsapp')||null,location:val('op_location')||null,from_text:null,to_text:null,details:val('op_details')||null,active:true})});
       await loadCommunity(); toast('Operator added and published.'); render();
     }
     else if (act === 'operator-toggle') {
