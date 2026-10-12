@@ -145,7 +145,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             val fileName = "Bustime-v${latest.version}.apk"
             val request = DownloadManager.Request(Uri.parse(latest.downloadUrl))
                 .setTitle("Bustime v${latest.version}")
-                .setDescription("Downloading update")
+                .setDescription(activity.getString(R.string.update_downloading))
                 .setMimeType("application/vnd.android.package-archive")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setAllowedOverMetered(true)
@@ -208,8 +208,8 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             .setTitle(activity.getString(R.string.update_ready))
             .setMessage(activity.getString(R.string.update_install_prompt, version))
             .setCancelable(true)
-            .setPositiveButton("Install") { _, _ -> installApk(version) }
-            .setNegativeButton("Later", null)
+            .setPositiveButton(activity.getString(R.string.install)) { _, _ -> installApk(version) }
+            .setNegativeButton(activity.getString(R.string.later), null)
             .create()
         installDialog?.show()
     }
@@ -220,12 +220,12 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             AlertDialog.Builder(activity)
                 .setTitle(activity.getString(R.string.update_permission_needed))
                 .setMessage(activity.getString(R.string.update_permission_help))
-                .setPositiveButton("Open settings") { _, _ ->
+                .setPositiveButton(activity.getString(R.string.open_settings)) { _, _ ->
                     activity.startActivity(
                         Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${activity.packageName}"))
                     )
                 }
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(activity.getString(R.string.cancel), null)
                 .show()
             return
         }
