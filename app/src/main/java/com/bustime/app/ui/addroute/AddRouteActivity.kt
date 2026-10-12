@@ -358,8 +358,8 @@ class AddRouteActivity : AppCompatActivity() {
                         }
                     }
                 }
-                line.addView(name)
-                controls.addView(time, LinearLayout.LayoutParams(0, -2, 1f))
+                controls.addView(name, LinearLayout.LayoutParams(0, (44 * resources.displayMetrics.density).toInt(), 1f))
+                controls.addView(time, LinearLayout.LayoutParams((62 * resources.displayMetrics.density).toInt(), -2))
                 controls.addView(plusButton { insertStopAfter(line, row) })
                 controls.addView(remove)
                 line.addView(controls)
@@ -399,8 +399,10 @@ class AddRouteActivity : AppCompatActivity() {
         }
         val remove = Button(this).apply { text = "−"; setOnClickListener { existingRows.remove(row); stopsBox.removeView(line) } }
         val plus = plusButton { insertStopAfter(line, row) }
-        controls.addView(time, LinearLayout.LayoutParams(0, -2, 1f)); controls.addView(plus); controls.addView(remove)
-        line.addView(name); line.addView(controls)
+        controls.addView(name, LinearLayout.LayoutParams(0, (44 * resources.displayMetrics.density).toInt(), 1f))
+        controls.addView(time, LinearLayout.LayoutParams((62 * resources.displayMetrics.density).toInt(), -2))
+        controls.addView(plus); controls.addView(remove)
+        line.addView(controls)
         val viewIndex = stopsBox.indexOfChild(anchorLine) + 1
         stopsBox.addView(line, viewIndex)
         val rowIndex = if (anchorRow == null) 0 else existingRows.indexOf(anchorRow) + 1
@@ -433,10 +435,11 @@ class AddRouteActivity : AppCompatActivity() {
             }
         }
         val remove = Button(this).apply { text = "−"; setOnClickListener { existingRows.remove(row); stopsBox.removeView(line) } }
-        controls.addView(time, LinearLayout.LayoutParams(0, -2, 1f))
+        controls.addView(name, LinearLayout.LayoutParams(0, (44 * resources.displayMetrics.density).toInt(), 1f))
+        controls.addView(time, LinearLayout.LayoutParams((62 * resources.displayMetrics.density).toInt(), -2))
         controls.addView(plusButton { insertStopAfter(line, row) })
         controls.addView(remove)
-        line.addView(name); line.addView(controls)
+        line.addView(controls)
         stopsBox.addView(line); existingRows.add(row)
     }
 
