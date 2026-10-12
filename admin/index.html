@@ -1343,10 +1343,6 @@ document.addEventListener('click', async function (e) {
         toast('This review editor is no longer available. Refresh submissions and try again.'); routeReviewEditor = null; render(); return;
       }
       if (!v.from || !v.to) { toast('Enter a name for both From and To.'); return; }
-      if (!sub || !v) {
-        toast('This request form is no longer available. Refresh the submissions list and try again.');
-        return;
-      }
       if (sub.submission_type === 'edit_existing_route') {
         var targetRoute = data.routes.find(function (r) { return String(r.id) === String(sub.route_id); });
         if (!targetRoute) { toast('The selected route no longer exists. Refresh and review this request.'); return; }
@@ -1357,7 +1353,6 @@ document.addEventListener('click', async function (e) {
         for (var esi = 0; esi < v.stops.length; esi++) {
           var es = v.stops[esi], submittedName = String(es.name || '').trim();
           var resolvedId = submittedName ? ensureReviewedPlace(es.names || {en:submittedName}, es.place) : es.place;
-            (originalPlace && originalNames.indexOf(normalizedSubmittedName) >= 0 ? es.place : ensureSubmittedPlace(submittedName));
           if (!resolvedId || !placeById(resolvedId)) { toast('Every stop must have a valid name.'); return; }
           resolvedStops.push({ place: resolvedId, time: es.time });
         }
