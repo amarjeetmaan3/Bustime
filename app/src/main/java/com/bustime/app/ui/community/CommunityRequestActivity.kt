@@ -86,11 +86,11 @@ class CommunityRequestActivity : AppCompatActivity() {
                 if (requestedIndex >= 0) routeSpinner?.setSelection(requestedIndex)
             }
             heading(getString(com.bustime.app.R.string.community_what_correction))
-            missingCheck = CheckBox(this@CommunityRequestActivity).apply { text = getString(com.bustime.app.R.string.community_missing_stop); isChecked = true }
+            missingCheck = CheckBox(this@CommunityRequestActivity).apply { text = getString(com.bustime.app.R.string.community_missing_stop); isChecked = false }
             timeCheck = CheckBox(this@CommunityRequestActivity).apply { text = getString(com.bustime.app.R.string.community_correct_time) }
             root.addView(missingCheck); root.addView(timeCheck)
             missingSection = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
-            root.addView(missingSection)
+            root.addView(missingSection!!)
             headingIn(missingSection!!, getString(com.bustime.app.R.string.community_missing_stop_details))
             textIn(missingSection!!, getString(com.bustime.app.R.string.community_missing_stop_help), 14f)
             stopOne = spinnerIn(missingSection!!, getString(com.bustime.app.R.string.community_stop_before), emptyList())
@@ -98,7 +98,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             fieldIn(missingSection!!, "missing_place", getString(com.bustime.app.R.string.community_missing_place_hint))
             timePickerFieldIn(missingSection!!, "missing_time", "Missing stop time (optional)")
             timeSection = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
-            root.addView(timeSection)
+            root.addView(timeSection!!)
             headingIn(timeSection!!, getString(com.bustime.app.R.string.community_correct_time_details))
             correctedStop = spinnerIn(timeSection!!, getString(com.bustime.app.R.string.community_choose_stop), emptyList())
             timePickerFieldIn(timeSection!!, "corrected_time", getString(com.bustime.app.R.string.community_correct_time_hint))
@@ -345,6 +345,13 @@ class CommunityRequestActivity : AppCompatActivity() {
     private fun field(key: String, hint: String): EditText { val e = EditText(this).apply { this.hint = hint; textSize = 16f; setPadding(dp(12), dp(10), dp(12), dp(10)) }; fields[key] = e; root.addView(e); return e }
     private fun spinner(hint: String, options: List<String>, key: String? = null): Spinner {
         val s = Spinner(this); s.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (options.isEmpty()) listOf("Loading stops…") else options)
+        s.setOnTouchListener { v, event ->
+            if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0)
+                v.clearFocus()
+            }
+            false
+        }
         root.addView(s); if (key != null) spinners[key] = s; return s
     }
     private fun button(label: String, action: () -> Unit) { root.addView(Button(this).apply { text = label; setOnClickListener { action() } }) }
