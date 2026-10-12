@@ -33,7 +33,7 @@
     <!-- Auto -->
     <string name="auto_all">All</string>
     <string name="auto_ev">EV (Electric)</string>
-    <string name="auto_oil">Oil (Petrol/CNG)</string>
+    <string name="auto_oil">Petrol / CNG (Oil)</string>
     <string name="no_autos">No autos available</string>
 
     <!-- Driver card -->
@@ -278,4 +278,5 @@
     <string name="bb_sleeper_berths_format">%1$d sleeper berths</string>
     <string name="bb_seats_format">%1$d seats</string>
     <string name="bb_not_specified">Not specified</string>
+    <string name="fuel_oil">Oil (Petrol/CNG)</string>
 </resources>
