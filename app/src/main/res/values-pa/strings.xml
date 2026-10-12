@@ -261,4 +261,7 @@
     <string name="update_permission_help">Bustime ਨੂੰ ਅੱਪਡੇਟ ਇੰਸਟਾਲ ਕਰਨ ਦੀ ਇਜਾਜ਼ਤ ਦਿਓ, ਫਿਰ ਐਪ ਵਿੱਚ ਵਾਪਸ ਆਓ।</string>
     <string name="update_file_missing">ਅੱਪਡੇਟ ਫਾਈਲ ਨਹੀਂ ਮਿਲੀ। ਕਿਰਪਾ ਕਰਕੇ ਮੁੜ ਡਾਊਨਲੋਡ ਕਰੋ।</string>
     <string name="update_installer_failed">ਇੰਸਟਾਲਰ ਨਹੀਂ ਖੁੱਲ੍ਹ ਸਕਿਆ</string>
+    <string name="update_downloading">ਅੱਪਡੇਟ ਡਾਊਨਲੋਡ ਹੋ ਰਿਹਾ ਹੈ</string>
+    <string name="install">ਇੰਸਟਾਲ ਕਰੋ</string>
+    <string name="open_settings">ਸੈਟਿੰਗਾਂ ਖੋਲ੍ਹੋ</string>
 </resources>
