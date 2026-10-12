@@ -272,4 +272,5 @@
     <string name="bb_seat_type_label">सीटों का प्रकार: %1$s</string>
     <string name="bb_sleeper_berths_format">%1$d स्लीपर बर्थ</string>
     <string name="bb_seats_format">%1$d सीटें</string>
+    <string name="bb_not_specified">निर्दिष्ट नहीं</string>
 </resources>
