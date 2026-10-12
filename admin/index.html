@@ -1356,20 +1356,16 @@ document.addEventListener('click', async function (e) {
         var resolvedStops = [];
         for (var esi = 0; esi < v.stops.length; esi++) {
           var es = v.stops[esi], submittedName = String(es.name || '').trim();
-          var originalPlace = es.place ? placeById(es.place) : null;
-          var originalNames = originalPlace ? Object.keys(originalPlace.name || {}).map(function (k) {
-            return String(originalPlace.name[k] || '').trim().toLowerCase().replace(/\\s+/g, ' ');
-          }) : [];
-          var normalizedSubmittedName = submittedName.toLowerCase().replace(/\\s+/g, ' ');
-          var resolvedId = !submittedName ? es.place :
+          var resolvedId = submittedName ? ensureReviewedPlace(es.names || {en:submittedName}, es.place) : es.place;
             (originalPlace && originalNames.indexOf(normalizedSubmittedName) >= 0 ? es.place : ensureSubmittedPlace(submittedName));
           if (!resolvedId || !placeById(resolvedId)) { toast('Every stop must have a valid name.'); return; }
           resolvedStops.push({ place: resolvedId, time: es.time });
         }
-        resolvedStops[0].name = v.from;
-        resolvedStops[resolvedStops.length - 1].name = v.to;
-        var editStart = TIME_RE.test(v.start) ? v.start : '';
-        if (!editStart) { toast('Add a departure time before approving.'); return; }
+        resolvedStops[0].place = ensureReviewedPlace(v.fromNames, resolvedStops[0].place);
+        resolvedStops[resolvedStops.length - 1].place = ensureReviewedPlace(v.toNames, resolvedStops[resolvedStops.length - 1].place);
+        if (!resolvedStops[0].place || !resolvedStops[resolvedStops.length - 1].place) { toast('From and To must have valid names.'); return; }
+        var editStart = TIME_RE.test(v.start) ? v.start : ((v.stops.find(function(st){ return TIME_RE.test(st.time || ''); }) || {}).time || '');
+        if (!editStart) { toast('Add at least one valid time before approving.'); return; }
         var prevEditTime = editStart, editDay = 0, editTimeInvalid = false;
         resolvedStops.slice(1).forEach(function (st) {
           if (st.time && st.time < prevEditTime) {
@@ -1397,7 +1393,7 @@ document.addEventListener('click', async function (e) {
         await sbFetch('/rest/v1/route_submissions?id=eq.' + encodeURIComponent(sub.id), {
           method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'approved' })
         });
-        subs[i].status = 'approved';
+        subs[i].status = 'approved'; routeReviewEditor = null;
         toast('Existing route updated. Press Publish to make the changes live.');
         render();
         return;
@@ -1410,8 +1406,8 @@ document.addEventListener('click', async function (e) {
       var reviewedFrom = String(v.from || '').trim(), reviewedTo = String(v.to || '').trim();
       if (!reviewedFrom || !reviewedTo) { toast('Enter both From and To before approving.'); return; }
       if (isFreeText && !warnNearSubmittedPlaces([reviewedFrom, reviewedTo].concat(v.stops.map(function(st){return st.name;})))) return;
-      var fromId = isFreeText ? ensureSubmittedPlace(reviewedFrom) : sub.from_id;
-      var toId = isFreeText ? ensureSubmittedPlace(reviewedTo) : sub.to_id;
+      var fromId = isFreeText ? ensureReviewedPlace(v.fromNames, sub.from_id) : sub.from_id;
+      var toId = isFreeText ? ensureReviewedPlace(v.toNames, sub.to_id) : sub.to_id;
       var previousReviewTime = effectiveStart, invalidReviewTime = false, inferredDayOffset = 0;
       v.stops.forEach(function (st) {
         if (st.time && st.time < previousReviewTime) {
