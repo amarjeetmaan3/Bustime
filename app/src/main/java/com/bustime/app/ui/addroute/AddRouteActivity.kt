@@ -90,7 +90,8 @@ class AddRouteActivity : AppCompatActivity() {
             ?: item.fallbackName
         return item.copy(
             selectedName = selected,
-            label = (orderedNames.ifEmpty { listOf(selected) }).joinToString(" • ")
+            // Show only the name matching the script currently being typed.
+            label = selected
         )
     }
 
