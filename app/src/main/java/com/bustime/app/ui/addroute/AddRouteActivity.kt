@@ -6,6 +6,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -37,6 +38,24 @@ import org.json.JSONObject
 class AddRouteActivity : AppCompatActivity() {
     private class ExistingStop(val placeId: String?, val timeView: TextView, var time: String? = null, val nameEdit: EditText? = null, var line: View? = null)
     private class NewStop(val name: EditText, val timeView: TextView, var time: String? = null)
+    private var placeSuggestions: List<String> = emptyList()
+    private fun placeAutoComplete(hintText: String): AutoCompleteTextView = AutoCompleteTextView(this).apply {
+        hint = hintText
+        threshold = 1
+        setAdapter(ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, placeSuggestions))
+        setOnFocusChangeListener { _, focused -> if (focused && placeSuggestions.isNotEmpty()) showDropDown() }
+        setOnClickListener { if (placeSuggestions.isNotEmpty()) showDropDown() }
+    }
+    private fun refreshPlaceSuggestions() {
+        lifecycleScope.launch {
+            val all = withContext(Dispatchers.IO) { repo.getAllPlaces() }
+            val lang = LanguageHelper.current()
+            placeSuggestions = all.map { it.displayName(lang) }.filter { it.isNotBlank() }.distinct().sorted()
+            (newRows.map { it.name } + existingRows.mapNotNull { it.nameEdit }).forEach { field ->
+                if (field is AutoCompleteTextView) field.setAdapter(ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, placeSuggestions))
+            }
+        }
+    }
 
     private lateinit var repo: AppRepository
     private lateinit var tvStart: TextView
@@ -54,6 +73,7 @@ class AddRouteActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_route)
         repo = AppRepository.getInstance(this)
+        refreshPlaceSuggestions()
         findViewById<Button>(R.id.btnBackAdd).visibility = View.GONE
         tvStart = findViewById(R.id.tvStartTime)
         stopsBox = findViewById(R.id.stopsBox)
@@ -116,8 +136,7 @@ class AddRouteActivity : AppCompatActivity() {
                     orientation = LinearLayout.VERTICAL
                     setPadding(if (index == 0) 0 else pad, pad / 2, 0, pad / 2)
                 }
-                val name = EditText(this@AddRouteActivity).apply {
-                    hint = getString(R.string.ar_custom_stop_name)
+                val name = placeAutoComplete(getString(R.string.ar_custom_stop_name)).apply {
                     setSingleLine(true)
                     textSize = 16f
                     setText(names[stop.placeId]?.displayName(lang) ?: stop.placeId)
@@ -174,8 +193,7 @@ class AddRouteActivity : AppCompatActivity() {
     private fun insertStopAfter(anchorLine: View, anchorRow: ExistingStop?) {
         val pad = (8 * resources.displayMetrics.density).toInt()
         val line = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(pad * 2, pad, 0, pad) }
-        val name = EditText(this).apply {
-            hint = getString(R.string.ar_custom_stop_name)
+        val name = placeAutoComplete(getString(R.string.ar_custom_stop_name)).apply {
             setSingleLine(true)
             textSize = 16f
             filters = arrayOf(android.text.InputFilter.LengthFilter(80))
