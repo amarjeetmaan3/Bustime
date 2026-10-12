@@ -178,7 +178,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         field("phone", "Mobile number")
         val fuelSpinner = spinner("Auto fuel type", listOf("EV", "Oil", "CNG", "Other"), "fuel_type")
         if (requestedType != "auto") fuelSpinner.visibility = View.GONE
-        field("details", "Other information (optional)")
+        field("details", "Other information (optional)").apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
         button("Submit listing for admin review") {
             val type = if (requestedType == "auto" || (requestedType == null && spinners["vehicle_type"]?.selectedItemPosition == 0)) "auto" else "taxi"
             val name = value("person_name"); val vehicle = value("vehicle_name"); val phone = digits(value("phone"))
@@ -214,7 +214,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                 if (index >= 0) categorySpinner.setSelection(index)
             }
         }
-        field("custom_category", "Describe your specific bus type / variant (required for every category)")
+        field("custom_category", "Describe your specific bus type / variant (required for every category)").apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
         field("sleeper_count", "Number of sleeper berths")
         field("seater_count", "Number of seater seats")
         field("from_text", "Starting area / city")
@@ -222,7 +222,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         field("location", "Operating area / city (required)")
         field("phone", "Operator mobile number")
         field("whatsapp", "WhatsApp number (optional)")
-        field("details", "Additional information (optional)")
+        field("details", "Additional information (optional)").apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
         button("Submit bus for admin review") {
             val operator = value("operator_name")
             val service = value("service_name")
