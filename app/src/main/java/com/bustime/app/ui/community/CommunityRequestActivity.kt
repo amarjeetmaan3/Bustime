@@ -49,6 +49,7 @@ class CommunityRequestActivity : AppCompatActivity() {
     private var missingSection: LinearLayout? = null
     private var timeSection: LinearLayout? = null
     private var missingPosition: Spinner? = null
+    private val missingPlaceFields = mutableListOf<AutoCompleteTextView>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,7 +99,10 @@ class CommunityRequestActivity : AppCompatActivity() {
             missingPosition = spinnerIn(missingSection!!, "Missing stop location", listOf("Before the first listed stop", "Between existing stops", "After the last listed stop"))
             stopOne = spinnerIn(missingSection!!, "Existing stop before the missing stops", emptyList())
             stopTwo = spinnerIn(missingSection!!, "Existing stop after the missing stops", emptyList())
-            fieldIn(missingSection!!, "missing_places", "Missing stop name(s), one per line").apply { minLines = 2; maxLines = 6; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
+            val missingNamesBox = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
+            missingSection!!.addView(missingNamesBox)
+            addMissingPlaceField(missingNamesBox)
+            buttonIn(missingSection!!, "+ Add another missing stop") { addMissingPlaceField(missingNamesBox) }
             timePickerFieldIn(missingSection!!, "missing_time", "Time of first missing stop (optional)")
             missingPosition?.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -154,7 +158,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         if (phone.length !in 10..13) { toast("Enter a valid mobile number before submitting a correction."); return }
         val jobs = mutableListOf<Pair<String, JSONObject>>()
         if (sendMissing) {
-            val missingNames = value("missing_places").lines().map { it.trim() }.filter { it.isNotBlank() }
+            val missingNames = missingPlaceFields.map { it.text.toString().trim() }.filter { it.isNotBlank() }
             if (missingNames.isEmpty()) { toast("Enter at least one missing stop name."); return }
             val position = missingPosition?.selectedItemPosition ?: 1
             val before: RouteStop?
@@ -346,6 +350,62 @@ class CommunityRequestActivity : AppCompatActivity() {
             if (results.all { it }) { toast(success); finish() }
             else toast("Could not send all requests. Check internet and try again.\n" + CommunitySupabase.lastError)
         }
+    }
+
+    private fun buttonIn(target: LinearLayout, label: String, action: () -> Unit) { target.addView(Button(this).apply { text = label; setOnClickListener { action() } }) }
+
+    private fun addMissingPlaceField(target: LinearLayout) {
+        val field = AutoCompleteTextView(this).apply {
+            hint = "Missing stop name (Punjabi / हिंदी / English)"
+            threshold = 1
+            textSize = 16f
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+        }
+        fun languageFor(query: String): String {
+            val pa = query.count { it.code in 0x0A00..0x0A7F }
+            val hi = query.count { it.code in 0x0900..0x097F }
+            val en = query.count { it in 'a'..'z' || it in 'A'..'Z' }
+            return when {
+                pa > hi && pa > en -> "pa"
+                hi > pa && hi > en -> "hi"
+                en > 0 && en >= pa && en >= hi -> "en"
+                else -> LanguageHelper.current()
+            }
+        }
+        fun labelFor(place: Place, lang: String): String {
+            val order = when (lang) { "hi" -> listOf("hi", "en", "pa"); "pa" -> listOf("pa", "hi", "en"); else -> listOf("en", "hi", "pa") }
+            return order.mapNotNull { place.names[it]?.trim()?.takeIf { name -> name.isNotBlank() } }
+                .distinct().joinToString(" • ").ifBlank { place.displayName(lang) }
+        }
+        var activeLanguage = LanguageHelper.current()
+        var shownPlaces = allPlaces
+        val adapter = ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, mutableListOf())
+        fun refreshSuggestions(query: String) {
+            activeLanguage = languageFor(query)
+            shownPlaces = allPlaces.filter { place ->
+                query.isBlank() || place.names.values.any { it.contains(query, ignoreCase = true) } ||
+                    place.displayName(activeLanguage).contains(query, ignoreCase = true)
+            }
+            adapter.clear()
+            adapter.addAll(shownPlaces.map { labelFor(it, activeLanguage) })
+            adapter.notifyDataSetChanged()
+        }
+        refreshSuggestions("")
+        field.setAdapter(adapter)
+        field.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { refreshSuggestions(s?.toString().orEmpty()) }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        field.setOnItemClickListener { _, _, position, _ ->
+            val place = shownPlaces.getOrNull(position)
+            if (place != null) {
+                field.setText(place.displayName(activeLanguage), false)
+                field.setSelection(field.text.length)
+            }
+        }
+        target.addView(field)
+        missingPlaceFields.add(field)
     }
 
     private fun buttonIn(target: LinearLayout, label: String, action: () -> Unit) { target.addView(Button(this).apply { text = label; setOnClickListener { action() } }) }
