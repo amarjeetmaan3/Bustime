@@ -362,7 +362,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         field("location", getString(com.bustime.app.R.string.community_location_area))
         field("union_name", getString(com.bustime.app.R.string.community_union_name))
         field("phone", getString(com.bustime.app.R.string.community_mobile_number))
-        val fuelSpinner = spinner(getString(com.bustime.app.R.string.community_auto_fuel_type), listOf("EV", "Oil", "CNG", getString(com.bustime.app.R.string.community_other)), "fuel_type")
+        val fuelSpinner = spinner(getString(com.bustime.app.R.string.community_auto_fuel_type), listOf("EV", getString(com.bustime.app.R.string.fuel_oil), "CNG", getString(com.bustime.app.R.string.community_other)), "fuel_type")
         if (requestedType != "auto") fuelSpinner.visibility = View.GONE
         field("details", getString(com.bustime.app.R.string.community_other_info)).apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
         button(getString(com.bustime.app.R.string.community_submit_listing)) {
