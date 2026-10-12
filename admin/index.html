@@ -1263,6 +1263,8 @@ document.addEventListener('click', async function (e) {
         var targetRoute = data.routes.find(function (r) { return String(r.id) === String(sub.route_id); });
         if (!targetRoute) { toast('The selected route no longer exists. Refresh and review this request.'); return; }
         if (v.stops.length < 2) { toast('An edited route must have at least a start and destination stop.'); return; }
+        if (!v.from || !v.to) { toast('Enter both From and To before approving.'); return; }
+        if (!warnNearSubmittedPlaces([v.from, v.to].concat(v.stops.map(function(st){return st.name;})))) return;
         var resolvedStops = [];
         for (var esi = 0; esi < v.stops.length; esi++) {
           var es = v.stops[esi], submittedName = String(es.name || '').trim();
@@ -1276,6 +1278,8 @@ document.addEventListener('click', async function (e) {
           if (!resolvedId || !placeById(resolvedId)) { toast('Every stop must have a valid name.'); return; }
           resolvedStops.push({ place: resolvedId, time: es.time });
         }
+        resolvedStops[0].name = v.from;
+        resolvedStops[resolvedStops.length - 1].name = v.to;
         var editStart = TIME_RE.test(v.start) ? v.start : '';
         if (!editStart) { toast('Add a departure time before approving.'); return; }
         var prevEditTime = editStart, editDay = 0, editTimeInvalid = false;
@@ -1300,7 +1304,7 @@ document.addEventListener('click', async function (e) {
           return item;
         });
         if (editedMidStops.length) targetRoute.stops = editedMidStops; else delete targetRoute.stops;
-        if (sub.service_name) targetRoute.service = sub.service_name;
+        if (v.service) targetRoute.service = v.service; else delete targetRoute.service;
         setDirty(true);
         await sbFetch('/rest/v1/route_submissions?id=eq.' + encodeURIComponent(sub.id), {
           method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'approved' })
