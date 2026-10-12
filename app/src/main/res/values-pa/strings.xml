@@ -239,4 +239,14 @@
     <string name="home_all_areas">ਸਾਰੇ ਇਲਾਕੇ</string>
     <string name="bus_from_to">ਕਿੱਥੋਂ → ਕਿੱਥੇ ਤੱਕ</string>
     <string name="show_number_short">ਨੰਬਰ ਦਿਖਾਓ</string>
+    <string name="community_duplicate_stop">ਇਸ ਰੂਟ ਵਿੱਚ ਇੱਕ ਪੜਾਅ ਦੋ ਵਾਰ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਵੱਖਰਾ ਪੜਾਅ ਚੁਣੋ ਜਾਂ ਭੇਜਣ ਤੋਂ ਪਹਿਲਾਂ ਦੁਹਰਾਇਆ ਪੜਾਅ ਹਟਾਓ।</string>
+    <string name="community_route_label">ਰੂਟ: %1$s</string>
+    <string name="bus_category_ordinary">ਆਮ</string>
+    <string name="bus_category_luxury">ਲਗਜ਼ਰੀ</string>
+    <string name="bus_category_sleeper">ਸਲੀਪਰ</string>
+    <string name="bus_category_sleeper_plus">ਸਲੀਪਰ ਪਲੱਸ</string>
+    <string name="bus_category_seater_plus">ਸੀਟਰ ਪਲੱਸ</string>
+    <string name="bus_category_seater">ਸੀਟਰ</string>
+    <string name="bus_category_sleeper_seater">ਸਲੀਪਰ + ਸੀਟਰ</string>
+    <string name="bus_category_custom">ਹੋਰ ਕਿਸਮ</string>
 </resources>
