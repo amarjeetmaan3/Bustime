@@ -230,7 +230,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             val body = JSONObject()
                 .put("operator_name", operator).put("service_name", service)
                 .put("bus_type", category).put("custom_category", variant)
-                .put("seat_type", category)
+                .put("seat_type", if (sleeper > 0 && seater > 0) "Sleeper + Seater" else if (sleeper > 0) "Sleeper" else if (seater > 0) "Seater" else "Not specified")
                 .put("sleeper_count", sleeper).put("seater_count", seater)
                 .put("from_text", value("from_text")).put("to_text", value("to_text"))
                 .put("location", value("location")).put("phone", phone)
