@@ -275,10 +275,14 @@ class AddRouteActivity : AppCompatActivity() {
 
     private fun setMode(newMode: Boolean) {
         isNew = newMode
+        // Keep one shared From/To editor on screen in both modes. Existing-route
+        // selection only changes which stop rows are loaded into the editor.
         findViewById<View>(R.id.layoutExisting).visibility = if (newMode) View.GONE else View.VISIBLE
         findViewById<View>(R.id.layoutExistingStops).visibility = if (newMode) View.GONE else View.VISIBLE
-        findViewById<View>(R.id.layoutNew).visibility = if (newMode) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.layoutNew).visibility = View.VISIBLE
         findViewById<View>(R.id.layoutNewStops).visibility = if (newMode) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.btnUseExistingRoute).visibility = if (newMode) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.btnUseNewRoute).visibility = if (newMode) View.GONE else View.VISIBLE
         findViewById<TextView>(R.id.tvModeHint).setText(if (newMode) R.string.ar_new_route_intro else R.string.ar_existing_route_intro)
     }
 
@@ -480,12 +484,17 @@ class AddRouteActivity : AppCompatActivity() {
                     .put("time", row.time ?: JSONObject.NULL))
             }
         }
-        val anyTime = startTime != null || if (isNew) newRows.any { it.time != null } else existingRows.any { it.time != null }
+        val anyTime = !startTime.isNullOrBlank() ||
+            if (isNew) newRows.any { !it.time.isNullOrBlank() } else existingRows.any { !it.time.isNullOrBlank() }
         if (!anyTime) {
             Toast.makeText(this, R.string.ar_need_time, Toast.LENGTH_LONG).show()
             return
         }
-        if (TimeFlow.resolve(orderedTimes()).badIndex >= 0) { Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show(); return }
+        // Validate order among only real, non-empty times; blank stop times are optional.
+        if (TimeFlow.resolve(orderedTimes().filterNotNull().filter { it.isNotBlank() }).badIndex >= 0) {
+            Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show()
+            return
+        }
 
         val body = JSONObject()
             .put("submission_type", "new_route")
