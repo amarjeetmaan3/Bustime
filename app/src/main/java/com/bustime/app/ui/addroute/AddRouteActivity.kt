@@ -289,9 +289,10 @@ class AddRouteActivity : AppCompatActivity() {
         }
         // Keep one shared From/To editor on screen in both modes.
         findViewById<View>(R.id.layoutExisting).visibility = if (newMode) View.GONE else View.VISIBLE
-        findViewById<View>(R.id.layoutExistingStops).visibility = if (newMode) View.GONE else View.VISIBLE
+        // Both modes use the same stop editor and row layout. Only route selection differs.
+        findViewById<View>(R.id.layoutExistingStops).visibility = View.VISIBLE
         findViewById<View>(R.id.layoutNew).visibility = View.VISIBLE
-        findViewById<View>(R.id.layoutNewStops).visibility = if (newMode) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.layoutNewStops).visibility = View.GONE
         findViewById<View>(R.id.btnUseExistingRoute).visibility = if (newMode) View.VISIBLE else View.GONE
         findViewById<View>(R.id.btnUseNewRoute).visibility = if (newMode) View.GONE else View.VISIBLE
         findViewById<TextView>(R.id.tvModeHint).setText(if (newMode) R.string.ar_new_route_intro else R.string.ar_existing_route_intro)
@@ -407,6 +408,12 @@ class AddRouteActivity : AppCompatActivity() {
     }
 
     private fun addNewStop() {
+        // New routes use the exact same stop row editor as existing-route details.
+        val last = existingRows.lastOrNull()
+        if (last != null && last.line != null) {
+            insertStopAfter(last.line!!, last)
+            return
+        }
         val pad = (8 * resources.displayMetrics.density).toInt()
         val line = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, pad, 0, pad) }
         val name = placeAutoComplete(getString(R.string.ar_custom_stop_name)).apply {
@@ -417,17 +424,20 @@ class AddRouteActivity : AppCompatActivity() {
             setBackgroundResource(R.drawable.bg_input)
             setPadding(pad * 2, pad, pad * 2, pad)
         }
-        val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, pad, 0, 0) }
+        val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val time = timeBox()
-        val remove = Button(this).apply { text = "−"; setOnClickListener { val row = newRows.find { it.name === name }; if (row != null) newRows.remove(row); newStopsBox.removeView(line) } }
-        val row = NewStop(name, time)
+        val row = ExistingStop(null, time, nameEdit = name, line = line)
         time.setOnClickListener {
             pickTime(row.time) { t ->
-                if (t == null || fitsOrder(newRow = row, newTime = t)) { row.time = t; showTime(time, t) }
+                if (t == null || fitsOrder(existingRow = row, existingTime = t)) { row.time = t; showTime(time, t) }
             }
         }
-        controls.addView(time, LinearLayout.LayoutParams(0, -2, 1f)); controls.addView(remove)
-        line.addView(name); line.addView(controls); newStopsBox.addView(line); newRows.add(row)
+        val remove = Button(this).apply { text = "−"; setOnClickListener { existingRows.remove(row); stopsBox.removeView(line) } }
+        controls.addView(time, LinearLayout.LayoutParams(0, -2, 1f))
+        controls.addView(plusButton { insertStopAfter(line, row) })
+        controls.addView(remove)
+        line.addView(name); line.addView(controls)
+        stopsBox.addView(line); existingRows.add(row)
     }
 
     private fun timeBox(): TextView {
@@ -459,8 +469,7 @@ class AddRouteActivity : AppCompatActivity() {
     ): List<String?> {
         val out = ArrayList<String?>()
         out.add(replaceStart ?: startTime)
-        if (isNew) newRows.forEach { out.add(if (it === newRow) newTime else it.time) }
-        else existingRows.forEach { out.add(if (it === existingRow) existingTime else it.time) }
+        existingRows.forEach { out.add(if (it === existingRow) existingTime else it.time) }
         return out
     }
 
@@ -487,28 +496,18 @@ class AddRouteActivity : AppCompatActivity() {
         val service = findViewById<EditText>(R.id.etService).text.toString().trim()
 
         val stops = JSONArray()
-        if (isNew) {
-            for (row in newRows) {
-                val name = row.name.text.toString().trim()
-                if (name.isNotBlank()) {
-                    stops.put(JSONObject().put("name", name).put("time", row.time ?: JSONObject.NULL))
-                }
+        for (row in existingRows) {
+            val nm = row.nameEdit?.text?.toString()?.trim().orEmpty()
+            if (nm.isBlank()) {
+                Toast.makeText(this, R.string.ar_stop_name_required, Toast.LENGTH_SHORT).show()
+                return
             }
-        } else {
-            for (row in existingRows) {
-                val nm = row.nameEdit?.text?.toString()?.trim().orEmpty()
-                if (nm.isBlank()) {
-                    Toast.makeText(this, R.string.ar_stop_name_required, Toast.LENGTH_SHORT).show()
-                    return
-                }
-                stops.put(JSONObject()
-                    .put("place", row.placeId ?: JSONObject.NULL)
-                    .put("name", nm)
-                    .put("time", row.time ?: JSONObject.NULL))
-            }
+            stops.put(JSONObject()
+                .put("place", row.placeId ?: JSONObject.NULL)
+                .put("name", nm)
+                .put("time", row.time ?: JSONObject.NULL))
         }
-        val anyTime = !startTime.isNullOrBlank() ||
-            if (isNew) newRows.any { !it.time.isNullOrBlank() } else existingRows.any { !it.time.isNullOrBlank() }
+        val anyTime = !startTime.isNullOrBlank() || existingRows.any { !it.time.isNullOrBlank() }
         if (!anyTime) {
             Toast.makeText(this, R.string.ar_need_time, Toast.LENGTH_LONG).show()
             return
