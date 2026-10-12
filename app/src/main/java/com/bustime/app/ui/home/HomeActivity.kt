@@ -1,6 +1,8 @@
 package com.bustime.app.ui.home
 
 import android.os.Bundle
+import android.view.MotionEvent
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -76,6 +78,45 @@ class HomeActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                swipeStartX = event.rawX
+                swipeStartY = event.rawY
+                val container = findViewById<View>(R.id.fragmentContainer)
+                if (container != null) {
+                    val location = IntArray(2)
+                    container.getLocationOnScreen(location)
+                    swipeStartedInContent = event.rawX >= location[0] &&
+                        event.rawX <= location[0] + container.width &&
+                        event.rawY >= location[1] &&
+                        event.rawY <= location[1] + container.height
+                } else {
+                    swipeStartedInContent = false
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                val dx = event.rawX - swipeStartX
+                val dy = event.rawY - swipeStartY
+                val minSwipe = 72 * resources.displayMetrics.density
+                val shouldSwitch = swipeStartedInContent &&
+                    kotlin.math.abs(dx) >= minSwipe &&
+                    kotlin.math.abs(dy) < minSwipe
+                val handled = super.dispatchTouchEvent(event)
+                swipeStartedInContent = false
+                if (shouldSwitch) {
+                    val nextTab = currentTab + if (dx < 0) 1 else -1
+                    if (nextTab in 0..2) {
+                        findViewById<TabLayout>(R.id.tabLayout).getTabAt(nextTab)?.select()
+                    }
+                }
+                return handled
+            }
+            MotionEvent.ACTION_CANCEL -> swipeStartedInContent = false
+        }
+        return super.dispatchTouchEvent(event)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
