@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 23,
+  "dataVersion": 24,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -240,8 +240,12 @@
         },
         {
           "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
         }
-      ]
+      ],
+      "longRoute": false
     }
   ],
   "taxiSeaters": [
