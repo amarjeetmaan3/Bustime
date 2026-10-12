@@ -237,6 +237,8 @@ class AddRouteActivity : AppCompatActivity() {
         setMode(true)
 
         findViewById<Button>(R.id.btnAddNewStop).setOnClickListener { addNewStop() }
+        findViewById<Button>(R.id.btnUseExistingRoute).setOnClickListener { setMode(false) }
+        findViewById<Button>(R.id.btnUseNewRoute).setOnClickListener { setMode(true) }
         tvStart.setOnClickListener {
             pickTime(startTime) { t ->
                 if (t == null || fitsOrder(replaceStart = t)) { startTime = t; showTime(tvStart, t) }
@@ -245,15 +247,23 @@ class AddRouteActivity : AppCompatActivity() {
         btnSubmit.setOnClickListener { submit() }
 
         lifecycleScope.launch {
-            routes = repo.getAllRoutes().distinctBy { it.fromId + ">" + it.toId }
+            routes = repo.getAllRoutes()
             val ids = routes.flatMap { listOf(it.fromId, it.toId) }.toSet()
             val names = repo.getPlacesById(ids)
             val lang = LanguageHelper.current()
-            val labels = routes.map { "${names[it.fromId]?.displayName(lang) ?: it.fromId} → ${names[it.toId]?.displayName(lang) ?: it.toId}" }
+            val labels = routes.map { route ->
+                val endpoints = "${names[route.fromId]?.displayName(lang) ?: route.fromId} → ${names[route.toId]?.displayName(lang) ?: route.toId}"
+                if (route.time.isNotBlank()) "$endpoints • ${route.time}" else endpoints
+            }
             spinner.adapter = ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_spinner_dropdown_item, labels)
             spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    if (position in routes.indices) loadStops(routes[position])
+                    if (position in routes.indices) {
+                        val route = routes[position]
+                        findViewById<EditText>(R.id.etFromText).setText(names[route.fromId]?.displayName(lang) ?: route.fromId)
+                        findViewById<EditText>(R.id.etToText).setText(names[route.toId]?.displayName(lang) ?: route.toId)
+                        loadStops(route)
+                    }
                 }
                 override fun onNothingSelected(parent: AdapterView<*>?) = Unit
             }
@@ -298,7 +308,8 @@ class AddRouteActivity : AppCompatActivity() {
                     gravity = Gravity.CENTER_VERTICAL
                 }
                 val time = timeBox()
-                val row = ExistingStop(stop.placeId, time, nameEdit = name, line = line)
+                val row = ExistingStop(stop.placeId, time, time = stop.time, nameEdit = name, line = line)
+                showTime(time, row.time)
                 time.setOnClickListener {
                     pickTime(row.time) { t ->
                         if (t == null || fitsOrder(existingRow = row, existingTime = t)) {
@@ -441,7 +452,7 @@ class AddRouteActivity : AppCompatActivity() {
         val fromText = findViewById<EditText>(R.id.etFromText).text.toString().trim()
         val toText = findViewById<EditText>(R.id.etToText).text.toString().trim()
         val route = selected
-        if (isNew && (fromText.isBlank() || toText.isBlank())) { Toast.makeText(this, R.string.ar_custom_need_endpoints, Toast.LENGTH_SHORT).show(); return }
+        if (fromText.isBlank() || toText.isBlank()) { Toast.makeText(this, R.string.ar_custom_need_endpoints, Toast.LENGTH_SHORT).show(); return }
         if (!isNew && route == null) { Toast.makeText(this, R.string.ar_pick_route, Toast.LENGTH_SHORT).show(); return }
         val phone = findViewById<EditText>(R.id.etPhone).text.toString().filter { it.isDigit() }
         if (phone.length !in 10..13) { Toast.makeText(this, R.string.ar_need_phone, Toast.LENGTH_SHORT).show(); return }
@@ -467,6 +478,11 @@ class AddRouteActivity : AppCompatActivity() {
                     .put("name", nm)
                     .put("time", row.time ?: JSONObject.NULL))
             }
+        }
+        val anyTime = startTime != null || if (isNew) newRows.any { it.time != null } else existingRows.any { it.time != null }
+        if (!anyTime) {
+            Toast.makeText(this, R.string.ar_need_time, Toast.LENGTH_LONG).show()
+            return
         }
         if (TimeFlow.resolve(orderedTimes()).badIndex >= 0) { Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show(); return }
 
