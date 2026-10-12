@@ -43,6 +43,8 @@ class AddRouteActivity : AppCompatActivity() {
     private class NewStop(val name: EditText, val timeView: TextView, var time: String? = null)
     private data class PlaceSuggestion(
         val placeId: String,
+        val namesByLanguage: Map<String, String>,
+        val fallbackName: String,
         val selectedName: String,
         val label: String,
         val searchableNames: List<String>
@@ -56,6 +58,47 @@ class AddRouteActivity : AppCompatActivity() {
         "hi" -> listOf("hi", "en", "pa")
         "pa" -> listOf("pa", "hi", "en")
         else -> listOf("en", "hi", "pa")
+    }
+
+    /**
+     * Android doesn't reliably expose the active keyboard language. Detect the
+     * script the user is actually typing, and fall back to the app language when
+     * the field is empty or the text has no recognizable script.
+     */
+    private fun typedLanguage(query: String, fallback: String): String {
+        var punjabi = 0
+        var hindi = 0
+        var english = 0
+        query.codePoints().forEach { codePoint ->
+            when (codePoint) {
+                in 0x0A00..0x0A7F -> punjabi++
+                in 0x0900..0x097F -> hindi++
+                in 0x0041..0x005A, in 0x0061..0x007A -> english++
+            }
+        }
+        return when {
+            punjabi > hindi && punjabi > english -> "pa"
+            hindi > punjabi && hindi > english -> "hi"
+            english > 0 && english >= hindi && english >= punjabi -> "en"
+            hindi > 0 -> "hi"
+            punjabi > 0 -> "pa"
+            else -> fallback
+        }
+    }
+
+    private fun suggestionForLanguage(item: PlaceSuggestion, lang: String): PlaceSuggestion {
+        val orderedNames = languageOrder(lang).mapNotNull { code ->
+            item.namesByLanguage[code]?.trim()?.takeIf { it.isNotBlank() }
+        }.distinct()
+        val selected = item.namesByLanguage[lang]?.trim()?.takeIf { it.isNotBlank() }
+            ?: languageOrder(lang).firstNotNullOfOrNull { code ->
+                item.namesByLanguage[code]?.trim()?.takeIf { it.isNotBlank() }
+            }
+            ?: item.fallbackName
+        return item.copy(
+            selectedName = selected,
+            label = (orderedNames.ifEmpty { listOf(selected) }).joinToString(" • ")
+        )
     }
 
     /**
@@ -87,9 +130,10 @@ class AddRouteActivity : AppCompatActivity() {
             override fun performFiltering(constraint: CharSequence?): FilterResults {
                 val query = constraint?.toString()?.trim()?.lowercase()
                     ?.replace(Regex("\\s+"), " ").orEmpty()
-                val matches = if (query.isBlank()) allItems else allItems.filter { item ->
+                val lang = typedLanguage(query, LanguageHelper.current())
+                val matches = (if (query.isBlank()) allItems else allItems.filter { item ->
                     item.searchableNames.any { name -> name.lowercase().contains(query) }
-                }
+                }).map { item -> suggestionForLanguage(item, lang) }
                 return FilterResults().apply {
                     values = matches
                     count = matches.size
@@ -136,20 +180,25 @@ class AddRouteActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val all = withContext(Dispatchers.IO) { repo.getAllPlaces() }
             val lang = LanguageHelper.current()
-            val order = languageOrder(lang)
-            // One suggestion per saved place. The selected app language comes first,
-            // followed by the other languages; selecting it fills only that language's name.
+            // Keep one record per saved place. The dropdown label and selected
+            // name are reordered per the script actually typed into this field.
             placeSuggestions = all.map { place ->
-                val labels = order.mapNotNull { code ->
-                    place.names[code]?.trim()?.takeIf { it.isNotBlank() }
-                }.distinct()
-                val label = labels.ifEmpty { listOf(place.displayName(lang)) }.joinToString(" • ")
-                PlaceSuggestion(
-                    place.id,
-                    place.displayName(lang),
-                    label,
-                    (place.names.values + labels).map { it.trim() }.filter { it.isNotBlank() }.distinct()
+                val names = place.names.mapNotNull { (code, value) ->
+                    value.trim().takeIf { it.isNotBlank() }?.let { code to it }
+                }.toMap()
+                val fallback = place.displayName(lang)
+                val initial = suggestionForLanguage(
+                    PlaceSuggestion(
+                        place.id,
+                        names,
+                        fallback,
+                        fallback,
+                        fallback,
+                        names.values.distinct()
+                    ),
+                    lang
                 )
+                initial
             }.distinctBy { it.placeId }
                 .sortedBy { it.label.lowercase() }
 
