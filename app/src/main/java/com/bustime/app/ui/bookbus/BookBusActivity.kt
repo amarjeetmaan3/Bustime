@@ -44,7 +44,7 @@ class BookBusActivity : AppCompatActivity() {
             }
             val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
             val allRows = (0 until rows.length()).map { rows.getJSONObject(it) }
-            if (allRows.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = "No approved bus operators are listed yet."; textSize = 15f; setPadding(0, 8, 0, 8) })
+            if (allRows.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_no_operators); textSize = 15f; setPadding(0, 8, 0, 8) })
             for (item in allRows) {
                 val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(getColor(com.bustime.app.R.color.surfaceVariant)); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
                 val name = item.optString("operator_name", "Bus Operator")
