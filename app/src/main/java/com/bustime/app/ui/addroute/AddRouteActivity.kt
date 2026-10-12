@@ -85,7 +85,10 @@ class AddRouteActivity : AppCompatActivity() {
         toggle.addOnButtonCheckedListener { _, checkedId, checked ->
             if (checked) setMode(checkedId == R.id.btnModeNew)
         }
-        setMode(false)
+        // Add Route is intentionally a single "New Route" flow. Preserve the raw
+        // user-entered place name even when it is Hindi or Punjabi.
+        toggle.visibility = View.GONE
+        setMode(true)
 
         findViewById<Button>(R.id.btnAddNewStop).setOnClickListener { addNewStop() }
         tvStart.setOnClickListener {
@@ -327,13 +330,12 @@ class AddRouteActivity : AppCompatActivity() {
         if (TimeFlow.resolve(orderedTimes()).badIndex >= 0) { Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show(); return }
 
         val body = JSONObject()
-            .put("submission_type", if (isNew) "new_route" else "edit_existing_route")
-            .put("route_id", if (!isNew) route!!.id else JSONObject.NULL)
-            .put("from_id", if (!isNew) route!!.fromId else JSONObject.NULL)
-            .put("to_id", if (!isNew) route!!.toId else JSONObject.NULL)
-            .put("from_text", if (isNew) fromText else JSONObject.NULL)
-            .put("to_text", if (isNew) toText else JSONObject.NULL)
-            .put("route_text", if (isNew) "$fromText → $toText" else JSONObject.NULL)
+            .put("submission_type", "new_route")
+            .put("from_id", JSONObject.NULL)
+            .put("to_id", JSONObject.NULL)
+            .put("from_text", fromText)
+            .put("to_text", toText)
+            .put("route_text", "$fromText → $toText")
             .put("start_time", startTime ?: JSONObject.NULL)
             .put("service_name", if (service.isBlank()) JSONObject.NULL else service)
             .put("stops", stops)
