@@ -233,6 +233,7 @@ var community = { corrections:null, vehicles:null, feedback:null, busSubmissions
 var communityStatus = 'pending';
 var communitySection = 'all';
 var editing = null;
+var routeReviewEditor = null;
 var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
@@ -1036,13 +1037,84 @@ function applyApprovedCorrection(x) {
   setDirty(true);
 }
 
+// ============ Multilingual route review ============
+function reviewNamesForPlace(id, rawName) {
+  var p = id ? placeById(id) : null, source = p && p.name ? p.name : {};
+  return { en:String(rawName || source.en || '').trim(), hi:String(source.hi || '').trim(), pa:String(source.pa || '').trim() };
+}
+function reviewNameInputs(key, names) {
+  names = names || {};
+  return '<div class="row2" style="margin-top:8px"><div><label>English</label><input data-rv-name="' + esc(key) + '" data-lang="en" value="' + esc(names.en || '') + '"></div><div><label>Hindi</label><input data-rv-name="' + esc(key) + '" data-lang="hi" value="' + esc(names.hi || '') + '"></div></div><label>Punjabi</label><input data-rv-name="' + esc(key) + '" data-lang="pa" value="' + esc(names.pa || '') + '">';
+}
+function routeReviewEditorHtml() {
+  var i = routeReviewEditor.index, sub = subs && subs[i], v = subCardValues(i);
+  if (!sub || !v) return '<p class="alert err">This request form is unavailable. Close and refresh submissions.</p>';
+  var fromNames = reviewNamesForPlace(sub.from_id, v.from || sub.from_text);
+  var toNames = reviewNamesForPlace(sub.to_id, v.to || sub.to_text);
+  var stopHtml = v.stops.map(function(st, index) {
+    return '<div class="card" style="padding:12px;margin:12px 0" data-rv-stop="' + index + '" data-place="' + esc(st.place || '') + '"><b>Stop ' + (index + 1) + '</b>' +
+      reviewNameInputs('stop-' + index, reviewNamesForPlace(st.place, st.name)) +
+      '<label>Stop time (optional)</label><input type="time" data-rv-time="' + index + '" value="' + esc(st.time || '') + '"></div>';
+  }).join('');
+  return '<p class="muted">Review before approving. Contributor text is preserved in English; edit Hindi and Punjabi translations here. Blank stop times are allowed, but at least one valid route time is required.</p>' +
+    '<label>Service / bus name</label><input id="rv_service" value="' + esc(v.service || '') + '">' +
+    '<label>Starting place</label>' + reviewNameInputs('from', fromNames) +
+    '<label>Destination</label>' + reviewNameInputs('to', toNames) +
+    '<label>Departure time</label><input id="rv_start" type="time" value="' + esc(v.start || '') + '">' +
+    '<h3 style="margin-top:18px">Stops and timings</h3>' + (stopHtml || '<p class="muted">No intermediate stops submitted.</p>') +
+    '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="sb-final-approve" data-i="' + i + '">Save translations &amp; approve</button></div>';
+}
+function routeReviewValues() {
+  if (!routeReviewEditor) return null;
+  var body = $('#dlgBody');
+  if (!body) return null;
+  function field(selector) { var e = body.querySelector(selector); return e && typeof e.value === 'string' ? e.value.trim() : ''; }
+  function names(key) {
+    var out = {};
+    body.querySelectorAll('[data-rv-name="' + key + '"]').forEach(function(e) {
+      var value = String(e.value || '').trim(); if (value) out[e.getAttribute('data-lang')] = value;
+    });
+    return out;
+  }
+  var stops = [];
+  body.querySelectorAll('[data-rv-stop]').forEach(function(row) {
+    var index = row.getAttribute('data-rv-stop'), nameMap = names('stop-' + index), timeEl = row.querySelector('[data-rv-time]');
+    stops.push({place:row.getAttribute('data-place') || null, names:nameMap, name:nameMap.en || nameMap.hi || nameMap.pa || '',
+      time:timeEl && TIME_RE.test(timeEl.value || '') ? timeEl.value : null});
+  });
+  var fromNames = names('from'), toNames = names('to');
+  return {fromNames:fromNames,toNames:toNames,from:fromNames.en || fromNames.hi || fromNames.pa || '',
+    to:toNames.en || toNames.hi || toNames.pa || '',start:field('#rv_start'),service:field('#rv_service'),stops:stops};
+}
+function ensureReviewedPlace(names, preferredId) {
+  names = names || {}; var clean = {};
+  ['en','hi','pa'].forEach(function(lang){var value=String(names[lang] || '').trim();if(value)clean[lang]=value;});
+  var primary=clean.en || clean.hi || clean.pa || '';
+  if (!primary) return preferredId && placeById(preferredId) ? preferredId : null;
+  function norm(v){return String(v || '').trim().toLowerCase().replace(/\s+/g,' ');}
+  var place=preferredId ? placeById(preferredId) : null;
+  if (!place) {
+    var variants=Object.keys(clean).map(function(k){return norm(clean[k]);});
+    place=data.places.find(function(p){return Object.keys(p.name || {}).some(function(k){return variants.indexOf(norm(p.name[k]))>=0;});}) || null;
+  }
+  if (!place) { place={id:makeId('place_user_',primary,function(candidate){return !!placeById(candidate);}),kind:'place',name:{},aliases:[]};data.places.push(place); }
+  place.name=place.name || {};
+  ['en','hi','pa'].forEach(function(lang){if(clean[lang])place.name[lang]=clean[lang];});
+  setDirty(true); return place.id;
+}
+
 // ============ Dialog ============
 function foot(saveAct) {
   return '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="' + saveAct + '">Save</button></div>';
 }
 function renderModal() {
   var ov = $('#overlay');
-  if (publishOpen) {
+  if (routeReviewEditor) {
+    var reviewSub = subs && subs[routeReviewEditor.index];
+    $('#dlgTitle').textContent = 'Review route submission' + (reviewSub && reviewSub.service_name ? ' · ' + reviewSub.service_name : '');
+    $('#dlgBody').innerHTML = routeReviewEditorHtml();
+    ov.classList.add('show');
+  } else if (publishOpen) {
     var v = validate();
     $('#dlgTitle').textContent = 'Publish changes';
     $('#dlgBody').innerHTML = '<p class="muted" style="margin-top:14px">Data version will change from ' + baseVersion + ' to ' + (baseVersion + 1) +
@@ -1086,18 +1158,18 @@ document.addEventListener('change', function (e) {
 document.addEventListener('input', function (e) { if (e.target && (e.target.id === 'fp_hi' || e.target.id === 'fp_pa')) e.target.dataset.autofilled = 'false'; });
 
 document.addEventListener('click', async function (e) {
-  if (e.target.id === 'overlay') { editing = null; publishOpen = false; render(); return; }
+  if (e.target.id === 'overlay') { editing = null; routeReviewEditor = null; publishOpen = false; render(); return; }
   var b = e.target.closest('[data-act]');
   if (!b) return;
   var act = b.getAttribute('data-act'), i = parseInt(b.getAttribute('data-i'), 10);
   try {
     if (act === 'analytics-refresh') { loadAnalytics(); }
     else if (act === 'tab') {
-      tab = b.getAttribute('data-t'); editing = null; publishOpen = false; render();
+      tab = b.getAttribute('data-t'); editing = null; routeReviewEditor = null; publishOpen = false; render();
       if (tab === 'analytics' && sbToken) { loadAnalytics(); }
       if (['review','busRequests','taxiReview','autoReview','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
-    else if (act === 'close') { editing = null; publishOpen = false; render(); }
+    else if (act === 'close') { editing = null; routeReviewEditor = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
     else if (act === 'save-cfg') {
       cfg.owner = val('c_owner'); cfg.repo = val('c_repo'); cfg.branch = val('c_branch');
@@ -1260,7 +1332,17 @@ document.addEventListener('click', async function (e) {
       subs.splice(i, 1); toast('Rejected request deleted'); render();
     }
     else if (act === 'sb-approve') {
-      var sub = subs && subs[i], v = subCardValues(i);
+      if (!subs || !subs[i] || !document.querySelector('[data-sub="' + i + '"]')) {
+        toast('This request form is no longer available. Refresh the submissions list and try again.'); return;
+      }
+      routeReviewEditor = { index:i }; editing = null; publishOpen = false; render(); return;
+    }
+    else if (act === 'sb-final-approve') {
+      var sub = subs && subs[i], v = routeReviewValues();
+      if (!sub || !v || !routeReviewEditor || routeReviewEditor.index !== i) {
+        toast('This review editor is no longer available. Refresh submissions and try again.'); routeReviewEditor = null; render(); return;
+      }
+      if (!v.from || !v.to) { toast('Enter a name for both From and To.'); return; }
       if (!sub || !v) {
         toast('This request form is no longer available. Refresh the submissions list and try again.');
         return;
@@ -1343,7 +1425,7 @@ document.addEventListener('click', async function (e) {
       var arrive = null, mid = [];
       v.stops.forEach(function (st) {
         var stopPlace = st.place;
-        if (st.name) stopPlace = ensureSubmittedPlace(st.name);
+        if (st.name) stopPlace = ensureReviewedPlace(st.names || {en:st.name}, st.place);
         if (stopPlace === toId) arrive = st.time;
         else if (stopPlace && stopPlace !== fromId && placeById(stopPlace)) { var o = { place:stopPlace }; if (st.time) o.time = st.time; if (st.day_offset != null) o.day_offset = st.day_offset; mid.push(o); }
       });
@@ -1354,7 +1436,7 @@ document.addEventListener('click', async function (e) {
       if (mid.length) nr.stops = mid;
       data.routes.push(nr); setDirty(true);
       await sbFetch('/rest/v1/route_submissions?id=eq.' + sub.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'approved' }) });
-      subs[i].status = 'approved'; toast('Approved and retained in Approved list. Press Publish to make it live.'); render();
+      subs[i].status = 'approved'; routeReviewEditor = null; toast('Approved and retained in Approved list. Press Publish to make it live.'); render();
     }
 
     // ---- community requests ----
