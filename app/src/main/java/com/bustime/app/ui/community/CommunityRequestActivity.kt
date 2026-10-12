@@ -54,12 +54,13 @@ class CommunityRequestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mode = intent.getStringExtra("mode") ?: "feedback"
-        title = when (mode) { "correction" -> getString(com.bustime.app.R.string.community_title_correction); "vehicle" -> getString(com.bustime.app.R.string.community_title_vehicle); "bus_operator" -> getString(com.bustime.app.R.string.community_title_bus); "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") getString(com.bustime.app.R.string.community_title_taxi_correction) else getString(com.bustime.app.R.string.community_title_auto_correction); else -> getString(com.bustime.app.R.string.community_title_feedback) }
+        val screenTitle = when (mode) { "correction" -> getString(com.bustime.app.R.string.community_title_correction); "vehicle" -> getString(com.bustime.app.R.string.community_title_vehicle); "bus_operator" -> getString(com.bustime.app.R.string.community_title_bus); "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") getString(com.bustime.app.R.string.community_title_taxi_correction) else getString(com.bustime.app.R.string.community_title_auto_correction); else -> getString(com.bustime.app.R.string.community_title_feedback) }
+        title = screenTitle
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll)
-        if (mode == "correction" || mode == "bus_operator") text(title, 18f)
-        else text("${title}\n${getString(com.bustime.app.R.string.community_review_notice)}", 18f)
+        if (mode == "correction" || mode == "bus_operator") text(screenTitle, 18f)
+        else text("$screenTitle\n${getString(com.bustime.app.R.string.community_review_notice)}", 18f)
         when (mode) {
             "correction" -> loadCorrectionForm()
             "vehicle" -> vehicleForm()
