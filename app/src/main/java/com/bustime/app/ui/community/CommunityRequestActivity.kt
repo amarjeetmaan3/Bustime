@@ -156,7 +156,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                 hint = if (index == 0) "Start stop" else if (index == correctionDrafts.lastIndex) "Destination" else "Stop name"
                 threshold = 1
                 textSize = 14f
-                singleLine = true
+                setSingleLine(true)
                 setTextColor(textColor)
                 setHintTextColor(if (textColor == android.graphics.Color.WHITE) 0xFFAAAAAA.toInt() else 0xFF777777.toInt())
                 setPadding(dp(5), 0, dp(3), 0)
