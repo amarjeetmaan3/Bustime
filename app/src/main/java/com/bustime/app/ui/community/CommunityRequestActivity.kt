@@ -203,8 +203,17 @@ class CommunityRequestActivity : AppCompatActivity() {
         text("Enter bus details for admin review. Your listing appears publicly only after approval.", 14f)
         field("service_name", "Service name")
         field("operator_name", "Bus owner name")
-        val categories = CommunitySupabase.getBusCategories().ifEmpty { listOf("Ordinary", "Luxury", "Sleeper", "Sleeper Plus", "Seater Plus", "Seater", "Sleeper + Seater", "Custom") }
-        spinner("Bus category", categories, "bus_type")
+        val defaultCategories = listOf("Ordinary", "Luxury", "Sleeper", "Sleeper Plus", "Seater Plus", "Seater", "Sleeper + Seater", "Custom")
+        val categorySpinner = spinner("Bus category", defaultCategories, "bus_type")
+        lifecycleScope.launch {
+            val categories = withContext(Dispatchers.IO) { CommunitySupabase.getBusCategories() }
+            if (categories.isNotEmpty()) {
+                val selected = categorySpinner.selectedItem?.toString()
+                categorySpinner.adapter = ArrayAdapter(this@CommunityRequestActivity, android.R.layout.simple_spinner_dropdown_item, categories)
+                val index = categories.indexOf(selected)
+                if (index >= 0) categorySpinner.setSelection(index)
+            }
+        }
         field("custom_category", "Describe your specific bus type / variant (required for every category)")
         field("sleeper_count", "Number of sleeper berths")
         field("seater_count", "Number of seater seats")
