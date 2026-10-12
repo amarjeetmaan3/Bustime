@@ -913,7 +913,7 @@ function viewCommunity(mode) {
     } else if (x._kind === 'vehicles') {
       details = '<p><b>'+esc(x.vehicle_type)+'</b> · '+esc(x.person_name)+' · '+esc(x.vehicle_name)+' · Model '+esc(x.vehicle_model_number||'-')+' · Vehicle No. '+esc(x.vehicle_number||'-')+' · Seats '+esc(x.seats||'-')+'</p><p><b>Service area:</b> '+esc(x.area_name||x.location||'-')+' · <b>Union:</b> '+esc(x.union_name||'-')+' · <b>Fuel:</b> '+esc(x.fuel_type||'-')+'</p><p>'+esc(x.phone)+'</p><p>'+esc(x.details||'')+'</p>';
     } else if (x._kind === 'busSubmissions') {
-      details = '<p><b>Operator:</b> '+esc(x.operator_name)+' · <b>Service:</b> '+esc(x.service_name||'-')+'</p><p><b>Category:</b> '+esc(x.bus_type)+' · <b>Seat config:</b> '+esc(x.seat_type||'-')+' · <b>Sleeper berths:</b> '+esc(x.sleeper_count==null?'-':x.sleeper_count)+' · <b>Seats:</b> '+esc(x.seater_count==null?'-':x.seater_count)+'</p><p><b>Route:</b> '+esc(x.from_text||'-')+' → '+esc(x.to_text||'-')+' · <b>Area:</b> '+esc(x.location||'-')+'</p><p><b>Phone:</b> '+esc(x.phone)+' · <b>WhatsApp:</b> '+esc(x.whatsapp||'-')+'</p><p>'+esc(x.details||'')+'</p>';
+      details = '<p><b>Operator:</b> '+esc(x.operator_name)+' · <b>Service:</b> '+esc(x.service_name||'-')+'</p><p><b>Category:</b> '+esc(x.bus_type)+' · <b>Variant:</b> '+esc(x.custom_category||'-')+' · <b>Seat config:</b> '+esc(x.seat_type||'-')+' · <b>Sleeper berths:</b> '+esc(x.sleeper_count==null?'-':x.sleeper_count)+' · <b>Seats:</b> '+esc(x.seater_count==null?'-':x.seater_count)+'</p><p><b>Operating area:</b> '+esc(x.location||'-')+'</p><p><b>Phone:</b> '+esc(x.phone)+' · <b>WhatsApp:</b> '+esc(x.whatsapp||'-')+'</p><p>'+esc(x.details||'')+'</p>';
     } else {
       details = '<p><b>'+esc(x.category)+'</b> · Route '+esc(x.related_route||'-')+'</p><p>'+esc(x.message)+'</p><p class="muted">Contact: '+esc(x.contact||'-')+'</p>';
     }
@@ -926,7 +926,7 @@ function viewCommunity(mode) {
       '<div class="row2"><div><label>Bus type / custom category</label><input id="op_type" placeholder="AC / Sleeper / Prime A"></div><div><label>Phone</label><input id="op_phone"></div></div>'+
       '<div class="row2"><div><label>Seat configuration</label><input id="op_seat_type" placeholder="Sleeper / Seater / Both"></div><div><label>WhatsApp</label><input id="op_whatsapp"></div></div>'+
       '<div class="row2"><div><label>Sleeper berths</label><input id="op_sleeper_count" type="number" min="0"></div><div><label>Seats</label><input id="op_seater_count" type="number" min="0"></div></div>'+
-      '<div class="row2"><div><label>From</label><input id="op_from"></div><div><label>To</label><input id="op_to"></div></div>'+
+      
       '<label>Operating area</label><input id="op_location"><label>Details</label><input id="op_details"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-add">Add operator</button></div></div>';
     html += '<div class="card"><h2>Manage bus categories</h2><p class="muted">Categories added here appear in the Add Your Bus form. Operators can enter a specific variant for any category.</p><div class="row2"><div><label>New category name</label><input id="bus_category_name" placeholder="e.g. Seater Plus"></div><div style="display:flex;align-items:end"><button class="btn primary" data-act="category-add">Add category</button></div></div><div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Category</th><th>Status</th><th></th></tr></thead><tbody>'+(community.categories||[]).map(function(cat){return '<tr><td>'+esc(cat.name)+'</td><td>'+(cat.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="category-toggle" data-id="'+esc(cat.id)+'" data-active="'+(!cat.active)+'">'+(cat.active?'Hide':'Activate')+'</button></td></tr>';}).join('')+'</tbody></table></div></div>';
     html += '<div class="card"><h2>Published operator listings <span class="badge gray">' + community.operators.length + '</span></h2><div class="tablewrap"><table><thead><tr><th>Operator</th><th>Service / type</th><th>Operating area</th><th>Phone</th><th>Visibility</th><th></th></tr></thead><tbody>' +
@@ -1339,7 +1339,7 @@ document.addEventListener('click', async function (e) {
         }
       } else if (!confirm('Reject this request?')) return;
       await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({status:act==='community-approve'?'approved':'rejected'}) });
-      record.status = act==='community-approve'?'approved':'rejected'; toast(act==='community-approve'?'Approved. If route data changed, press Publish to make it live.':'Moved to Rejected.'); render();
+      record.status = act==='community-approve'?'approved':'rejected'; toast(act==='community-approve'?(kind==='vehicles'?'Approved in Admin data. Press Publish at the top to make this Taxi/Auto listing visible in the app.':kind==='busSubmissions'?'Bus operator approved and published to the operator directory.':'Approved. If route data changed, press Publish to make it live.'):'Moved to Rejected.'); render();
     }
     else if (act === 'community-delete') {
       var dk=b.getAttribute('data-kind'), did=b.getAttribute('data-id'), dtable=communityTable(dk);
@@ -1363,7 +1363,7 @@ document.addEventListener('click', async function (e) {
     else if (act === 'operator-add') {
       var on=val('op_name'), op=val('op_phone').replace(/[^+0-9 -]/g,'');
       if (!on || op.replace(/\D/g,'').length<9) { toast('Enter operator name and valid phone.'); return; }
-      await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:val('op_service')||null,bus_type:val('op_type')||'Bus',seat_type:val('op_seat_type')||null,sleeper_count:parseInt(val('op_sleeper_count'),10)||null,seater_count:parseInt(val('op_seater_count'),10)||null,phone:op,whatsapp:val('op_whatsapp')||null,location:val('op_location')||null,from_text:val('op_from')||null,to_text:val('op_to')||null,details:val('op_details')||null,active:true})});
+      await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:val('op_service')||null,bus_type:val('op_type')||'Bus',seat_type:val('op_seat_type')||null,sleeper_count:parseInt(val('op_sleeper_count'),10)||null,seater_count:parseInt(val('op_seater_count'),10)||null,phone:op,whatsapp:val('op_whatsapp')||null,location:val('op_location')||null,from_text:val('op_from')||null,to_text:null,details:val('op_details')||null,active:true})});
       await loadCommunity(); toast('Operator added and published.'); render();
     }
     else if (act === 'operator-toggle') {
