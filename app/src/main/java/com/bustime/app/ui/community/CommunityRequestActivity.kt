@@ -119,35 +119,57 @@ class CommunityRequestActivity : AppCompatActivity() {
     private fun renderCorrectionList() {
         val box = correctionEditor ?: return
         box.removeAllViews()
-        correctionDrafts.toList().forEachIndexed { index, draft ->
-            val card = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(10), dp(8), dp(10), dp(10))
+        val bg = android.util.TypedValue()
+        val fg = android.util.TypedValue()
+        theme.resolveAttribute(android.R.attr.colorBackground, bg, true)
+        theme.resolveAttribute(android.R.attr.textColorPrimary, fg, true)
+        val surfaceColor = if (bg.resourceId != 0) androidx.core.content.ContextCompat.getColor(this, bg.resourceId) else bg.data
+        val textColor = if (fg.resourceId != 0) androidx.core.content.ContextCompat.getColor(this, fg.resourceId) else fg.data
+
+        // Compact, theme-aware rows: no large white cards and no four-button toolbar per stop.
+        correctionDrafts.forEachIndexed { index, draft ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(dp(3), dp(2), dp(3), dp(2))
+                minimumHeight = dp(54)
                 background = android.graphics.drawable.GradientDrawable().apply {
-                    setColor(android.graphics.Color.rgb(246, 248, 252))
-                    cornerRadius = dp(12).toFloat()
-                    setStroke(dp(1), android.graphics.Color.rgb(220, 226, 235))
+                    setColor(surfaceColor)
+                    cornerRadius = dp(7).toFloat()
                 }
             }
-            textIn(card, (index + 1).toString() + ". " + if (index == 0) "START" else if (index == correctionDrafts.lastIndex) "DESTINATION" else "STOP", 13f, true)
+            val number = TextView(this).apply {
+                text = (index + 1).toString()
+                textSize = 13f
+                setTextColor(textColor)
+                gravity = android.view.Gravity.CENTER
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(if (index == 0 || index == correctionDrafts.lastIndex) android.graphics.Color.rgb(44, 115, 83) else android.graphics.Color.rgb(83, 91, 108))
+                    cornerRadius = dp(14).toFloat()
+                }
+                minWidth = dp(28)
+                setPadding(dp(5), dp(3), dp(5), dp(3))
+            }
+            row.addView(number, LinearLayout.LayoutParams(dp(30), dp(28)).apply { marginEnd = dp(5) })
+
             val name = AutoCompleteTextView(this).apply {
-                hint = "Stop name — ਪੰਜਾਬੀ / हिंदी / English"
+                hint = if (index == 0) "Start stop" else if (index == correctionDrafts.lastIndex) "Destination" else "Stop name"
                 threshold = 1
-                setText(draft.optString("name"))
-                textSize = 16f
-                setPadding(dp(10), dp(8), dp(10), dp(8))
+                textSize = 14f
+                singleLine = true
+                setTextColor(textColor)
+                setHintTextColor(if (textColor == android.graphics.Color.WHITE) 0xFFAAAAAA.toInt() else 0xFF777777.toInt())
+                setPadding(dp(5), 0, dp(3), 0)
+                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                setText(draft.optString("name"), false)
             }
-            val language = draft.optString("language", LanguageHelper.current())
-            val matching = allPlaces.filter { p ->
-                val q = draft.optString("name")
-                p.names.values.any { it.equals(q, true) }
-            }.toMutableList()
-            val suggestionPlaces = allPlaces.toList()
-            fun label(p: Place): String {
-                val order = when (language) { "pa" -> listOf("pa", "hi", "en"); "hi" -> listOf("hi", "en", "pa"); else -> listOf("en", "hi", "pa") }
-                return order.mapNotNull { p.names[it]?.trim()?.takeIf { n -> n.isNotBlank() } }.distinct().joinToString(" • ")
+            val initialLang = draft.optString("language", LanguageHelper.current())
+            fun suggestionLabel(p: Place, lang: String): String {
+                val order = when (lang) { "pa" -> listOf("pa", "hi", "en"); "hi" -> listOf("hi", "en", "pa"); else -> listOf("en", "hi", "pa") }
+                return order.mapNotNull { p.names[it]?.trim()?.takeIf { v -> v.isNotBlank() } }.distinct().joinToString(" • ")
             }
-            val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, suggestionPlaces.map { label(it) })
+            var filteredPlaces = allPlaces.toList()
+            val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, filteredPlaces.map { suggestionLabel(it, initialLang) })
             name.setAdapter(adapter)
             name.addTextChangedListener(object : android.text.TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -161,87 +183,110 @@ class CommunityRequestActivity : AppCompatActivity() {
                         else -> LanguageHelper.current()
                     }
                     draft.put("language", lang)
-                    val filtered = allPlaces.filter { p -> q.isBlank() || p.names.values.any { it.contains(q, true) } }
+                    filteredPlaces = allPlaces.filter { p -> q.isBlank() || p.names.values.any { it.contains(q, true) } }
                     adapter.clear()
-                    adapter.addAll(filtered.map { p ->
-                        val order = when (lang) { "pa" -> listOf("pa", "hi", "en"); "hi" -> listOf("hi", "en", "pa"); else -> listOf("en", "hi", "pa") }
-                        order.mapNotNull { p.names[it]?.trim()?.takeIf { n -> n.isNotBlank() } }.distinct().joinToString(" • ")
-                    })
+                    adapter.addAll(filteredPlaces.map { suggestionLabel(it, lang) })
                     adapter.notifyDataSetChanged()
                 }
                 override fun afterTextChanged(s: android.text.Editable?) {}
             })
             name.setOnItemClickListener { _, _, pos, _ ->
-                val q = name.text.toString()
-                val filtered = allPlaces.filter { p -> q.isBlank() || p.names.values.any { it.contains(q, true) } }
-                val p = filtered.getOrNull(pos) ?: suggestionPlaces.getOrNull(pos)
+                val p = filteredPlaces.getOrNull(pos)
                 if (p != null) {
-                    draft.put("place_id", p.id).put("name", p.displayName(draft.optString("language", LanguageHelper.current())))
-                    name.setText(p.displayName(draft.optString("language", LanguageHelper.current())), false)
+                    val lang = draft.optString("language", LanguageHelper.current())
+                    draft.put("place_id", p.id).put("name", p.displayName(lang))
+                    name.setText(p.displayName(lang), false)
                 }
             }
-            card.addView(name)
-            val time = EditText(this).apply {
-                hint = "Time (optional) — tap to choose"
-                setText(if (draft.isNull("time")) "" else draft.optString("time"))
-                isFocusable = false; isClickable = true; textSize = 16f
-                setPadding(dp(10), dp(8), dp(10), dp(8))
+            row.addView(name, LinearLayout.LayoutParams(0, dp(44), 1f))
+
+            val time = TextView(this).apply {
+                val t = if (draft.isNull("time")) "" else draft.optString("time")
+                text = if (t.isBlank()) "＋ time" else t
+                textSize = 12f
+                gravity = android.view.Gravity.CENTER
+                setTextColor(if (t.isBlank()) textColor else android.graphics.Color.rgb(58, 133, 190))
+                setPadding(dp(5), dp(4), dp(5), dp(4))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(if (t.isBlank()) android.graphics.Color.TRANSPARENT else if (android.os.Build.VERSION.SDK_INT >= 29 && resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES) 0xFF263746.toInt() else 0xFFEAF3FA.toInt()
+                    cornerRadius = dp(6).toFloat()
+                }
                 setOnClickListener {
                     val cal = java.util.Calendar.getInstance()
-                    val parts = text.toString().split(":")
+                    val parts = draft.optString("time").split(":")
                     val h = parts.getOrNull(0)?.toIntOrNull() ?: cal.get(java.util.Calendar.HOUR_OF_DAY)
                     val m = parts.getOrNull(1)?.toIntOrNull() ?: cal.get(java.util.Calendar.MINUTE)
                     TimePickerDialog(this@CommunityRequestActivity, { _, hh, mm ->
-                        setText(String.format(Locale.ROOT, "%02d:%02d", hh, mm))
-                        draft.put("time", text.toString())
+                        val value = String.format(Locale.ROOT, "%02d:%02d", hh, mm)
+                        draft.put("time", value)
+                        text = value
+                        setTextColor(android.graphics.Color.rgb(58, 133, 190))
                     }, h, m, true).show()
                 }
             }
-            card.addView(time)
-            val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            fun addAction(label: String, color: Int, enabled: Boolean = true, run: () -> Unit) {
-                controls.addView(Button(this@CommunityRequestActivity).apply {
-                    text = label; isEnabled = enabled; setTextColor(android.graphics.Color.WHITE)
-                    backgroundTintList = android.content.res.ColorStateList.valueOf(color)
-                    setOnClickListener {
-                        draft.put("name", name.text.toString().trim())
-                        draft.put("time", time.text.toString().trim())
-                        run()
-                    }
-                }, LinearLayout.LayoutParams(0, dp(44), 1f).apply { setMargins(dp(2), dp(4), dp(2), dp(2)) })
+            row.addView(time, LinearLayout.LayoutParams(dp(56), dp(36)).apply { marginStart = dp(3) })
+
+            val add = TextView(this).apply {
+                text = "+"
+                textSize = 23f
+                gravity = android.view.Gravity.CENTER
+                setTextColor(android.graphics.Color.WHITE)
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.rgb(32, 145, 75))
+                    cornerRadius = dp(7).toFloat()
+                }
+                contentDescription = "Add stop below"
+                setOnClickListener {
+                    draft.put("name", name.text.toString().trim())
+                    val newStop = JSONObject().put("place_id", JSONObject.NULL).put("name", "").put("language", LanguageHelper.current()).put("time", JSONObject.NULL)
+                    correctionDrafts.add(index + 1, newStop)
+                    renderCorrectionList()
+                }
             }
-            addAction("＋ Add", android.graphics.Color.rgb(30, 142, 72)) {
-                correctionDrafts.add(index + 1, JSONObject().put("place_id", JSONObject.NULL).put("name", "").put("language", LanguageHelper.current()).put("time", JSONObject.NULL))
+            row.addView(add, LinearLayout.LayoutParams(dp(34), dp(36)).apply { marginStart = dp(4) })
+
+            val more = TextView(this).apply {
+                text = "⋮"
+                textSize = 23f
+                gravity = android.view.Gravity.CENTER
+                setTextColor(textColor)
+                contentDescription = "More stop actions"
+                setOnClickListener { anchor ->
+                    draft.put("name", name.text.toString().trim())
+                    val menu = android.widget.PopupMenu(this@CommunityRequestActivity, anchor)
+                    menu.menu.add("Move up").isEnabled = index > 0
+                    menu.menu.add("Move down").isEnabled = index < correctionDrafts.lastIndex
+                    menu.menu.add("Remove stop").setIcon(android.R.drawable.ic_menu_delete)
+                    menu.setOnMenuItemClickListener { item ->
+                        when (item.title.toString()) {
+                            "Move up" -> if (index > 0) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index - 1, v); renderCorrectionList() }
+                            "Move down" -> if (index < correctionDrafts.lastIndex) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index + 1, v); renderCorrectionList() }
+                            "Remove stop" -> android.app.AlertDialog.Builder(this@CommunityRequestActivity)
+                                .setTitle("Remove stop?")
+                                .setMessage("This removes it only from your proposed correction. The live route stays unchanged until Admin approval.")
+                                .setNegativeButton("Cancel", null)
+                                .setPositiveButton("Remove") { _, _ -> correctionDrafts.removeAt(index); renderCorrectionList() }.show()
+                        }
+                        true
+                    }
+                    menu.show()
+                }
+            }
+            row.addView(more, LinearLayout.LayoutParams(dp(28), dp(40)).apply { marginStart = dp(1) })
+            box.addView(row, LinearLayout.LayoutParams(-1, dp(58)).apply { setMargins(0, dp(1), 0, dp(1)) })
+            val divider = View(this).apply { setBackgroundColor(if (textColor == android.graphics.Color.WHITE) 0xFF393939.toInt() else 0xFFE0E0E0.toInt()) }
+            box.addView(divider, LinearLayout.LayoutParams(-1, dp(1)))
+        }
+        val addAtEnd = Button(this).apply {
+            text = "＋ Add stop at end"
+            setTextColor(android.graphics.Color.WHITE)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.rgb(32, 145, 75))
+            setOnClickListener {
+                correctionDrafts.add(JSONObject().put("place_id", JSONObject.NULL).put("name", "").put("language", LanguageHelper.current()).put("time", JSONObject.NULL))
                 renderCorrectionList()
             }
-            addAction("↑", android.graphics.Color.rgb(65, 90, 145), index > 0) {
-                if (index > 0) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index - 1, v); renderCorrectionList() }
-            }
-            addAction("↓", android.graphics.Color.rgb(65, 90, 145), index < correctionDrafts.lastIndex) {
-                if (index < correctionDrafts.lastIndex) { val v = correctionDrafts.removeAt(index); correctionDrafts.add(index + 1, v); renderCorrectionList() }
-            }
-            addAction("− Remove", android.graphics.Color.rgb(196, 48, 48)) {
-                android.app.AlertDialog.Builder(this@CommunityRequestActivity).setTitle("Remove this stop?")
-                    .setMessage("This only changes your proposed route. The live route stays unchanged until Admin approval.")
-                    .setNegativeButton("Cancel", null).setPositiveButton("Remove") { _, _ -> correctionDrafts.removeAt(index); renderCorrectionList() }.show()
-            }
-            card.addView(controls)
-            box.addView(card, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, dp(5), 0, dp(5)) })
         }
-        val addEnds = Button(this).apply {
-            text = "＋ Add at beginning / end"
-            setTextColor(android.graphics.Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.rgb(30, 142, 72))
-            setOnClickListener {
-                android.app.AlertDialog.Builder(this@CommunityRequestActivity).setTitle("Add stop where?")
-                    .setItems(arrayOf("At beginning", "At end")) { _, which ->
-                        val d = JSONObject().put("place_id", JSONObject.NULL).put("name", "").put("language", LanguageHelper.current()).put("time", JSONObject.NULL)
-                        if (which == 0) correctionDrafts.add(0, d) else correctionDrafts.add(d)
-                        renderCorrectionList()
-                    }.show()
-            }
-        }
-        box.addView(addEnds)
+        box.addView(addAtEnd, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(8) })
     }
 
     private fun submitCorrection() {
