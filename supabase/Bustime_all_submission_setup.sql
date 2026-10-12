@@ -88,6 +88,7 @@ create table if not exists public.correction_submissions (
   status text not null default 'pending' check (status in ('pending','approved','rejected'))
 );
 alter table public.correction_submissions add column if not exists missing_place_id text;
+alter table public.correction_submissions add column if not exists phone text;
 create index if not exists correction_submissions_status_idx on public.correction_submissions(status, created_at desc);
 
 create table if not exists public.vehicle_submissions (
