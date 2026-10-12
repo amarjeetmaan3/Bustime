@@ -38,33 +38,64 @@ import org.json.JSONObject
 class AddRouteActivity : AppCompatActivity() {
     private class ExistingStop(val placeId: String?, val timeView: TextView, var time: String? = null, val nameEdit: EditText? = null, var line: View? = null)
     private class NewStop(val name: EditText, val timeView: TextView, var time: String? = null)
-    private var placeSuggestions: List<String> = emptyList()
+    private data class PlaceSuggestion(val placeId: String, val selectedName: String, val label: String) {
+        override fun toString(): String = label
+    }
+
+    private var placeSuggestions: List<PlaceSuggestion> = emptyList()
+
+    private fun languageOrder(lang: String): List<String> = when (lang) {
+        "hi" -> listOf("hi", "en", "pa")
+        "pa" -> listOf("pa", "hi", "en")
+        else -> listOf("en", "hi", "pa")
+    }
+
+    private fun placeSuggestionAdapter(): ArrayAdapter<PlaceSuggestion> =
+        ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, placeSuggestions)
+
+    private fun attachPlaceSuggestions(field: AutoCompleteTextView) {
+        field.threshold = 1
+        field.setAdapter(placeSuggestionAdapter())
+        field.setOnItemClickListener { parent, _, position, _ ->
+            val suggestion = parent.getItemAtPosition(position) as? PlaceSuggestion
+            if (suggestion != null) {
+                // Show only the selected-language name in the field; the dropdown
+                // itself keeps all available translations together on one line.
+                field.setText(suggestion.selectedName, false)
+                field.setSelection(field.text.length)
+            }
+        }
+        field.setOnFocusChangeListener { _, focused ->
+            if (focused && placeSuggestions.isNotEmpty()) field.showDropDown()
+        }
+        field.setOnClickListener { if (placeSuggestions.isNotEmpty()) field.showDropDown() }
+    }
+
     private fun placeAutoComplete(hintText: String): AutoCompleteTextView = AutoCompleteTextView(this).apply {
         hint = hintText
-        threshold = 1
-        setAdapter(ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, placeSuggestions))
-        setOnFocusChangeListener { _, focused -> if (focused && placeSuggestions.isNotEmpty()) showDropDown() }
-        setOnClickListener { if (placeSuggestions.isNotEmpty()) showDropDown() }
+        attachPlaceSuggestions(this)
     }
+
     private fun refreshPlaceSuggestions() {
         lifecycleScope.launch {
             val all = withContext(Dispatchers.IO) { repo.getAllPlaces() }
             val lang = LanguageHelper.current()
-            // Include saved translations/aliases so Hindi, English and Punjabi users
-            // can find the same saved place while typing.
-            placeSuggestions = all
-                .flatMap { place -> listOf(place.displayName(lang)) + place.names.values.toList() }
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .distinctBy { it.lowercase() }
-                .sorted()
-            val adapter = ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, placeSuggestions)
-            findViewById<AutoCompleteTextView>(R.id.etFromText)?.setAdapter(adapter)
-            findViewById<AutoCompleteTextView>(R.id.etToText)?.setAdapter(adapter)
+            val order = languageOrder(lang)
+            // One suggestion per saved place. The selected app language comes first,
+            // followed by the other languages; selecting it fills only that language's name.
+            placeSuggestions = all.map { place ->
+                val labels = order.mapNotNull { code ->
+                    place.names[code]?.trim()?.takeIf { it.isNotBlank() }
+                }.distinct()
+                val label = labels.ifEmpty { listOf(place.displayName(lang)) }.joinToString(" • ")
+                PlaceSuggestion(place.id, place.displayName(lang), label)
+            }.distinctBy { it.placeId }
+                .sortedBy { it.label.lowercase() }
+
+            findViewById<AutoCompleteTextView>(R.id.etFromText)?.let(::attachPlaceSuggestions)
+            findViewById<AutoCompleteTextView>(R.id.etToText)?.let(::attachPlaceSuggestions)
             (newRows.map { it.name } + existingRows.mapNotNull { it.nameEdit }).forEach { field ->
-                if (field is AutoCompleteTextView) {
-                    field.setAdapter(ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, placeSuggestions))
-                }
+                if (field is AutoCompleteTextView) attachPlaceSuggestions(field)
             }
         }
     }
