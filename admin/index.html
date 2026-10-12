@@ -829,7 +829,8 @@ async function loadCommunity() {
     ['vehicles','vehicle_submissions'],
     ['feedback','feedback_submissions'],
     ['busSubmissions','bus_operator_submissions'],
-    ['operators','bus_operators']
+    ['operators','bus_operators'],
+    ['categories','bus_categories']
   ];
   var failed = [];
   for (var i = 0; i < specs.length; i++) {
@@ -927,6 +928,7 @@ function viewCommunity(mode) {
       '<div class="row2"><div><label>Sleeper berths</label><input id="op_sleeper_count" type="number" min="0"></div><div><label>Seats</label><input id="op_seater_count" type="number" min="0"></div></div>'+
       '<div class="row2"><div><label>From</label><input id="op_from"></div><div><label>To</label><input id="op_to"></div></div>'+
       '<label>Operating area</label><input id="op_location"><label>Details</label><input id="op_details"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-add">Add operator</button></div></div>';
+    html += '<div class="card"><h2>Manage bus categories</h2><p class="muted">Categories added here appear in the Add Your Bus form. Operators can enter a specific variant for any category.</p><div class="row2"><div><label>New category name</label><input id="bus_category_name" placeholder="e.g. Seater Plus"></div><div style="display:flex;align-items:end"><button class="btn primary" data-act="category-add">Add category</button></div></div><div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Category</th><th>Status</th><th></th></tr></thead><tbody>'+(community.categories||[]).map(function(cat){return '<tr><td>'+esc(cat.name)+'</td><td>'+(cat.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="category-toggle" data-id="'+esc(cat.id)+'" data-active="'+(!cat.active)+'">'+(cat.active?'Hide':'Activate')+'</button></td></tr>';}).join('')+'</tbody></table></div></div>';
     html += '<div class="card"><h2>Published operator listings <span class="badge gray">' + community.operators.length + '</span></h2><div class="tablewrap"><table><thead><tr><th>Operator</th><th>Service / type</th><th>Route</th><th>Phone</th><th>Visibility</th><th></th></tr></thead><tbody>' +
       community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||'-')+' / '+esc(o.bus_type)+'</td><td>'+esc(o.from_text||'-')+' → '+esc(o.to_text||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
   }
@@ -1324,14 +1326,14 @@ document.addEventListener('click', async function (e) {
       if (act === 'community-approve') {
         if (kind === 'corrections') applyApprovedCorrection(record);
         if (kind === 'vehicles') {
-          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name, phone:record.phone, area:record.area_name || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.details || '') };
-          if (record.vehicle_type==='auto') driver.fuel=(record.fuel==='ev'?'ev':'oil');
+          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name + (record.vehicle_model_number ? ' · '+record.vehicle_model_number : ''), phone:record.phone, area:record.area_name || record.location || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.vehicle_number ? 'Vehicle No: '+record.vehicle_number+' · ' : '') + (record.details || '') };
+          if (record.vehicle_type==='auto') driver.fuel=(record.fuel_type||record.fuel||'oil').toLowerCase();
           if (record.union_name) driver.union_name=record.union_name;
           if (record.seats) driver.seats = record.seats;
           data.drivers.push(driver); setDirty(true);
         }
         if (kind === 'busSubmissions') {
-          await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.operator_name,service_name:record.service_name||null,bus_type:record.bus_type||'Ordinary',seat_type:record.seat_type||null,sleeper_count:record.sleeper_count,seater_count:record.seater_count,from_text:record.from_text||null,to_text:record.to_text||null,location:record.location||null,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
+          await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.operator_name,service_name:record.service_name||null,bus_type:record.bus_type||'Ordinary',custom_category:record.custom_category||null,seat_type:record.seat_type||null,sleeper_count:record.sleeper_count,seater_count:record.seater_count,from_text:record.from_text||null,to_text:record.to_text||null,location:record.location||null,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
         }
       } else if (!confirm('Reject this request?')) return;
       await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({status:act==='community-approve'?'approved':'rejected'}) });
@@ -1344,6 +1346,17 @@ document.addEventListener('click', async function (e) {
       if (!confirm('Permanently delete this rejected request?')) return;
       await sbFetch('/rest/v1/'+dtable+'?id=eq.'+encodeURIComponent(did)+'&status=eq.rejected',{method:'DELETE',headers:{Prefer:'return=minimal'}});
       community[dk]=community[dk].filter(function(x){return x.id!==did;}); render();
+    }
+    else if (act === 'category-add') {
+      var categoryName=val('bus_category_name').trim();
+      if (!categoryName || categoryName.length>60) { toast('Enter a category name (1–60 characters).'); return; }
+      await sbFetch('/rest/v1/bus_categories',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({name:categoryName,active:true})});
+      await loadCommunity(); toast('Bus category added.'); render();
+    }
+    else if (act === 'category-toggle') {
+      var catId=b.getAttribute('data-id'), catActive=b.getAttribute('data-active')==='true';
+      await sbFetch('/rest/v1/bus_categories?id=eq.'+encodeURIComponent(catId),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({active:catActive})});
+      await loadCommunity(); render();
     }
     else if (act === 'operator-add') {
       var on=val('op_name'), op=val('op_phone').replace(/[^+0-9 -]/g,'');
