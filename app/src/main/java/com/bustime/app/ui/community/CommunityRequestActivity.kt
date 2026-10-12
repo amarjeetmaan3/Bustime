@@ -58,7 +58,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll)
-        text("${title}\n${getString(com.bustime.app.R.string.community_review_notice)}", 18f)
+        if (mode == "correction" || mode == "bus_operator") text(title, 18f)\n        else text("${title}\n${getString(com.bustime.app.R.string.community_review_notice)}", 18f)
         when (mode) {
             "correction" -> loadCorrectionForm()
             "vehicle" -> vehicleForm()
