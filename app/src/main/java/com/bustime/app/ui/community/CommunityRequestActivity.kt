@@ -352,7 +352,6 @@ class CommunityRequestActivity : AppCompatActivity() {
         }
     }
 
-    private fun buttonIn(target: LinearLayout, label: String, action: () -> Unit) { target.addView(Button(this).apply { text = label; setOnClickListener { action() } }) }
 
     private fun addMissingPlaceField(target: LinearLayout) {
         val field = AutoCompleteTextView(this).apply {
