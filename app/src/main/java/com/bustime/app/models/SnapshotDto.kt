@@ -31,7 +31,8 @@ data class RouteDto(
     val info: String?,
     val stops: List<StopDto>?,
     val longRoute: Boolean?,
-    val startDate: String?
+    val startDate: String?,
+    val hidden: Boolean?
 )
 
 data class StopDto(
@@ -49,5 +50,6 @@ data class DriverDto(
     val fuel: String?,
     val info: String?,
     val area: String?,
-    val unionName: String?
+    val unionName: String?,
+    val hidden: Boolean?
 )
