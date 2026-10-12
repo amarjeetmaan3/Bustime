@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Filter
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
@@ -38,7 +39,12 @@ import org.json.JSONObject
 class AddRouteActivity : AppCompatActivity() {
     private class ExistingStop(val placeId: String?, val timeView: TextView, var time: String? = null, val nameEdit: EditText? = null, var line: View? = null)
     private class NewStop(val name: EditText, val timeView: TextView, var time: String? = null)
-    private data class PlaceSuggestion(val placeId: String, val selectedName: String, val label: String) {
+    private data class PlaceSuggestion(
+        val placeId: String,
+        val selectedName: String,
+        val label: String,
+        val searchableNames: List<String>
+    ) {
         override fun toString(): String = label
     }
 
@@ -50,8 +56,43 @@ class AddRouteActivity : AppCompatActivity() {
         else -> listOf("en", "hi", "pa")
     }
 
+    /**
+     * ArrayAdapter's default filter checks the rendered label from its beginning.
+     * Search every saved language/alias instead, while still rendering one compact row.
+     */
+    private inner class PlaceSuggestionAdapter(items: List<PlaceSuggestion>) :
+        ArrayAdapter<PlaceSuggestion>(this@AddRouteActivity, android.R.layout.simple_dropdown_item_1line, items) {
+        private val allItems = items.toList()
+
+        override fun getFilter(): Filter = object : Filter() {
+            override fun performFiltering(constraint: CharSequence?): FilterResults {
+                val query = constraint?.toString()?.trim()?.lowercase()?.replace(Regex("\\s+"), " ").orEmpty()
+                val matches = if (query.isBlank()) allItems else allItems.filter { item ->
+                    item.searchableNames.any { name ->
+                        name.lowercase().contains(query)
+                    }
+                }
+                return FilterResults().apply {
+                    values = matches
+                    count = matches.size
+                }
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                clear()
+                val matches = results?.values as? List<PlaceSuggestion> ?: emptyList()
+                addAll(matches)
+                notifyDataSetChanged()
+            }
+
+            override fun convertResultToString(resultValue: Any): CharSequence =
+                (resultValue as? PlaceSuggestion)?.label.orEmpty()
+        }
+    }
+
     private fun placeSuggestionAdapter(): ArrayAdapter<PlaceSuggestion> =
-        ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, placeSuggestions)
+        PlaceSuggestionAdapter(placeSuggestions)
 
     private fun attachPlaceSuggestions(field: AutoCompleteTextView) {
         field.threshold = 1
@@ -88,7 +129,12 @@ class AddRouteActivity : AppCompatActivity() {
                     place.names[code]?.trim()?.takeIf { it.isNotBlank() }
                 }.distinct()
                 val label = labels.ifEmpty { listOf(place.displayName(lang)) }.joinToString(" • ")
-                PlaceSuggestion(place.id, place.displayName(lang), label)
+                PlaceSuggestion(
+                    place.id,
+                    place.displayName(lang),
+                    label,
+                    (place.names.values + labels).map { it.trim() }.filter { it.isNotBlank() }.distinct()
+                )
             }.distinctBy { it.placeId }
                 .sortedBy { it.label.lowercase() }
 
