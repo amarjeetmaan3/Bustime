@@ -24,7 +24,6 @@ import com.bustime.app.models.Route
 import com.bustime.app.utils.LanguageHelper
 import com.bustime.app.utils.TimeFlow
 import com.bustime.app.utils.TimeFormat
-import com.google.android.material.button.MaterialButtonToggleGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -221,21 +220,14 @@ class AddRouteActivity : AppCompatActivity() {
         setContentView(R.layout.activity_add_route)
         repo = AppRepository.getInstance(this)
         refreshPlaceSuggestions()
-        findViewById<Button>(R.id.btnBackAdd).visibility = View.GONE
         tvStart = findViewById(R.id.tvStartTime)
         stopsBox = findViewById(R.id.stopsBox)
         newStopsBox = findViewById(R.id.newStopsBox)
         btnSubmit = findViewById(R.id.btnSubmitRoute)
         val spinner = findViewById<Spinner>(R.id.spRoute)
-        val toggle = findViewById<MaterialButtonToggleGroup>(R.id.toggleMode)
-
-        toggle.addOnButtonCheckedListener { _, checkedId, checked ->
-            if (checked) setMode(checkedId == R.id.btnModeNew)
-        }
         // Default to a new route; users can switch to copying an existing route's
         // endpoints and stops, then submit the edited details for admin review.
         // Preserve raw user-entered place names in Hindi, Punjabi, or English.
-        toggle.visibility = View.GONE
         setMode(true)
 
         findViewById<Button>(R.id.btnAddNewStop).setOnClickListener { addNewStop() }
@@ -268,7 +260,6 @@ class AddRouteActivity : AppCompatActivity() {
                 override fun onNothingSelected(parent: AdapterView<*>?) = Unit
             }
             // कोई रूट बना ही नहीं है तो सीधे New Route खुले
-            if (routes.isEmpty()) toggle.check(R.id.btnModeNew)
         }
     }
 
