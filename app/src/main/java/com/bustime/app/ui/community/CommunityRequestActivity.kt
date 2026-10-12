@@ -80,26 +80,25 @@ class CommunityRequestActivity : AppCompatActivity() {
             routes = repo.getAllRoutes()
             if (routes.isEmpty()) { text(getString(com.bustime.app.R.string.community_no_routes), 14f); return@launch }
             allPlaces = repo.getAllPlaces()
-            routeSpinner = spinner(getString(com.bustime.app.R.string.community_choose_route), routes.map { routeLabel(it) })
-            routeSpinner?.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    lifecycleScope.launch { loadStopsFor(routes[position]) }
-                }
-                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-            }
+            placeNames = allPlaces.associate { it.id to it.displayName(LanguageHelper.current()) }
+
+            // The route is passed from the selected route's details page; keep it fixed here.
             val requested = intent.getStringExtra("route_id")
-            if (requested != null) {
-                val i = routes.indexOfFirst { it.id == requested }
-                if (i >= 0) routeSpinner?.setSelection(i)
+            val route = routes.firstOrNull { it.id == requested }
+            if (route == null) {
+                text("Open Route Correction from a specific route's details page so the correct route stays selected.", 14f)
+                return@launch
             }
-            heading("Complete route correction")
+
+            heading("Route: ${routeLabel(route)}")
+            text("Complete route correction", 16f, true)
             text("Replace an incorrect stop by selecting the correct place. Add a new start at the top or add stops between/at the end. Time is optional. Changes go to Admin for approval first.", 14f)
             correctionEditor = LinearLayout(this@CommunityRequestActivity).apply { orientation = LinearLayout.VERTICAL }
             root.addView(correctionEditor!!)
             field("correction_note", "Extra note for admin (optional)")
             field("phone", "Mobile number (required)")
             button("Submit complete route correction") { submitCorrection() }
-            loadStopsFor(routes.getOrNull(routeSpinner?.selectedItemPosition ?: 0) ?: routes.first())
+            loadStopsFor(route)
         }
     }
 
@@ -107,7 +106,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         correctionRoute = route
         routeStops = AppRepository.getInstance(this).getRouteStops(route.id).sortedBy { it.stopOrder }
         val places = AppRepository.getInstance(this).getPlacesById(routeStops.map { it.placeId }.toSet())
-        placeNames = places.mapValues { it.value.displayName(LanguageHelper.current()) }
+        placeNames = allPlaces.associate { it.id to it.displayName(LanguageHelper.current()) }
         correctionDrafts.clear()
         routeStops.forEach { stop ->
             correctionDrafts.add(JSONObject().put("place_id", stop.placeId).put("name", placeNames[stop.placeId] ?: stop.placeId)
@@ -578,7 +577,12 @@ class CommunityRequestActivity : AppCompatActivity() {
         return e
     }
 
-    private fun routeLabel(route: Route): String = "${placeNames[route.fromId] ?: route.fromId} → ${placeNames[route.toId] ?: route.toId} (${route.time})"
+    private fun routeLabel(route: Route): String {
+        fun label(id: String): String = (placeNames[id] ?: id)
+            .removeSuffix("_stand")
+            .replace('_', ' ')
+        return "${label(route.fromId)} → ${label(route.toId)}"
+    }
     private fun heading(s: String) { text(s, 16f, true) }
     private fun text(s: String, size: Float, bold: Boolean = false) { root.addView(TextView(this).apply { text = s; textSize = size; if (bold) setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, dp(10), 0, dp(5)) }) }
     private fun field(key: String, hint: String): EditText { val e = EditText(this).apply { this.hint = hint; textSize = 16f; setPadding(dp(12), dp(10), dp(12), dp(10)) }; fields[key] = e; root.addView(e); return e }
