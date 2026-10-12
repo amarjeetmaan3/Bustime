@@ -242,7 +242,7 @@ var NAV = [
 ];
 var TITLES = {
   dashboard:'Dashboard', analytics:'Analytics & Stats', bus:'Bus', taxi:'Taxi', auto:'Auto', places:'Bus · Places',
-  routes:'Bus · Routes', busRequests:'Bus · Route Requests', addBus:'Bus · Add Your Bus',
+  routes:'Bus · Routes', busRequests:'Bus · Route Requests', addBus:'Bus · Add Your Bus', busDirectory:'Bus · Operator Directory',
   taxiReview:'Taxi · Submissions', autoReview:'Auto · Submissions', seats:'Taxi · Seat Options',
   drivers:'Taxi · Directory', autoDrivers:'Auto · Directory', corrections:'Review Center · Corrections',
   feedbackReview:'Review Center · Feedback', review:'Review Center', settings:'Settings'
@@ -417,7 +417,7 @@ function render() {
   var dataTabs = ['dashboard','bus','taxi','auto','places','routes','seats','drivers','autoDrivers'];
   var views = { dashboard:viewDashboard, analytics:viewAnalytics, bus:viewBusHome, taxi:viewTaxiHome, auto:viewAutoHome,
     places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers, autoDrivers:viewDrivers,
-    busRequests:viewBusRequests, taxiReview:function(){return viewCommunity('taxi');},
+    busRequests:viewBusRequests, busDirectory:function(){return viewCommunity('busDirectory');}, taxiReview:function(){return viewCommunity('taxi');},
     autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
     corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, settings:viewSettings };
   if (dataTabs.indexOf(tab) >= 0 && !data) {
@@ -437,9 +437,9 @@ function refreshWorkspaceNav() {
   var host = $('#workspaceNav');
   if (!host) return;
   var items = [], active = tab;
-  if (['bus','places','routes','busRequests','addBus'].indexOf(tab) >= 0) {
-    items = [['places','Places & Bus Stands'],['routes','Bus Routes'],['busRequests','Route Requests'],['addBus','Add Your Bus']];
-    active = ['places','routes','busRequests','addBus'].indexOf(tab) >= 0 ? tab : 'bus';
+  if (['bus','places','routes','busRequests','addBus','busDirectory'].indexOf(tab) >= 0) {
+    items = [['places','Places & Bus Stands'],['routes','Bus Routes'],['busRequests','Route Requests'],['addBus','Add Bus Requests'],['busDirectory','Operator Directory']];
+    active = ['places','routes','busRequests','addBus','busDirectory'].indexOf(tab) >= 0 ? tab : 'bus';
   } else if (['taxi','taxiReview','seats','drivers'].indexOf(tab) >= 0) {
     items = [['taxiReview','Taxi Submissions'],['seats','Seat Options'],['drivers','Taxi Directory']];
     active = ['taxiReview','seats','drivers'].indexOf(tab) >= 0 ? tab : 'taxi';
@@ -891,12 +891,12 @@ function viewCommunity(mode) {
     var textValue = (x.category||'') + ' ' + (x.message||'');
     if (mode === 'taxi') return (x._kind === 'vehicles' && x.vehicle_type === 'taxi') || (x._kind === 'feedback' && /taxi/i.test(textValue));
     if (mode === 'auto') return (x._kind === 'vehicles' && x.vehicle_type === 'auto') || (x._kind === 'feedback' && /auto|rickshaw/i.test(textValue));
-    if (mode === 'bus') return x._kind === 'busSubmissions';
+    if (mode === 'bus' || mode === 'busDirectory') return mode === 'bus' ? x._kind === 'busSubmissions' : false;
     if (mode === 'corrections') return x._kind === 'corrections';
     if (mode === 'feedback') return x._kind === 'feedback' && !/correct/i.test(textValue) && !/taxi|auto|rickshaw/i.test(textValue);
     return communitySection === 'all' || x._kind === communitySection;
   }
-  var html = '<div class="toolbar"><span class="grow muted">' + esc(mode === 'taxi' ? 'Taxi listings and taxi-related corrections.' : mode === 'auto' ? 'Auto listings and auto-related corrections.' : mode === 'bus' ? 'Review Add Bus submissions and manage published operator details.' : mode === 'corrections' ? 'Route correction requests only.' : mode === 'feedback' ? 'General feedback not classified as a vehicle or route correction.' : 'Requests grouped by category.') + '</span><button class="btn" data-act="community-refresh">Refresh</button>' + (sbToken ? '<button class="btn" data-act="sb-logout">Sign out</button>' : '') + '</div>';
+  var html = '<div class="toolbar"><span class="grow muted">' + esc(mode === 'taxi' ? 'Taxi listings and taxi-related corrections.' : mode === 'auto' ? 'Auto listings and auto-related corrections.' : mode === 'bus' ? 'Review Add Your Bus submissions. Manual operator management is in Operator Directory.' : mode === 'busDirectory' ? 'Manage published bus operators separately from submitted requests.' : mode === 'corrections' ? 'Route correction requests only.' : mode === 'feedback' ? 'General feedback not classified as a vehicle or route correction.' : 'Requests grouped by category.') + '</span><button class="btn" data-act="community-refresh">Refresh</button>' + (sbToken ? '<button class="btn" data-act="sb-logout">Sign out</button>' : '') + '</div>';
   if (!mode) html += '<div class="chips">' + sections.map(function(p){return '<button class="btn '+(communitySection===p[0]?'primary':'')+'" data-act="community-section" data-section="'+p[0]+'">'+p[1]+' ('+((community[p[0]]||[]).length)+')</button>';}).join('') + '</div>';
   if (community._failed && community._failed.length) html = '<div class="card" style="border-color:#c0392b"><b>Some tables failed to load:</b><br>' + community._failed.map(esc).join('<br>') + '<br><span class="muted">Tables failed to load: ' + community._failed.map(esc).join(', ') + '. Check the error and refresh.</span></div>' + html;
   var scoped = all.filter(matchesMode);
@@ -920,7 +920,7 @@ function viewCommunity(mode) {
     var actions = x.status==='pending' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
     html += '<div class="card"><h2>'+esc(x._label)+' · '+esc(x.request_type||x.vehicle_type||x.category||'Request')+'</h2><p class="muted">'+esc(new Date(x.created_at).toLocaleString())+' · ID '+esc(x.id)+'</p>'+details+'<div class="dlg-foot" style="justify-content:flex-start">'+actions+'</div></div>';
   });
-  if (mode === 'bus') {
+  if (mode === 'busDirectory') {
     html += '<div class="card"><h2>Published Bus Operator Directory</h2><p class="muted">Public operator information only. This is separate from scheduled routes and is not a booking queue.</p>'+
       '<div class="row2"><div><label>Operator name</label><input id="op_name"></div><div><label>Service name</label><input id="op_service"></div></div>'+
       '<div class="row2"><div><label>Bus type / custom category</label><input id="op_type" placeholder="AC / Sleeper / Prime A"></div><div><label>Phone</label><input id="op_phone"></div></div>'+
@@ -929,8 +929,8 @@ function viewCommunity(mode) {
       '<div class="row2"><div><label>From</label><input id="op_from"></div><div><label>To</label><input id="op_to"></div></div>'+
       '<label>Operating area</label><input id="op_location"><label>Details</label><input id="op_details"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-add">Add operator</button></div></div>';
     html += '<div class="card"><h2>Manage bus categories</h2><p class="muted">Categories added here appear in the Add Your Bus form. Operators can enter a specific variant for any category.</p><div class="row2"><div><label>New category name</label><input id="bus_category_name" placeholder="e.g. Seater Plus"></div><div style="display:flex;align-items:end"><button class="btn primary" data-act="category-add">Add category</button></div></div><div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Category</th><th>Status</th><th></th></tr></thead><tbody>'+(community.categories||[]).map(function(cat){return '<tr><td>'+esc(cat.name)+'</td><td>'+(cat.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="category-toggle" data-id="'+esc(cat.id)+'" data-active="'+(!cat.active)+'">'+(cat.active?'Hide':'Activate')+'</button></td></tr>';}).join('')+'</tbody></table></div></div>';
-    html += '<div class="card"><h2>Published operator listings <span class="badge gray">' + community.operators.length + '</span></h2><div class="tablewrap"><table><thead><tr><th>Operator</th><th>Service / type</th><th>Route</th><th>Phone</th><th>Visibility</th><th></th></tr></thead><tbody>' +
-      community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||'-')+' / '+esc(o.bus_type)+(o.custom_category?' · '+esc(o.custom_category):'')+'</td><td>'+esc(o.from_text||'-')+' → '+esc(o.to_text||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
+    html += '<div class="card"><h2>Published operator listings <span class="badge gray">' + community.operators.length + '</span></h2><div class="tablewrap"><table><thead><tr><th>Operator</th><th>Service / type</th><th>Operating area</th><th>Phone</th><th>Visibility</th><th></th></tr></thead><tbody>' +
+      community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||'-')+' / '+esc(o.bus_type)+(o.custom_category?' · '+esc(o.custom_category):'')+'</td><td>'+esc(o.location||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
   }
   return html;
 }
