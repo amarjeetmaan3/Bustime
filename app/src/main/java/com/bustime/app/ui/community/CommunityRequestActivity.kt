@@ -348,6 +348,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         }
     }
 
+    private fun buttonIn(target: LinearLayout, label: String, action: () -> Unit) { target.addView(Button(this).apply { text = label; setOnClickListener { action() } }) }
     private fun headingIn(target: LinearLayout, s: String) { textIn(target, s, 16f, true) }
     private fun textIn(target: LinearLayout, s: String, size: Float, bold: Boolean = false) {
         target.addView(TextView(this).apply { text = s; textSize = size; if (bold) setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, dp(10), 0, dp(5)) })
