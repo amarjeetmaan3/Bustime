@@ -40,17 +40,27 @@ class PlacePickerActivity : AppCompatActivity() {
         val density = resources.displayMetrics.density
         var job: Job? = null
 
-        fun render(places: List<Place>) {
+        fun typedLanguage(query: String): String {
+            val pa = query.count { it.code in 0x0A00..0x0A7F }
+            val hi = query.count { it.code in 0x0900..0x097F }
+            val en = query.count { it in 'a'..'z' || it in 'A'..'Z' }
+            return when {
+                pa > hi && pa > en -> "pa"
+                hi > pa && hi > en -> "hi"
+                en > 0 -> "en"
+                hi > 0 -> "hi"
+                pa > 0 -> "pa"
+                else -> lang
+            }
+        }
+
+        fun render(places: List<Place>, query: String) {
             list.removeAllViews()
             tvEmpty.visibility = if (places.isEmpty()) View.VISIBLE else View.GONE
+            val displayLang = typedLanguage(query)
             for (p in places) {
                 val tv = TextView(this).apply {
-                    text = listOf(lang, if (lang == "hi") "en" else "hi", "pa", "en")
-                        .distinct()
-                        .mapNotNull { code -> p.names[code]?.trim()?.takeIf { it.isNotBlank() } }
-                        .distinct()
-                        .joinToString(" • ")
-                        .ifBlank { p.displayName(lang) }
+                    text = p.displayName(displayLang)
                     textSize = 18f
                     setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt())
                     setBackgroundResource(android.R.drawable.list_selector_background)
@@ -67,7 +77,7 @@ class PlacePickerActivity : AppCompatActivity() {
             job?.cancel()
             job = lifecycleScope.launch {
                 if (delayMs > 0) delay(delayMs)
-                render(repo.searchPlaces(query, standsOnly, 40, allowEmpty = true))
+                render(repo.searchPlaces(query, standsOnly, 40, allowEmpty = true), query)
             }
         }
 
