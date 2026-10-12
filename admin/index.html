@@ -628,6 +628,7 @@ function viewRoutes() {
         '<td><span class="route-count">' + stopCount + '</span><div class="route-subline">' + (r.stops || []).length + ' intermediate</div></td>' +
         '<td class="actions"><button class="btn sm" data-act="reverse-route" data-i="' + x.i + '" title="Create return route">↔ Return</button>' +
         '<button class="btn sm" data-act="edit-route" data-i="' + x.i + '">Edit</button>' +
+        '<button class="btn sm" data-act="toggle-route-hidden" data-i="' + x.i + '">' + (r.hidden ? 'Show' : 'Hide') + '</button>' +
         '<button class="btn sm danger" data-act="del-route" data-i="' + x.i + '">Delete</button></td></tr>';
     }).join('') || '<tr><td colspan="5" class="empty">' + (q ? 'No routes match this search. Try a different place or service name.' : 'No bus routes yet. Add your first route to get started.') + '</td></tr>') +
     '</tbody></table></div><div class="bus-table-caption"><span>Showing <strong>' + rows.length + '</strong> route records</span><span>' + (dirty ? '● Unpublished edits' : '✓ Data loaded') + '</span></div>';
@@ -692,6 +693,7 @@ function viewDrivers() {
         '<td>' + esc(d.vehicle || '-') + '</td><td>' + (d.type === 'taxi' ? (d.seats || '?') + ' seater' : (d.fuel ? d.fuel.toUpperCase() : '-')) + '</td>' +
         '<td>' + esc(d.phone) + '</td><td class="actions">' +
         '<button class="btn sm" data-act="edit-driver" data-i="' + x.i + '">Edit</button>' +
+        '<button class="btn sm" data-act="toggle-driver-hidden" data-i="' + x.i + '">' + (d.hidden ? 'Show' : 'Hide') + '</button>' +
         '<button class="btn sm danger" data-act="del-driver" data-i="' + x.i + '">Delete</button></td></tr>';
     }).join('') || '<tr><td colspan="6" class="empty">No drivers found</td></tr>') + '</tbody></table></div>';
 }
@@ -1127,6 +1129,7 @@ document.addEventListener('click', async function (e) {
       } };
       render(); toast('Return route prepared. Fill in the times and save.');
     }
+    else if (act === 'toggle-route-hidden') { data.routes[i].hidden = !data.routes[i].hidden; setDirty(true); render(); toast(data.routes[i].hidden ? 'Route hidden from app; publish to apply.' : 'Route shown in app; publish to apply.'); }
     else if (act === 'del-route') {
       if (confirm('Delete this route?')) { data.routes.splice(i, 1); setDirty(true); render(); }
     }
@@ -1183,6 +1186,7 @@ document.addEventListener('click', async function (e) {
     // ---- drivers ----
     else if (act === 'new-driver') { editing = { type: 'driver', index: -1, draft: { type: 'taxi' } }; render(); }
     else if (act === 'edit-driver') { editing = { type: 'driver', index: i, draft: JSON.parse(JSON.stringify(data.drivers[i])) }; render(); }
+    else if (act === 'toggle-driver-hidden') { data.drivers[i].hidden = !data.drivers[i].hidden; setDirty(true); render(); toast(data.drivers[i].hidden ? 'Listing hidden from app; publish to apply.' : 'Listing shown in app; publish to apply.'); }
     else if (act === 'del-driver') {
       if (confirm('Delete "' + data.drivers[i].name + '"?')) { data.drivers.splice(i, 1); setDirty(true); render(); }
     }
