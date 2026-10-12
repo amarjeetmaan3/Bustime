@@ -1061,26 +1061,7 @@ document.addEventListener('change', function (e) {
   if (e.target.id === 'f_dtype') { filters.driverType = e.target.value; render(); }
   if (e.target.id === 'f_pkind') { filters.placeKind = e.target.value; render(); }
 });
-async function autoTranslatePlaceName() {
-  var source = document.getElementById('fp_en');
-  if (!source || !source.value.trim()) return;
-  var english = source.value.trim();
-  async function translate(target) {
-    var response = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(english) + '&langpair=en%7C' + target);
-    if (!response.ok) throw new Error('Translation service unavailable');
-    var json = await response.json(), translated = json && json.responseData && json.responseData.translatedText;
-    if (!translated || json.responseStatus !== 200) throw new Error('Translation unavailable');
-    return translated;
-  }
-  var hi = document.getElementById('fp_hi'), pa = document.getElementById('fp_pa');
-  try {
-    var values = await Promise.all([translate('hi'), translate('pa')]);
-    if (source.value.trim() !== english) return;
-    if (hi && (!hi.value.trim() || hi.dataset.autofilled === 'true')) { hi.value = values[0]; hi.dataset.autofilled = 'true'; }
-    if (pa && (!pa.value.trim() || pa.dataset.autofilled === 'true')) { pa.value = values[1]; pa.dataset.autofilled = 'true'; }
-  } catch (err) { toast('Auto translation failed; enter Hindi/Punjabi manually.'); }
-}
-document.addEventListener('focusout', function (e) { if (e.target && e.target.id === 'fp_en') autoTranslatePlaceName(); });
+// Place names are intentionally not auto-translated. Admins can edit Hindi/Punjabi fields explicitly.
 document.addEventListener('input', function (e) { if (e.target && (e.target.id === 'fp_hi' || e.target.id === 'fp_pa')) e.target.dataset.autofilled = 'false'; });
 
 document.addEventListener('click', async function (e) {
