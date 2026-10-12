@@ -264,4 +264,12 @@
     <string name="update_downloading">अपडेट डाउनलोड हो रहा है</string>
     <string name="install">इंस्टॉल करें</string>
     <string name="open_settings">सेटिंग खोलें</string>
+    <string name="bb_bus_operator">बस ऑपरेटर</string>
+    <string name="bb_bus">बस</string>
+    <string name="bb_service_label">सेवा: %1$s</string>
+    <string name="bb_bus_type_label">बस का प्रकार: %1$s</string>
+    <string name="bb_bus_variant_label">बस का वैरिएंट: %1$s</string>
+    <string name="bb_seat_type_label">सीटों का प्रकार: %1$s</string>
+    <string name="bb_sleeper_berths_format">%1$d स्लीपर बर्थ</string>
+    <string name="bb_seats_format">%1$d सीटें</string>
 </resources>
