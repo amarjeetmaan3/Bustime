@@ -21,25 +21,30 @@ class BookBusActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         title = getString(com.bustime.app.R.string.book_bus)
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(18, 12, 18, 18) }
-        root.addView(TextView(this).apply { text = getString(com.bustime.app.R.string.bb_intro); textSize = 15f; setPadding(0, 8, 0, 10) })
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(18, 12, 18, 0) }
+        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 0, 0, 16) }
+        val scroll = ScrollView(this).apply { addView(content) }
+        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        val addBus = com.google.android.material.button.MaterialButton(this).apply {
+            text = getString(com.bustime.app.R.string.bb_add_your_bus)
+            setOnClickListener {
+                startActivity(Intent(this@BookBusActivity, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "bus_operator"))
+            }
+        }
+        root.addView(addBus, LinearLayout.LayoutParams(-1, -2).apply { topMargin = 10; bottomMargin = 12 })
+        setContentView(root)
+        content.addView(TextView(this).apply { text = getString(com.bustime.app.R.string.bb_intro); textSize = 15f; setPadding(0, 8, 0, 10) })
         val areaLabel = TextView(this).apply { text = getString(com.bustime.app.R.string.bb_select_area_required); textSize = 16f; setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, 8, 0, 6) }
-        root.addView(areaLabel)
+        content.addView(areaLabel)
         val areaSpinner = android.widget.Spinner(this)
         areaSpinner.isEnabled = false
-        root.addView(areaSpinner, LinearLayout.LayoutParams(-1, -2))
+        content.addView(areaSpinner, LinearLayout.LayoutParams(-1, -2))
         val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 12, 0, 0) }
-        root.addView(results)
-        val scroll = ScrollView(this).apply { addView(root) }; setContentView(scroll)
+        content.addView(results)
         lifecycleScope.launch {
             val raw = withContext(Dispatchers.IO) { CommunitySupabase.getPublicOperators() }
             if (raw == null) {
                 results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_load_failed) })
-                root.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_load_failed) })
-                results.addView(com.google.android.material.button.MaterialButton(this@BookBusActivity).apply {
-                    text = getString(com.bustime.app.R.string.bb_add_your_bus)
-                    setOnClickListener { startActivity(Intent(this@BookBusActivity, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "bus_operator")) }
-                })
                 return@launch
             }
             val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
@@ -94,14 +99,6 @@ class BookBusActivity : AppCompatActivity() {
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) { renderArea("") }
             }
             renderArea("")
-            // Keep Add Your Bus outside results because renderArea() clears results on each area selection.
-            val addBus = com.google.android.material.button.MaterialButton(this@BookBusActivity).apply {
-                text = "Add Your Bus"
-                setOnClickListener {
-                    startActivity(Intent(this@BookBusActivity, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "bus_operator"))
-                }
-            }
-            root.addView(addBus, LinearLayout.LayoutParams(-1, -2).apply { topMargin = 16 })
         }
     }
 }
