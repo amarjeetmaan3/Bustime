@@ -107,7 +107,7 @@ class AddRouteActivity : AppCompatActivity() {
         }
     }
 
-    private fun placeSuggestionAdapter(): BaseAdapter = PlaceSuggestionAdapter(placeSuggestions)
+    private fun placeSuggestionAdapter(): PlaceSuggestionAdapter = PlaceSuggestionAdapter(placeSuggestions)
 
     private fun attachPlaceSuggestions(field: AutoCompleteTextView) {
         field.threshold = 1
