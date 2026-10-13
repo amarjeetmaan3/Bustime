@@ -151,6 +151,8 @@
     <string name="network_support_ads">Please turn on your internet connection to use the app and support us through ads.</string>
     <string name="retry">Retry</string>
     <string name="feedback">Feedback</string>
+    <string name="refresh_routes">Refresh routes</string>
+    <string name="refresh_started">Checking for route updates…</string>
     <string name="ar_add_existing_details">＋ Add Existing Route Details</string>
     <string name="ar_create_new">Create new</string>
     <string name="ar_add_stop_below">Add stop below</string>
