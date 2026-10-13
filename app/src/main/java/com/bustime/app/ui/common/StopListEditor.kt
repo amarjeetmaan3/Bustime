@@ -113,10 +113,10 @@ class StopListEditor(
                 setText(draft.optString("name"), false)
             }
             val initialLang = draft.optString("language", LanguageHelper.current())
-            fun suggestionLabel(p: Place, lang: String): String {
-                val order = when (lang) { "pa" -> listOf("pa", "hi", "en"); "hi" -> listOf("hi", "en", "pa"); else -> listOf("en", "hi", "pa") }
-                return order.mapNotNull { p.names[it]?.trim()?.takeIf { v -> v.isNotBlank() } }.distinct().joinToString(" • ")
-            }
+            // Keep each autocomplete row and the text inserted by AutoCompleteTextView to ONE
+            // language-specific name. A combined "English • Hindi • Punjabi" label can leak
+            // into the route draft when the user taps + or ⋮ before the click callback settles.
+            fun suggestionLabel(p: Place, lang: String): String = p.displayName(lang).trim()
             var filteredPlaces = allPlaces.toList()
             // AutoCompleteTextView may put the full multi-language label into the field
             // before onItemClick fires. Ignore that generated label and retain the language
@@ -207,7 +207,9 @@ class StopListEditor(
                 }
                 contentDescription = activity.getString(R.string.ar_add_stop_below)
                 setOnClickListener {
-                    draft.put("name", name.text.toString().trim())
+                    // A selected place's canonical single-language name is already in draft.
+                    // Never overwrite it with an autocomplete presentation string.
+                    if (draft.isNull("place_id")) draft.put("name", name.text.toString().trim())
                     drafts.add(index + 1, newDraft())
                     render()
                 }
@@ -221,7 +223,7 @@ class StopListEditor(
                 setTextColor(textColor)
                 contentDescription = activity.getString(R.string.ar_more_stop_actions)
                 setOnClickListener { anchor ->
-                    draft.put("name", name.text.toString().trim())
+                    if (draft.isNull("place_id")) draft.put("name", name.text.toString().trim())
                     val menu = PopupMenu(activity, anchor)
                     val up = activity.getString(R.string.ar_move_up)
                     val down = activity.getString(R.string.ar_move_down)
