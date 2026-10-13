@@ -30,6 +30,7 @@ class HomeActivity : AppCompatActivity() {
     private var swipeStartX = 0f
     private var swipeStartY = 0f
     private var swipeStartedInContent = false
+    private var swipeStartedInTaxiSeatFilters = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,16 +110,28 @@ class HomeActivity : AppCompatActivity() {
                 } else {
                     swipeStartedInContent = false
                 }
+                val seatFilters = findViewById<View?>(R.id.seatFiltersScroll)
+                swipeStartedInTaxiSeatFilters = false
+                if (seatFilters != null && seatFilters.visibility == View.VISIBLE) {
+                    val filterLocation = IntArray(2)
+                    seatFilters.getLocationOnScreen(filterLocation)
+                    swipeStartedInTaxiSeatFilters =
+                        event.rawX >= filterLocation[0] &&
+                        event.rawX <= filterLocation[0] + seatFilters.width &&
+                        event.rawY >= filterLocation[1] &&
+                        event.rawY <= filterLocation[1] + seatFilters.height
+                }
             }
             MotionEvent.ACTION_UP -> {
                 val dx = event.rawX - swipeStartX
                 val dy = event.rawY - swipeStartY
                 val minSwipe = 72 * resources.displayMetrics.density
-                val shouldSwitch = swipeStartedInContent &&
+                val shouldSwitch = swipeStartedInContent && !swipeStartedInTaxiSeatFilters &&
                     kotlin.math.abs(dx) >= minSwipe &&
                     kotlin.math.abs(dy) < minSwipe
                 val handled = super.dispatchTouchEvent(event)
                 swipeStartedInContent = false
+                swipeStartedInTaxiSeatFilters = false
                 if (shouldSwitch) {
                     val nextTab = currentTab + if (dx < 0) 1 else -1
                     if (nextTab in 0..2) {
@@ -127,7 +140,7 @@ class HomeActivity : AppCompatActivity() {
                 }
                 return handled
             }
-            MotionEvent.ACTION_CANCEL -> swipeStartedInContent = false
+            MotionEvent.ACTION_CANCEL -> { swipeStartedInContent = false; swipeStartedInTaxiSeatFilters = false }
         }
         return super.dispatchTouchEvent(event)
     }
