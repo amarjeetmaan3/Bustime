@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 30,
+  "dataVersion": 31,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -225,6 +225,146 @@
         "hi": "बठिंडा",
         "pa": "ਬਠਿੰਡਾ"
       }
+    },
+    {
+      "id": "place_user_chandigarh",
+      "kind": "place",
+      "name": {
+        "en": "Chandigarh",
+        "hi": "चंडीगढ़",
+        "pa": "ਚੰਡੀਗੜ੍ਹ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_abohar",
+      "kind": "place",
+      "name": {
+        "en": "Abohar",
+        "hi": "अबोहर",
+        "pa": "ਅਬੋਹਰ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_moga",
+      "kind": "place",
+      "name": {
+        "en": "Moga",
+        "hi": "मोगा",
+        "pa": "ਮੋਗਾ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_ludhiana",
+      "kind": "place",
+      "name": {
+        "en": "Ludhiana",
+        "hi": "लुधियाना",
+        "pa": "ਲੁਧਿਆਣਾ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_patiala",
+      "kind": "place",
+      "name": {
+        "en": "Patiala",
+        "hi": "पटियाला",
+        "pa": "ਪਟਿਆਲਾ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_ambala",
+      "kind": "place",
+      "name": {
+        "en": "Ambala",
+        "hi": "अम्बाला",
+        "pa": "ਅੰਬਾਲਾ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_jalandhar",
+      "kind": "place",
+      "name": {
+        "en": "Jalandhar",
+        "hi": "जालंधर",
+        "pa": "ਜਲੰਧਰ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_dhuri",
+      "kind": "place",
+      "name": {
+        "en": "Dhuri",
+        "hi": "दीवार",
+        "pa": "ਕੰਧ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_fazlika",
+      "kind": "place",
+      "name": {
+        "en": "Fazlika",
+        "hi": "गुण",
+        "pa": "ਨੇਕੀ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_firozpur",
+      "kind": "place",
+      "name": {
+        "en": "Firozpur",
+        "hi": "फिरोजपुर",
+        "pa": "ਫ਼ਿਰੋਜ਼ਪੁਰ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_bikaner",
+      "kind": "place",
+      "name": {
+        "en": "Bikaner",
+        "hi": "बीकानेर",
+        "pa": "ਬੀਕਾਨੇਰ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_suratgarh",
+      "kind": "place",
+      "name": {
+        "en": "Suratgarh",
+        "hi": "सूरतगढ़",
+        "pa": "ਸੂਰਤਗੜ੍ਹ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_faridkot",
+      "kind": "place",
+      "name": {
+        "en": "Faridkot",
+        "hi": "फरीदकोट",
+        "pa": "ਫਰੀਦਕੋਟ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_dabwali",
+      "kind": "place",
+      "name": {
+        "en": "Dabwali",
+        "hi": "डबवाली",
+        "pa": "ਡੱਬਵਾਲੀ"
+      },
+      "aliases": []
     }
   ],
   "routes": [
@@ -343,6 +483,66 @@
       "arrive": "11:00",
       "service": "Punjab",
       "longRoute": false
+    },
+    {
+      "id": "r4",
+      "from": "place_user_chandigarh",
+      "to": "place_user_abohar",
+      "time": "08:00",
+      "arrive": "20:00",
+      "service": "Prime Bus Service",
+      "stops": [
+        {
+          "place": "place_user_moga",
+          "time": "09:00"
+        },
+        {
+          "place": "place_user_ludhiana",
+          "time": "10:00"
+        },
+        {
+          "place": "place_user_patiala",
+          "time": "11:00"
+        },
+        {
+          "place": "place_user_ambala",
+          "time": "12:00"
+        },
+        {
+          "place": "place_user_jalandhar",
+          "time": "12:30"
+        },
+        {
+          "place": "place_user_dhuri",
+          "time": "13:00"
+        },
+        {
+          "place": "place_user_fazlika",
+          "time": "14:00"
+        },
+        {
+          "place": "place_user_firozpur",
+          "time": "15:00"
+        },
+        {
+          "place": "place_user_bikaner",
+          "time": "16:00"
+        },
+        {
+          "place": "place_user_suratgarh",
+          "time": "17:00"
+        },
+        {
+          "place": "place_user_faridkot",
+          "time": "18:00"
+        },
+        {
+          "place": "place_user_dabwali",
+          "time": "07:00",
+          "day_offset": 1
+        }
+      ],
+      "arrive_day_offset": 1
     }
   ],
   "taxiSeaters": [
