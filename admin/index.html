@@ -999,7 +999,7 @@ function viewRouteReview() {
     var requestTitle = s.submission_type === 'edit_existing_route' ? ' <span class="badge">Edit existing route #' + esc(s.route_id) + '</span>' : (s.submission_type === 'new_route' ? ' <span class="badge">New free-text route</span>' : '');
     return '<div class="card" data-sub="' + i + '"><h2>' + esc(fromLabel) + ' &rarr; ' + esc(toLabel) + requestTitle + '</h2>' +
       '<p class="muted">Sent ' + esc(new Date(s.created_at).toLocaleString()) + ' · Phone <b>' + esc(s.phone) + '</b>' +
-      (s.long_route ? ' · <b>Long route</b> · Start date ' + esc(s.start_date || '-') : '') + '</p>' +
+      '</p>' +
       '<label>From / starting place</label><input class="sub_from" value="' + esc(fromLabel === '(missing From)' ? '' : fromLabel) + '" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
       '<label>To / destination</label><input class="sub_to" value="' + esc(toLabel === '(missing To)' ? '' : toLabel) + '" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
       '<label>Service name</label><input class="sub_service" value="' + esc(s.service_name || '') + '" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' +
