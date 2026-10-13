@@ -238,13 +238,65 @@ var routeReviewEditor = null;
 var communityReviewEditor = null;
 function communityEditorHtml() {
  if(!communityReviewEditor)return '';
+ var rec=communityReviewEditor.record,kind=communityReviewEditor.kind,draft=rec.reviewed_data&&typeof rec.reviewed_data==='object'?rec.reviewed_data:{};
+ var merged=Object.assign({},rec,draft);
+ if(kind==='corrections'){
+  var x=merged, route=(data.routes||[]).find(function(r){return String(r.id)===String(x.route_id);});
+  var from=route?pname(placeById(route.from)):'',to=route?pname(placeById(route.to)):'';
+  var routeLabel=from&&to?from+' → '+to:(x.route_id?'Bus route correction':'Bus route');
+  function stopLabel(id){var p=placeById(id);return p?pname(p):String(id||'Unknown stop');}
+  function placeOptions(selected,allowBlank){
+   var html=allowBlank?'<option value="">Choose existing place (optional)</option>':'';
+   (data.places||[]).slice().sort(function(a,b){return pname(a).localeCompare(pname(b));}).forEach(function(p){
+    html+='<option value="'+esc(p.id)+'"'+(String(p.id)===String(selected||'')?' selected':'')+'>'+esc(pname(p)||p.id)+'</option>';
+   });return html;
+  }
+  var html='<p class="muted"><b>'+esc(routeLabel)+'</b></p><p class="muted">Review the correction details below. No SQL or raw record data is shown here.</p>';
+  html+='<label>Correction type</label><input value="'+esc(x.request_type==='correct_time'?'Correct stop timing':x.request_type==='missing_stop'?'Add a missing stop':x.request_type==='route_edit'?'Edit route stops':String(x.request_type||'Route correction'))+'" disabled>';
+  if(x.request_type==='correct_time'){
+   var stops=route?[{id:route.from,label:stopLabel(route.from)},{id:route.to,label:stopLabel(route.to)}].concat((route.stops||[]).map(function(st){return{id:st.place,label:stopLabel(st.place)};})):[];
+   html+='<label>Stop whose time needs correction</label><select data-cr-field="stop_id">'+stops.map(function(st){return '<option value="'+esc(st.id)+'"'+(String(st.id)===String(x.stop_id||'')?' selected':'')+'>'+esc(st.label)+'</option>';}).join('')+'</select>';
+   html+='<label>Correct time</label><input data-cr-field="corrected_time" type="time" value="'+esc(x.corrected_time||'')+'">';
+  }else if(x.request_type==='missing_stop'){
+   var routeStops=route?[{id:route.from,label:stopLabel(route.from)}].concat((route.stops||[]).map(function(st){return{id:st.place,label:stopLabel(st.place)};}),[{id:route.to,label:stopLabel(route.to)}]):[];
+   html+='<label>Stop before the missing stop</label><select data-cr-field="before_stop_id">'+routeStops.map(function(st){return '<option value="'+esc(st.id)+'"'+(String(st.id)===String(x.before_stop_id||'')?' selected':'')+'>'+esc(st.label)+'</option>';}).join('')+'</select>';
+   html+='<label>Stop after the missing stop</label><select data-cr-field="after_stop_id">'+routeStops.map(function(st){return '<option value="'+esc(st.id)+'"'+(String(st.id)===String(x.after_stop_id||'')?' selected':'')+'>'+esc(st.label)+'</option>';}).join('')+'</select>';
+   html+='<label>Missing stop name</label><input data-cr-field="missing_place_name" value="'+esc(x.missing_place_name||'')+'">';
+   html+='<label>Use an existing place instead (optional)</label><select data-cr-field="missing_place_id">'+placeOptions(x.missing_place_id,true)+'</select>';
+   html+='<label>Time at missing stop (optional)</label><input data-cr-field="missing_time" type="time" value="'+esc(x.missing_time||'')+'">';
+  }else if(x.request_type==='route_edit'){
+   html+='<label>Correction summary</label><input data-cr-field="change_summary" value="'+esc(x.change_summary||'')+'">';
+   html+='<h3>Proposed route stops</h3><p class="muted">Choose an existing place or enter a name for a new place. Set a time when known.</p>';
+   var proposed=Array.isArray(x.proposed_stops)?x.proposed_stops:[];
+   html+='<div id="crProposedStops">'+proposed.map(function(st,i){
+    var p=st.place_id?placeById(st.place_id):null;
+    return '<div class="card" style="padding:12px;margin:10px 0" data-cr-proposed="'+i+'"><b>Stop '+(i+1)+'</b><label>Existing place</label><select data-cr-place>'+placeOptions(st.place_id,true)+'</select><label>Place name</label><input data-cr-name value="'+esc(st.name||(p?pname(p):''))+'"><label>Time</label><input data-cr-time type="time" value="'+esc(st.time||'')+'"></div>';
+   }).join('')+'</div>';
+   html+='<p class="muted">Original route: '+esc((Array.isArray(x.original_stops)?x.original_stops:[]).map(function(st){return stopLabel(st.place_id||st.place)+' '+(st.time||'');}).join(' · ')||routeLabel)+'</p>';
+  }else{
+   html+='<p class="muted">This correction type is not recognized. Refresh the request list before approving it.</p>';
+  }
+  html+='<label>Contact phone</label><input value="'+esc(x.phone||'')+'" disabled><label>Notes</label><textarea data-cr-field="notes" rows="3">'+esc(x.notes||'')+'</textarea>';
+  html+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Approve reviewed correction</button></div>';
+  return html;
+ }
  var rec=communityReviewEditor.record,kind=communityReviewEditor.kind,draft=rec.reviewed_data&&typeof rec.reviewed_data==='object'?rec.reviewed_data:rec;
  var skip={id:1,status:1,created_at:1,updated_at:1,reviewed_data:1,reviewed_at:1,approved_at:1};
- var labels={vehicle_type:'Vehicle type',person_name:'Owner/driver name',vehicle_name:'Vehicle name',vehicle_model_number:'Model number',vehicle_number:'Vehicle number',seats:'Seats',area_name:'Service area',location:'Location',union_name:'Union',fuel_type:'Fuel type',phone:'Phone',whatsapp:'WhatsApp',details:'Details',operator_name:'Operator name',service_name:'Service name',bus_type:'Bus type',custom_category:'Custom category',seat_type:'Seat type',sleeper_count:'Sleeper berths',seater_count:'Seater seats',from_text:'From',to_text:'To',request_type:'Request type',route_id:'Route ID',before_stop_id:'Before stop ID',after_stop_id:'After stop ID',missing_place_name:'Missing stop',missing_time:'Missing stop time',stop_id:'Stop ID',corrected_time:'Corrected time',change_summary:'Change summary',proposed_stops:'Proposed stops JSON',category:'Category',related_route:'Related route',message:'Message',contact:'Contact',notes:'Notes'};
+ var labels={vehicle_type:'Vehicle type',person_name:'Owner/driver name',vehicle_name:'Vehicle name',vehicle_model_number:'Model number',vehicle_number:'Vehicle number',seats:'Seats',area_name:'Service area',location:'Location',union_name:'Union',fuel_type:'Fuel type',phone:'Phone',whatsapp:'WhatsApp',details:'Details',operator_name:'Operator name',service_name:'Service name',bus_type:'Bus type',custom_category:'Custom category',seat_type:'Seat type',sleeper_count:'Sleeper berths',seater_count:'Seater seats',from_text:'From',to_text:'To',request_type:'Request type',route_id:'Route ID',before_stop_id:'Before stop ID',after_stop_id:'After stop ID',missing_place_name:'Missing stop',missing_time:'Missing stop time',stop_id:'Stop ID',corrected_time:'Corrected time',change_summary:'Change summary',proposed_stops:'Proposed stops',category:'Category',related_route:'Related route',message:'Message',contact:'Contact',notes:'Notes'};
  var html='<p class="muted">Opening never approves a request. Edit and save a reviewed draft first; approve is a separate action. Original submission below is read-only.</p><div class="card" style="background:#f5f7fa"><b>Original submission · read-only</b><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto">'+esc(JSON.stringify(rec,null,2))+'</pre></div>';
  Object.keys(rec).forEach(function(k){if(skip[k]||typeof rec[k]==='function')return;var value=Object.prototype.hasOwnProperty.call(draft,k)?draft[k]:rec[k],label=labels[k]||k.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});if(k==='original_stops'){html+='<label>'+esc(label)+' · original/read-only</label><pre style="white-space:pre-wrap">'+esc(JSON.stringify(value,null,2))+'</pre>';return;}if(value!==null&&typeof value==='object'){html+='<label>'+esc(label)+' · JSON</label><textarea data-cr-field="'+esc(k)+'" rows="5" style="width:100%;font-family:monospace">'+esc(JSON.stringify(value,null,2))+'</textarea>';}else{var type=/(time)$/.test(k)?'time':(/count$|^seats$/.test(k)?'number':'text');html+='<label>'+esc(label)+'</label><input data-cr-field="'+esc(k)+'" type="'+type+'" value="'+esc(value==null?'':String(value))+'">';}});
  html+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Approve reviewed data</button></div>';return html;
 }
+function communityEditorValues(){var out={};document.querySelectorAll('#dlgBody [data-cr-field]').forEach(function(el){var k=el.getAttribute('data-cr-field');if(el.tagName==='TEXTAREA'){if(k==='notes'){out[k]=el.value.trim()||null;}else{try{out[k]=JSON.parse(el.value);}catch(e){throw new Error('Invalid JSON in '+k+'. Fix it before saving.');}}}else if(el.type==='number'){out[k]=el.value.trim()===''?null:Number(el.value);if(el.value.trim()!==''&&!Number.isFinite(out[k]))throw new Error('Invalid number in '+k+'.');}else out[k]=el.value.trim()===''?null:el.value.trim();});
+ if(communityReviewEditor&&communityReviewEditor.kind==='corrections'&&communityReviewEditor.record.request_type==='route_edit'){
+  out.proposed_stops=Array.prototype.map.call(document.querySelectorAll('#crProposedStops [data-cr-proposed]'),function(row){
+   var place=row.querySelector('[data-cr-place]'),name=row.querySelector('[data-cr-name]'),time=row.querySelector('[data-cr-time]');
+   return {place_id:place&&place.value||null,name:name&&name.value.trim()||'',time:time&&time.value||null,language:'en'};
+  });
+ }
+ return out;}
+function showCommunityEditor(kind,record){communityReviewEditor={kind:kind,record:JSON.parse(JSON.stringify(record))};editing=null;routeReviewEditor=null;publishOpen=false;render();}
+
 function communityEditorValues(){var out={};document.querySelectorAll('#dlgBody [data-cr-field]').forEach(function(el){var k=el.getAttribute('data-cr-field');if(el.tagName==='TEXTAREA'){try{out[k]=JSON.parse(el.value);}catch(e){throw new Error('Invalid JSON in '+k+'. Fix it before saving.');}}else if(el.type==='number'){out[k]=el.value.trim()===''?null:Number(el.value);if(el.value.trim()!==''&&!Number.isFinite(out[k]))throw new Error('Invalid number in '+k+'.');}else out[k]=el.value.trim()===''?null:el.value.trim();});return out;}
 function showCommunityEditor(kind,record){communityReviewEditor={kind:kind,record:JSON.parse(JSON.stringify(record))};editing=null;routeReviewEditor=null;publishOpen=false;render();}
 
@@ -994,8 +1046,14 @@ function viewCommunity(mode) {
     } else {
       details = '<p><b>'+esc(x.category)+'</b> · Route '+esc(x.related_route||'-')+'</p><p>'+esc(x.message)+'</p><p class="muted">Contact: '+esc(x.contact||'-')+'</p>';
     }
+    var isCompactBusCorrection=x._kind==='corrections'&&communityStatus==='pending';
+    if(isCompactBusCorrection) details='';
     var actions = x.status==='pending' ? (x._kind==='feedback' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve feedback</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>') : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
-    html += '<div class="card"><h2>'+esc(x._label)+' · '+esc(x.request_type||x.vehicle_type||x.category||'Request')+'</h2><p class="muted">'+esc(new Date(x.created_at).toLocaleString())+' · ID '+esc(x.id)+'</p>'+details+'<div class="dlg-foot" style="justify-content:flex-start">'+actions+'</div></div>';
+    var correctionRoute=isCompactBusCorrection?(data.routes||[]).find(function(r){return String(r.id)===String(x.route_id);}):null;
+    var correctionRouteName=correctionRoute?(pname(placeById(correctionRoute.from))+' → '+pname(placeById(correctionRoute.to))):'bus route';
+    var cardTitle=isCompactBusCorrection?'Correction request received for '+correctionRouteName:(x._label+' · '+(x.request_type||x.vehicle_type||x.category||'Request'));
+    var cardMeta=isCompactBusCorrection?'':(new Date(x.created_at).toLocaleString()+' · ID '+x.id);
+    html += '<div class="card"><h2>'+esc(cardTitle)+'</h2>'+(cardMeta?'<p class="muted">'+esc(cardMeta)+'</p>':'')+details+'<div class="dlg-foot" style="justify-content:flex-start">'+actions+'</div></div>';
   });
   if (mode === 'busDirectory') {
     html += '<div class="card"><h2>Published Bus Operator Directory</h2><p class="muted">Public operator information only. This is separate from scheduled routes and is not a booking queue.</p>'+
@@ -1235,8 +1293,38 @@ document.addEventListener('change', function (e) {
   if (e.target.id === 'f_dtype') { filters.driverType = e.target.value; render(); }
   if (e.target.id === 'f_pkind') { filters.placeKind = e.target.value; render(); }
 });
-// Place names are intentionally not auto-translated. Admins can edit Hindi/Punjabi fields explicitly.
-document.addEventListener('input', function (e) { if (e.target && (e.target.id === 'fp_hi' || e.target.id === 'fp_pa')) e.target.dataset.autofilled = 'false'; });
+// Auto-translate the English place name into Hindi and Punjabi. Manual edits are preserved.
+var placeTranslateTimer=null,placeTranslateSequence=0;
+async function translatePlaceText(text,target){
+ var url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(text);
+ var response=await fetch(url,{method:'GET',cache:'no-store'});
+ if(!response.ok)throw new Error('Translation service returned HTTP '+response.status);
+ var result=await response.json();
+ return Array.isArray(result)&&Array.isArray(result[0])?result[0].map(function(part){return part&&part[0]||'';}).join('').trim():'';
+}
+document.addEventListener('input', function(e){
+ var target=e.target;
+ if(!target)return;
+ if(target.id==='fp_hi'||target.id==='fp_pa'){target.dataset.autofilled='false';return;}
+ if(target.id!=='fp_en')return;
+ if(placeTranslateTimer)clearTimeout(placeTranslateTimer);
+ var sequence=++placeTranslateSequence;
+ placeTranslateTimer=setTimeout(async function(){
+  var english=document.getElementById('fp_en');
+  var hi=document.getElementById('fp_hi'),pa=document.getElementById('fp_pa');
+  var source=english&&english.value.trim();
+  if(!source||!hi||!pa)return;
+  var shouldFillHi=!hi.value.trim()||hi.dataset.autofilled==='true';
+  var shouldFillPa=!pa.value.trim()||pa.dataset.autofilled==='true';
+  if(!shouldFillHi&&!shouldFillPa)return;
+  try{
+   var results=await Promise.all([shouldFillHi?translatePlaceText(source,'hi'):Promise.resolve(null),shouldFillPa?translatePlaceText(source,'pa'):Promise.resolve(null)]);
+   if(sequence!==placeTranslateSequence||!document.getElementById('fp_en')||document.getElementById('fp_en').value.trim()!==source)return;
+   if(shouldFillHi&&results[0]&&(!hi.value.trim()||hi.dataset.autofilled==='true')){hi.value=results[0];hi.dataset.autofilled='true';}
+   if(shouldFillPa&&results[1]&&(!pa.value.trim()||pa.dataset.autofilled==='true')){pa.value=results[1];pa.dataset.autofilled='true';}
+  }catch(err){console.warn('Automatic place translation failed',err);}
+ },450);
+});
 
 document.addEventListener('click', async function (e) {
   if (e.target.id === 'overlay') { editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render(); return; }
