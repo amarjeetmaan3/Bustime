@@ -71,7 +71,7 @@
     <!-- Custom route and Book Bus labels -->
     <string name="ar_new_route_mode">बिल्कुल नया रूट / पड़ाव दर्ज करें</string>
     <string name="ar_existing_route_mode">मौजूदा रूट चुनें</string>
-    <string name="ar_new_route_intro">From और To के नाम हिंदी, पंजाबी या अंग्रेज़ी में लिखें। कम-से-कम एक सही समय भरना ज़रूरी है; बाकी समय खाली छोड़ सकते हैं। एडमिन जाँच के बाद मंज़ूर करेगा।</string>
+    <string name="ar_new_route_intro">पड़ाव क्रम से जोड़ें, हिंदी, पंजाबी या अंग्रेज़ी में। समय भरने के लिए पड़ाव के समय पर टैप करें; कम-से-कम एक सही समय भरना ज़रूरी है, बाकी खाली छोड़ सकते हैं। एडमिन जाँच के बाद मंज़ूर करेगा।</string>
     <string name="ar_custom_from">कहाँ से — शहर / बस स्टैंड</string>
     <string name="ar_custom_to">कहाँ तक — शहर / बस स्टैंड</string>
     <string name="ar_custom_stops">बीच के पड़ाव (वैकल्पिक)</string>
