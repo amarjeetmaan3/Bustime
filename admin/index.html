@@ -463,28 +463,31 @@ function initRouteAutoTranslation(){
   el.addEventListener('input',function(){
    var lang=el.dataset.lang,key=el.dataset.routeName;
    var idEl=document.querySelector('[data-route-id="'+key+'"]');if(idEl)idEl.value='';
-   if(lang!=='en'){el.dataset.autofilled='false';return;}
    var source=el.value.trim();if(!source)return;
-   var hi=document.querySelector('[data-route-name="'+key+'"][data-lang="hi"]'),pa=document.querySelector('[data-route-name="'+key+'"][data-lang="pa"]');
-   var fillHi=hi&&(!hi.value.trim()||hi.dataset.autofilled==='true'),fillPa=pa&&(!pa.value.trim()||pa.dataset.autofilled==='true');
-   if(!fillHi&&!fillPa)return;
+   var codes=['en','hi','pa'].filter(function(code){return code!==lang;});
+   var targets=codes.map(function(code){return document.querySelector('[data-route-name="'+key+'"][data-lang="'+code+'"]');});
+   var fill=targets.map(function(target){return target&&(!target.value.trim()||target.dataset.autofilled==='true');});
+   if(!fill.some(Boolean))return;
    clearTimeout(el._routeTranslateTimer);
    el._routeTranslateTimer=setTimeout(async function(){
     try{
-     var results=await Promise.all([fillHi?translatePlaceText(source,'hi'):Promise.resolve(''),fillPa?translatePlaceText(source,'pa'):Promise.resolve('')]);
+     var results=await Promise.all(codes.map(function(code,index){return fill[index]?translatePlaceText(source,code):Promise.resolve('');}));
      if(el.value.trim()!==source)return;
-     if(fillHi&&results[0]&&(!hi.value.trim()||hi.dataset.autofilled==='true')){hi.value=results[0];hi.dataset.autofilled='true';}
-     if(fillPa&&results[1]&&(!pa.value.trim()||pa.dataset.autofilled==='true')){pa.value=results[1];pa.dataset.autofilled='true';}
+     targets.forEach(function(target,index){if(fill[index]&&results[index]&&(!target.value.trim()||target.dataset.autofilled==='true')){target.value=results[index];target.dataset.autofilled='true';}});
     }catch(err){console.warn('Route place translation failed',err);}
    },350);
   });
   el.addEventListener('change',function(){
-   var key=el.dataset.routeName,lang=el.dataset.lang,value=String(el.value||'').trim();if(!value)return;
-   var norm=function(s){return String(s||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');};
-   var matches=(data.places||[]).filter(function(p){return norm((p.name||{})[lang])===norm(value)||(p.aliases||[]).some(function(a){return norm(a)===norm(value);});});
+   var key=el.dataset.routeName,value=String(el.value||'').trim();if(!value)return;
+   var norm=function(s){return String(s||'').trim().toLocaleLowerCase().replace(/\\s+/g,' ');};
+   // Resolve names in any script to the same saved Place ID.
+   var matches=(data.places||[]).filter(function(p){
+    return Object.keys(p.name||{}).some(function(code){return norm(p.name[code])===norm(value);})||
+      (p.aliases||[]).some(function(a){return norm(a)===norm(value);});
+   });
    if(matches.length!==1)return;
    var p=matches[0],idEl=document.querySelector('[data-route-id="'+key+'"]');if(idEl)idEl.value=p.id;
-   ['en','hi','pa'].forEach(function(code){var field=document.querySelector('[data-route-name="'+key+'"][data-lang="'+code+'"]');if(field){field.value=String((p.name||{})[code]||'');field.dataset.autofilled=code==='en'?'false':'true';}});
+   ['en','hi','pa'].forEach(function(code){var field=document.querySelector('[data-route-name="'+key+'"][data-lang="'+code+'"]');if(field){field.value=String((p.name||{})[code]||'');field.dataset.autofilled='true';}});
   });
  });
 }
