@@ -269,7 +269,9 @@ function communityEditorHtml() {
    var routeStops=route?[{id:route.from,label:stopLabel(route.from)}].concat((route.stops||[]).map(function(st){return{id:st.place,label:stopLabel(st.place)};}),[{id:route.to,label:stopLabel(route.to)}]):[];
    html+='<label>Stop before the missing stop</label><select data-cr-field="before_stop_id">'+routeStops.map(function(st){return '<option value="'+esc(st.id)+'"'+(String(st.id)===String(x.before_stop_id||'')?' selected':'')+'>'+esc(st.label)+'</option>';}).join('')+'</select>';
    html+='<label>Stop after the missing stop</label><select data-cr-field="after_stop_id">'+routeStops.map(function(st){return '<option value="'+esc(st.id)+'"'+(String(st.id)===String(x.after_stop_id||'')?' selected':'')+'>'+esc(st.label)+'</option>';}).join('')+'</select>';
-   html+='<label>Missing stop name</label><input data-cr-field="missing_place_name" value="'+esc(x.missing_place_name||'')+'">';
+   var missingRaw=String(x.missing_place_name||'').trim(),missingLang=detectPlaceLanguage(missingRaw),missingNames=x.missing_place_names||{};
+   if(!missingNames.en&&!missingNames.hi&&!missingNames.pa&&missingRaw)missingNames[missingLang]=missingRaw;
+   html+='<label>Missing stop name · English / Hindi / Punjabi</label><div class="review-name-fields">'+reviewNameField('missing-stop','en',missingNames.en||'',missingLang)+reviewNameField('missing-stop','hi',missingNames.hi||'',missingLang)+reviewNameField('missing-stop','pa',missingNames.pa||'',missingLang)+'</div>';
    html+='<label>Use an existing place instead (optional)</label><select data-cr-field="missing_place_id">'+placeOptions(x.missing_place_id,true)+'</select>';
    html+='<label>Time at missing stop (optional)</label><input data-cr-field="missing_time" type="time" value="'+esc(x.missing_time||'')+'">';
   }else if(x.request_type==='route_edit'){
