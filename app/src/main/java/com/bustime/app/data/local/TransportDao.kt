@@ -18,9 +18,10 @@ abstract class TransportDao {
 
     // ---------- सर्च ----------
 
-    // जगह के सुझाव: किसी भी भाषा में टाइप करो; kind = "stand" देने पर सिर्फ़ बस स्टैंड
+    // जगह के सुझाव: किसी भी भाषा में टाइप करो। kind = "stand" (स्टैंड सर्च) में अब हर तरह की जगह आती है
+    // (stand, village, city और "place" जैसे चौक/कॉलोनी/Chandigarh), ताकि कोई भी नाम खोजने से छूटे नहीं।
     @Query(
-        "SELECT * FROM places WHERE (:kind IS NULL OR (:kind = 'stand' AND kind IN ('stand', 'village', 'city')) OR kind = :kind) " +
+        "SELECT * FROM places WHERE (:kind IS NULL OR :kind = 'stand' OR kind = :kind) " +
         "AND searchText LIKE '%' || :query || '%' " +
         "ORDER BY CASE WHEN searchText LIKE :query || '%' THEN 0 ELSE 1 END, searchText " +
         "LIMIT :limit"
