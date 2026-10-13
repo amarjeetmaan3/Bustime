@@ -1,0 +1,18 @@
+-- Single-admin security migration for Bustime. Existing owner UID is used in policies.
+DROP POLICY IF EXISTS "Public can save advertisement config" ON public.ad_settings;
+DROP POLICY IF EXISTS "Public can update advertisement config" ON public.ad_settings;
+DROP POLICY IF EXISTS "single owner inserts advertisement config" ON public.ad_settings;
+CREATE POLICY "single owner inserts advertisement config" ON public.ad_settings FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid AND id = 1);
+DROP POLICY IF EXISTS "single owner updates advertisement config" ON public.ad_settings;
+CREATE POLICY "single owner updates advertisement config" ON public.ad_settings FOR UPDATE TO authenticated USING ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid AND id = 1) WITH CHECK ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid AND id = 1);
+DROP POLICY IF EXISTS "Authenticated can read analytics events" ON public.analytics_events;
+DROP POLICY IF EXISTS "single owner reads analytics events" ON public.analytics_events;
+CREATE POLICY "single owner reads analytics events" ON public.analytics_events FOR SELECT TO authenticated USING ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
+DROP POLICY IF EXISTS "Browser admins can upload ad posters" ON storage.objects;
+DROP POLICY IF EXISTS "Browser admins can update ad posters" ON storage.objects;
+DROP POLICY IF EXISTS "single owner uploads ad posters" ON storage.objects;
+CREATE POLICY "single owner uploads ad posters" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'ads-posters' AND (select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid AND lower(storage.extension(name)) = ANY (ARRAY['png','jpg','jpeg','webp']));
+DROP POLICY IF EXISTS "single owner updates ad posters" ON storage.objects;
+CREATE POLICY "single owner updates ad posters" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'ads-posters' AND (select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) WITH CHECK (bucket_id = 'ads-posters' AND (select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid AND lower(storage.extension(name)) = ANY (ARRAY['png','jpg','jpeg','webp']));
+ALTER FUNCTION public.validate_route_submission_timing() SET search_path = public, pg_temp;
+REVOKE EXECUTE ON FUNCTION public.limit_route_submissions() FROM PUBLIC, anon, authenticated;
