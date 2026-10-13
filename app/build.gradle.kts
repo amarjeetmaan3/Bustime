@@ -1,3 +1,4 @@
+import java.util.Base64 as JBase64
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -38,14 +39,7 @@ android {
     val testingKeyFile = file("bustime.jks")
     val testingKeyBase64File = file("bustime-testing-keystore.base64")
     if (!testingKeyFile.exists() && testingKeyBase64File.exists()) {
-        testingKeyFile.writeBytes(
-            Class.forName("java.util.Base64")
-                .getMethod("getMimeDecoder")
-                .invoke(null)
-                .javaClass
-                .getMethod("decode", String::class.java)
-                .invoke(Class.forName("java.util.Base64").getMethod("getMimeDecoder").invoke(null), testingKeyBase64File.readText()) as ByteArray
-        )
+        testingKeyFile.writeBytes(JBase64.getMimeDecoder().decode(testingKeyBase64File.readText()))
     }
 
     signingConfigs {
