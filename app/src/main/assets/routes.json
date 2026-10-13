@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 25,
+  "dataVersion": 26,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -207,6 +207,22 @@
         "hi": "हुनमनगढ़",
         "pa": "ਹੁਨਮੰਗਗੜ"
       }
+    },
+    {
+      "id": "place_user_gurdaspur",
+      "kind": "place",
+      "name": {
+        "en": "Gurdaspur"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_bathinda",
+      "kind": "place",
+      "name": {
+        "en": "Bathinda"
+      },
+      "aliases": []
     }
   ],
   "routes": [
@@ -312,6 +328,15 @@
           "day_offset": 1
         }
       ]
+    },
+    {
+      "id": "r3",
+      "from": "place_user_gurdaspur",
+      "to": "place_user_bathinda",
+      "time": "08:00",
+      "arrive": "11:00",
+      "service": "Punjab",
+      "longRoute": false
     }
   ],
   "taxiSeaters": [
