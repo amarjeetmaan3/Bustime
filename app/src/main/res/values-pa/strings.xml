@@ -33,6 +33,7 @@
     <string name="no_autos">ਕੋਈ ਆਟੋ ਉਪਲਬਧ ਨਹੀਂ ਹੈ</string>
 
     <string name="show_number">ਡਰਾਈਵਰ ਦਾ ਨੰਬਰ ਵੇਖੋ</string>
+    <string name="show_details">ਪੂਰੀ ਜਾਣਕਾਰੀ ਵੇਖੋ</string>
     <string name="number_notice">ਧਿਆਨ ਦਿਓ: ਕਿਰਾਇਆ ਤੈਅ ਹੈ, ਮੋਲ-ਭਾਵ ਨਾ ਕਰੋ। ਨੰਬਰ ਕੁਝ ਸਕਿੰਟਾਂ ਵਿੱਚ ਦਿਖੇਗਾ…</string>
     <string name="call">ਕਾਲ</string>
     <string name="whatsapp">WhatsApp</string>
