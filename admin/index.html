@@ -82,7 +82,7 @@
   .review-stop-row .review-place { min-width:170px; }
   .review-stop-row .review-hi, .review-stop-row .review-pa { min-width:130px; }
   .request-row { display:grid; grid-template-columns:minmax(220px,1.7fr) minmax(130px,1fr) minmax(150px,1.2fr) auto; gap:14px; align-items:center; }
-  .request-row .request-title { font-weight:750; overflow-wrap:anywhere; }
+  .request-row .request-title { font-weight:750; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .request-row .request-summary { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .route-place-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; flex:1; min-width:0; }
   .route-place-fields input { min-width:0; width:100%; }
@@ -419,12 +419,16 @@ function ensureRoutePlace(prefix){
  if(!primary)return null;
  function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
  var preferred=preferredId?placeById(preferredId):null;
- var unchanged=!!preferred&&Object.keys(names).some(function(code){return names[code]&&norm((preferred.name||{})[code])===norm(names[code]);});
+ var unchanged=!!preferred&&norm((preferred.name||{})[lang])===norm(primary);
  var exact=data.places.find(function(p){return Object.keys(p.name||{}).some(function(code){return code===lang&&norm(p.name[code])===norm(primary);})||(p.aliases||[]).some(function(a){return norm(a)===norm(primary);});})||null;
  var place=unchanged?preferred:exact;
- if(!place){place={id:makeId('place_',primary,function(candidate){return !!placeById(candidate);}),kind:'place',name:{},aliases:[]};data.places.push(place);}
+ var created=false;
+ if(!place){place={id:makeId('place_',primary,function(candidate){return !!placeById(candidate);}),kind:'place',name:{},aliases:[]};data.places.push(place);created=true;}
  place.name=place.name||{};
- ['en','hi','pa'].forEach(function(code){if(names[code])place.name[code]=names[code];});
+ // Never overwrite another existing Place's translations merely because one
+ // language label matched. Only the selected Place or a brand-new Place can
+ // receive the names entered in this editor.
+ if(created||unchanged)['en','hi','pa'].forEach(function(code){if(names[code])place.name[code]=names[code];});
  if(idEl)idEl.value=place.id;
  setDirty(true);return place.id;
 }
