@@ -25,6 +25,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
     private val gson = Gson()
 
     private val localMutex = Mutex()
+    private val syncMutex = Mutex()
 
     // स्क्रीन खुलने से पहले यह पक्का करता है कि डेटाबेस खाली न हो (पहली बार ऐप वाली फाइल से भरता है)
     suspend fun ensureLocalData() {
@@ -48,10 +49,12 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
     suspend fun sync() {
         ensureLocalData()
         withContext(Dispatchers.IO) {
-            try {
-                fetchRemote()
-            } catch (e: Exception) {
-                Log.w(TAG, "Sync failed, old data kept: ${e.message}")
+            syncMutex.withLock {
+                try {
+                    fetchRemote()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Sync failed, old data kept: ${e.message}")
+                }
             }
         }
     }
