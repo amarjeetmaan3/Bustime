@@ -1177,6 +1177,22 @@ async function sbFetch(path, opts) {
   var headers = Object.assign({ apikey: cfg.sbKey, 'Content-Type': 'application/json' }, opts.headers || {});
   if (sbToken) headers.Authorization = 'Bearer ' + sbToken;
   var res = await fetch(base + path, Object.assign({}, opts, { headers: headers }));
+  if (res.status === 401 && sbRefreshToken && !opts.__bustimeRetried) {
+    var refreshRes = await fetch(base + '/auth/v1/token?grant_type=refresh_token', {
+      method:'POST', headers:{apikey:cfg.sbKey,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:sbRefreshToken})
+    });
+    var refreshed = await refreshRes.json();
+    if (refreshRes.ok) {
+      saveAdminSession(refreshed);
+      await verifySingleAdmin();
+      var retryOpts = Object.assign({}, opts, {__bustimeRetried:true});
+      delete retryOpts.__bustimeRetried;
+      return sbFetchRetryOnce(path, retryOpts);
+    }
+    saveAdminSession({});
+    throw new Error('Admin session expired. Please sign in again.');
+  }
   if (!res.ok) {
     var t = ''; try { var j = await res.json(); t = j.error_description || j.message || j.hint || ''; } catch (e) {}
     throw new Error('Supabase ' + res.status + (t ? ': ' + t : ''));
@@ -1193,6 +1209,19 @@ async function sbFetch(path, opts) {
   }
   return raw;
 }
+async function sbFetchRetryOnce(path, opts) {
+  opts = opts || {};
+  var base = cfg.sbUrl.replace(/\/+$/, '');
+  var headers = Object.assign({apikey:cfg.sbKey,'Content-Type':'application/json'}, opts.headers || {});
+  if (sbToken) headers.Authorization = 'Bearer ' + sbToken;
+  var res = await fetch(base + path, Object.assign({}, opts, {headers:headers}));
+  if (!res.ok) { var t=''; try { var j=await res.json(); t=j.message||j.error_description||''; } catch (_) {} throw new Error('Supabase '+res.status+(t?': '+t:'')); }
+  if (res.status===204) return null;
+  var raw=await res.text(); if(!raw||!raw.trim()) return null;
+  var ct=res.headers.get('content-type')||'';
+  if(ct.indexOf('json')>=0) { try{return JSON.parse(raw);}catch(_){throw new Error('Supabase returned invalid JSON ('+res.status+').');} }
+  return raw;
+}
 async function sbLogin(email, password) {
   var base = cfg.sbUrl.replace(/\/+$/, '');
   var res = await fetch(base + '/auth/v1/token?grant_type=password', {
@@ -1201,7 +1230,8 @@ async function sbLogin(email, password) {
   });
   var j = await res.json();
   if (!res.ok) throw new Error(j.error_description || j.msg || 'Login failed');
-  sbToken = j.access_token;
+  saveAdminSession(j);
+  await verifySingleAdmin();
 }
 async function loadSubs() {
   subs = await sbFetch('/rest/v1/route_submissions?select=*&order=created_at.desc&limit=300');
