@@ -127,6 +127,8 @@ class AddRouteActivity : AppCompatActivity() {
                 val matches = (if (query.isBlank()) allItems else allItems.filter { item ->
                     item.searchableNames.any { name -> name.lowercase().contains(query) }
                 }).map { item -> suggestionForLanguage(item, lang) }
+                    .distinctBy { it.label.trim().lowercase().replace(Regex("\\s+"), " ") }
+                    .sortedBy { it.label.lowercase() }
                 return FilterResults().apply {
                     values = matches
                     count = matches.size
@@ -204,7 +206,7 @@ class AddRouteActivity : AppCompatActivity() {
                         fallback,
                         fallback,
                         fallback,
-                        names.values.distinct()
+                        (names.values + place.searchText).distinct()
                     ),
                     lang
                 )
@@ -220,7 +222,6 @@ class AddRouteActivity : AppCompatActivity() {
                         .sortedBy { it.key }
                         .joinToString("|") { it.key + "=" + it.value.trim().lowercase().replace(Regex("\\s+"), " ") }
                 }
-                .sortedBy { it.label.lowercase() }
 
             findViewById<AutoCompleteTextView>(R.id.etFromText)?.let(::attachPlaceSuggestions)
             findViewById<AutoCompleteTextView>(R.id.etToText)?.let(::attachPlaceSuggestions)
