@@ -217,10 +217,9 @@ class AddRouteActivity : AppCompatActivity() {
                 .sortedWith(compareByDescending<PlaceSuggestion> { routeUsage[it.placeId] ?: 0 }
                     .thenBy { it.label.lowercase() })
                 .distinctBy { item ->
-                    item.namesByLanguage.entries
-                        .filter { it.value.isNotBlank() }
-                        .sortedBy { it.key }
-                        .joinToString("|") { it.key + "=" + it.value.trim().lowercase().replace(Regex("\\s+"), " ") }
+                    // Duplicate visible names should not be repeated in suggestions.
+                    // The admin can disambiguate genuinely different places with a suffix.
+                    item.label.trim().lowercase().replace(Regex("\\s+"), " ")
                 }
 
             findViewById<AutoCompleteTextView>(R.id.etFromText)?.let(::attachPlaceSuggestions)
