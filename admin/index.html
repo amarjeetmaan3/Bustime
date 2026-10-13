@@ -169,6 +169,9 @@
     .edstop { grid-template-columns:36px minmax(0,1fr) auto; grid-template-areas:"num names names" ". time act"; }
     .edstop>.ed-time:empty { display:none; }
   }
+  .ed-bad { border-color:var(--red) !important; background:var(--red-l) !important; }
+  .ed-bad:focus { outline-color:#F6C9C5 !important; }
+  #edProblems .alert { margin-top:14px; }
   .edsug { position:fixed; z-index:60; display:none; background:#fff; border:1px solid #C9D1DA; border-radius:10px; box-shadow:0 10px 28px rgba(16,24,40,.22); max-height:250px; overflow:auto; }
   .edsug-item { padding:8px 11px; border-bottom:1px solid #F0F2F5; cursor:pointer; line-height:1.3; }
   .edsug-item:last-child { border-bottom:0; }
@@ -364,7 +367,7 @@ function communityEditorHtml() {
    html+='<h3>Proposed route stops</h3><p class="muted">Each stop stays on one horizontal line. Choose an existing Place ID to retain it, or enter a distinct name; a new Place is created only after approval. Hindi and Punjabi translations can be corrected inline.</p>';
    var proposed=Array.isArray(x.proposed_stops)?x.proposed_stops:[];
    html+='<div class="tablewrap"><table class="review-stop-table"><thead><tr><th>#</th><th>Existing Place ID</th><th>Place name</th><th>हिंदी</th><th>ਪੰਜਾਬੀ</th><th>Time</th><th>Move</th></tr></thead><tbody id="crProposedStops">'+proposed.map(function(st,i){
-    var p=st.place_id?placeById(st.place_id):null,raw=String(st.name||(p?pname(p):'')||'').trim(),lang=st.language||detectPlaceLanguage(raw),names=st.names||{};
+    var p=st.place_id?placeById(st.place_id):null,raw=String(st.name||(p?pname(p):'')||'').trim(),lang=edLangForText(raw,st.language),names=st.names||{};
     if(!names.en&&!names.hi&&!names.pa&&p)names=p.name||{};
     if(!names.en&&!names.hi&&!names.pa&&raw)names[lang]=raw;
     var key='cr-stop-'+i;
@@ -1389,6 +1392,7 @@ function reviewStopRowHtml(index, st) {
 }
 function renumberReviewStops() {
   var body=$('#rvStops');if(!body)return;
+  setTimeout(edMarkAll,0);
   Array.prototype.slice.call(body.querySelectorAll('[data-rv-stop]')).forEach(function(row,index){
     row.setAttribute('data-rv-stop',index);
     row.querySelectorAll('[data-rv-name]').forEach(function(inp){inp.setAttribute('data-rv-name','stop-'+index);});
@@ -1495,13 +1499,14 @@ function renderModal() {
   edSuggestHide();
   if (communityReviewEditor) {
     $('#dlgTitle').textContent = 'Edit request · ' + (communityReviewEditor.record.vehicle_type || communityReviewEditor.record.request_type || communityReviewEditor.record.category || communityReviewEditor.kind);
-    $('#dlgBody').innerHTML = communityEditorHtml(); ov.classList.add('show'); autoTranslateReviewGroups();
+    $('#dlgBody').innerHTML = communityEditorHtml(); ov.classList.add('show'); autoTranslateReviewGroups(); edMarkAll();
   } else if (routeReviewEditor) {
     var reviewSub = subs && subs[routeReviewEditor.index];
     $('#dlgTitle').textContent = 'Review route submission' + (reviewSub && reviewSub.service_name ? ' · ' + reviewSub.service_name : '');
     $('#dlgBody').innerHTML = routeReviewEditorHtml();
     ov.classList.add('show');
     autoTranslateReviewGroups();
+    edMarkAll();
   } else if (publishOpen) {
     var v = validate();
     $('#dlgTitle').textContent = 'Publish changes';
@@ -1628,12 +1633,12 @@ function edPick(input,pid){
   });
   if(info.mode==='route'){var h=document.querySelector('#dlgBody [data-route-id="'+info.key+'"]');if(h)h.value=p.id;}
   else{var row=input.closest('[data-rv-stop]');if(row)row.setAttribute('data-place',p.id);}
-  edSuggestHide();
+  edSuggestHide();edMarkAll();
   // If the saved Place has no name in some language, fill only that empty box by translation.
   var empties=info.fields.filter(function(f){return !f.value.trim();}),pn=p.name||{},srcText=pn[lang]||pn.en||pn.hi||pn.pa||'';
   if(empties.length&&srcText){
     Promise.all(empties.map(function(f){return translatePlaceText(srcText,f.getAttribute('data-lang'));})).then(function(res){
-      empties.forEach(function(f,i){if(res[i]&&!f.value.trim()){f.value=res[i];f.dataset.autofilled='true';}});
+      empties.forEach(function(f,i){if(res[i]&&!f.value.trim()){f.value=res[i];f.dataset.autofilled='true';}});edMarkAll();
     }).catch(function(){});
   }
 }
@@ -1661,6 +1666,60 @@ document.addEventListener('scroll',function(e){
   if(edSug.input&&!(edSug.el&&edSug.el.contains(e.target)))edSuggestShow(edSug.input);
 },true);
 window.addEventListener('resize',edSuggestHide);
+
+// ===== Name script check (route requests + corrections): English box = English letters, Hindi = Devanagari, Punjabi = Gurmukhi =====
+// Numbers and punctuation are fine in every box. An empty Hindi/Punjabi box is allowed; the English box must always have the name.
+var ED_RE={en:/[A-Za-zÀ-ɏ]/,hi:/[ऀ-ॿ]/,pa:/[਀-੿]/};
+var ED_LANGNAME={en:'English',hi:'Hindi',pa:'Punjabi'};
+function edScriptsIn(v){return ED_LANGS.filter(function(c){return ED_RE[c].test(v);});}
+function edLangForText(raw,hint){
+  var s=edScriptsIn(String(raw||''));
+  if(hint&&ED_RE[hint]&&(!s.length||s.indexOf(hint)>=0))return hint;
+  return detectPlaceLanguage(raw);
+}
+function edFieldProblem(lang,value,othersFilled){
+  var v=String(value||'').trim();
+  if(!v)return lang==='en'&&othersFilled?'the English name is missing — write it in English letters.':'';
+  var foreign=edScriptsIn(v).filter(function(c){return c!==lang;});
+  if(foreign.length)return 'the '+ED_LANGNAME[lang]+' box has '+foreign.map(function(c){return ED_LANGNAME[c];}).join(' / ')+' letters — write it in '+ED_LANGNAME[lang]+'.';
+  if(lang==='en'&&!ED_RE.en.test(v))return 'the English box needs the name in English letters.';
+  return '';
+}
+function edNameProblems(){
+  var seen={},list=[],stopNo=0;
+  document.querySelectorAll('#dlgBody [data-route-name],#dlgBody [data-rv-name]').forEach(function(el){
+    var attr=el.hasAttribute('data-route-name')?'data-route-name':'data-rv-name',key=el.getAttribute(attr);
+    if(seen[key])return;seen[key]=true;
+    var label=key==='from'?'From':key==='to'?'To':key==='missing-stop'?'Missing stop':'Stop '+(++stopNo);
+    var fields=Array.prototype.slice.call(document.querySelectorAll('#dlgBody ['+attr+'="'+key+'"]'));
+    var anyFilled=fields.some(function(f){return f.value.trim();});
+    fields.forEach(function(f){
+      var lang=f.getAttribute('data-lang'),others=fields.some(function(o){return o!==f&&o.value.trim();});
+      var msg=edFieldProblem(lang,f.value,others&&anyFilled);
+      if(msg)list.push({el:f,label:label,msg:msg});
+    });
+  });
+  return list;
+}
+function edMarkAll(){
+  if(!routeReviewEditor&&!communityReviewEditor)return;
+  var probs=edNameProblems();
+  document.querySelectorAll('#dlgBody .ed-bad').forEach(function(el){el.classList.remove('ed-bad');});
+  probs.forEach(function(p){p.el.classList.add('ed-bad');});
+  var body=$('#dlgBody');if(!body)return;
+  var box=document.getElementById('edProblems');
+  if(!box){box=document.createElement('div');box.id='edProblems';var foot=body.querySelector('.dlg-foot');if(foot)foot.parentNode.insertBefore(box,foot);else body.appendChild(box);}
+  box.innerHTML=probs.length?'<div class="alert err"><b>Fix these before approving ('+probs.length+'):</b><ul>'+probs.slice(0,8).map(function(p){return '<li>'+esc(p.label+': '+p.msg)+'</li>';}).join('')+(probs.length>8?'<li>…and '+(probs.length-8)+' more</li>':'')+'</ul></div>':'';
+}
+function edBlockIfProblems(){
+  var p=edNameProblems();if(!p.length)return false;
+  edMarkAll();
+  toast(p[0].label+': '+p[0].msg+(p.length>1?'  (+'+(p.length-1)+' more — see the red boxes)':''));
+  try{p[0].el.scrollIntoView({block:'center'});p[0].el.focus();}catch(err){}
+  return true;
+}
+document.addEventListener('input',function(e){var t=e.target;if(t&&t.closest&&t.closest('#dlgBody')&&(t.hasAttribute('data-rv-name')||t.hasAttribute('data-route-name')))edMarkAll();});
+document.addEventListener('change',function(e){var t=e.target;if(t&&t.closest&&t.closest('#dlgBody')&&(t.hasAttribute('data-rv-name')||t.hasAttribute('data-route-name')))setTimeout(edMarkAll,0);});
 
 // ============ Events ============
 function val(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
@@ -1728,6 +1787,7 @@ async function translateReviewGroup(key,sourceLang){
   targets.forEach(function(el,index){if(translated[index]){
    el.value=translated[index];el.dataset.autofilled='true';
   }});
+  edMarkAll();
  }catch(err){console.warn('Automatic review translation failed',err);}
 }
 function autoTranslateReviewGroups(){
@@ -1999,6 +2059,7 @@ document.addEventListener('click', async function (e) {
         toast('This review editor is no longer available. Refresh submissions and try again.'); routeReviewEditor = null; render(); return;
       }
       if (!v.from || !v.to) { toast('Enter a name for both From and To.'); return; }
+      if (edBlockIfProblems()) return;
       var dupReview = edDuplicateError('review'); if (dupReview) { toast(dupReview); return; }
       if (sub.submission_type === 'edit_existing_route') {
         var targetRoute = data.routes.find(function (r) { return String(r.id) === String(sub.route_id); });
@@ -2090,6 +2151,7 @@ document.addEventListener('click', async function (e) {
     else if (act === 'community-save-draft' || act === 'community-approve-reviewed') {
       var rk=b.getAttribute('data-kind'),rid=b.getAttribute('data-id'),rt=communityTable(rk),orig=(community[rk]||[]).find(function(x){return x.id===rid;});
       if(!orig||orig.status!=='pending'||!communityReviewEditor||communityReviewEditor.record.id!==rid){toast('Request is no longer pending. Refresh and reopen it.');return;}
+      if(act==='community-approve-reviewed'&&edBlockIfProblems())return;
       var rv=communityEditorValues(),merged=Object.assign({},orig,rv),stamp=new Date().toISOString();
       if(act==='community-save-draft'){await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:rv,reviewed_at:stamp})});orig.reviewed_data=rv;orig.reviewed_at=stamp;communityReviewEditor.record.reviewed_data=rv;toast('Reviewed draft saved. Request remains pending; original is unchanged.');render();return;}
       if(!confirm('Approve the reviewed data into the main app data? This does not publish the GitHub snapshot.'))return;
