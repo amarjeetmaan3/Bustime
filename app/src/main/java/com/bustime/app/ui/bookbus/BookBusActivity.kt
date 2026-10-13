@@ -58,6 +58,7 @@ class BookBusActivity : AppCompatActivity() {
         content.addView(TextView(this).apply { text = getString(com.bustime.app.R.string.bb_intro); textSize = 15f; setPadding(0, 8, 0, 10) })
         var selectedArea: String? = null
         var allRowsCache: List<org.json.JSONObject> = emptyList()
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 12, 0, 0) }
         val areaButton = Button(this).apply {
             text = "Permanent Area: Select Area ▾"
             setOnClickListener {
@@ -76,7 +77,6 @@ class BookBusActivity : AppCompatActivity() {
             }
         }
         content.addView(areaButton, LinearLayout.LayoutParams(-1, -2))
-        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 12, 0, 0) }
         content.addView(results)
         lifecycleScope.launch {
             val raw = withContext(Dispatchers.IO) { CommunitySupabase.getPublicOperators() }
