@@ -99,17 +99,17 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
             for (n in seats) {
                 val filter = MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
                     text = getString(R.string.seater_format, n)
-                    textSize = 11f
-                    minHeight = (36 * resources.displayMetrics.density).toInt()
+                    textSize = 13f
+                    minHeight = (42 * resources.displayMetrics.density).toInt()
                     minimumHeight = minHeight
-                    setPadding((10 * resources.displayMetrics.density).toInt(), 0, (10 * resources.displayMetrics.density).toInt(), 0)
+                    setPadding((14 * resources.displayMetrics.density).toInt(), 0, (14 * resources.displayMetrics.density).toInt(), 0)
                     isAllCaps = false
                     setOnClickListener {
                         AnalyticsHelper.logEvent(requireContext(), "taxi_seat_filter", "taxi", org.json.JSONObject().put("seats", n))
                         showDrivers(n)
                     }
                 }
-                val filterLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (38 * resources.displayMetrics.density).toInt())
+                val filterLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (44 * resources.displayMetrics.density).toInt())
                 filterLp.marginEnd = margin
                 seatFiltersContainer.addView(filter, filterLp)
 
