@@ -451,7 +451,7 @@ function communityEditorHtml() {
  var rec=communityReviewEditor.record,kind=communityReviewEditor.kind,draft=rec.reviewed_data&&typeof rec.reviewed_data==='object'?rec.reviewed_data:rec;
  var skip={id:1,status:1,created_at:1,updated_at:1,reviewed_data:1,reviewed_at:1,approved_at:1};
  var labels={vehicle_type:'Vehicle type',person_name:'Owner/driver name',vehicle_name:'Vehicle name',vehicle_model_number:'Model number',vehicle_number:'Vehicle number',seats:'Seats',area_name:'Service area',location:'Location',union_name:'Union',fuel_type:'Fuel type',phone:'Phone',whatsapp:'WhatsApp',details:'Details',operator_name:'Operator name',service_name:'Service name',bus_type:'Bus type',custom_category:'Custom category',seat_type:'Seat type',sleeper_count:'Sleeper berths',seater_count:'Seater seats',from_text:'From',to_text:'To',request_type:'Request type',route_id:'Route ID',before_stop_id:'Before stop ID',after_stop_id:'After stop ID',missing_place_name:'Missing stop',missing_time:'Missing stop time',stop_id:'Stop ID',corrected_time:'Corrected time',change_summary:'Change summary',proposed_stops:'Proposed stops',category:'Category',related_route:'Related route',message:'Message',contact:'Contact',notes:'Notes'};
- var html='<p class="muted">Opening never approves a request. Edit and save a reviewed draft first; approve is a separate action. Original submission below is read-only.</p><div class="card" style="background:#f5f7fa"><b>Original submission · read-only</b><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto">'+esc(JSON.stringify(rec,null,2))+'</pre></div>';
+ var html='<p class="muted">Opening never approves a request. Edit and save a reviewed draft first; approve is a separate action. </p>';
  Object.keys(rec).forEach(function(k){if(skip[k]||typeof rec[k]==='function')return;var value=Object.prototype.hasOwnProperty.call(draft,k)?draft[k]:rec[k],label=labels[k]||k.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});if(k==='original_stops'){html+='<label>'+esc(label)+' · original/read-only</label><pre style="white-space:pre-wrap">'+esc(JSON.stringify(value,null,2))+'</pre>';return;}if(value!==null&&typeof value==='object'){html+='<label>'+esc(label)+' · JSON</label><textarea data-cr-field="'+esc(k)+'" rows="5" style="width:100%;font-family:monospace">'+esc(JSON.stringify(value,null,2))+'</textarea>';}else{var type=/(time)$/.test(k)?'time':(/count$|^seats$/.test(k)?'number':'text');html+='<label>'+esc(label)+'</label><input data-cr-field="'+esc(k)+'" type="'+type+'" value="'+esc(value==null?'':String(value))+'">';}});
  html+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Approve reviewed data</button></div>';return html;
 }
@@ -556,9 +556,11 @@ function initRouteAutoTranslation(){
   if(el.dataset.routeTranslateBound==='true')return;el.dataset.routeTranslateBound='true';
   el.addEventListener('input',function(){
    var lang=el.dataset.lang,key=el.dataset.routeName;
+   // Hindi / Punjabi edits are manual: they never change English, the other language, or the Place ID.
+   if(lang!=='en'){el.dataset.autofilled='false';return;}
    var idEl=document.querySelector('[data-route-id="'+key+'"]');if(idEl)idEl.value='';
    var source=el.value.trim();if(!source)return;
-   var codes=['en','hi','pa'].filter(function(code){return code!==lang;});
+   var codes=['hi','pa'];
    var targets=codes.map(function(code){return document.querySelector('[data-route-name="'+key+'"][data-lang="'+code+'"]');});
    var fill=targets.map(function(target){return target&&(!target.value.trim()||target.dataset.autofilled==='true');});
    if(!fill.some(Boolean))return;
@@ -573,10 +575,11 @@ function initRouteAutoTranslation(){
   });
   el.addEventListener('change',function(){
    var key=el.dataset.routeName,value=String(el.value||'').trim();if(!value)return;
-   var norm=function(s){return String(s||'').trim().toLocaleLowerCase().replace(/\\s+/g,' ');};
-   // Resolve names in any script to the same saved Place ID.
+   if(el.dataset.lang!=='en')return;   // only the English box picks an existing Place; Hindi/Punjabi edits stay manual
+   var norm=function(s){return String(s||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');};
+   // Resolve the English name to the same saved Place ID.
    var matches=(data.places||[]).filter(function(p){
-    return Object.keys(p.name||{}).some(function(code){return norm(p.name[code])===norm(value);})||
+    return norm((p.name||{}).en)===norm(value)||
       (p.aliases||[]).some(function(a){return norm(a)===norm(value);});
    });
    if(matches.length!==1)return;
@@ -1676,7 +1679,8 @@ function routeReviewValues() {
 function ensureReviewedPlace(names, preferredId) {
   names=names||{};var clean={};
   ['en','hi','pa'].forEach(function(code){var value=String(names[code]||'').trim();if(value)clean[code]=value;});
-  var lang=['en','hi','pa'].indexOf(names._sourceLang)>=0?names._sourceLang:(clean.en?'en':clean.hi?'hi':clean.pa?'pa':'');
+  // English is the identity of a Place; another language is used only when there is no English name.
+  var lang=clean.en?'en':(['en','hi','pa'].indexOf(names._sourceLang)>=0&&clean[names._sourceLang]?names._sourceLang:(clean.hi?'hi':clean.pa?'pa':''));
   var primary=lang&&clean[lang];if(!primary)return preferredId&&placeById(preferredId)?preferredId:null;
   function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
   preferredId=preferredId||names._selectedPlaceId||'';
@@ -1948,6 +1952,7 @@ document.addEventListener('input', function (e) {
 document.addEventListener('change',function(e){
  var target=e.target;if(!target||!target.hasAttribute||!target.hasAttribute('data-rv-name'))return;
  var key=target.getAttribute('data-rv-name'),lang=target.getAttribute('data-lang'),value=String(target.value||'').trim();if(!value)return;
+ if(lang!=='en')return;   // only the English box picks an existing Place; Hindi/Punjabi edits stay manual
  var norm=function(s){return String(s||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');};
  var matches=(data.places||[]).filter(function(p){return norm((p.name||{})[lang])===norm(value)||(p.aliases||[]).some(function(a){return norm(a)===norm(value);});});
  if(matches.length!==1)return;
@@ -1968,7 +1973,30 @@ document.addEventListener('change', function (e) {
 });
 // Automatic place translation. Translated fields stay editable; typing in one marks it manual.
 var placeTranslateTimer=null,placeTranslateSequence=0;
+// Place names are TRANSLITERATED (Chandigarh -> चंडीगढ़ / ਚੰਡੀਗੜ੍ਹ), never translated by meaning (Apple -> सेब).
+// English -> Hindi/Punjabi uses Google Input Tools; anything else (or if that service fails) falls back to Google Translate.
+async function transliterateWord(word,target){
+ var url='https://inputtools.google.com/request?text='+encodeURIComponent(word)+'&itc='+target+'-t-i0-und&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8&app=bustime-admin';
+ var response=await fetch(url,{method:'GET',cache:'no-store'});
+ if(!response.ok)throw new Error('Transliteration service returned HTTP '+response.status);
+ var result=await response.json();
+ var best=result&&result[0]==='SUCCESS'&&result[1]&&result[1][0]&&result[1][0][1]&&result[1][0][1][0];
+ if(!best)throw new Error('No transliteration returned');
+ return String(best);
+}
 async function translatePlaceText(text,target){
+ var source=String(text||'').trim();
+ if((target==='hi'||target==='pa')&&/[A-Za-z]/.test(source)&&!/[\u0900-\u097F\u0A00-\u0A7F]/.test(source)){
+  try{
+   var pieces=source.match(/[A-Za-z]+|[^A-Za-z]+/g)||[];
+   var done=await Promise.all(pieces.map(function(piece){return /[A-Za-z]/.test(piece)?transliterateWord(piece,target):Promise.resolve(piece);}));
+   var joined=done.join('').replace(/\s+/g,' ').trim();
+   if(joined)return joined;
+  }catch(err){console.warn('Transliteration failed, using translation instead',err);}
+ }
+ return translatePlaceTextGoogle(source,target);
+}
+async function translatePlaceTextGoogle(text,target){
  var url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(text);
  var response=await fetch(url,{method:'GET',cache:'no-store'});
  if(!response.ok)throw new Error('Translation service returned HTTP '+response.status);
@@ -1979,6 +2007,8 @@ function detectPlaceLanguage(value){
  value=String(value||'');var pa=(value.match(/[\u0A00-\u0A7F]/g)||[]).length,hi=(value.match(/[\u0900-\u097F]/g)||[]).length,en=(value.match(/[A-Za-z]/g)||[]).length;
  return pa>hi&&pa>=en?'pa':hi>pa&&hi>=en?'hi':'en';
 }
+var rvTranslateTimers={};
+function scheduleReviewTranslate(key,lang){clearTimeout(rvTranslateTimers[key]);rvTranslateTimers[key]=setTimeout(function(){translateReviewGroup(key,lang);},350);}
 async function translateReviewGroup(key,sourceLang){
  var fields=Array.prototype.slice.call(document.querySelectorAll('[data-rv-name="'+key+'"]'));
  var sourceField=fields.find(function(el){return el.dataset.lang===sourceLang;});
@@ -2019,11 +2049,14 @@ document.addEventListener('input',function(e){
  if(target.id==='fp_hi'||target.id==='fp_pa'){target.dataset.autofilled='false';return;}
  if(target.hasAttribute&&target.hasAttribute('data-rv-name')){
   var key=target.getAttribute('data-rv-name'),lang=target.getAttribute('data-lang');
-  target.dataset.autofilled='false';delete target.dataset.rvSelectedPlaceId;
+  target.dataset.autofilled='false';
+  // Hindi / Punjabi edits are manual: they never change English, the other language, or the Place.
+  if(lang!=='en')return;
+  delete target.dataset.rvSelectedPlaceId;
   var correctionRow=target.closest('[data-cr-proposed]');
   if(correctionRow){var placeField=correctionRow.querySelector('[data-cr-place]'),placeLabel=correctionRow.querySelector('[data-cr-place-label]');if(placeField)placeField.value='';if(placeLabel)placeLabel.textContent='New on approval';}
   document.querySelectorAll('[data-rv-name="'+key+'"]').forEach(function(el){el.setAttribute('data-rv-source-lang',lang);delete el.dataset.rvSelectedPlaceId;});
-  translateReviewGroup(key,lang);
+  scheduleReviewTranslate(key,'en');
   return;
  }
  if(target.id!=='fp_en')return;
