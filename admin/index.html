@@ -73,6 +73,14 @@
   .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .stoprow { display:flex; gap:6px; margin-bottom:6px; align-items:center; }
   .stoprow select { flex:3; } .stoprow input { flex:1.2; }
+  .review-stop-table { width:100%; min-width:1040px; border-collapse:separate; border-spacing:0 5px; }
+  .review-stop-table th { padding:7px 8px; background:#F7F9FC; }
+  .review-stop-table td { padding:5px 6px; vertical-align:middle; }
+  .review-stop-row input { min-width:100px; padding:7px 8px; min-height:35px; }
+  .review-stop-row .review-stop-num { width:34px; font-weight:750; color:var(--muted); }
+  .review-stop-row .review-move { white-space:nowrap; width:76px; }
+  .review-stop-row .review-place { min-width:170px; }
+  .review-stop-row .review-hi, .review-stop-row .review-pa { min-width:130px; }
 
   .overlay { position:fixed; inset:0; background:rgba(16,24,40,.5); display:none; align-items:flex-start; justify-content:center; padding:24px 12px; overflow-y:auto; z-index:30; }
   .overlay.show { display:flex; }
@@ -675,8 +683,8 @@ function placeFormHtml() {
     '<option value="city"' + (p.kind === 'city' ? ' selected' : '') + '>City</option>' +
     '<option value="place"' + (p.kind === 'place' || !p.kind ? ' selected' : '') + '>Other place</option></select>' +
     '<label>Name in English</label><input id="fp_en" value="' + esc(n.en) + '">' +
-    '<label>Name in Hindi (editable; leave blank if unknown)</label><input id="fp_hi" value="' + esc(n.hi) + '">' +
-    '<label>Name in Punjabi (editable; leave blank if unknown)</label><input id="fp_pa" value="' + esc(n.pa) + '">' +
+    '<label>Name in Hindi (editable; leave blank if unknown)</label><input id="fp_hi" data-autofilled="true" value="' + esc(n.hi) + '">' +
+    '<label>Name in Punjabi (editable; leave blank if unknown)</label><input id="fp_pa" data-autofilled="true" value="' + esc(n.pa) + '">' +
     '<label>Alternate spellings (comma separated)</label><input id="fp_alias" value="' + esc((p.aliases || []).join(', ')) + '">' +
     '<div class="row2"><div><label>City</label><input id="fp_city" value="' + esc(p.city) + '"></div>' +
     '<div><label>District</label><input id="fp_dist" value="' + esc(p.district) + '"></div></div>' + foot('save-place');
@@ -1182,11 +1190,17 @@ function applyApprovedCorrection(x) {
 // ============ Multilingual route review ============
 function reviewNamesForPlace(id, rawName) {
   var p = id ? placeById(id) : null, source = p && p.name ? p.name : {};
-  return { en:String(rawName || source.en || '').trim(), hi:String(source.hi || '').trim(), pa:String(source.pa || '').trim() };
+  if (p) return {en:String(source.en||'').trim(),hi:String(source.hi||'').trim(),pa:String(source.pa||'').trim()};
+  var raw=String(rawName||'').trim(),lang=detectPlaceLanguage(raw),out={en:'',hi:'',pa:''};
+  if(raw)out[lang]=raw;
+  return out;
 }
 function reviewNameInputs(key, names) {
   names = names || {};
-  return '<div class="row2" style="margin-top:8px"><div><label>English</label><input data-rv-name="' + esc(key) + '" data-lang="en" value="' + esc(names.en || '') + '"></div><div><label>Hindi</label><input data-rv-name="' + esc(key) + '" data-lang="hi" value="' + esc(names.hi || '') + '"></div></div><label>Punjabi</label><input data-rv-name="' + esc(key) + '" data-lang="pa" value="' + esc(names.pa || '') + '">';
+  return '<div class="review-name-fields" style="display:flex;gap:6px;align-items:center;min-width:0">' +
+    '<input class="review-place" aria-label="English name" placeholder="English" data-rv-name="' + esc(key) + '" data-lang="en" data-autofilled="' + (!names.en?'true':'false') + '" value="' + esc(names.en || '') + '">' +
+    '<input class="review-hi" aria-label="Hindi name" placeholder="हिंदी" data-rv-name="' + esc(key) + '" data-lang="hi" data-autofilled="' + (!names.hi?'true':'false') + '" value="' + esc(names.hi || '') + '">' +
+    '<input class="review-pa" aria-label="Punjabi name" placeholder="ਪੰਜਾਬੀ" data-rv-name="' + esc(key) + '" data-lang="pa" data-autofilled="' + (!names.pa?'true':'false') + '" value="' + esc(names.pa || '') + '</div>';
 }
 function routeReviewEditorHtml() {
   var i = routeReviewEditor.index, sub = subs && subs[i], v = subCardValues(i);
@@ -1207,15 +1221,20 @@ function routeReviewEditorHtml() {
   }
   var fromNames = reviewNamesForPlace(sub.from_id, v.from);
   var toNames = reviewNamesForPlace(sub.to_id, v.to);
-  var stopHtml = v.stops.map(function(st, index) {
-    return '<div class="card" style="padding:12px;margin:12px 0" data-rv-stop="' + index + '" data-place="' + esc(st.place || '') + '"><b>Stop ' + (index + 1) + '</b>' +
-      reviewNameInputs('stop-' + index, reviewNamesForPlace(st.place, st.name)) +
-      '<label>Stop time (optional)</label><input type="time" data-rv-time="' + index + '" value="' + esc(st.time || '') + '"></div>';
-  }).join('');
-  return '<p class="muted">Review before approving. Contributor text is preserved in English; edit Hindi and Punjabi translations here. Blank stop times are allowed, but at least one valid route time is required.</p>' +
+  var stopHtml = '<div class="tablewrap"><table class="review-stop-table"><thead><tr><th>#</th><th>Place name</th><th>Hindi</th><th>Punjabi</th><th>Timing</th><th>Place ID</th><th>Move</th></tr></thead><tbody>' +
+    v.stops.map(function(st, index) {
+      var names=reviewNamesForPlace(st.place,st.name);
+      return '<tr class="review-stop-row" data-rv-stop="' + index + '" data-place="' + esc(st.place || '') + '">' +
+        '<td class="review-stop-num">' + (index+1) + '</td><td>' + reviewNameInputs('stop-' + index, names).replace('class="review-name-fields" style="display:flex;gap:6px;align-items:center;min-width:0">','class="review-name-fields" style="display:contents">').replace(/<input class="review-hi"[^>]*>/,'') .replace(/<input class="review-pa"[^>]*>/,'').replace('</div>','') + '</td>' +
+        '<td>' + (names.hi ? '<span class="muted">' + esc(names.hi) + '</span>' : '<span class="muted">Auto</span>') + '</td>' +
+        '<td>' + (names.pa ? '<span class="muted">' + esc(names.pa) + '</span>' : '<span class="muted">Auto</span>') + '</td>' +
+        '<td><input type="time" data-rv-time="' + index + '" value="' + esc(st.time || '') + '"></td><td><span class="muted">' + esc(st.place || 'New on approval') + '</span></td>' +
+        '<td class="review-move"><button class="btn sm" data-act="review-stop-up" data-i="' + index + '">↑</button> <button class="btn sm" data-act="review-stop-down" data-i="' + index + '">↓</button></td></tr>';
+    }).join('') + '</tbody></table></div>';
+  return '<p class="muted">Review names and translations inline. New Places are created only when you approve. Existing Place IDs are retained unless a clearly distinct name is entered. Blank stop times are allowed, but at least one valid route time is required.</p>' +
     '<label>Service / bus name</label><input id="rv_service" value="' + esc(v.service || '') + '">' +
-    '<label>Starting place</label>' + reviewNameInputs('from', fromNames) +
-    '<label>Destination</label>' + reviewNameInputs('to', toNames) +
+    '<label>Starting place (English · हिंदी · ਪੰਜਾਬੀ)</label>' + reviewNameInputs('from', fromNames) +
+    '<label>Destination (English · हिंदी · ਪੰਜਾਬੀ)</label>' + reviewNameInputs('to', toNames) +
     '<label>Departure time</label><input id="rv_start" type="time" value="' + esc(v.start || '') + '">' +
     '<h3 style="margin-top:18px">Stops and timings</h3>' + (stopHtml || '<p class="muted">No intermediate stops submitted.</p>') +
     '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="sb-save-draft" data-i="' + i + '">Save reviewed draft</button><button class="btn primary" data-act="sb-final-approve" data-i="' + i + '">Approve reviewed route</button></div>';
@@ -1243,20 +1262,25 @@ function routeReviewValues() {
     to:toNames.en || toNames.hi || toNames.pa || '',start:field('#rv_start'),service:field('#rv_service'),stops:stops};
 }
 function ensureReviewedPlace(names, preferredId) {
-  names = names || {}; var clean = {};
-  ['en','hi','pa'].forEach(function(lang){var value=String(names[lang] || '').trim();if(value)clean[lang]=value;});
-  var primary=clean.en || clean.hi || clean.pa || '';
-  if (!primary) return preferredId && placeById(preferredId) ? preferredId : null;
-  function norm(v){return String(v || '').trim().toLowerCase().replace(/\s+/g,' ');}
-  var place=preferredId ? placeById(preferredId) : null;
-  if (!place) {
-    var variants=Object.keys(clean).map(function(k){return norm(clean[k]);});
-    place=data.places.find(function(p){return Object.keys(p.name || {}).some(function(k){return variants.indexOf(norm(p.name[k]))>=0;});}) || null;
-  }
-  if (!place) { place={id:makeId('place_user_',primary,function(candidate){return !!placeById(candidate);}),kind:'place',name:{},aliases:[]};data.places.push(place); }
-  place.name=place.name || {};
-  ['en','hi','pa'].forEach(function(lang){if(clean[lang])place.name[lang]=clean[lang];});
-  setDirty(true); return place.id;
+  names=names||{};var clean={};
+  ['en','hi','pa'].forEach(function(lang){var value=String(names[lang]||'').trim();if(value)clean[lang]=value;});
+  var lang=clean.en? 'en':clean.hi?'hi':clean.pa?'pa':'';
+  var primary=lang&&clean[lang];if(!primary)return preferredId&&placeById(preferredId)?preferredId:null;
+  function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
+  var existing=preferredId?placeById(preferredId):null;
+  var oldNames=existing&&existing.name?existing.name:{};
+  var sameAsPreferred=!!existing&&Object.keys(oldNames).some(function(k){return norm(oldNames[k])===norm(primary);});
+  // Resolve exact matches in the same source language only. A shared Hindi/Punjabi
+  // transliteration must not merge two locations whose English names are distinct (e.g. Rampur RJ/PB).
+  var exact=data.places.find(function(p){return Object.keys(p.name||{}).some(function(k){return k===lang&&norm(p.name[k])===norm(primary);});})||null;
+  var place=null;
+  if(existing&&sameAsPreferred)place=existing;
+  else if(exact)place=exact;
+  else place=null; // a distinct edited name becomes a new Place at approval; no extra checkbox.
+  if(!place){place={id:makeId('place_user_',primary,function(candidate){return !!placeById(candidate);}),kind:'place',name:{},aliases:[]};data.places.push(place);}
+  place.name=place.name||{};
+  ['en','hi','pa'].forEach(function(code){if(clean[code])place.name[code]=clean[code];});
+  setDirty(true);return place.id;
 }
 
 // ============ Dialog ============
@@ -1273,6 +1297,7 @@ function renderModal() {
     $('#dlgTitle').textContent = 'Review route submission' + (reviewSub && reviewSub.service_name ? ' · ' + reviewSub.service_name : '');
     $('#dlgBody').innerHTML = routeReviewEditorHtml();
     ov.classList.add('show');
+    autoTranslateReviewGroups();
   } else if (publishOpen) {
     var v = validate();
     $('#dlgTitle').textContent = 'Publish changes';
@@ -1313,7 +1338,7 @@ document.addEventListener('change', function (e) {
   if (e.target.id === 'f_dtype') { filters.driverType = e.target.value; render(); }
   if (e.target.id === 'f_pkind') { filters.placeKind = e.target.value; render(); }
 });
-// Auto-translate the English place name into Hindi and Punjabi. Manual edits are preserved.
+// Automatic place translation. Translated fields stay editable; typing in one marks it manual.
 var placeTranslateTimer=null,placeTranslateSequence=0;
 async function translatePlaceText(text,target){
  var url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(text);
@@ -1322,18 +1347,48 @@ async function translatePlaceText(text,target){
  var result=await response.json();
  return Array.isArray(result)&&Array.isArray(result[0])?result[0].map(function(part){return part&&part[0]||'';}).join('').trim():'';
 }
-document.addEventListener('input', function(e){
- var target=e.target;
- if(!target)return;
+function detectPlaceLanguage(value){
+ value=String(value||'');var pa=(value.match(/[\u0A00-\u0A7F]/g)||[]).length,hi=(value.match(/[\u0900-\u097F]/g)||[]).length,en=(value.match(/[A-Za-z]/g)||[]).length;
+ return pa>hi&&pa>=en?'pa':hi>pa&&hi>=en?'hi':'en';
+}
+async function translateReviewGroup(key,sourceLang){
+ var fields=Array.prototype.slice.call(document.querySelectorAll('[data-rv-name="'+key+'"]'));
+ var sourceField=fields.find(function(el){return el.dataset.lang===sourceLang;});
+ var source=sourceField&&sourceField.value.trim();if(!source)return;
+ var targets=fields.filter(function(el){return el!==sourceField&&(!el.value.trim()||el.dataset.autofilled==='true');});
+ if(!targets.length)return;
+ var sourceSnapshot=source;
+ try{
+  var translated=await Promise.all(targets.map(function(el){return translatePlaceText(sourceSnapshot,el.dataset.lang);}));
+  if(!sourceField.isConnected||sourceField.value.trim()!==sourceSnapshot)return;
+  targets.forEach(function(el,index){if(translated[index]&&(!el.value.trim()||el.dataset.autofilled==='true')){el.value=translated[index];el.dataset.autofilled='true';}});
+ }catch(err){console.warn('Automatic review translation failed',err);}
+}
+function autoTranslateReviewGroups(){
+ var keys={};document.querySelectorAll('[data-rv-name]').forEach(function(el){var key=el.getAttribute('data-rv-name');(keys[key]||(keys[key]=[])).push(el);});
+ Object.keys(keys).forEach(function(key){
+  var fields=keys[key],source=fields.find(function(el){return el.value.trim();});
+  if(!source)return;
+  fields.forEach(function(el){if(el!==source&&!el.value.trim())el.dataset.autofilled='true';});
+  translateReviewGroup(key,source.dataset.lang||detectPlaceLanguage(source.value));
+ });
+}
+document.addEventListener('input',function(e){
+ var target=e.target;if(!target)return;
  if(target.id==='fp_hi'||target.id==='fp_pa'){target.dataset.autofilled='false';return;}
+ if(target.hasAttribute&&target.hasAttribute('data-rv-name')){
+  var key=target.getAttribute('data-rv-name'),lang=target.getAttribute('data-lang');
+  target.dataset.autofilled='false';
+  // Only update auto-generated translations; manually edited target fields are never overwritten.
+  translateReviewGroup(key,lang);
+  return;
+ }
  if(target.id!=='fp_en')return;
  if(placeTranslateTimer)clearTimeout(placeTranslateTimer);
  var sequence=++placeTranslateSequence;
  placeTranslateTimer=setTimeout(async function(){
-  var english=document.getElementById('fp_en');
-  var hi=document.getElementById('fp_hi'),pa=document.getElementById('fp_pa');
-  var source=english&&english.value.trim();
-  if(!source||!hi||!pa)return;
+  var english=document.getElementById('fp_en'),hi=document.getElementById('fp_hi'),pa=document.getElementById('fp_pa');
+  var source=english&&english.value.trim();if(!source||!hi||!pa)return;
   var shouldFillHi=!hi.value.trim()||hi.dataset.autofilled==='true';
   var shouldFillPa=!pa.value.trim()||pa.dataset.autofilled==='true';
   if(!shouldFillHi&&!shouldFillPa)return;
@@ -1343,7 +1398,7 @@ document.addEventListener('input', function(e){
    if(shouldFillHi&&results[0]&&(!hi.value.trim()||hi.dataset.autofilled==='true')){hi.value=results[0];hi.dataset.autofilled='true';}
    if(shouldFillPa&&results[1]&&(!pa.value.trim()||pa.dataset.autofilled==='true')){pa.value=results[1];pa.dataset.autofilled='true';}
   }catch(err){console.warn('Automatic place translation failed',err);}
- },450);
+ },350);
 });
 
 document.addEventListener('click', async function (e) {
@@ -1375,6 +1430,13 @@ document.addEventListener('click', async function (e) {
     else if (act === 'stop-down') {
       var row2 = b.closest('.stoprow'), next = row2.nextElementSibling;
       if (next) row2.parentNode.insertBefore(next, row2);
+    }
+    else if (act === 'review-stop-up' || act === 'review-stop-down') {
+      var reviewRow=b.closest('[data-rv-stop]'), reviewBody=$('#dlgBody'), reviewRows=Array.prototype.slice.call(reviewBody.querySelectorAll('[data-rv-stop]'));
+      var ri=reviewRows.indexOf(reviewRow), other=act==='review-stop-up'?reviewRows[ri-1]:reviewRows[ri+1];
+      if(reviewRow&&other){var parent=reviewRow.parentNode;if(act==='review-stop-up')parent.insertBefore(reviewRow,other);else parent.insertBefore(other,reviewRow);
+        Array.prototype.slice.call(parent.querySelectorAll('[data-rv-stop]')).forEach(function(row,index){row.setAttribute('data-rv-stop',index);var num=row.querySelector('.review-stop-num');if(num)num.textContent=index+1;row.querySelectorAll('[data-rv-name]').forEach(function(inp){inp.setAttribute('data-rv-name','stop-'+index);});var time=row.querySelector('[data-rv-time]');if(time)time.setAttribute('data-rv-time',index);var buttons=row.querySelectorAll('[data-act^="review-stop-"]');buttons.forEach(function(btn){btn.setAttribute('data-i',index);});});
+      }
     }
 
     // ---- places ----
