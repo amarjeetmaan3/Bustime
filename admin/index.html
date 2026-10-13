@@ -337,7 +337,7 @@ function communityEditorHtml() {
     if(!names.en&&!names.hi&&!names.pa&&p)names=p.name||{};
     if(!names.en&&!names.hi&&!names.pa&&raw)names[lang]=raw;
     var key='cr-stop-'+i;
-    return '<tr class="review-stop-row" data-cr-proposed="'+i+'"><td class="review-stop-num">'+(i+1)+'</td><td><select data-cr-place>'+placeOptions(st.place_id,true)+'</select></td>' +
+    return '<tr class="review-stop-row" data-cr-proposed="'+i+'"><td class="review-stop-num">'+(i+1)+'</td><td><input type="hidden" data-cr-place value="'+esc(st.place_id||'')+'"><span class="muted" data-cr-place-label>'+esc(st.place_id||'New on approval')+'</span></td>' +
       '<td>'+reviewNameField(key,'en',names.en||'',lang)+'</td><td>'+reviewNameField(key,'hi',names.hi||'',lang)+'</td><td>'+reviewNameField(key,'pa',names.pa||'',lang)+'</td>' +
       '<td><input data-cr-time type="time" value="'+esc(st.time||'')+'"></td><td class="review-move"><button class="btn sm" data-act="cr-stop-up" data-i="'+i+'">↑</button> <button class="btn sm" data-act="cr-stop-down" data-i="'+i+'">↓</button></td></tr>';
    }).join('')+'</tbody></table></div>';
@@ -1392,6 +1392,7 @@ function ensureReviewedPlace(names, preferredId) {
   var lang=['en','hi','pa'].indexOf(names._sourceLang)>=0?names._sourceLang:(clean.en?'en':clean.hi?'hi':clean.pa?'pa':'');
   var primary=lang&&clean[lang];if(!primary)return preferredId&&placeById(preferredId)?preferredId:null;
   function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
+  preferredId=preferredId||names._selectedPlaceId||'';
   var preferred=preferredId?placeById(preferredId):null;
   var preferredNames=preferred&&preferred.name?preferred.name:{};
   // Keep an existing route's Place ID when its canonical name in the edited
@@ -1466,7 +1467,8 @@ document.addEventListener('change',function(e){
  var norm=function(s){return String(s||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');};
  var matches=(data.places||[]).filter(function(p){return norm((p.name||{})[lang])===norm(value)||(p.aliases||[]).some(function(a){return norm(a)===norm(value);});});
  if(matches.length!==1)return;
- var place=matches[0];
+ var place=matches[0],row=target.closest('[data-cr-proposed]');
+ if(row){var idField=row.querySelector('[data-cr-place]'),idLabel=row.querySelector('[data-cr-place-label]');if(idField)idField.value=place.id;if(idLabel)idLabel.textContent=place.id;}
  document.querySelectorAll('[data-rv-name="'+key+'"]').forEach(function(el){el.value=String((place.name||{})[el.dataset.lang]||'');el.dataset.rvSelectedPlaceId=place.id;el.dataset.rvSourceLang=lang;el.dataset.autofilled=el.dataset.lang===lang?'false':'true';});
 });
 document.addEventListener('change', function (e) {
@@ -1533,6 +1535,8 @@ document.addEventListener('input',function(e){
  if(target.hasAttribute&&target.hasAttribute('data-rv-name')){
   var key=target.getAttribute('data-rv-name'),lang=target.getAttribute('data-lang');
   target.dataset.autofilled='false';delete target.dataset.rvSelectedPlaceId;
+  var correctionRow=target.closest('[data-cr-proposed]');
+  if(correctionRow){var placeField=correctionRow.querySelector('[data-cr-place]'),placeLabel=correctionRow.querySelector('[data-cr-place-label]');if(placeField)placeField.value='';if(placeLabel)placeLabel.textContent='New on approval';}
   document.querySelectorAll('[data-rv-name="'+key+'"]').forEach(function(el){el.setAttribute('data-rv-source-lang',lang);delete el.dataset.rvSelectedPlaceId;});
   translateReviewGroup(key,lang);
   return;
