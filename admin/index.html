@@ -81,9 +81,19 @@
   .review-stop-row .review-move { white-space:nowrap; width:76px; }
   .review-stop-row .review-place { min-width:170px; }
   .review-stop-row .review-hi, .review-stop-row .review-pa { min-width:130px; }
-  .request-row { display:grid; grid-template-columns:minmax(180px,1.35fr) minmax(160px,1.5fr) minmax(120px,1fr) auto; gap:12px; align-items:center; }
-  .request-row .request-title { font-weight:750; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .request-row .request-summary { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .request-row { display:grid; grid-template-columns:minmax(180px,1.25fr) minmax(140px,1fr) minmax(170px,1.1fr) auto; gap:10px; align-items:center; }
+  .request-row .request-title { font-weight:750; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .request-row .request-summary { color:var(--muted); font-size:12px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .request-row .request-actions { min-width:0; white-space:nowrap; }
+  @media (min-width:1100px) {
+    .overlay { padding:8px; }
+    .dialog { width:100%; max-width:none; height:calc(100vh - 16px); max-height:calc(100vh - 16px); }
+    .dlg-body { padding:14px 24px 20px; }
+    .review-stop-table { min-width:0; table-layout:fixed; }
+    .review-stop-row input { box-sizing:border-box; max-width:100%; }
+    .review-stop-row .review-place { min-width:0; width:100%; }
+    .review-stop-row .review-hi,.review-stop-row .review-pa { min-width:0; width:100%; }
+  }
   .request-details { display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
   .request-card.expanded .request-details { display:block; }
   .request-card { min-width:0; }
@@ -428,19 +438,15 @@ function placeById(id) { return data.places.find(function(p){return p.id===id;})
 function routeNameValue(prefix,lang){var el=document.querySelector('[data-route-name="'+prefix+'"][data-lang="'+lang+'"]');return el?String(el.value||'').trim():'';}
 function ensureRoutePlace(prefix){
  var idEl=document.querySelector('[data-route-id="'+prefix+'"]'),preferredId=idEl&&idEl.value||'',names={en:routeNameValue(prefix,'en'),hi:routeNameValue(prefix,'hi'),pa:routeNameValue(prefix,'pa')};
- var lang=names.en?'en':names.hi?'hi':names.pa?'pa':'',primary=lang&&names[lang];
+ var lang=['en','hi','pa'].find(function(code){return !!names[code];})||'',primary=lang&&names[lang];
  if(!primary)return null;
  function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
  var preferred=preferredId?placeById(preferredId):null;
  var unchanged=!!preferred&&norm((preferred.name||{})[lang])===norm(primary);
  var exact=data.places.find(function(p){return Object.keys(p.name||{}).some(function(code){return code===lang&&norm(p.name[code])===norm(primary);})||(p.aliases||[]).some(function(a){return norm(a)===norm(primary);});})||null;
- var place=unchanged?preferred:exact;
- var created=false;
+ var place=unchanged?preferred:exact,created=false;
  if(!place){place={id:makeId('place_',primary,function(candidate){return !!placeById(candidate);}),kind:'place',name:{},aliases:[]};data.places.push(place);created=true;}
  place.name=place.name||{};
- // Never overwrite another existing Place's translations merely because one
- // language label matched. Only the selected Place or a brand-new Place can
- // receive the names entered in this editor.
  if(created||unchanged)['en','hi','pa'].forEach(function(code){if(names[code])place.name[code]=names[code];});
  if(idEl)idEl.value=place.id;
  setDirty(true);return place.id;
@@ -837,7 +843,7 @@ function placeOptions(sel) {
 function routePlaceFields(prefix, placeId) {
   var place=placeId?placeById(placeId):null,names=place&&place.name?place.name:{};
   function field(lang,label){var seen={},opts=(data.places||[]).map(function(p){var v=String((p.name||{})[lang]||'').trim(),key=v.toLocaleLowerCase();if(!v||seen[key])return '';seen[key]=true;return '<option value="'+esc(v)+'"></option>';}).join(''),listId='route-place-'+prefix+'-'+lang;
-    return '<div><input aria-label="'+label+'" placeholder="'+label+'" list="'+esc(listId)+'" data-route-name="'+esc(prefix)+'" data-lang="'+lang+'" data-autofilled="'+(lang!=='en'?'true':'false')+'" value="'+esc(names[lang]||'')+'"><datalist id="'+esc(listId)+'">'+opts+'</datalist></div>';}
+    return '<div><input aria-label="'+label+'" placeholder="'+label+'" autocomplete="off" list="'+esc(listId)+'" data-route-name="'+esc(prefix)+'" data-lang="'+lang+'" data-autofilled="'+(lang!=='en'?'true':'false')+'" value="'+esc(names[lang]||'')+'"><datalist id="'+esc(listId)+'">'+opts+'</datalist></div>';}
   return '<div class="route-place-fields"><input type="hidden" data-route-id="'+esc(prefix)+'" value="'+esc(placeId||'')+'">'+field('en','English')+field('hi','हिंदी')+field('pa','ਪੰਜਾਬੀ')+'</div>';
 }
 function stopRow(place, time) {
@@ -1114,7 +1120,7 @@ function viewBusRequests() {
     var r=x.s, from=r.from_text||pname(placeById(r.from_id))||r.from_id||'Missing start', to=r.to_text||pname(placeById(r.to_id))||r.to_id||'Missing destination';
     var detailKey='bus-sub-'+x.index;
     var stopDetails=(r.stops||[]).map(function(st){return '<div class="stoprow"><span class="grow">'+esc(st.name||pname(placeById(st.place))||st.place||'Unnamed stop')+'</span><span class="route-time">'+esc(st.time||'Time unknown')+'</span></div>';}).join('')||'<p class="muted">No intermediate stops included.</p>';
-    return '<div class="card request-card" data-sub="'+x.index+'" data-request-card="'+detailKey+'" style="padding:10px 14px;margin-bottom:7px"><div class="request-row"><div class="request-title" title="'+esc(from+' → '+to)+'">'+esc(from)+' → '+esc(to)+'</div><div class="request-summary">'+esc(r.service_name||'Service not provided')+' · '+esc(r.start_time||'Time unknown')+'</div><div class="request-summary">Submitted '+esc(new Date(r.created_at).toLocaleString())+' · '+esc(r.phone||'No phone')+' · '+esc(r.status)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap"><button class="btn sm" data-act="community-toggle-details" data-detail="'+detailKey+'">Details ▾</button>'+(r.status==='pending'?'<button class="btn primary" data-act="sb-approve" data-i="'+x.index+'">Open review</button><button class="btn danger" data-act="sb-reject" data-i="'+x.index+'">Reject</button>':'<span class="badge">Retained</span>')+'</div></div><div class="request-details"><div class="row2"><div><label>Service</label><div>'+esc(r.service_name||'Not provided')+'</div></div><div><label>Departure</label><div><b>'+esc(r.start_time||'Not provided')+'</b></div></div></div><label>Stops and timings</label>'+stopDetails+'</div></div>';
+    return '<div class="card request-card" data-sub="'+x.index+'" data-request-card="'+detailKey+'" style="padding:7px 12px;margin-bottom:5px"><div class="request-row"><div class="request-title" title="'+esc(from+' → '+to)+'">'+esc(from)+' → '+esc(to)+'</div><div class="request-summary">'+esc(r.service_name||'Service not provided')+' · '+esc(r.start_time||'Time unknown')+'</div><div class="request-summary">Submitted '+esc(new Date(r.created_at).toLocaleString())+' · '+esc(r.phone||'No phone')+' · '+esc(r.status)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap"><button class="btn sm" data-act="community-toggle-details" data-detail="'+detailKey+'">Details ▾</button>'+(r.status==='pending'?'<button class="btn primary" data-act="sb-approve" data-i="'+x.index+'">Open review</button><button class="btn danger" data-act="sb-reject" data-i="'+x.index+'">Reject</button>':'<span class="badge">Retained</span>')+'</div></div><div class="request-details"><div class="row2"><div><label>Service</label><div>'+esc(r.service_name||'Not provided')+'</div></div><div><label>Departure</label><div><b>'+esc(r.start_time||'Not provided')+'</b></div></div></div><label>Stops and timings</label>'+stopDetails+'</div></div>';
   }).join('');
 }
 function viewCommunity(mode) {
@@ -1187,7 +1193,7 @@ function viewCommunity(mode) {
     var summary=x._kind==='corrections'?(x.request_type==='route_edit'?'Full route edit':x.request_type==='missing_stop'?'Missing stop: '+String(x.missing_place_name||'name pending'):x.request_type==='correct_time'?'Timing correction: '+String(x.corrected_time||'time pending'):String(x.notes||'')):(x._kind==='vehicles'?[x.person_name,x.vehicle_name,x.area_name||x.location].filter(Boolean).join(' · '):x._kind==='busSubmissions'?[x.operator_name,x.service_name,x.location].filter(Boolean).join(' · '):String(x.category||'')+' '+String(x.message||'')).trim();
     var cardMeta=(x.created_at?new Date(x.created_at).toLocaleString()+' · ':'')+'ID '+x.id;
     var detailKey=String(x._kind)+'-'+String(x.id);
-    html += '<div class="card request-card" data-request-card="'+esc(detailKey)+'" style="padding:10px 14px;margin-bottom:7px"><div class="request-row"><div class="request-title" title="'+esc(cardTitle)+'">'+esc(cardTitle)+'</div><div class="request-summary" title="'+esc(summary||'')+'">'+esc(summary||'No summary')+'</div><div class="request-summary">'+esc(cardMeta)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap"><button class="btn sm" data-act="community-toggle-details" data-detail="'+esc(detailKey)+'">Details ▾</button>'+actions+'</div></div><div class="request-details">'+details+'</div></div>';
+    html += '<div class="card request-card" data-request-card="'+esc(detailKey)+'" style="padding:7px 12px;margin-bottom:5px"><div class="request-row"><div class="request-title" title="'+esc(cardTitle)+'">'+esc(cardTitle)+'</div><div class="request-summary" title="'+esc(summary||'')+'">'+esc(summary||'No summary')+'</div><div class="request-summary">'+esc(cardMeta)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap"><button class="btn sm" data-act="community-toggle-details" data-detail="'+esc(detailKey)+'">Details ▾</button>'+actions+'</div></div><div class="request-details">'+details+'</div></div>';
   });
   if (mode === 'busDirectory') {
     html += '<div class="card"><h2>Published Bus Operator Directory</h2><p class="muted">Public operator information only. This is separate from scheduled routes and is not a booking queue.</p>'+
