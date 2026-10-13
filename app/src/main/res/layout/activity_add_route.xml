@@ -73,19 +73,40 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <AutoCompleteTextView
-                android:id="@+id/etFromText"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="8dp"
-                android:background="@android:color/transparent"
-                android:hint="@string/ar_custom_from"
-                android:inputType="textCapWords"
-                android:maxLength="80"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp"
-                android:textColor="@color/textPrimary"
-                android:textSize="15sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <AutoCompleteTextView
+                    android:id="@+id/etFromText"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="@string/ar_custom_from"
+                    android:inputType="textCapWords"
+                    android:maxLength="80"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/tvStartTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:gravity="center"
+                    android:minWidth="64dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/ar_tap_time"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="13sp"
+                    android:background="@drawable/bg_input" />
+            </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
@@ -126,26 +147,7 @@
                     android:background="@drawable/bg_input" />
             </LinearLayout>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="@string/ar_stop_times"
-                android:textColor="@color/textPrimary"
-                android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvStartTime"
-                android:layout_width="match_parent"
-                android:layout_height="42dp"
-                android:layout_marginTop="4dp"
-                android:background="@android:color/transparent"
-                android:gravity="center_vertical"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp"
-                android:text="@string/ar_tap_time"
-                android:textColor="@color/textPrimary"
-                android:textSize="14sp" />
 
             <LinearLayout
                 android:id="@+id/layoutExistingStops"
