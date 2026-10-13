@@ -333,6 +333,12 @@ function communityEditorValues(){
    return {place_id:place&&place.value||null,name:names[lang]||names.en||names.hi||names.pa||'',names:names,time:time&&time.value||null,language:lang};
   });
  }
+ if(communityReviewEditor&&communityReviewEditor.kind==='corrections'&&communityReviewEditor.record.request_type==='missing_stop'){
+  var missingNames={};
+  document.querySelectorAll('#dlgBody [data-rv-name="missing-stop"]').forEach(function(el){var value=el.value.trim();if(value)missingNames[el.dataset.lang]=value;missingNames._sourceLang=el.getAttribute('data-rv-source-lang')||missingNames._sourceLang;});
+  out.missing_place_names=missingNames;
+  out.missing_place_name=missingNames[missingNames._sourceLang||'en']||missingNames.en||missingNames.hi||missingNames.pa||'';
+ }
  return out;
 }
 function showCommunityEditor(kind,record){communityReviewEditor={kind:kind,record:JSON.parse(JSON.stringify(record))};editing=null;routeReviewEditor=null;publishOpen=false;render();}
