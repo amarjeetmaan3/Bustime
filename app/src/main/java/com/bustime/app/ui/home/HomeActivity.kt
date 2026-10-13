@@ -7,6 +7,8 @@ import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.ProgressBar
 import android.widget.Toast
+import android.widget.TextView
+import com.bustime.app.data.RemoteContentSettings
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -63,6 +65,7 @@ class HomeActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         toolbar.inflateMenu(R.menu.home_menu)
         updateLanguageIndicator(toolbar)
+        loadWarningTicker()
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_language -> { showLanguageDialog(); true }
@@ -172,6 +175,7 @@ class HomeActivity : AppCompatActivity() {
             try {
                 AppRepository.getInstance(this@HomeActivity).syncData()
                 refreshCurrentTab()
+                loadWarningTicker()
             } catch (e: Exception) {
                 Toast.makeText(this@HomeActivity, "Refresh failed: " + (e.message ?: "Please try again"), Toast.LENGTH_LONG).show()
             } finally {
@@ -191,12 +195,30 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun updateLanguageIndicator(toolbar: Toolbar) {
-        val code = when (LanguageHelper.current()) {
-            "hi" -> "हि"
-            "pa" -> "ਪੰ"
-            else -> "ENG"
+        toolbar.menu.findItem(R.id.action_language)?.title = ""
+    }
+
+    private fun loadWarningTicker() {
+        lifecycleScope.launch {
+            val settings = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                RemoteContentSettings.refresh()
+            }
+            val ticker = findViewById<TextView>(R.id.warningTicker)
+            if (!settings.tickerEnabled) {
+                ticker.visibility = View.GONE
+                return@launch
+            }
+            val langs = RemoteContentSettings.pairedLanguages(LanguageHelper.current())
+            val pieces = langs.mapNotNull { lang -> settings.ticker[lang]?.trim()?.takeIf { it.isNotEmpty() } }
+            if (pieces.isEmpty()) {
+                ticker.visibility = View.GONE
+                return@launch
+            }
+            ticker.text = ("     " + pieces.joinToString("     •     ") + "     •     ").repeat(4)
+            ticker.visibility = View.VISIBLE
+            ticker.isSelected = true
+            ticker.post { ticker.requestFocus() }
         }
-        toolbar.menu.findItem(R.id.action_language)?.title = code
     }
 
     private fun showLanguageDialog() {
