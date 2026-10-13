@@ -963,7 +963,10 @@ function warnNearSubmittedPlaces(names) {
   (names || []).forEach(function (name) {
     nearSubmittedPlaces(name).forEach(function (p) {
       var label = pname(p) || p.id;
-      if (warnings.indexOf(String(name) + ' → ' + label) < 0) warnings.push(String(name) + ' → ' + label);
+      var rawNorm=String(name||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
+      var baseNorm=rawNorm.replace(/\s+(rj|pb|dl|de|mp)$/i,'').trim();
+      var stateQualified=baseNorm!==rawNorm&&Object.keys(p.name||{}).some(function(lang){return String(p.name[lang]||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')===baseNorm;});
+      if(!stateQualified&&warnings.indexOf(String(name) + ' → ' + label) < 0) warnings.push(String(name) + ' → ' + label);
     });
   });
   if (!warnings.length) return true;
