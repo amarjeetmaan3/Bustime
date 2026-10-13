@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 24,
+  "dataVersion": 25,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -68,7 +68,7 @@
       "id": "place_kaluwala",
       "kind": "village",
       "name": {
-        "en": "Kaluwala",
+        "en": "कालूवाला",
         "hi": "कालूवाला",
         "pa": "ਕਾਲੂਵਾਲਾ"
       }
@@ -95,7 +95,7 @@
       "id": "place_abhoria",
       "kind": "village",
       "name": {
-        "en": "Abhoria",
+        "en": "अभोरिया",
         "hi": "अभोरिया",
         "pa": "ਅਬੋਰੀਆ"
       }
@@ -131,7 +131,7 @@
       "id": "place_chak_shone_wala",
       "kind": "village",
       "name": {
-        "en": "Chak sohne wala",
+        "en": "चक सोहने वाला",
         "hi": "चक सोहने वाला",
         "pa": "ਚੱਕ ਸੋਹਨੇ ਵਾਲਾ"
       }
@@ -140,7 +140,7 @@
       "id": "place_takhat_hazara_babiran",
       "kind": "village",
       "name": {
-        "en": "Takhat hazara babriyan",
+        "en": "तख्त हज़ारा बाबरियान",
         "hi": "तख्त हज़ारा बाबरियान",
         "pa": "ਤਖਤ ਹਜ਼ਾਰਾ ਬਾਬਰੀਅਨ"
       }
@@ -149,7 +149,7 @@
       "id": "place_kanchiya_chowk_sadulshahar",
       "kind": "village",
       "name": {
-        "en": "Kainchiya chowk sadulshahar",
+        "en": "कैंचिया चौक सादुलशहर",
         "hi": "कैंचिया चौक सादुलशहर",
         "pa": "ਕੈਂਚੀਆ ਚੌਕ ਸਦੁਲਸ਼ਹਿਰ"
       }
@@ -246,6 +246,72 @@
         }
       ],
       "longRoute": false
+    },
+    {
+      "id": "r2",
+      "from": "stand_sangriya",
+      "to": "stand_sri_ganganagar",
+      "time": "10:00",
+      "arrive": "09:30",
+      "service": "Aj",
+      "stops": [
+        {
+          "place": "place_bolanwali"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_hunmangarh"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_miraa_chowk_sri_ganganagar",
+          "time": "09:15",
+          "day_offset": 1
+        }
+      ]
     }
   ],
   "taxiSeaters": [
