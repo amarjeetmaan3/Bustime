@@ -71,7 +71,7 @@
     <!-- Custom route and Book Bus labels -->
     <string name="ar_new_route_mode">ਬਿਲਕੁਲ ਨਵਾਂ ਰੂਟ / ਅੱਡੇ ਦਰਜ ਕਰੋ</string>
     <string name="ar_existing_route_mode">ਮੌਜੂਦਾ ਰੂਟ ਚੁਣੋ</string>
-    <string name="ar_new_route_intro">ਸ਼ਹਿਰ ਅਤੇ ਬੱਸ ਅੱਡੇ ਦੇ ਨਾਮ ਪੰਜਾਬੀ, ਹਿੰਦੀ ਜਾਂ ਅੰਗਰੇਜ਼ੀ ਵਿੱਚ ਲਿਖੋ। ਐਡਮਿਨ ਜਾਂਚ ਕਰਕੇ ਮਨਜ਼ੂਰ ਕਰੇਗਾ।</string>
+    <string name="ar_new_route_intro">From ਅਤੇ To ਦੇ ਨਾਮ ਪੰਜਾਬੀ, ਹਿੰਦੀ ਜਾਂ ਅੰਗਰੇਜ਼ੀ ਵਿੱਚ ਲਿਖੋ। ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਹੀ ਸਮਾਂ ਭਰਨਾ ਲਾਜ਼ਮੀ ਹੈ; ਬਾਕੀ ਸਮੇਂ ਖਾਲੀ ਛੱਡ ਸਕਦੇ ਹੋ। ਐਡਮਿਨ ਜਾਂਚ ਤੋਂ ਬਾਅਦ ਮਨਜ਼ੂਰ ਕਰੇਗਾ.</string>
     <string name="ar_custom_from">ਕਿੱਥੋਂ — ਸ਼ਹਿਰ / ਬੱਸ ਅੱਡਾ</string>
     <string name="ar_custom_to">ਕਿੱਥੇ ਤੱਕ — ਸ਼ਹਿਰ / ਬੱਸ ਅੱਡਾ</string>
     <string name="ar_custom_stops">ਵਿਚਕਾਰਲੇ ਅੱਡੇ (ਵਿਕਲਪਿਕ)</string>
