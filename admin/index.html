@@ -389,8 +389,9 @@ function communityEditorValues(){
  }
  if(communityReviewEditor&&communityReviewEditor.kind==='corrections'&&communityReviewEditor.record.request_type==='missing_stop'){
   var missingNames={};
-  document.querySelectorAll('#dlgBody [data-rv-name="missing-stop"]').forEach(function(el){var value=el.value.trim();if(value)missingNames[el.dataset.lang]=value;missingNames._sourceLang=el.getAttribute('data-rv-source-lang')||missingNames._sourceLang;});
+  document.querySelectorAll('#dlgBody [data-rv-name="missing-stop"]').forEach(function(el){var value=el.value.trim();if(value)missingNames[el.dataset.lang]=value;missingNames._sourceLang=el.getAttribute('data-rv-source-lang')||missingNames._sourceLang;if(el.dataset.rvSelectedPlaceId)missingNames._selectedPlaceId=el.dataset.rvSelectedPlaceId;});
   out.missing_place_names=missingNames;
+  if(missingNames._selectedPlaceId)out.missing_place_id=missingNames._selectedPlaceId;
   out.missing_place_name=missingNames[missingNames._sourceLang||'en']||missingNames.en||missingNames.hi||missingNames.pa||'';
  }
  return out;
