@@ -73,7 +73,7 @@ class BookBusActivity : AppCompatActivity() {
                         text = "Permanent Area: " + (selectedArea ?: "All Areas") + " ▾"
                         dialog.dismiss()
                         renderOperators(allRowsCache, results, selectedArea)
-                    }.setNegativeButton(R.string.cancel, null).show()
+                    }.setNegativeButton(com.bustime.app.R.string.cancel, null).show()
             }
         }
         content.addView(areaButton, LinearLayout.LayoutParams(-1, -2))
