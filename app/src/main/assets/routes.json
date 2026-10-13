@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 28,
+  "dataVersion": 29,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -68,7 +68,7 @@
       "id": "place_kaluwala",
       "kind": "village",
       "name": {
-        "en": "कालूवाला",
+        "en": "Kaluwala",
         "hi": "कालूवाला",
         "pa": "ਕਾਲੂਵਾਲਾ"
       }
@@ -95,7 +95,7 @@
       "id": "place_abhoria",
       "kind": "village",
       "name": {
-        "en": "अभोरिया",
+        "en": "Abhoria",
         "hi": "अभोरिया",
         "pa": "ਅਬੋਰੀਆ"
       }
@@ -131,7 +131,7 @@
       "id": "place_chak_shone_wala",
       "kind": "village",
       "name": {
-        "en": "चक सोहने वाला",
+        "en": "Chak Shone Wala",
         "hi": "चक सोहने वाला",
         "pa": "ਚੱਕ ਸੋਹਨੇ ਵਾਲਾ"
       }
@@ -140,7 +140,7 @@
       "id": "place_takhat_hazara_babiran",
       "kind": "village",
       "name": {
-        "en": "तख्त हज़ारा बाबरियान",
+        "en": "Takhat Hazara Babiran",
         "hi": "तख्त हज़ारा बाबरियान",
         "pa": "ਤਖਤ ਹਜ਼ਾਰਾ ਬਾਬਰੀਅਨ"
       }
@@ -149,7 +149,7 @@
       "id": "place_kanchiya_chowk_sadulshahar",
       "kind": "village",
       "name": {
-        "en": "कैंचिया चौक सादुलशहर",
+        "en": "Kanchiya Chowk Sadulshahar",
         "hi": "कैंचिया चौक सादुलशहर",
         "pa": "ਕੈਂਚੀਆ ਚੌਕ ਸਦੁਲਸ਼ਹਿਰ"
       }
