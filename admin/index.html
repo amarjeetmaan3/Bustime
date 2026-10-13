@@ -81,9 +81,22 @@
   .review-stop-row .review-move { white-space:nowrap; width:76px; }
   .review-stop-row .review-place { min-width:170px; }
   .review-stop-row .review-hi, .review-stop-row .review-pa { min-width:130px; }
-  .request-row { display:grid; grid-template-columns:minmax(220px,1.7fr) minmax(130px,1fr) minmax(150px,1.2fr) auto; gap:14px; align-items:center; }
+  .request-row { display:grid; grid-template-columns:minmax(180px,1.35fr) minmax(160px,1.5fr) minmax(120px,1fr) auto; gap:12px; align-items:center; }
   .request-row .request-title { font-weight:750; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .request-row .request-summary { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .request-details { display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+  .request-card.expanded .request-details { display:block; }
+  .request-card { min-width:0; }
+  @media (max-width: 860px) {
+    .request-row { grid-template-columns:minmax(0,1fr) auto; gap:7px 10px; }
+    .request-row .request-title { grid-column:1; }
+    .request-row .request-summary { grid-column:1; }
+    .request-row .request-actions { grid-column:2; grid-row:1 / span 3; }
+    .overlay { padding:0; }
+    .dialog { height:100dvh; max-height:100dvh; border-radius:0; }
+    .dlg-body { padding:10px 12px 16px; }
+    .review-stop-table { min-width:900px; }
+  }
   .route-place-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; flex:1; min-width:0; }
   .route-place-fields input { min-width:0; width:100%; }
   .route-place-labels { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; font-size:11px; color:var(--muted); margin:0 0 4px; }
@@ -1100,7 +1113,7 @@ function viewBusRequests() {
   return html+rows.map(function(x){
     var r=x.s, from=r.from_text||pname(placeById(r.from_id))||r.from_id||'Missing start', to=r.to_text||pname(placeById(r.to_id))||r.to_id||'Missing destination';
     return '<div class="card" data-sub="'+x.index+'"><div class="bus-page-head"><div><h2>'+esc(from)+' <span class="muted">→</span> '+esc(to)+'</h2><p class="muted">Submitted '+esc(new Date(r.created_at).toLocaleString())+' · '+esc(r.phone||'No phone')+'</p></div><span class="badge">'+esc(r.status)+'</span></div>'+
-      '<div class="row2"><div><label>Service</label><div>'+(esc(r.service_name||'Not provided'))+'</div></div><div><label>Departure</label><div><b>'+esc(r.start_time||'Not provided')+'</b>'+(r.long_route?' · Long route':'')+'</div></div></div>'+
+      '<div class="row2"><div><label>Service</label><div>'+(esc(r.service_name||'Not provided'))+'</div></div><div><label>Departure</label><div><b>'+esc(r.start_time||'Not provided')+'</b></div></div></div>'+
       '<label>Stops and timings</label>'+((r.stops||[]).map(function(st){return '<div class="stoprow"><span class="grow">'+esc(st.name||pname(placeById(st.place))||st.place||'Unnamed stop')+'</span><span class="route-time">'+esc(st.time||'Time unknown')+'</span></div>';}).join('')||'<p class="muted">No intermediate stops included.</p>')+
       '<div class="dlg-foot" style="justify-content:flex-start">'+(r.status==='pending'?'<button class="btn primary" data-act="sb-approve" data-i="'+x.index+'">Open</button><button class="btn danger" data-act="sb-reject" data-i="'+x.index+'">Reject</button>':'<span class="muted">Request retained for reference.</span>')+'</div></div>';
   }).join('');
@@ -1174,7 +1187,8 @@ function viewCommunity(mode) {
     var cardTitle=x._kind==='corrections'?(correctionRouteName||('Route '+String(x.route_id||'correction')))+' · '+String(x.request_type||'correction'):(x._label+' · '+(x.request_type||x.vehicle_type||x.category||'Request'));
     var summary=x._kind==='corrections'?(x.request_type==='route_edit'?'Full route edit':x.request_type==='missing_stop'?'Missing stop: '+String(x.missing_place_name||'name pending'):x.request_type==='correct_time'?'Timing correction: '+String(x.corrected_time||'time pending'):String(x.notes||'')):(x._kind==='vehicles'?[x.person_name,x.vehicle_name,x.area_name||x.location].filter(Boolean).join(' · '):x._kind==='busSubmissions'?[x.operator_name,x.service_name,x.location].filter(Boolean).join(' · '):String(x.category||'')+' '+String(x.message||'')).trim();
     var cardMeta=(x.created_at?new Date(x.created_at).toLocaleString()+' · ':'')+'ID '+x.id;
-    html += '<div class="card" style="padding:12px 16px;margin-bottom:8px"><div class="request-row"><div class="request-title">'+esc(cardTitle)+'</div><div class="request-summary">'+esc(summary||cardMeta)+'</div><div class="request-summary">'+esc(cardMeta)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">'+actions+'</div></div></div>';
+    var detailKey=String(x._kind)+'-'+String(x.id);
+    html += '<div class="card request-card" data-request-card="'+esc(detailKey)+'" style="padding:10px 14px;margin-bottom:7px"><div class="request-row"><div class="request-title" title="'+esc(cardTitle)+'">'+esc(cardTitle)+'</div><div class="request-summary" title="'+esc(summary||'')+'">'+esc(summary||'No summary')+'</div><div class="request-summary">'+esc(cardMeta)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap"><button class="btn sm" data-act="community-toggle-details" data-detail="'+esc(detailKey)+'">Details ▾</button>'+actions+'</div></div><div class="request-details">'+details+'</div></div>';
   });
   if (mode === 'busDirectory') {
     html += '<div class="card"><h2>Published Bus Operator Directory</h2><p class="muted">Public operator information only. This is separate from scheduled routes and is not a booking queue.</p>'+
@@ -1794,6 +1808,10 @@ document.addEventListener('click', async function (e) {
     }
 
     // ---- community requests ----
+    else if (act === 'community-toggle-details') {
+      var detailId=b.getAttribute('data-detail'),detailCard=document.querySelector('[data-request-card="'+detailId.replace(/"/g,'\\"')+'"]');
+      if(detailCard){var opened=detailCard.classList.toggle('expanded');b.textContent=opened?'Hide details ▴':'Details ▾';}
+    }
     else if (act === 'community-open') {
       var okind=b.getAttribute('data-kind'),oid=b.getAttribute('data-id'),orec=(community[okind]||[]).find(function(x){return x.id===oid;});
       if(!orec||orec.status!=='pending'){toast('Only pending requests can be opened. Refresh the list.');return;} showCommunityEditor(okind,orec);return;
