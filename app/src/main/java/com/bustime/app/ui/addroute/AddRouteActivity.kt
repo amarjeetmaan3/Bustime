@@ -153,7 +153,7 @@ class AddRouteActivity : AppCompatActivity() {
         field.setAdapter(placeSuggestionAdapter())
         // Keep the selected Place ID with the field. Any subsequent manual edit
         // invalidates the selection so typed text cannot accidentally reuse an old ID.
-        if (field.getTag(R.id.etFromText) != true) {
+        if (field.tag != true) {
             field.addTextChangedListener(object : android.text.TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -162,7 +162,7 @@ class AddRouteActivity : AppCompatActivity() {
                 }
                 override fun afterTextChanged(s: android.text.Editable?) = Unit
             })
-            field.setTag(R.id.etFromText, true)
+            field.tag = true
         }
         field.setOnItemClickListener { parent, _, position, _ ->
             val suggestion = parent.getItemAtPosition(position) as? PlaceSuggestion
@@ -334,8 +334,16 @@ class AddRouteActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val names = repo.getPlacesById(setOf(route.fromId, route.toId))
             val lang = LanguageHelper.current()
-            findViewById<EditText>(R.id.etFromText).setText(names[route.fromId]?.displayName(lang) ?: route.fromId)
-            findViewById<EditText>(R.id.etToText).setText(names[route.toId]?.displayName(lang) ?: route.toId)
+            findViewById<EditText>(R.id.etFromText).apply {
+                setText(names[route.fromId]?.displayName(lang) ?: route.fromId)
+                setTag(R.id.etFromText, true)
+                setTag(R.id.etToText, route.fromId)
+            }
+            findViewById<EditText>(R.id.etToText).apply {
+                setText(names[route.toId]?.displayName(lang) ?: route.toId)
+                setTag(R.id.etFromText, true)
+                setTag(R.id.etToText, route.toId)
+            }
             loadStops(route)
         }
     }
@@ -358,6 +366,8 @@ class AddRouteActivity : AppCompatActivity() {
                     setSingleLine(true)
                     textSize = 16f
                     setText(names[stop.placeId]?.displayName(lang) ?: stop.placeId)
+                    setTag(R.id.etFromText, true)
+                    setTag(R.id.etToText, stop.placeId)
                     filters = arrayOf(android.text.InputFilter.LengthFilter(80))
                     setBackgroundResource(R.drawable.bg_input)
                     setPadding(pad * 2, pad, pad * 2, pad)
@@ -633,7 +643,7 @@ class AddRouteActivity : AppCompatActivity() {
                 return
             }
             stops.put(JSONObject()
-                .put("place", (row.nameEdit?.getTag(R.id.etToText) as? String) ?: row.placeId ?: JSONObject.NULL)
+                .put("place", (row.nameEdit?.getTag(R.id.etToText) as? String) ?: JSONObject.NULL)
                 .put("name", nm)
                 .put("time", row.time ?: JSONObject.NULL))
         }
