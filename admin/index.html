@@ -313,7 +313,7 @@ function communityEditorHtml() {
     html+='<option value="'+esc(p.id)+'"'+(String(p.id)===String(selected||'')?' selected':'')+'>'+esc(pname(p)||p.id)+'</option>';
    });return html;
   }
-  var html='<p class="muted"><b>'+esc(routeLabel)+'</b></p><p class="muted">Review the correction details below. No SQL or raw record data is shown here.</p>';
+  var html=reviewPlaceDatalistsHtml()+'<p class="muted"><b>'+esc(routeLabel)+'</b></p><p class="muted">Review the correction details below. No SQL or raw record data is shown here.</p>';
   html+='<label>Correction type</label><input value="'+esc(x.request_type==='correct_time'?'Correct stop timing':x.request_type==='missing_stop'?'Add a missing stop':x.request_type==='route_edit'?'Edit route stops':String(x.request_type||'Route correction'))+'" disabled>';
   if(x.request_type==='correct_time'){
    var stops=route?[{id:route.from,label:stopLabel(route.from)},{id:route.to,label:stopLabel(route.to)}].concat((route.stops||[]).map(function(st){return{id:st.place,label:stopLabel(st.place)};})):[];
@@ -382,7 +382,7 @@ function communityEditorValues(){
  if(communityReviewEditor&&communityReviewEditor.kind==='corrections'&&communityReviewEditor.record.request_type==='route_edit'){
   out.proposed_stops=Array.prototype.map.call(document.querySelectorAll('#crProposedStops [data-cr-proposed]'),function(row){
    var place=row.querySelector('[data-cr-place]'),time=row.querySelector('[data-cr-time]'),names={};
-   row.querySelectorAll('[data-rv-name]').forEach(function(el){var value=el.value.trim();if(value)names[el.dataset.lang]=value;names._sourceLang=el.getAttribute('data-rv-source-lang')||names._sourceLang;});
+   row.querySelectorAll('[data-rv-name]').forEach(function(el){var value=el.value.trim();if(value)names[el.dataset.lang]=value;names._sourceLang=el.getAttribute('data-rv-source-lang')||names._sourceLang;if(el.dataset.rvSelectedPlaceId)names._selectedPlaceId=el.dataset.rvSelectedPlaceId;});
    var lang=names._sourceLang||'en';
    return {place_id:place&&place.value||null,name:names[lang]||names.en||names.hi||names.pa||'',names:names,time:time&&time.value||null,language:lang};
   });
@@ -1305,7 +1305,7 @@ function reviewNamesForPlace(id, rawName) {
 }
 function reviewNameField(key, lang, value, sourceLang) {
   value=String(value||'');
-  return '<input class="review-' + lang + '" aria-label="' + lang + ' name" placeholder="' + (lang==='en'?'English':lang==='hi'?'हिंदी':'ਪੰਜਾਬੀ') + '" data-rv-name="' + esc(key) + '" data-lang="' + lang + '" data-rv-source-lang="' + esc(sourceLang||lang) + '" data-original-value="' + esc(value) + '" data-autofilled="' + (!value?'true':'false') + '" value="' + esc(value) + '">';
+  return '<input class="review-' + lang + '" aria-label="' + lang + ' name" placeholder="' + (lang==='en'?'English':lang==='hi'?'हिंदी':'ਪੰਜਾਬੀ') + '" list="review-place-' + lang + '" autocomplete="off" data-rv-name="' + esc(key) + '" data-lang="' + lang + '" data-rv-source-lang="' + esc(sourceLang||lang) + '" data-original-value="' + esc(value) + '" data-autofilled="' + (!value?'true':'false') + '" value="' + esc(value) + '">';
 }
 function reviewNameInputs(key, names) {
   names = names || {};
@@ -1346,13 +1346,19 @@ function routeReviewEditorHtml() {
         '<td><input type="time" data-rv-time="' + index + '" value="' + esc(st.time || '') + '"></td><td><span class="muted">' + esc(st.place || 'New on approval') + '</span></td>' +
         '<td class="review-move"><button class="btn sm" data-act="review-stop-up" data-i="' + index + '">↑</button> <button class="btn sm" data-act="review-stop-down" data-i="' + index + '">↓</button></td></tr>';
     }).join('') + '</tbody></table></div>';
-  return '<p class="muted">Review names and translations inline. New Places are created only when you approve. Existing Place IDs are retained unless a clearly distinct name is entered. Blank stop times are allowed, but at least one valid route time is required.</p>' +
+  return reviewPlaceDatalistsHtml() + '<p class="muted">Review names and translations inline. New Places are created only when you approve. Existing Place IDs are retained unless a clearly distinct name is entered. Blank stop times are allowed, but at least one valid route time is required.</p>' +
     '<label>Service / bus name</label><input id="rv_service" value="' + esc(v.service || '') + '">' +
     '<label>Starting place (English · हिंदी · ਪੰਜਾਬੀ)</label>' + reviewNameInputs('from', fromNames) +
     '<label>Destination (English · हिंदी · ਪੰਜਾਬੀ)</label>' + reviewNameInputs('to', toNames) +
     '<label>Departure time</label><input id="rv_start" type="time" value="' + esc(v.start || '') + '">' +
     '<h3 style="margin-top:18px">Stops and timings</h3>' + (stopHtml || '<p class="muted">No intermediate stops submitted.</p>') +
     '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="sb-save-draft" data-i="' + i + '">Save reviewed draft</button><button class="btn primary" data-act="sb-final-approve" data-i="' + i + '">Approve reviewed route</button></div>';
+}
+function reviewPlaceDatalistsHtml() {
+  return ['en','hi','pa'].map(function(lang){
+    var seen={},options=(data.places||[]).map(function(p){var value=String((p.name||{})[lang]||'').trim(),key=value.toLocaleLowerCase();if(!value||seen[key])return '';seen[key]=true;return '<option value="'+esc(value)+'"></option>';}).join('');
+    return '<datalist id="review-place-'+lang+'">'+options+'</datalist>';
+  }).join('');
 }
 function routeReviewValues() {
   if (!routeReviewEditor) return null;
@@ -1364,6 +1370,7 @@ function routeReviewValues() {
     body.querySelectorAll('[data-rv-name="' + key + '"]').forEach(function(e) {
       var value = String(e.value || '').trim(); if (value) out[e.getAttribute('data-lang')] = value;
       if(e.getAttribute('data-rv-source-lang'))out._sourceLang=e.getAttribute('data-rv-source-lang');
+      if(e.dataset.rvSelectedPlaceId)out._selectedPlaceId=e.dataset.rvSelectedPlaceId;
     });
     return out;
   }
@@ -1451,6 +1458,15 @@ document.addEventListener('input', function (e) {
   var el = document.getElementById(id);
   if (el) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (x) {} }
 });
+document.addEventListener('change',function(e){
+ var target=e.target;if(!target||!target.hasAttribute||!target.hasAttribute('data-rv-name'))return;
+ var key=target.getAttribute('data-rv-name'),lang=target.getAttribute('data-lang'),value=String(target.value||'').trim();if(!value)return;
+ var norm=function(s){return String(s||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');};
+ var matches=(data.places||[]).filter(function(p){return norm((p.name||{})[lang])===norm(value)||(p.aliases||[]).some(function(a){return norm(a)===norm(value);});});
+ if(matches.length!==1)return;
+ var place=matches[0];
+ document.querySelectorAll('[data-rv-name="'+key+'"]').forEach(function(el){el.value=String((place.name||{})[el.dataset.lang]||'');el.dataset.rvSelectedPlaceId=place.id;el.dataset.rvSourceLang=lang;el.dataset.autofilled=el.dataset.lang===lang?'false':'true';});
+});
 document.addEventListener('change', function (e) {
   if (e.target.id === 'analyticsPeriod') { var custom = e.target.value === 'custom'; document.getElementById('analyticsFrom').style.display = custom ? 'block' : 'none'; document.getElementById('analyticsTo').style.display = custom ? 'block' : 'none'; if (!custom) loadAnalytics(); }
   if (e.target.id === 'analyticsFrom' || e.target.id === 'analyticsTo') { if (document.getElementById('analyticsPeriod') && document.getElementById('analyticsPeriod').value === 'custom' && document.getElementById('analyticsFrom').value && document.getElementById('analyticsTo').value) loadAnalytics(); }
@@ -1512,8 +1528,8 @@ document.addEventListener('input',function(e){
  if(target.id==='fp_hi'||target.id==='fp_pa'){target.dataset.autofilled='false';return;}
  if(target.hasAttribute&&target.hasAttribute('data-rv-name')){
   var key=target.getAttribute('data-rv-name'),lang=target.getAttribute('data-lang');
-  target.dataset.autofilled='false';
-  document.querySelectorAll('[data-rv-name="'+key+'"]').forEach(function(el){el.setAttribute('data-rv-source-lang',lang);});
+  target.dataset.autofilled='false';delete target.dataset.rvSelectedPlaceId;
+  document.querySelectorAll('[data-rv-name="'+key+'"]').forEach(function(el){el.setAttribute('data-rv-source-lang',lang);delete el.dataset.rvSelectedPlaceId;});
   translateReviewGroup(key,lang);
   return;
  }
@@ -1752,12 +1768,12 @@ document.addEventListener('click', async function (e) {
         var resolvedStops = [];
         for (var esi = 0; esi < v.stops.length; esi++) {
           var es = v.stops[esi], submittedName = String(es.name || '').trim();
-          var resolvedId = submittedName ? ensureReviewedPlace(es.names || {en:submittedName}, es.place) : es.place;
+          var resolvedId = submittedName ? ensureReviewedPlace(es.names || {en:submittedName}, (es.names&&es.names._selectedPlaceId)||es.place) : es.place;
           if (!resolvedId || !placeById(resolvedId)) { toast('Every stop must have a valid name.'); return; }
           resolvedStops.push({ place: resolvedId, time: es.time });
         }
-        resolvedStops[0].place = ensureReviewedPlace(v.fromNames, resolvedStops[0].place);
-        resolvedStops[resolvedStops.length - 1].place = ensureReviewedPlace(v.toNames, resolvedStops[resolvedStops.length - 1].place);
+        resolvedStops[0].place = ensureReviewedPlace(v.fromNames, v.fromNames._selectedPlaceId || resolvedStops[0].place);
+        resolvedStops[resolvedStops.length - 1].place = ensureReviewedPlace(v.toNames, v.toNames._selectedPlaceId || resolvedStops[resolvedStops.length - 1].place);
         if (!resolvedStops[0].place || !resolvedStops[resolvedStops.length - 1].place) { toast('From and To must have valid names.'); return; }
         var editStart = TIME_RE.test(v.start) ? v.start : ((v.stops.find(function(st){ return TIME_RE.test(st.time || ''); }) || {}).time || '');
         if (!editStart) { toast('Add at least one valid time before approving.'); return; }
@@ -1797,8 +1813,8 @@ document.addEventListener('click', async function (e) {
       var reviewedFrom = String(v.from || '').trim(), reviewedTo = String(v.to || '').trim();
       if (!reviewedFrom || !reviewedTo) { toast('Enter both From and To before approving.'); return; }
       if (isFreeText && !warnNearSubmittedPlaces([reviewedFrom, reviewedTo].concat(v.stops.map(function(st){return st.name;})))) return;
-      var fromId = isFreeText ? ensureReviewedPlace(v.fromNames, sub.from_id) : sub.from_id;
-      var toId = isFreeText ? ensureReviewedPlace(v.toNames, sub.to_id) : sub.to_id;
+      var fromId = isFreeText ? ensureReviewedPlace(v.fromNames, v.fromNames._selectedPlaceId || sub.from_id) : sub.from_id;
+      var toId = isFreeText ? ensureReviewedPlace(v.toNames, v.toNames._selectedPlaceId || sub.to_id) : sub.to_id;
       var previousReviewTime = effectiveStart, inferredDayOffset = 0;
       v.stops.forEach(function (st) {
         if (st.time && st.time < previousReviewTime) inferredDayOffset++;
@@ -1808,7 +1824,7 @@ document.addEventListener('click', async function (e) {
       var arrive = null, mid = [];
       v.stops.forEach(function (st) {
         var stopPlace = st.place;
-        if (st.name) stopPlace = ensureReviewedPlace(st.names || {en:st.name}, st.place);
+        if (st.name) stopPlace = ensureReviewedPlace(st.names || {en:st.name}, (st.names&&st.names._selectedPlaceId)||st.place);
         if (stopPlace === toId) arrive = st.time;
         else if (stopPlace && stopPlace !== fromId && placeById(stopPlace)) { var o = { place:stopPlace }; if (st.time) o.time = st.time; if (st.day_offset != null) o.day_offset = st.day_offset; mid.push(o); }
       });
