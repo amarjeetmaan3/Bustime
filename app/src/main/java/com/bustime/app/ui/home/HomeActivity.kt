@@ -3,6 +3,9 @@ package com.bustime.app.ui.home
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
+import android.view.Gravity
+import android.widget.FrameLayout
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -58,6 +61,7 @@ class HomeActivity : AppCompatActivity() {
         // ऊपर "भाषा" का बटन
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         toolbar.inflateMenu(R.menu.home_menu)
+        updateLanguageIndicator(toolbar)
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_language -> { showLanguageDialog(); true }
@@ -137,14 +141,29 @@ class HomeActivity : AppCompatActivity() {
         val refreshItem = toolbar.menu.findItem(R.id.action_refresh) ?: return
         if (!refreshItem.isEnabled) return
         refreshItem.isEnabled = false
+        val density = resources.displayMetrics.density
+        val progress = ProgressBar(this).apply {
+            isIndeterminate = true
+            contentDescription = getString(R.string.refresh_started)
+        }
+        val holder = FrameLayout(this).apply {
+            val size = (48 * density).toInt()
+            layoutParams = android.view.ViewGroup.LayoutParams(size, size)
+            addView(progress, FrameLayout.LayoutParams(
+                (24 * density).toInt(), (24 * density).toInt(), Gravity.CENTER
+            ))
+        }
+        refreshItem.actionView = holder
         Toast.makeText(this, R.string.refresh_started, Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
             try {
                 AppRepository.getInstance(this@HomeActivity).syncData()
-                // Refresh the visible screen from Room after the sync completes,
-                // even when the snapshot version was already current.
                 refreshCurrentTab()
+            } catch (e: Exception) {
+                Toast.makeText(this@HomeActivity, "Refresh failed: " + (e.message ?: "Please try again"), Toast.LENGTH_LONG).show()
             } finally {
+                refreshItem.actionView = null
+                refreshItem.setIcon(R.drawable.ic_refresh)
                 refreshItem.isEnabled = true
             }
         }
@@ -156,6 +175,15 @@ class HomeActivity : AppCompatActivity() {
             2 -> replaceFragment(AutoRickshawFragment())
             else -> replaceFragment(BusFragment())
         }
+    }
+
+    private fun updateLanguageIndicator(toolbar: Toolbar) {
+        val code = when (LanguageHelper.current()) {
+            "hi" -> "हि"
+            "pa" -> "ਪੰ"
+            else -> "ENG"
+        }
+        toolbar.menu.findItem(R.id.action_language)?.title = code
     }
 
     private fun showLanguageDialog() {
