@@ -59,7 +59,6 @@ class LaunchGateActivity : AppCompatActivity() {
                 setOnClickListener {
                     selected = code
                     prefs.edit().putString("preferred_language", code).apply()
-                    applyLanguage(code)
                     showTermsPage()
                 }
             }, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(10) })
@@ -101,7 +100,7 @@ class LaunchGateActivity : AppCompatActivity() {
                 val text = settings.terms[lang]?.takeIf { it.isNotBlank() } ?: defaultText.getValue(lang)
                 val label = when(lang) { "hi" -> "हिन्दी"; "pa" -> "ਪੰਜਾਬੀ"; else -> "English" }
                 "$label\n$text"
-            } else "Bustime is for information only. Please verify travel details with the relevant service."
+            } else langs.joinToString("\n\n━━━━━━━━━━━━\n\n") { lang -> val label = when(lang) { "hi" -> "हिन्दी"; "pa" -> "ਪੰਜਾਬੀ"; else -> "English" }; "$label\n" + defaultText.getValue(lang) }
             loading.text = body
             agree.isEnabled = true
             next.isEnabled = agree.isChecked
@@ -112,6 +111,6 @@ class LaunchGateActivity : AppCompatActivity() {
     private fun applyLanguage(code: String) {
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
     }
-    private fun openHome() { startActivity(Intent(this, HomeActivity::class.java)); finish() }
+    private fun openHome() { applyLanguage(selected); startActivity(Intent(this, HomeActivity::class.java)); finish() }
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 }
