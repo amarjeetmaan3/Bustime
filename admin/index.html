@@ -1085,12 +1085,20 @@ async function saveAdConfig(){
 async function uploadAdPoster(file){
   if(!file) return;
   if(!cfg.sbUrl||!cfg.sbKey)throw new Error('Configure Supabase URL and anon key in Settings first.');
-  var ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');
-  var path='campaign-'+Date.now()+'.'+ext;
-  var headers={apikey:cfg.sbKey,Authorization:sbToken?'Bearer '+sbToken:'Bearer '+cfg.sbKey,'Content-Type':file.type||'image/jpeg', 'x-upsert':'true'};
-  var response=await fetch(cfg.sbUrl.replace(/\/+$/,'')+'/storage/v1/object/ads-posters/'+path,{method:'POST',headers:headers,body:file});
-  if(!response.ok)throw new Error('Poster upload failed: HTTP '+response.status+' (run ad migration SQL and check Storage policies).');
-  adConfig.my.poster_url=cfg.sbUrl.replace(/\/+$/,'')+'/storage/v1/object/public/ads-posters/'+path;
+  var allowed={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+  if(!allowed[file.type])throw new Error('Unsupported poster format. Use JPG, PNG or WebP.');
+  if(file.size>8*1024*1024)throw new Error('Poster is larger than 8 MB. Choose a smaller image.');
+  var ext=allowed[file.type];
+  var path='campaign-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext;
+  var base=cfg.sbUrl.replace(/\/+$/,'');
+  var headers={apikey:cfg.sbKey,Authorization:'Bearer '+cfg.sbKey,'Content-Type':file.type,'x-upsert':'false'};
+  var response=await fetch(base+'/storage/v1/object/ads-posters/'+path,{method:'POST',headers:headers,body:file});
+  if(!response.ok){
+    var detail='';
+    try{var payload=await response.json();detail=payload.message||payload.error||payload.error_description||JSON.stringify(payload);}catch(_){try{detail=await response.text();}catch(__){}}
+    throw new Error('Poster upload failed: HTTP '+response.status+(detail?' — '+detail:'')+'.');
+  }
+  adConfig.my.poster_url=base+'/storage/v1/object/public/ads-posters/'+path;
 }
 
 function viewSettings() {
