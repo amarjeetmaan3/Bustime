@@ -1280,7 +1280,7 @@ function ensureReviewedPlace(names, preferredId) {
   var primary=lang&&clean[lang];if(!primary)return preferredId&&placeById(preferredId)?preferredId:null;
   function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
   var place=preferredId?placeById(preferredId):null;
-  if(!place)place=data.places.find(function(p){return Object.keys(p.name||{}).some(function(k){return k===lang&&norm(p.name[k])===norm(primary);});})||null;
+  if(!place)place=data.places.find(function(p){return Object.keys(p.name||{}).some(function(k){return k===lang&&norm(p.name[k])===norm(primary);})||(p.aliases||[]).some(function(alias){return norm(alias)===norm(primary);});})||null;
   if(!place){place={id:makeId('place_user_',primary,function(candidate){return !!placeById(candidate);}),kind:'place',name:{},aliases:[]};data.places.push(place);}
   place.name=place.name||{};
   ['en','hi','pa'].forEach(function(code){if(clean[code])place.name[code]=clean[code];});
