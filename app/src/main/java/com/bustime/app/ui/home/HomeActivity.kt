@@ -195,7 +195,26 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun updateLanguageIndicator(toolbar: Toolbar) {
-        toolbar.menu.findItem(R.id.action_language)?.title = ""
+        val item = toolbar.menu.findItem(R.id.action_language) ?: return
+        val languageMark = TextView(this).apply {
+            text = "A ਅ अ"
+            setTextColor(android.graphics.Color.WHITE)
+            textSize = 16f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setPadding(
+                (8 * resources.displayMetrics.density).toInt(),
+                0,
+                (8 * resources.displayMetrics.density).toInt(),
+                0
+            )
+            contentDescription = getString(R.string.language)
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { showLanguageDialog() }
+        }
+        item.actionView = languageMark
+        item.title = getString(R.string.language)
     }
 
     private fun loadWarningTicker() {
