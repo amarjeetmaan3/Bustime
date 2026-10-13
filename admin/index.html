@@ -352,6 +352,7 @@ function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
 // ============ State ============
 var data = null, sha = null, baseVersion = 0, dirty = false;
 var tab = 'settings';
+var contentSettings = {terms_enabled:true,terms:{en:'',hi:'',pa:''},popup_enabled:true,popup:{en:'',hi:'',pa:''},popup_seconds:5,ticker_enabled:true,ticker:{en:'',hi:'',pa:''}};
 var sbToken = null, sbRefreshToken = null, subs = null, subsError = '';
 var ADMIN_AUTH_UID = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9';
 var ADMIN_SESSION_KEY = 'bustime_admin_session_v1';
@@ -501,14 +502,14 @@ var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
 var NAV = [
   ['dashboard','Dashboard'], ['analytics','Analytics & Stats'], ['bus','Bus'], ['taxi','Taxi'],
-  ['auto','Auto'], ['review','Review Center'], ['advertisement','Advertisement'], ['settings','Settings']
+  ['auto','Auto'], ['review','Review Center'], ['content','App Text & Warnings'], ['advertisement','Advertisement'], ['settings','Settings']
 ];
 var TITLES = {
   dashboard:'Dashboard', analytics:'Analytics & Stats', bus:'Bus', taxi:'Taxi', auto:'Auto', places:'Bus · Places',
   routes:'Bus · Routes', busRequests:'Bus · Route Requests', addBus:'Bus · Add Your Bus', busDirectory:'Bus · Operator Directory',
   taxiReview:'Taxi · Submissions', autoReview:'Auto · Submissions', seats:'Taxi · Seat Options',
   drivers:'Taxi · Directory', autoDrivers:'Auto · Directory', corrections:'Review Center · Corrections',
-  feedbackReview:'Review Center · Feedback', review:'Review Center', advertisement:'Advertisement', settings:'Settings'
+  feedbackReview:'Review Center · Feedback', review:'Review Center', content:'App Text & Warnings', advertisement:'Advertisement', settings:'Settings'
 };
 
 // ============ Helpers ============
@@ -750,7 +751,7 @@ function render() {
     places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers, autoDrivers:viewDrivers,
     busRequests:viewBusRequests, busDirectory:function(){return viewCommunity('busDirectory');}, taxiReview:function(){return viewCommunity('taxi');},
     autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
-    corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, advertisement:viewAdvertisement, settings:viewSettings };
+    corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, content:viewContentSettings, advertisement:viewAdvertisement, settings:viewSettings };
   if (dataTabs.indexOf(tab) >= 0 && !data) {
     v.innerHTML = '<div class="card"><h2>Load route data first</h2><p class="muted">Open Settings and load the data from GitHub. Submission review tabs can be opened independently after Supabase sign-in.</p><button class="btn primary" data-act="tab" data-t="settings">Open Settings</button></div>';
   } else {
@@ -1177,6 +1178,37 @@ function viewSettings() {
     'GitHub &rarr; profile picture &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens &rarr; Generate new token.<br>' +
     '&bull; Repository access: only the <b>Bustime</b> repository<br>&bull; Repository permissions: <b>Contents &rarr; Read and write</b><br>' +
     'Paste the token above. Never share it and never commit it to the repository.</p></div>';
+}
+
+
+// ============ Editable app text: Terms, driver popup, ticker ============
+async function loadContentSettings() {
+  var rows = await sbFetch('/rest/v1/app_content_settings?id=eq.1&select=settings');
+  if (rows && rows[0] && rows[0].settings) {
+    var saved = rows[0].settings;
+    contentSettings = Object.assign({}, contentSettings, saved);
+    ['terms','popup','ticker'].forEach(function(k) {
+      contentSettings[k] = Object.assign({en:'',hi:'',pa:''}, contentSettings[k] || {});
+    });
+  }
+}
+function contentTextField(id, title, value, rows) {
+  return '<label>'+title+'</label><textarea id="'+id+'" rows="'+(rows||4)+'" style="width:100%;min-height:90px;padding:10px 12px;border:1px solid #C9D1DA;border-radius:8px;font:inherit">'+esc(value||'')+'</textarea>';
+}
+function viewContentSettings() {
+  var s=contentSettings;
+  return '<div class="card"><h2>Terms & Conditions / Information-only Disclaimer</h2><p class="muted">The first-launch page shows the selected language plus Hindi for Punjabi/English language pairing rules. Add all translations here; a blank translation falls back to the app’s built-in safety notice.</p>'+
+    '<label class="ad-check"><input id="content_terms_enabled" type="checkbox" '+(s.terms_enabled?'checked':'')+'> Enable Terms text from this panel</label>'+
+    contentTextField('content_terms_en','Terms — English',s.terms.en,5)+contentTextField('content_terms_hi','Terms — Hindi',s.terms.hi,5)+contentTextField('content_terms_pa','Terms — Punjabi',s.terms.pa,5)+
+    '</div><div class="card"><h2>Driver Details warning popup</h2><p class="muted">Shown when Taxi/Auto user opens Show Details. Popup auto-closes after the selected duration; minimum is 5 seconds.</p>'+
+    '<label class="ad-check"><input id="content_popup_enabled" type="checkbox" '+(s.popup_enabled?'checked':'')+'> Enable driver warning popup</label>'+
+    '<div class="row2"><div>'+contentTextField('content_popup_en','Popup — English',s.popup.en,4)+'</div><div>'+contentTextField('content_popup_hi','Popup — Hindi',s.popup.hi,4)+'</div></div>'+
+    contentTextField('content_popup_pa','Popup — Punjabi',s.popup.pa,4)+
+    '<label>Auto-dismiss duration (seconds, minimum 5)</label><input id="content_popup_seconds" type="number" min="5" max="60" value="'+Math.max(5,Math.min(60,parseInt(s.popup_seconds,10)||5))+'">'+
+    '</div><div class="card"><h2>Scrolling warning ticker</h2><p class="muted">Runs continuously from right to left below Bus / Taxi / Auto tabs. The app shows two languages according to the selected app language: English+Hindi, Hindi+English, or Punjabi+Hindi.</p>'+
+    '<label class="ad-check"><input id="content_ticker_enabled" type="checkbox" '+(s.ticker_enabled?'checked':'')+'> Enable warning ticker</label>'+
+    contentTextField('content_ticker_en','Ticker — English',s.ticker.en,3)+contentTextField('content_ticker_hi','Ticker — Hindi',s.ticker.hi,3)+contentTextField('content_ticker_pa','Ticker — Punjabi',s.ticker.pa,3)+
+    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="content-save">Save app text and warnings</button></div></div>';
 }
 
 
@@ -2090,6 +2122,7 @@ document.addEventListener('click', async function (e) {
       tab = b.getAttribute('data-t'); editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render();
       if (tab === 'analytics' && sbToken) { loadAnalytics(); }
    if (tab === 'advertisement') { loadAdConfig().then(function(){render();}).catch(function(err){toast('Advertisement settings: '+err.message);}); }
+      if (tab === 'content') { loadContentSettings().then(function(){render();}).catch(function(err){toast('App text settings: '+err.message);}); }
       if (['review','busRequests','taxiReview','autoReview','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
     else if (act === 'close') { editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render(); }
@@ -2496,6 +2529,21 @@ document.addEventListener('click', async function (e) {
       await loadCommunity(); render();
     }
 
+
+
+    else if (act === 'content-save') {
+      contentSettings = {
+        terms_enabled:document.getElementById('content_terms_enabled').checked,
+        terms:{en:document.getElementById('content_terms_en').value.trim(),hi:document.getElementById('content_terms_hi').value.trim(),pa:document.getElementById('content_terms_pa').value.trim()},
+        popup_enabled:document.getElementById('content_popup_enabled').checked,
+        popup:{en:document.getElementById('content_popup_en').value.trim(),hi:document.getElementById('content_popup_hi').value.trim(),pa:document.getElementById('content_popup_pa').value.trim()},
+        popup_seconds:Math.max(5,Math.min(60,parseInt(document.getElementById('content_popup_seconds').value,10)||5)),
+        ticker_enabled:document.getElementById('content_ticker_enabled').checked,
+        ticker:{en:document.getElementById('content_ticker_en').value.trim(),hi:document.getElementById('content_ticker_hi').value.trim(),pa:document.getElementById('content_ticker_pa').value.trim()}
+      };
+      await sbFetch('/rest/v1/app_content_settings?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:1,settings:contentSettings})});
+      toast('Terms, popup and ticker text saved.'); render();
+    }
 
     else if (act === 'ad-subtab') { adSubtab=b.getAttribute('data-sub')==='admob'?'admob':'my'; render(); }
     else if (act === 'ad-save-my') {
