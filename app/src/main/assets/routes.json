@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 36,
+  "dataVersion": 37,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -728,9 +728,10 @@
       "vehicle": "luna · 2033",
       "phone": "9649885866",
       "areaId": "Amargarh",
-      "info": "Union: maan · Vehicle No: rj 31 56 · ",
+      "info": "Union: maan · Union: maan · Vehicle No: rj 31 56 ·",
       "union_name": "maan",
-      "seats": 5
+      "seats": 5,
+      "area": "amargarh"
     },
     {
       "id": "a2",
@@ -739,10 +740,10 @@
       "vehicle": "auto · 22",
       "phone": "9649885866",
       "areaId": "Hunmangarh",
-      "info": "Union: dev autos · Vehicle No: rj 15 · ",
+      "info": "Union: dev autos · Union: dev autos · Union: dev autos · Vehicle No: rj 15 ·",
       "fuel": "oil",
       "union_name": "dev autos",
-      "seats": 7
+      "area": "amargarh"
     }
   ]
 }
