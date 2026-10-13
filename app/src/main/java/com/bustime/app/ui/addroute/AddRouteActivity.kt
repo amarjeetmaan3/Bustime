@@ -167,6 +167,7 @@ class AddRouteActivity : AppCompatActivity() {
             if (suggestion != null) {
                 field.setText(suggestion.selectedName, false)
                 field.setSelection(field.text.length)
+                field.setTag(R.id.etFromText, true)
                 field.setTag(R.id.etToText, suggestion.placeId)
             }
         }
