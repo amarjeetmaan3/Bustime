@@ -1707,6 +1707,7 @@ document.addEventListener('click', async function (e) {
       var rv=communityEditorValues(),merged=Object.assign({},orig,rv),stamp=new Date().toISOString();
       if(act==='community-save-draft'){await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:rv,reviewed_at:stamp})});orig.reviewed_data=rv;orig.reviewed_at=stamp;communityReviewEditor.record.reviewed_data=rv;toast('Reviewed draft saved. Request remains pending; original is unchanged.');render();return;}
       if(!confirm('Approve the reviewed data into the main app data? This does not publish the GitHub snapshot.'))return;
+      if(rk==='corrections'&&merged.request_type==='route_edit'&&!warnNearSubmittedPlaces((merged.proposed_stops||[]).map(function(st){return st.name;})))return;
       if(rk==='corrections')applyApprovedCorrection(merged);
       if(rk==='vehicles'){
         if(!merged.person_name||!merged.vehicle_name||!merged.phone){toast('Owner/driver name, vehicle name and phone are required.');return;}
