@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 35,
+  "dataVersion": 36,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -34,8 +34,7 @@
       "kind": "village",
       "name": {
         "en": "Dhani khichdran",
-        "hi": "ढाणी खिचढा़न",
-        "pa": "ਧਨੀ ਖਿਚਡਰਾਂ"
+        "hi": "ढाणी खिचढा़न"
       }
     },
     {
