@@ -37,7 +37,7 @@ object AreaPicker {
         val name = place?.displayName(com.bustime.app.utils.LanguageHelper.current())
             ?.takeIf { it.isNotBlank() }
             ?: areaId.removePrefix("place_").replace('_', ' ').replaceFirstChar { it.uppercase() }
-        return "$name  ▾"
+        return "Permanent Area: $name  ▾"
     }
 
     /** No context.getString(R.string.home_all_areas) option: the user must choose a driver service area. */
