@@ -188,12 +188,15 @@ class AddRouteActivity : AppCompatActivity() {
             val lang = LanguageHelper.current()
             // Keep one record per saved place. The dropdown label and selected
             // name are reordered per the script actually typed into this field.
+            val routeUsage = withContext(Dispatchers.IO) { repo.getAllRoutes() }
+                .flatMap { route -> listOf(route.fromId, route.toId) + route.stops.map { it.placeId } }
+                .groupingBy { it }.eachCount()
             placeSuggestions = all.map { place ->
                 val names = place.names.mapNotNull { (code, value) ->
                     value.trim().takeIf { it.isNotBlank() }?.let { code to it }
                 }.toMap()
                 val fallback = place.displayName(lang)
-                val initial = suggestionForLanguage(
+                suggestionForLanguage(
                     PlaceSuggestion(
                         place.id,
                         names,
@@ -204,8 +207,18 @@ class AddRouteActivity : AppCompatActivity() {
                     ),
                     lang
                 )
-                initial
-            }.distinctBy { it.placeId }
+            }
+                // Exact duplicate multilingual records are shown once. Prefer the ID
+                // referenced by the most routes; distinct names such as "Rampur RJ"
+                // and "Rampur PB" remain separate Places.
+                .sortedWith(compareByDescending<PlaceSuggestion> { routeUsage[it.placeId] ?: 0 }
+                    .thenBy { it.label.lowercase() })
+                .distinctBy { item ->
+                    item.namesByLanguage.entries
+                        .filter { it.value.isNotBlank() }
+                        .sortedBy { it.key }
+                        .joinToString("|") { it.key + "=" + it.value.trim().lowercase().replace(Regex("\\s+"), " ") }
+                }
                 .sortedBy { it.label.lowercase() }
 
             findViewById<AutoCompleteTextView>(R.id.etFromText)?.let(::attachPlaceSuggestions)
