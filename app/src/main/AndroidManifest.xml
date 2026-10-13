@@ -38,12 +38,13 @@
                 android:value="true" />
         </service>
 
-        <activity android:name=".ui.home.HomeActivity" android:exported="true">
+        <activity android:name=".ui.home.LaunchGateActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".ui.home.HomeActivity" android:exported="false" />
 
         <activity android:name=".ui.search.SearchActivity" android:exported="false" />
         <!-- जगह चुनने का पूरा पेज: कीबोर्ड खुलते ही सूची उसके ऊपर सिकुड़कर दिखती है -->
@@ -52,6 +53,7 @@
             android:exported="false"
             android:windowSoftInputMode="stateVisible|adjustResize" />
         <activity android:name=".ui.details.RouteDetailActivity" android:exported="false" />
+        <activity android:name=".ui.details.DriverDetailActivity" android:exported="false" />
 
         <activity android:name=".ui.community.CommunityRequestActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ui.bookbus.BookBusActivity" android:exported="false" />
