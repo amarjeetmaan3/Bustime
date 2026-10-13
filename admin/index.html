@@ -720,7 +720,7 @@ function render() {
   var v = $('#view');
   if (!sbToken) {
     $('#nav').innerHTML = '';
-    $('#workspaceNav').innerHTML = '';
+    var workspaceNav = document.getElementById('workspaceNav'); if (workspaceNav) workspaceNav.innerHTML = '';
     $('#pageTitle').textContent = 'Secure Admin Sign-in';
     $('#dirty').style.display = 'none';
     $('#verPill').textContent = 'Locked';
