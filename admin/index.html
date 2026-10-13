@@ -1383,7 +1383,7 @@ document.addEventListener('input',function(e){
  if(target.hasAttribute&&target.hasAttribute('data-rv-name')){
   var key=target.getAttribute('data-rv-name'),lang=target.getAttribute('data-lang');
   target.dataset.autofilled='false';
-  // Only update auto-generated translations; manually edited target fields are never overwritten.
+  document.querySelectorAll('[data-rv-name="'+key+'"]').forEach(function(el){el.setAttribute('data-rv-source-lang',lang);});
   translateReviewGroup(key,lang);
   return;
  }
