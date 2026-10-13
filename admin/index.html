@@ -375,7 +375,7 @@ async function verifySingleAdmin() {
   }
   return true;
 }
-async function restoreAdminSession() {
+async async function restoreAdminSession() {
   try {
     var stored = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
     if (!stored || !stored.refresh_token || !cfg.sbUrl || !cfg.sbKey) return false;
