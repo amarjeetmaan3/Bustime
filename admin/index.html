@@ -348,7 +348,44 @@ function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
 // ============ State ============
 var data = null, sha = null, baseVersion = 0, dirty = false;
 var tab = 'settings';
-var sbToken = null, subs = null, subsError = '';   // Supabase login lives only in memory
+var sbToken = null, sbRefreshToken = null, subs = null, subsError = '';
+var ADMIN_AUTH_UID = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9';
+var ADMIN_SESSION_KEY = 'bustime_admin_session_v1';
+function saveAdminSession(session) {
+  sbToken = session.access_token || null;
+  sbRefreshToken = session.refresh_token || null;
+  try {
+    if (sbRefreshToken) localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({refresh_token:sbRefreshToken}));
+    else localStorage.removeItem(ADMIN_SESSION_KEY);
+  } catch (_) {}
+}
+async function verifySingleAdmin() {
+  if (!sbToken) return false;
+  var res = await fetch(cfg.sbUrl.replace(/\\/+$/, '') + '/auth/v1/user', {
+    headers:{apikey:cfg.sbKey, Authorization:'Bearer '+sbToken}
+  });
+  if (!res.ok) { saveAdminSession({}); return false; }
+  var user = await res.json();
+  if (!user || user.id !== ADMIN_AUTH_UID) {
+    saveAdminSession({});
+    throw new Error('This account is not the Bustime owner admin. Access denied.');
+  }
+  return true;
+}
+async function restoreAdminSession() {
+  try {
+    var stored = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
+    if (!stored || !stored.refresh_token || !cfg.sbUrl || !cfg.sbKey) return false;
+    var res = await fetch(cfg.sbUrl.replace(/\\/+$/, '') + '/auth/v1/token?grant_type=refresh_token', {
+      method:'POST', headers:{apikey:cfg.sbKey,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:stored.refresh_token})
+    });
+    if (!res.ok) { saveAdminSession({}); return false; }
+    var session = await res.json();
+    saveAdminSession(session);
+    return await verifySingleAdmin();
+  } catch (_) { saveAdminSession({}); return false; }
+}
 var reviewStatus = 'pending';
 var community = { corrections:null, vehicles:null, feedback:null, busSubmissions:null, operators:null };
 var communityStatus = 'pending';
@@ -680,6 +717,17 @@ function refreshChrome() {
   $('#pageTitle').textContent = TITLES[tab] || '';
 }
 function render() {
+  var v = $('#view');
+  if (!sbToken) {
+    $('#nav').innerHTML = '';
+    $('#workspaceNav').innerHTML = '';
+    $('#pageTitle').textContent = 'Secure Admin Sign-in';
+    $('#dirty').style.display = 'none';
+    $('#verPill').textContent = 'Locked';
+    v.innerHTML = viewSupabaseSignIn();
+    renderModal();
+    return;
+  }
   var counts = data ? { places:data.places.length, routes:data.routes.length, seats:data.taxiSeaters.length, drivers:data.drivers.filter(function(d){return d.type==='taxi';}).length, autoDrivers:data.drivers.filter(function(d){return d.type==='auto';}).length } : {};
   refreshWorkspaceNav();
   $('#nav').innerHTML = NAV.map(function (n) {
@@ -687,7 +735,6 @@ function render() {
       (counts[n[0]] != null ? '<span class="count">' + counts[n[0]] + '</span>' : '') + '</button>';
   }).join('');
   refreshChrome();
-  var v = $('#view');
   var dataTabs = ['dashboard','bus','taxi','auto','places','routes','seats','drivers','autoDrivers'];
   var views = { dashboard:viewDashboard, analytics:viewAnalytics, bus:viewBusHome, taxi:viewTaxiHome, auto:viewAutoHome,
     places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers, autoDrivers:viewDrivers,
@@ -2142,9 +2189,14 @@ document.addEventListener('click', async function (e) {
       cfg.sbUrl = val('sb_url'); cfg.sbKey = val('sb_key'); cfg.sbEmail = val('sb_email'); saveCfg();
       b.disabled = true; b.textContent = 'Signing in...';
       await sbLogin(cfg.sbEmail, document.getElementById('sb_pass').value);
-      subs = null; render(); await Promise.all([loadSubs(), loadCommunity()]); render();
+      subs = null; render();
+      await Promise.all([loadData().catch(function(){return null;}), loadSubs(), loadCommunity(), loadAdConfig().catch(function(){return null;})]);
+      tab = 'dashboard'; render();
     }
-    else if (act === 'sb-logout') { sbToken = null; subs = null; render(); }
+    else if (act === 'sb-logout') {
+      try { if (sbToken) await fetch(cfg.sbUrl.replace(/\\/+$/, '') + '/auth/v1/logout', {method:'POST',headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken}}); } catch (_) {}
+      saveAdminSession({}); subs = null; community = {corrections:[],vehicles:[],busSubmissions:[],feedback:[]}; render();
+    }
     else if (act === 'sb-refresh') { subs = null; render(); await Promise.all([loadSubs(), loadCommunity()]); render(); }
     else if (act === 'review-status') { reviewStatus = b.getAttribute('data-status'); render(); }
     else if (act === 'sb-reject') {
@@ -2424,9 +2476,18 @@ document.addEventListener('change',async function(e){
 
 // ============ Start ============
 render();
-if (cfg.token) {
-  loadData().then(function () { tab = 'dashboard'; render(); }).catch(function (e) { toast('Could not load: ' + e.message); });
-}
+restoreAdminSession().then(async function (ok) {
+  if (!ok) { render(); return; }
+  try {
+    await Promise.all([
+      cfg.token ? loadData().catch(function(){return null;}) : Promise.resolve(null),
+      loadSubs().catch(function(e){subsError=e.message;}),
+      loadCommunity().catch(function(){return null;}),
+      loadAdConfig().catch(function(){return null;})
+    ]);
+    tab = 'dashboard'; render();
+  } catch (e) { toast('Could not restore admin data: ' + e.message); render(); }
+});
 </script>
 </body>
 </html>
