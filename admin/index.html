@@ -809,7 +809,7 @@ function viewRouteReview() {
       return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><input class="grow sub_name" aria-label="Stop name" data-place="' + esc(st.place || '') + '" value="' + esc(stopName) + '" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' + dayText +
         '<input type="time" class="sub_t" data-place="' + esc(st.place || '') + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '></div>';
     }).join('');
-    var actions = s.status === 'pending' ? '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Approve</button><button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button>' :
+    var actions = s.status === 'pending' ? '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Open</button><button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button>' :
       s.status === 'rejected' ? '<button class="btn danger" data-act="sb-delete" data-i="' + i + '">Delete rejected request</button>' : '<span class="badge">Approved · retained</span>';
     var fromLabel = s.from_text || pname(placeById(s.from_id)) || s.from_id || '(missing From)';
     var toLabel = s.to_text || pname(placeById(s.to_id)) || s.to_id || '(missing To)';
@@ -994,7 +994,7 @@ function viewCommunity(mode) {
     } else {
       details = '<p><b>'+esc(x.category)+'</b> · Route '+esc(x.related_route||'-')+'</p><p>'+esc(x.message)+'</p><p class="muted">Contact: '+esc(x.contact||'-')+'</p>';
     }
-    var actions = x.status==='pending' ? '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
+    var actions = x.status==='pending' ? (x._kind==='feedback' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve feedback</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>') : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
     html += '<div class="card"><h2>'+esc(x._label)+' · '+esc(x.request_type||x.vehicle_type||x.category||'Request')+'</h2><p class="muted">'+esc(new Date(x.created_at).toLocaleString())+' · ID '+esc(x.id)+'</p>'+details+'<div class="dlg-foot" style="justify-content:flex-start">'+actions+'</div></div>';
   });
   if (mode === 'busDirectory') {
@@ -1112,6 +1112,7 @@ function reviewNameInputs(key, names) {
 }
 function routeReviewEditorHtml() {
   var i = routeReviewEditor.index, sub = subs && subs[i], v = subCardValues(i);
+  if (sub && sub.reviewed_data && typeof sub.reviewed_data === 'object') { var rd = sub.reviewed_data; v = {from:rd.from || '',to:rd.to || '',start:rd.start || '',service:rd.service || '',stops:Array.isArray(rd.stops) ? rd.stops : []}; }
   if (!sub || !v) return '<p class="alert err">This request form is unavailable. Close and refresh submissions.</p>';
   // The current Bus Requests screen is a summary card, while the legacy review
   // screen has inline inputs. Fall back to the actual Supabase record when those
