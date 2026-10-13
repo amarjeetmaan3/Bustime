@@ -2,9 +2,11 @@ package com.bustime.app.ui.home
 
 import android.os.Bundle
 import android.view.View
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.HorizontalScrollView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
@@ -41,6 +43,17 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
         layoutDrivers = view.findViewById(R.id.layoutDrivers)
         seatersContainer = view.findViewById(R.id.seatersContainer)
         seatFiltersContainer = view.findViewById(R.id.seatFiltersContainer)
+        val seatFiltersScroll = view.findViewById<HorizontalScrollView>(R.id.seatFiltersScroll)
+        // Keep horizontal seat-filter gestures inside this row; don't let the pager switch tabs.
+        seatFiltersScroll.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE ->
+                    v.parent.requestDisallowInterceptTouchEvent(true)
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                    v.parent.requestDisallowInterceptTouchEvent(false)
+            }
+            false
+        }
         tvSeatersEmpty = view.findViewById(R.id.tvSeatersEmpty)
         btnArea = view.findViewById(R.id.btnSelectArea)
         tvNoDrivers = view.findViewById(R.id.tvNoDrivers)
