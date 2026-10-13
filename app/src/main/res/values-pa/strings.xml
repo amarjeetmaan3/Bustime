@@ -146,6 +146,8 @@
     <string name="network_support_ads">ਐਪ ਵਰਤਣ ਅਤੇ ਇਸ਼ਤਿਹਾਰਾਂ ਰਾਹੀਂ ਸਾਡਾ ਸਹਿਯੋਗ ਕਰਨ ਲਈ ਇੰਟਰਨੈੱਟ ਚਾਲੂ ਕਰੋ।</string>
     <string name="retry">ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ</string>
     <string name="feedback">ਸੁਝਾਅ / ਸ਼ਿਕਾਇਤ</string>
+    <string name="refresh_routes">ਰੂਟ ਰਿਫ੍ਰੈਸ਼ ਕਰੋ</string>
+    <string name="refresh_started">ਨਵੇਂ ਰੂਟ ਚੈੱਕ ਕੀਤੇ ਜਾ ਰਹੇ ਹਨ…</string>
     <string name="ar_add_existing_details">＋ ਮੌਜੂਦਾ ਰੂਟ ਦੀ ਜਾਣਕਾਰੀ ਜੋੜੋ</string>
     <string name="ar_create_new">ਨਵਾਂ ਬਣਾਓ</string>
     <string name="ar_add_stop_below">ਹੇਠਾਂ ਪੜਾਅ ਜੋੜੋ</string>
