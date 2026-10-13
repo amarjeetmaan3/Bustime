@@ -12,13 +12,17 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="48dp"
+            android:minHeight="48dp"
             app:title="@string/app_name" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="42dp"
+            app:tabMinHeight="42dp"
+            app:tabPaddingTop="0dp"
+            app:tabPaddingBottom="0dp"
             app:tabMode="fixed"> <!-- 'fixed' करने से तीनों टैब पूरी स्क्रीन पर बराबर फ़ैल जाएंगे -->
             <com.google.android.material.tabs.TabItem android:text="@string/tab_bus" />
             <com.google.android.material.tabs.TabItem android:text="@string/tab_taxi" />
@@ -26,8 +30,24 @@
         </com.google.android.material.tabs.TabLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
+    <TextView
+        android:id="@+id/warningTicker"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:background="#FFF4E0"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="10dp"
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="-1"
+        android:scrollHorizontally="true"
+        android:textColor="#9A5700"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
     <FrameLayout
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 </LinearLayout>
