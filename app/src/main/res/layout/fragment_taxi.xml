@@ -15,25 +15,6 @@
         android:layout_marginTop="8dp"
         android:text="@string/select_area" />
 
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:fillViewport="false"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:id="@+id/seatFiltersContainer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp" />
-    </HorizontalScrollView>
-
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -84,6 +65,27 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:visibility="gone">
+
+    <HorizontalScrollView
+            android:id="@+id/seatFiltersScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fillViewport="false"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/seatFiltersContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp" />
+    </HorizontalScrollView>
+
 
         <TextView
             android:id="@+id/tvNoDrivers"
