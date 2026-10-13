@@ -33,6 +33,7 @@
     <string name="no_autos">कोई ऑटो उपलब्ध नहीं है</string>
 
     <string name="show_number">ड्राइवर का नंबर देखें</string>
+    <string name="show_details">पूरी जानकारी देखें</string>
     <string name="number_notice">ध्यान दें: किराया तय है, मोलभाव न करें। नंबर कुछ सेकंड में दिखेगा…</string>
     <string name="call">कॉल</string>
     <string name="whatsapp">WhatsApp</string>
