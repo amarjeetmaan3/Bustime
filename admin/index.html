@@ -1735,14 +1735,10 @@ document.addEventListener('click', async function (e) {
         if (!editStart) { toast('Add at least one valid time before approving.'); return; }
         var prevEditTime = editStart, editDay = 0, editTimeInvalid = false;
         resolvedStops.slice(1).forEach(function (st) {
-          if (st.time && st.time < prevEditTime) {
-            if (!targetRoute.longRoute) editTimeInvalid = true;
-            else editDay++;
-          }
+          if (st.time && st.time < prevEditTime) editDay++;
           if (st.time) prevEditTime = st.time;
           st.day_offset = editDay;
         });
-        if (editTimeInvalid) { toast('A stop time is earlier than the previous time. Check the times before approving.'); return; }
         targetRoute.from = resolvedStops[0].place;
         targetRoute.to = resolvedStops[resolvedStops.length - 1].place;
         targetRoute.time = editStart;
@@ -1775,16 +1771,12 @@ document.addEventListener('click', async function (e) {
       if (isFreeText && !warnNearSubmittedPlaces([reviewedFrom, reviewedTo].concat(v.stops.map(function(st){return st.name;})))) return;
       var fromId = isFreeText ? ensureReviewedPlace(v.fromNames, sub.from_id) : sub.from_id;
       var toId = isFreeText ? ensureReviewedPlace(v.toNames, sub.to_id) : sub.to_id;
-      var previousReviewTime = effectiveStart, invalidReviewTime = false, inferredDayOffset = 0;
+      var previousReviewTime = effectiveStart, inferredDayOffset = 0;
       v.stops.forEach(function (st) {
-        if (st.time && st.time < previousReviewTime) {
-          if (isFreeText) inferredDayOffset++;
-          else if (!sub.long_route) invalidReviewTime = true;
-        }
+        if (st.time && st.time < previousReviewTime) inferredDayOffset++;
         if (st.time) previousReviewTime = st.time;
-        if (isFreeText && inferredDayOffset > 0) st.day_offset = inferredDayOffset;
+        if (inferredDayOffset > 0) st.day_offset = inferredDayOffset;
       });
-      if (invalidReviewTime) { toast('A stop time is earlier than the previous time. Check the times before approving.'); return; }
       var arrive = null, mid = [];
       v.stops.forEach(function (st) {
         var stopPlace = st.place;
@@ -1793,7 +1785,6 @@ document.addEventListener('click', async function (e) {
         else if (stopPlace && stopPlace !== fromId && placeById(stopPlace)) { var o = { place:stopPlace }; if (st.time) o.time = st.time; if (st.day_offset != null) o.day_offset = st.day_offset; mid.push(o); }
       });
       var nr = { id: nextNum('r', data.routes), from: fromId, to: toId, time: effectiveStart };
-      if (sub.long_route) { nr.longRoute = true; nr.startDate = sub.start_date; }
       if (arrive) nr.arrive = arrive;
       if (v.service) nr.service = v.service;
       if (mid.length) nr.stops = mid;
