@@ -234,6 +234,20 @@ var communityStatus = 'pending';
 var communitySection = 'all';
 var editing = null;
 var routeReviewEditor = null;
+
+var communityReviewEditor = null;
+function communityEditorHtml() {
+ if(!communityReviewEditor)return '';
+ var rec=communityReviewEditor.record,kind=communityReviewEditor.kind,draft=rec.reviewed_data&&typeof rec.reviewed_data==='object'?rec.reviewed_data:rec;
+ var skip={id:1,status:1,created_at:1,updated_at:1,reviewed_data:1,reviewed_at:1,approved_at:1};
+ var labels={vehicle_type:'Vehicle type',person_name:'Owner/driver name',vehicle_name:'Vehicle name',vehicle_model_number:'Model number',vehicle_number:'Vehicle number',seats:'Seats',area_name:'Service area',location:'Location',union_name:'Union',fuel_type:'Fuel type',phone:'Phone',whatsapp:'WhatsApp',details:'Details',operator_name:'Operator name',service_name:'Service name',bus_type:'Bus type',custom_category:'Custom category',seat_type:'Seat type',sleeper_count:'Sleeper berths',seater_count:'Seater seats',from_text:'From',to_text:'To',request_type:'Request type',route_id:'Route ID',before_stop_id:'Before stop ID',after_stop_id:'After stop ID',missing_place_name:'Missing stop',missing_time:'Missing stop time',stop_id:'Stop ID',corrected_time:'Corrected time',change_summary:'Change summary',proposed_stops:'Proposed stops JSON',category:'Category',related_route:'Related route',message:'Message',contact:'Contact',notes:'Notes'};
+ var html='<p class="muted">Opening never approves a request. Edit and save a reviewed draft first; approve is a separate action. Original submission below is read-only.</p><div class="card" style="background:#f5f7fa"><b>Original submission · read-only</b><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto">'+esc(JSON.stringify(rec,null,2))+'</pre></div>';
+ Object.keys(rec).forEach(function(k){if(skip[k]||typeof rec[k]==='function')return;var value=Object.prototype.hasOwnProperty.call(draft,k)?draft[k]:rec[k],label=labels[k]||k.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});if(k==='original_stops'){html+='<label>'+esc(label)+' · original/read-only</label><pre style="white-space:pre-wrap">'+esc(JSON.stringify(value,null,2))+'</pre>';return;}if(value!==null&&typeof value==='object'){html+='<label>'+esc(label)+' · JSON</label><textarea data-cr-field="'+esc(k)+'" rows="5" style="width:100%;font-family:monospace">'+esc(JSON.stringify(value,null,2))+'</textarea>';}else{var type=/(time)$/.test(k)?'time':(/count$|^seats$/.test(k)?'number':'text');html+='<label>'+esc(label)+'</label><input data-cr-field="'+esc(k)+'" type="'+type+'" value="'+esc(value==null?'':String(value))+'">';}});
+ html+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Approve reviewed data</button></div>';return html;
+}
+function communityEditorValues(){var out={};document.querySelectorAll('#dlgBody [data-cr-field]').forEach(function(el){var k=el.getAttribute('data-cr-field');if(el.tagName==='TEXTAREA'){try{out[k]=JSON.parse(el.value);}catch(e){throw new Error('Invalid JSON in '+k+'. Fix it before saving.');}}else if(el.type==='number'){out[k]=el.value.trim()===''?null:Number(el.value);if(el.value.trim()!==''&&!Number.isFinite(out[k]))throw new Error('Invalid number in '+k+'.');}else out[k]=el.value.trim()===''?null:el.value.trim();});return out;}
+function showCommunityEditor(kind,record){communityReviewEditor={kind:kind,record:JSON.parse(JSON.stringify(record))};editing=null;routeReviewEditor=null;publishOpen=false;render();}
+
 var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
@@ -914,7 +928,7 @@ function viewBusRequests() {
     return '<div class="card" data-sub="'+x.index+'"><div class="bus-page-head"><div><h2>'+esc(from)+' <span class="muted">→</span> '+esc(to)+'</h2><p class="muted">Submitted '+esc(new Date(r.created_at).toLocaleString())+' · '+esc(r.phone||'No phone')+'</p></div><span class="badge">'+esc(r.status)+'</span></div>'+
       '<div class="row2"><div><label>Service</label><div>'+(esc(r.service_name||'Not provided'))+'</div></div><div><label>Departure</label><div><b>'+esc(r.start_time||'Not provided')+'</b>'+(r.long_route?' · Long route':'')+'</div></div></div>'+
       '<label>Stops and timings</label>'+((r.stops||[]).map(function(st){return '<div class="stoprow"><span class="grow">'+esc(st.name||pname(placeById(st.place))||st.place||'Unnamed stop')+'</span><span class="route-time">'+esc(st.time||'Time unknown')+'</span></div>';}).join('')||'<p class="muted">No intermediate stops included.</p>')+
-      '<div class="dlg-foot" style="justify-content:flex-start">'+(r.status==='pending'?'<button class="btn primary" data-act="sb-approve" data-i="'+x.index+'">Approve</button><button class="btn danger" data-act="sb-reject" data-i="'+x.index+'">Reject</button>':'<span class="muted">Request retained for reference.</span>')+'</div></div>';
+      '<div class="dlg-foot" style="justify-content:flex-start">'+(r.status==='pending'?'<button class="btn primary" data-act="sb-approve" data-i="'+x.index+'">Open</button><button class="btn danger" data-act="sb-reject" data-i="'+x.index+'">Reject</button>':'<span class="muted">Request retained for reference.</span>')+'</div></div>';
   }).join('');
 }
 function viewCommunity(mode) {
@@ -980,7 +994,7 @@ function viewCommunity(mode) {
     } else {
       details = '<p><b>'+esc(x.category)+'</b> · Route '+esc(x.related_route||'-')+'</p><p>'+esc(x.message)+'</p><p class="muted">Contact: '+esc(x.contact||'-')+'</p>';
     }
-    var actions = x.status==='pending' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
+    var actions = x.status==='pending' ? '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
     html += '<div class="card"><h2>'+esc(x._label)+' · '+esc(x.request_type||x.vehicle_type||x.category||'Request')+'</h2><p class="muted">'+esc(new Date(x.created_at).toLocaleString())+' · ID '+esc(x.id)+'</p>'+details+'<div class="dlg-foot" style="justify-content:flex-start">'+actions+'</div></div>';
   });
   if (mode === 'busDirectory') {
@@ -1125,7 +1139,7 @@ function routeReviewEditorHtml() {
     '<label>Destination</label>' + reviewNameInputs('to', toNames) +
     '<label>Departure time</label><input id="rv_start" type="time" value="' + esc(v.start || '') + '">' +
     '<h3 style="margin-top:18px">Stops and timings</h3>' + (stopHtml || '<p class="muted">No intermediate stops submitted.</p>') +
-    '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="sb-final-approve" data-i="' + i + '">Save translations &amp; approve</button></div>';
+    '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="sb-save-draft" data-i="' + i + '">Save reviewed draft</button><button class="btn primary" data-act="sb-final-approve" data-i="' + i + '">Approve reviewed route</button></div>';
 }
 function routeReviewValues() {
   if (!routeReviewEditor) return null;
@@ -1172,7 +1186,10 @@ function foot(saveAct) {
 }
 function renderModal() {
   var ov = $('#overlay');
-  if (routeReviewEditor) {
+  if (communityReviewEditor) {
+    $('#dlgTitle').textContent = 'Edit request · ' + (communityReviewEditor.record.vehicle_type || communityReviewEditor.record.request_type || communityReviewEditor.record.category || communityReviewEditor.kind);
+    $('#dlgBody').innerHTML = communityEditorHtml(); ov.classList.add('show');
+  } else if (routeReviewEditor) {
     var reviewSub = subs && subs[routeReviewEditor.index];
     $('#dlgTitle').textContent = 'Review route submission' + (reviewSub && reviewSub.service_name ? ' · ' + reviewSub.service_name : '');
     $('#dlgBody').innerHTML = routeReviewEditorHtml();
@@ -1221,18 +1238,18 @@ document.addEventListener('change', function (e) {
 document.addEventListener('input', function (e) { if (e.target && (e.target.id === 'fp_hi' || e.target.id === 'fp_pa')) e.target.dataset.autofilled = 'false'; });
 
 document.addEventListener('click', async function (e) {
-  if (e.target.id === 'overlay') { editing = null; routeReviewEditor = null; publishOpen = false; render(); return; }
+  if (e.target.id === 'overlay') { editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render(); return; }
   var b = e.target.closest('[data-act]');
   if (!b) return;
   var act = b.getAttribute('data-act'), i = parseInt(b.getAttribute('data-i'), 10);
   try {
     if (act === 'analytics-refresh') { loadAnalytics(); }
     else if (act === 'tab') {
-      tab = b.getAttribute('data-t'); editing = null; routeReviewEditor = null; publishOpen = false; render();
+      tab = b.getAttribute('data-t'); editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render();
       if (tab === 'analytics' && sbToken) { loadAnalytics(); }
       if (['review','busRequests','taxiReview','autoReview','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
-    else if (act === 'close') { editing = null; routeReviewEditor = null; publishOpen = false; render(); }
+    else if (act === 'close') { editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
     else if (act === 'save-cfg') {
       cfg.owner = val('c_owner'); cfg.repo = val('c_repo'); cfg.branch = val('c_branch');
@@ -1494,6 +1511,30 @@ document.addEventListener('click', async function (e) {
     }
 
     // ---- community requests ----
+    else if (act === 'community-open') {
+      var okind=b.getAttribute('data-kind'),oid=b.getAttribute('data-id'),orec=(community[okind]||[]).find(function(x){return x.id===oid;});
+      if(!orec||orec.status!=='pending'){toast('Only pending requests can be opened. Refresh the list.');return;} showCommunityEditor(okind,orec);return;
+    }
+    else if (act === 'community-save-draft' || act === 'community-approve-reviewed') {
+      var rk=b.getAttribute('data-kind'),rid=b.getAttribute('data-id'),rt=communityTable(rk),orig=(community[rk]||[]).find(function(x){return x.id===rid;});
+      if(!orig||orig.status!=='pending'||!communityReviewEditor||communityReviewEditor.record.id!==rid){toast('Request is no longer pending. Refresh and reopen it.');return;}
+      var rv=communityEditorValues(),merged=Object.assign({},orig,rv),stamp=new Date().toISOString();
+      if(act==='community-save-draft'){await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:rv,reviewed_at:stamp})});orig.reviewed_data=rv;orig.reviewed_at=stamp;communityReviewEditor.record.reviewed_data=rv;toast('Reviewed draft saved. Request remains pending; original is unchanged.');render();return;}
+      if(!confirm('Approve the reviewed data into the main app data? This does not publish the GitHub snapshot.'))return;
+      if(rk==='corrections')applyApprovedCorrection(merged);
+      if(rk==='vehicles'){
+        if(!merged.person_name||!merged.vehicle_name||!merged.phone){toast('Owner/driver name, vehicle name and phone are required.');return;}
+        var vd={id:nextNum(merged.vehicle_type==='taxi'?'t':'a',data.drivers),type:merged.vehicle_type,name:merged.person_name,vehicle:merged.vehicle_name+(merged.vehicle_model_number?' · '+merged.vehicle_model_number:''),phone:merged.phone,areaId:merged.area_name||merged.location||null,info:(merged.union_name?'Union: '+merged.union_name+' · ':'')+(merged.vehicle_number?'Vehicle No: '+merged.vehicle_number+' · ':'')+(merged.details||'')};
+        if(merged.vehicle_type==='auto')vd.fuel=(merged.fuel_type||merged.fuel||'oil').toLowerCase();if(merged.union_name)vd.union_name=merged.union_name;if(merged.seats)vd.seats=merged.seats;data.drivers.push(vd);setDirty(true);
+      }
+      if(rk==='busSubmissions'){
+        if(!merged.operator_name||!merged.phone){toast('Operator name and phone are required.');return;}
+        await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:merged.operator_name,service_name:merged.service_name||null,bus_type:merged.bus_type||'Ordinary',custom_category:merged.custom_category||null,seat_type:merged.seat_type||null,sleeper_count:merged.sleeper_count,seater_count:merged.seater_count,from_text:merged.from_text||null,to_text:merged.to_text||null,location:merged.location||null,phone:merged.phone,whatsapp:merged.whatsapp||null,details:merged.details||null,active:true})});
+      }
+      await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:rv,reviewed_at:stamp,approved_at:stamp,status:'approved'})});
+      orig.reviewed_data=rv;orig.reviewed_at=stamp;orig.approved_at=stamp;orig.status='approved';communityReviewEditor=null;
+      toast('Approved reviewed data; original submission retained. Publish separately to make snapshot changes live.');render();return;
+    }
     else if (act === 'community-refresh') { await loadCommunity(); render(); }
     else if (act === 'community-status') { communityStatus = b.getAttribute('data-status'); render(); }
     else if (act === 'community-section') { communitySection = b.getAttribute('data-section') || 'corrections'; render(); }
