@@ -110,7 +110,7 @@ class HomeActivity : AppCompatActivity() {
                 } else {
                     swipeStartedInContent = false
                 }
-                val seatFilters = findViewById<View?>(R.id.seatFiltersScroll)
+                val seatFilters = findViewById<View>(R.id.seatFiltersScroll)
                 swipeStartedInTaxiSeatFilters = false
                 if (seatFilters != null && seatFilters.visibility == View.VISIBLE) {
                     val filterLocation = IntArray(2)
