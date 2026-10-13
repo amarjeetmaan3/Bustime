@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 29,
+  "dataVersion": 30,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -210,19 +210,21 @@
     },
     {
       "id": "place_user_gurdaspur",
-      "kind": "place",
+      "kind": "city",
       "name": {
-        "en": "Gurdaspur"
-      },
-      "aliases": []
+        "en": "Gurdaspur",
+        "hi": "गुरदासपुर",
+        "pa": "ਗੁਰਦਾਸਪੁਰ"
+      }
     },
     {
       "id": "place_user_bathinda",
-      "kind": "place",
+      "kind": "city",
       "name": {
-        "en": "Bathinda"
-      },
-      "aliases": []
+        "en": "Bathinda",
+        "hi": "बठिंडा",
+        "pa": "ਬਠਿੰਡਾ"
+      }
     }
   ],
   "routes": [
