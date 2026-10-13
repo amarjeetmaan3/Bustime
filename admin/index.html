@@ -456,6 +456,7 @@ function initRouteAutoTranslation(){
   if(el.dataset.routeTranslateBound==='true')return;el.dataset.routeTranslateBound='true';
   el.addEventListener('input',function(){
    var lang=el.dataset.lang,key=el.dataset.routeName;
+   var idEl=document.querySelector('[data-route-id="'+key+'"]');if(idEl)idEl.value='';
    if(lang!=='en'){el.dataset.autofilled='false';return;}
    var source=el.value.trim();if(!source)return;
    var hi=document.querySelector('[data-route-name="'+key+'"][data-lang="hi"]'),pa=document.querySelector('[data-route-name="'+key+'"][data-lang="pa"]');
@@ -470,6 +471,14 @@ function initRouteAutoTranslation(){
      if(fillPa&&results[1]&&(!pa.value.trim()||pa.dataset.autofilled==='true')){pa.value=results[1];pa.dataset.autofilled='true';}
     }catch(err){console.warn('Route place translation failed',err);}
    },350);
+  });
+  el.addEventListener('change',function(){
+   var key=el.dataset.routeName,lang=el.dataset.lang,value=String(el.value||'').trim();if(!value)return;
+   var norm=function(s){return String(s||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');};
+   var matches=(data.places||[]).filter(function(p){return norm((p.name||{})[lang])===norm(value)||(p.aliases||[]).some(function(a){return norm(a)===norm(value);});});
+   if(matches.length!==1)return;
+   var p=matches[0],idEl=document.querySelector('[data-route-id="'+key+'"]');if(idEl)idEl.value=p.id;
+   ['en','hi','pa'].forEach(function(code){var field=document.querySelector('[data-route-name="'+key+'"][data-lang="'+code+'"]');if(field){field.value=String((p.name||{})[code]||'');field.dataset.autofilled=code==='en'?'false':'true';}});
   });
  });
 }
