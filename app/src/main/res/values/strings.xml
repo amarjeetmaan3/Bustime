@@ -37,7 +37,7 @@
     <string name="no_autos">No autos available</string>
 
     <!-- Driver card -->
-    <string name="show_number">Show Driver Number</string>
+    <string name="show_number">Show Details</string>
     <string name="show_details">Show Details</string>
     <string name="number_notice">Please note: fares are fixed. Do not negotiate. The number will appear in a few seconds…</string>
     <string name="call">Call</string>
