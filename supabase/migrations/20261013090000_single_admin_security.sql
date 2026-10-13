@@ -1,4 +1,27 @@
 -- Single-admin security migration for Bustime. Existing owner UID is used in policies.
+-- Replace broad authenticated management policies with owner-only policies.
+DROP POLICY IF EXISTS "Authenticated admins manage bus categories" ON public.bus_categories;
+DROP POLICY IF EXISTS "admin manage bus listings" ON public.bus_operator_submissions;
+DROP POLICY IF EXISTS "admin manage bus operators" ON public.bus_operators;
+DROP POLICY IF EXISTS "admin manage route corrections" ON public.correction_submissions;
+DROP POLICY IF EXISTS "admin manage feedback" ON public.feedback_submissions;
+DROP POLICY IF EXISTS "admin can read" ON public.route_submissions;
+DROP POLICY IF EXISTS "admin can update" ON public.route_submissions;
+DROP POLICY IF EXISTS "admin manage vehicles" ON public.vehicle_submissions;
+DROP POLICY IF EXISTS "single owner manages bus categories" ON public.bus_categories;
+DROP POLICY IF EXISTS "single owner manages bus operator submissions" ON public.bus_operator_submissions;
+DROP POLICY IF EXISTS "single owner manages bus operators" ON public.bus_operators;
+DROP POLICY IF EXISTS "single owner manages route corrections" ON public.correction_submissions;
+DROP POLICY IF EXISTS "single owner manages feedback" ON public.feedback_submissions;
+DROP POLICY IF EXISTS "single owner manages route submissions" ON public.route_submissions;
+DROP POLICY IF EXISTS "single owner manages vehicle submissions" ON public.vehicle_submissions;
+CREATE POLICY "single owner manages bus categories" ON public.bus_categories FOR ALL TO authenticated USING ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) WITH CHECK ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
+CREATE POLICY "single owner manages bus operator submissions" ON public.bus_operator_submissions FOR ALL TO authenticated USING ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) WITH CHECK ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
+CREATE POLICY "single owner manages bus operators" ON public.bus_operators FOR ALL TO authenticated USING ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) WITH CHECK ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
+CREATE POLICY "single owner manages route corrections" ON public.correction_submissions FOR ALL TO authenticated USING ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) WITH CHECK ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
+CREATE POLICY "single owner manages feedback" ON public.feedback_submissions FOR ALL TO authenticated USING ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) WITH CHECK ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
+CREATE POLICY "single owner manages route submissions" ON public.route_submissions FOR ALL TO authenticated USING ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) WITH CHECK ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
+CREATE POLICY "single owner manages vehicle submissions" ON public.vehicle_submissions FOR ALL TO authenticated USING ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) WITH CHECK ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
 DROP POLICY IF EXISTS "Public can save advertisement config" ON public.ad_settings;
 DROP POLICY IF EXISTS "Public can update advertisement config" ON public.ad_settings;
 DROP POLICY IF EXISTS "single owner inserts advertisement config" ON public.ad_settings;
