@@ -198,6 +198,9 @@
   :root { --brand:#2458D3; --brand-d:#173B91; --brand-l:#EAF0FF; --bg:#F5F7FB; --line:#E5EAF2; --text:#182230; --muted:#66758A; }
   body { background:var(--bg); color:var(--text); font-size:14px; letter-spacing:.005em; }
   .app { min-height:100vh; }
+  body.admin-locked aside, body.admin-locked header.top, body.admin-locked .workspace-nav { display:none !important; }
+  body.admin-locked .content { min-height:100vh; }
+  body.admin-locked main { max-width:760px; margin:8vh auto 0; }
   aside { width:248px; padding:22px 14px; background:#101C36; border-right:0; color:#fff; box-shadow:8px 0 24px rgba(16,28,54,.05); }
   .brand { color:#fff; font-size:21px; letter-spacing:-.04em; padding:5px 12px 28px; }
   .brand small { color:#A7B5D0; margin-top:5px; letter-spacing:.02em; }
@@ -719,6 +722,7 @@ function refreshChrome() {
 function render() {
   var v = $('#view');
   if (!sbToken) {
+    document.body.classList.add('admin-locked');
     $('#nav').innerHTML = '';
     var workspaceNav = document.getElementById('workspaceNav'); if (workspaceNav) workspaceNav.innerHTML = '';
     $('#pageTitle').textContent = 'Secure Admin Sign-in';
@@ -728,6 +732,7 @@ function render() {
     renderModal();
     return;
   }
+  document.body.classList.remove('admin-locked');
   var counts = data ? { places:data.places.length, routes:data.routes.length, seats:data.taxiSeaters.length, drivers:data.drivers.filter(function(d){return d.type==='taxi';}).length, autoDrivers:data.drivers.filter(function(d){return d.type==='auto';}).length } : {};
   refreshWorkspaceNav();
   $('#nav').innerHTML = NAV.map(function (n) {
