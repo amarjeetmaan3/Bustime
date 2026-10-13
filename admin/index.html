@@ -325,8 +325,10 @@ function communityEditorValues(){
  });
  if(communityReviewEditor&&communityReviewEditor.kind==='corrections'&&communityReviewEditor.record.request_type==='route_edit'){
   out.proposed_stops=Array.prototype.map.call(document.querySelectorAll('#crProposedStops [data-cr-proposed]'),function(row){
-   var place=row.querySelector('[data-cr-place]'),name=row.querySelector('[data-cr-name]'),time=row.querySelector('[data-cr-time]');
-   return {place_id:place&&place.value||null,name:name&&name.value.trim()||'',time:time&&time.value||null,language:'en'};
+   var place=row.querySelector('[data-cr-place]'),time=row.querySelector('[data-cr-time]'),names={};
+   row.querySelectorAll('[data-rv-name]').forEach(function(el){var value=el.value.trim();if(value)names[el.dataset.lang]=value;names._sourceLang=el.getAttribute('data-rv-source-lang')||names._sourceLang;});
+   var lang=names._sourceLang||'en';
+   return {place_id:place&&place.value||null,name:names[lang]||names.en||names.hi||names.pa||'',names:names,time:time&&time.value||null,language:lang};
   });
  }
  return out;
