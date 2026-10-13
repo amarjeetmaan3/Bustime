@@ -1246,11 +1246,12 @@ function routeReviewEditorHtml() {
       return {place:st.place || null,name:st.name || (place ? pname(place) : ''),time:TIME_RE.test(st.time || '') ? st.time : null};
     });
   }
-  var fromNames = reviewNamesForPlace(sub.from_id, v.from);
-  var toNames = reviewNamesForPlace(sub.to_id, v.to);
+  var reviewedData=sub.reviewed_data&&typeof sub.reviewed_data==='object'?sub.reviewed_data:{};
+  var fromNames = reviewedData.fromNames || reviewNamesForPlace(sub.from_id, v.from);
+  var toNames = reviewedData.toNames || reviewNamesForPlace(sub.to_id, v.to);
   var stopHtml = '<div class="tablewrap"><table class="review-stop-table"><thead><tr><th>#</th><th>Place name</th><th>Hindi</th><th>Punjabi</th><th>Timing</th><th>Place ID</th><th>Move</th></tr></thead><tbody>' +
     v.stops.map(function(st, index) {
-      var names=reviewNamesForPlace(st.place,st.name);
+      var names=st.names || reviewNamesForPlace(st.place,st.name);
       var sourceLang=names._sourceLang||(names.en?'en':names.hi?'hi':names.pa?'pa':'en');
       return '<tr class="review-stop-row" data-rv-stop="' + index + '" data-place="' + esc(st.place || '') + '">' +
         '<td class="review-stop-num">' + (index+1) + '</td><td>' + reviewNameField('stop-' + index,'en',names.en,sourceLang) + '</td>' +
@@ -1639,6 +1640,22 @@ document.addEventListener('click', async function (e) {
         toast('This request form is no longer available. Refresh the submissions list and try again.'); return;
       }
       routeReviewEditor = { index:i }; editing = null; publishOpen = false; render(); return;
+    }
+    else if (act === 'sb-save-draft') {
+      var draftSub=subs&&subs[i],draftValues=routeReviewValues();
+      if(!draftSub||!draftValues||!routeReviewEditor||routeReviewEditor.index!==i){
+        toast('This review editor is no longer available. Refresh submissions and try again.');return;
+      }
+      if(!draftValues.from||!draftValues.to){toast('Enter a name for both From and To.');return;}
+      var reviewedDraft={from:draftValues.from,to:draftValues.to,fromNames:draftValues.fromNames,toNames:draftValues.toNames,
+        start:draftValues.start,service:draftValues.service,stops:draftValues.stops};
+      await sbFetch('/rest/v1/route_submissions?id=eq.'+encodeURIComponent(draftSub.id),{
+        method:'PATCH',headers:{Prefer:'return=minimal'},
+        body:JSON.stringify({reviewed_data:reviewedDraft,reviewed_at:new Date().toISOString()})
+      });
+      draftSub.reviewed_data=reviewedDraft;draftSub.reviewed_at=new Date().toISOString();
+      toast('Reviewed draft saved. Request remains pending; original submission is unchanged.');
+      render();return;
     }
     else if (act === 'sb-final-approve') {
       var sub = subs && subs[i], v = routeReviewValues();
