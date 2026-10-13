@@ -45,7 +45,10 @@ class HomeActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 val repository = AppRepository.getInstance(this@HomeActivity)
                 while (true) {
-                    repository.syncData()
+                    val changed = repository.syncData()
+                    if (changed && supportFragmentManager.findFragmentById(R.id.fragmentContainer) != null) {
+                        refreshCurrentTab()
+                    }
                     kotlinx.coroutines.delay(10_000)
                 }
             }
@@ -137,9 +140,20 @@ class HomeActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 AppRepository.getInstance(this@HomeActivity).syncData()
+                // Refresh the visible screen from Room after the sync completes,
+                // even when the snapshot version was already current.
+                refreshCurrentTab()
             } finally {
                 refreshItem.isEnabled = true
             }
+        }
+    }
+
+    private fun refreshCurrentTab() {
+        when (currentTab) {
+            1 -> replaceFragment(TaxiFragment())
+            2 -> replaceFragment(AutoRickshawFragment())
+            else -> replaceFragment(BusFragment())
         }
     }
 
