@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 31,
+  "dataVersion": 32,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -365,6 +365,16 @@
         "pa": "ਡੱਬਵਾਲੀ"
       },
       "aliases": []
+    },
+    {
+      "id": "place_user_x",
+      "kind": "place",
+      "name": {
+        "en": "Guru Har Sahai",
+        "hi": "गुरू हर सहाई",
+        "pa": "ਗੁਰੂ ਹਰ ਸਹਾਇ"
+      },
+      "aliases": []
     }
   ],
   "routes": [
@@ -482,7 +492,13 @@
       "time": "08:00",
       "arrive": "11:00",
       "service": "Punjab",
-      "longRoute": false
+      "longRoute": false,
+      "stops": [
+        {
+          "place": "place_user_x",
+          "time": "09:00"
+        }
+      ]
     },
     {
       "id": "r4",
@@ -543,6 +559,30 @@
         }
       ],
       "arrive_day_offset": 1
+    },
+    {
+      "id": "r5",
+      "from": "place_user_gurdaspur",
+      "to": "place_user_bathinda",
+      "time": "08:00",
+      "arrive": "03:00",
+      "service": "Jd Service",
+      "stops": [
+        {
+          "place": "place_user_ambala",
+          "time": "11:00"
+        },
+        {
+          "place": "place_user_bikaner",
+          "time": "00:00",
+          "day_offset": 1
+        },
+        {
+          "place": "place_user_chandigarh",
+          "time": "13:00",
+          "day_offset": 1
+        }
+      ]
     }
   ],
   "taxiSeaters": [
@@ -575,6 +615,29 @@
       "info": "Union: sachdev · Union: sachdev · Vehicle No: Rj 56 2025 · to b end",
       "union_name": "sachdev",
       "seats": 4
+    },
+    {
+      "id": "t2",
+      "type": "taxi",
+      "name": "jai",
+      "vehicle": "luna · 2033",
+      "phone": "9649885866",
+      "areaId": "Amargarh",
+      "info": "Union: maan · Vehicle No: rj 31 56 · ",
+      "union_name": "maan",
+      "seats": 5
+    },
+    {
+      "id": "a2",
+      "type": "auto",
+      "name": "Ravi",
+      "vehicle": "auto · 22",
+      "phone": "9649885866",
+      "areaId": "Hunmangarh",
+      "info": "Union: dev autos · Vehicle No: rj 15 · ",
+      "fuel": "oil",
+      "union_name": "dev autos",
+      "seats": 7
     }
   ]
 }
