@@ -188,9 +188,10 @@ class AddRouteActivity : AppCompatActivity() {
             val lang = LanguageHelper.current()
             // Keep one record per saved place. The dropdown label and selected
             // name are reordered per the script actually typed into this field.
-            val routeUsage = withContext(Dispatchers.IO) { repo.getAllRoutes() }
-                .flatMap { route -> listOf(route.fromId, route.toId) + route.stops.map { it.placeId } }
-                .groupingBy { it }.eachCount()
+            val routeUsage = withContext(Dispatchers.IO) {
+                repo.getAllRoutes().flatMap { route -> listOf(route.fromId, route.toId) }
+                    .groupingBy { it }.eachCount()
+            }
             placeSuggestions = all.map { place ->
                 val names = place.names.mapNotNull { (code, value) ->
                     value.trim().takeIf { it.isNotBlank() }?.let { code to it }
