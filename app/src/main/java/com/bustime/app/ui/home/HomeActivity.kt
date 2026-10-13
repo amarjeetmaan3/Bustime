@@ -3,6 +3,7 @@ package com.bustime.app.ui.home
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -38,14 +39,14 @@ class HomeActivity : AppCompatActivity() {
         // अपडेटर चेक करना
         GitHubUpdateChecker(this).checkForLatestUpdate()
 
-        // डेटा तुरंत sync करो और ऐप foreground में रहने तक हर 60 सेकंड में दोबारा जाँचो।
-        // इससे admin द्वारा publish/delete किए गए routes बिना app restart के भी जल्दी दिखेंगे।
+        // डेटा तुरंत sync करो और ऐप foreground में रहने तक हर 10 सेकंड में दोबारा जाँचो।
+        // इंटरनेट लौटने पर अगली जाँच अपने-आप होगी; offline में पुराना डेटा सुरक्षित रहता है।
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 val repository = AppRepository.getInstance(this@HomeActivity)
                 while (true) {
                     repository.syncData()
-                    kotlinx.coroutines.delay(60_000)
+                    kotlinx.coroutines.delay(10_000)
                 }
             }
         }
@@ -56,6 +57,7 @@ class HomeActivity : AppCompatActivity() {
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_language -> { showLanguageDialog(); true }
+                R.id.action_refresh -> { refreshData(toolbar); true }
                 R.id.action_feedback -> {
                     startActivity(android.content.Intent(this, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "feedback")); true
                 }
@@ -125,6 +127,20 @@ class HomeActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt("TAB", currentTab)
+    }
+
+    private fun refreshData(toolbar: Toolbar) {
+        val refreshItem = toolbar.menu.findItem(R.id.action_refresh) ?: return
+        if (!refreshItem.isEnabled) return
+        refreshItem.isEnabled = false
+        Toast.makeText(this, R.string.refresh_started, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                AppRepository.getInstance(this@HomeActivity).syncData()
+            } finally {
+                refreshItem.isEnabled = true
+            }
+        }
     }
 
     private fun showLanguageDialog() {
