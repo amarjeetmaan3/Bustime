@@ -733,7 +733,7 @@ function render() {
     return;
   }
   document.body.classList.remove('admin-locked');
-  var counts = data ? { places:data.places.length, routes:data.routes.length, seats:data.taxiSeaters.length, drivers:data.drivers.filter(function(d){return d.type==='taxi';}).length, autoDrivers:data.drivers.filter(function(d){return d.type==='auto';}).length } : {};
+  var counts = data ? { places:(data.places||[]).length, routes:(data.routes||[]).length, seats:(data.taxiSeaters||[]).length, drivers:(data.drivers||[]).filter(function(d){return d.type==='taxi';}).length, autoDrivers:(data.drivers||[]).filter(function(d){return d.type==='auto';}).length } : {};
   refreshWorkspaceNav();
   $('#nav').innerHTML = NAV.map(function (n) {
     return '<button data-act="tab" data-t="' + n[0] + '" class="' + (tab === n[0] ? 'on' : '') + '">' + n[1] +
@@ -790,6 +790,11 @@ function viewAutoHome() {
 }
 
 function viewDashboard() {
+  data = data || {};
+  data.places = Array.isArray(data.places) ? data.places : [];
+  data.routes = Array.isArray(data.routes) ? data.routes : [];
+  data.taxiSeaters = Array.isArray(data.taxiSeaters) ? data.taxiSeaters : [];
+  data.drivers = Array.isArray(data.drivers) ? data.drivers : [];
   var stands = data.places.filter(function (p) { return p.kind === 'stand'; }).length;
   var taxis = data.drivers.filter(function (d) { return d.type === 'taxi'; }).length;
   var autos = data.drivers.length - taxis;
