@@ -108,8 +108,13 @@
     .review-stop-table { min-width:900px; }
   }
   .route-place-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; flex:1; min-width:0; }
-  .route-place-fields input { min-width:0; width:100%; }
+  .route-place-fields input { min-width:0; width:100%; padding:7px 9px; min-height:36px; }
   .route-place-labels { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; font-size:11px; color:var(--muted); margin:0 0 4px; }
+  .route-endpoint-row { display:grid; grid-template-columns:54px minmax(0,1fr); gap:10px; align-items:center; margin:7px 0; }
+  .route-endpoint-row>strong { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .route-form-meta { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+  .route-form-meta label { margin-top:8px; }
+  @media (max-width:900px) { .route-form-meta { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   .stoprow { display:grid; grid-template-columns:minmax(0,1fr) 112px auto; gap:8px; margin-bottom:8px; align-items:center; }
   .stoprow .route-place-fields { grid-column:1; }
   .stoprow .st_time { grid-column:2; }
@@ -866,12 +871,12 @@ function stopRow(place, time) {
 }
 function routeFormHtml() {
   var r=editing.draft;
-  return '<p class="muted">Each location has one Place ID and editable English, Hindi and Punjabi names. A new Place is added when you save and publish this admin route data.</p>' +
-    '<div class="route-place-labels"><span>English</span><span>हिंदी</span><span>ਪੰਜਾਬੀ</span></div><label>From</label>'+routePlaceFields('from',r.from)+
-    '<div class="route-place-labels" style="margin-top:12px"><span>English</span><span>हिंदी</span><span>ਪੰਜਾਬੀ</span></div><label>To</label>'+routePlaceFields('to',r.to)+
-    '<div class="row2"><div><label>Departure time</label><input id="fr_time" type="time" value="'+esc(r.time||'')+'"></div><div><label>Arrival time (optional)</label><input id="fr_arrive" type="time" value="'+esc(r.arrive||'')+'"></div></div>'+
-    '<label>Service / company (optional)</label><input id="fr_service" value="'+esc(r.service||'')+'"><label>Contact number (optional)</label><input id="fr_contact" inputmode="tel" value="'+esc(r.contact||'')+'"><label>Additional info (optional)</label><input id="fr_info" value="'+esc(r.info||'')+'">'+
-    '<label>Intermediate stops, in order (English · हिंदी · ਪੰਜਾਬੀ · timing · move)</label><div id="stops">'+(r.stops||[]).map(function(s){return stopRow(s.place,s.time);}).join('')+'</div>'+
+  return '<p class="muted">Type in any language to find an existing Place. A new distinct name becomes a Place when you save and publish. English changes auto-translate Hindi and Punjabi; manually edited translations are kept.</p>' +
+    '<div class="route-endpoint-row"><strong>From</strong>'+routePlaceFields('from',r.from)+'</div>'+
+    '<div class="route-endpoint-row"><strong>To</strong>'+routePlaceFields('to',r.to)+'</div>'+
+    '<div class="route-form-meta"><div><label>Departure</label><input id="fr_time" type="time" value="'+esc(r.time||'')+'"></div><div><label>Arrival (optional)</label><input id="fr_arrive" type="time" value="'+esc(r.arrive||'')+'"></div><div><label>Service / company</label><input id="fr_service" value="'+esc(r.service||'')+'"></div><div><label>Contact number</label><input id="fr_contact" inputmode="tel" value="'+esc(r.contact||'')+'"></div></div>'+
+    '<label>Additional info (optional)</label><input id="fr_info" value="'+esc(r.info||'')+'">'+
+    '<label>Intermediate stops · English / हिंदी / ਪੰਜਾਬੀ · timing · move</label><div id="stops">'+(r.stops||[]).map(function(s){return stopRow(s.place,s.time);}).join('')+'</div>'+
     '<button class="btn sm" data-act="add-stop">+ Add stop</button>'+foot('save-route');
 }
 
