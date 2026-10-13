@@ -82,14 +82,30 @@
   .review-stop-row .review-place { min-width:170px; }
   .review-stop-row .review-hi, .review-stop-row .review-pa { min-width:130px; }
 
-  .overlay { position:fixed; inset:0; background:rgba(16,24,40,.5); display:none; align-items:flex-start; justify-content:center; padding:24px 12px; overflow-y:auto; z-index:30; }
+  /* Desktop-first editor: use the available monitor instead of a narrow, clipped popup. */
+  .overlay { position:fixed; inset:0; background:rgba(16,24,40,.5); display:none; align-items:stretch; justify-content:center; padding:10px; overflow:hidden; z-index:30; }
   .overlay.show { display:flex; }
-  .dialog { background:#fff; border-radius:14px; width:100%; max-width:560px; box-shadow:0 20px 40px rgba(0,0,0,.25); }
-  .dlg-head { display:flex; align-items:center; padding:16px 20px; border-bottom:1px solid var(--line); }
+  .dialog { background:#fff; border-radius:12px; width:100%; max-width:none; height:calc(100vh - 20px); max-height:calc(100vh - 20px); display:flex; flex-direction:column; box-shadow:0 20px 40px rgba(0,0,0,.25); }
+  .dlg-head { display:flex; align-items:center; padding:12px 20px; border-bottom:1px solid var(--line); flex:0 0 auto; }
   .dlg-head h2 { margin:0; font-size:17px; flex:1; }
   .dlg-head button { border:0; background:none; font-size:24px; line-height:1; color:var(--muted); }
-  .dlg-body { padding:4px 20px 20px; }
-  .dlg-foot { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+  .dlg-body { padding:10px 20px 18px; flex:1 1 auto; min-height:0; overflow:auto; }
+  .dlg-foot { display:flex; justify-content:flex-end; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  @media (min-width: 1100px) {
+    .dialog { width:100%; }
+    .review-stop-table { min-width:0; table-layout:fixed; }
+    .review-stop-table th, .review-stop-table td { overflow-wrap:anywhere; }
+    .review-stop-row .review-place { min-width:0; width:100%; }
+    .review-stop-row .review-hi, .review-stop-row .review-pa { min-width:0; width:100%; }
+    .review-stop-row input { box-sizing:border-box; max-width:100%; }
+  }
+  @media (max-width: 760px) {
+    .overlay { padding:0; }
+    .dialog { border-radius:0; height:100dvh; max-height:100dvh; }
+    .dlg-head { padding:12px 14px; }
+    .dlg-body { padding:10px 12px 16px; }
+    .review-stop-table { min-width:1040px; }
+  }
   #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1F2933; color:#fff; padding:11px 20px; border-radius:24px; display:none; z-index:50; max-width:92%; font-size:14px; }
 
 
