@@ -125,7 +125,7 @@ class AddRouteActivity : AppCompatActivity() {
             stops.forEach { stop ->
                 drafts.add(JSONObject().put("place_id", stop.placeId)
                     .put("name", names[stop.placeId]?.displayName(lang) ?: stop.placeId)
-                    .put("language", lang).put("time", stop.time ?: JSONObject.NULL))
+                    .put("language", lang).put("time", JSONObject.NULL))
             }
             editor?.render()
         }
