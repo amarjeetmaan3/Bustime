@@ -29,11 +29,11 @@ create policy "public can read app content settings"
 
 drop policy if exists "authenticated admin can insert app content settings" on public.app_content_settings;
 create policy "authenticated admin can insert app content settings"
-  on public.app_content_settings for insert to authenticated with check (id = 1);
+  on public.app_content_settings for insert to authenticated with check (id = 1 and auth.uid() = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
 
 drop policy if exists "authenticated admin can update app content settings" on public.app_content_settings;
 create policy "authenticated admin can update app content settings"
-  on public.app_content_settings for update to authenticated using (true) with check (id = 1);
+  on public.app_content_settings for update to authenticated using (auth.uid() = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with check (id = 1);
 
 create or replace function public.touch_app_content_settings_updated_at()
 returns trigger language plpgsql as $$
