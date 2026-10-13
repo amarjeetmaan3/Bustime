@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 39,
+  "dataVersion": 40,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -416,7 +416,14 @@
       "aliases": []
     }
   ],
-  "routes": [],
+  "routes": [
+    {
+      "id": "r1",
+      "from": "place_amargarh",
+      "to": "place_sadulshahar",
+      "time": "05:45"
+    }
+  ],
   "taxiSeaters": [
     4,
     5,
