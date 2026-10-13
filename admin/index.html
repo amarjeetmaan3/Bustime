@@ -1173,19 +1173,17 @@ function applyApprovedCorrection(x) {
     if (!r.stops.length) delete r.stops;
     setDirty(true);
   } else if (x.request_type === 'missing_stop') {
-    var before = x.before_stop_id, after = x.after_stop_id;
-    var placeId = x.missing_place_id || '';
-    if (!placeId) {
-      placeId = makeId('place_', x.missing_place_name || 'missing_stop', function(id){return data.places.some(function(p){return p.id===id;});});
-      data.places.push({id:placeId,kind:'place',name:{en:x.missing_place_name},aliases:[]});
-    } else if (!placeById(placeId)) { throw new Error('The selected existing place no longer exists; request not approved.'); }
-    var stops = r.stops || (r.stops=[]);
-    var beforeIndex = before===r.from ? -1 : stops.findIndex(function(z){return z.place===before;});
-    var afterIndex = after===r.to ? stops.length : stops.findIndex(function(z){return z.place===after;});
-    if (beforeIndex < -1 || afterIndex < 0 || afterIndex !== beforeIndex+1) {
-      if (!x.missing_place_id) data.places.pop(); throw new Error('The two chosen stops are no longer adjacent; request not approved.');
-    }
-    var newStop = {place:placeId}; if (x.missing_time) newStop.time=x.missing_time;
+    var before=x.before_stop_id,after=x.after_stop_id,stops=r.stops||(r.stops=[]);
+    var beforeIndex=before===r.from?-1:stops.findIndex(function(z){return z.place===before;});
+    var afterIndex=after===r.to?stops.length:stops.findIndex(function(z){return z.place===after;});
+    if(beforeIndex < -1||afterIndex<0||afterIndex!==beforeIndex+1)throw new Error('The two chosen stops are no longer adjacent; request not approved.');
+    var placeId=x.missing_place_id||'';
+    if(placeId&&!placeById(placeId))throw new Error('The selected existing place no longer exists; request not approved.');
+    var names=x.missing_place_names||{};
+    if(!names.en&&!names.hi&&!names.pa&&x.missing_place_name){var sourceLang=detectPlaceLanguage(x.missing_place_name);names[sourceLang]=x.missing_place_name;names._sourceLang=sourceLang;}
+    placeId=ensureReviewedPlace(names,placeId||null);
+    if(!placeId||!placeById(placeId))throw new Error('Enter a valid missing-stop name before approval.');
+    var newStop={place:placeId};if(x.missing_time)newStop.time=x.missing_time;
     stops.splice(afterIndex,0,newStop);
   }
   setDirty(true);
