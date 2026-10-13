@@ -1596,19 +1596,22 @@ document.addEventListener('click', async function (e) {
       if (confirm('Delete this route?')) { data.routes.splice(i, 1); setDirty(true); render(); }
     }
     else if (act === 'save-route') {
-      var from=ensureRoutePlace('from'),to=ensureRoutePlace('to'),time=val('fr_time'),arrive=val('fr_arrive');
-      if(!from||!to){toast('Enter a name for both From and To');return;}
-      if(from===to){toast('From and To must be different places');return;}
+      var time=val('fr_time'),arrive=val('fr_arrive');
+      if(!routeNameValue('from','en')&&!routeNameValue('from','hi')&&!routeNameValue('from','pa')){toast('Enter a name for From');return;}
+      if(!routeNameValue('to','en')&&!routeNameValue('to','hi')&&!routeNameValue('to','pa')){toast('Enter a name for To');return;}
       if(!TIME_RE.test(time)){toast('Enter the departure time');return;}
-      var stops=[],previousTime=time,dayOffset=0,invalidTimeOrder=false;
-      document.querySelectorAll('#stops .stoprow').forEach(function(row){
+      var routeRows=Array.prototype.slice.call(document.querySelectorAll('#stops .stoprow'));
+      if(routeRows.some(function(row){var key=row.getAttribute('data-route-stop');return !routeNameValue(key,'en')&&!routeNameValue(key,'hi')&&!routeNameValue(key,'pa');})){toast('Enter a name for every intermediate stop');return;}
+      var from=ensureRoutePlace('from'),to=ensureRoutePlace('to');
+      if(!from||!to){toast('Could not resolve From and To names');return;}
+      if(from===to){toast('From and To must be different places');return;}
+      var stops=[],previousTime=time,dayOffset=0;
+      routeRows.forEach(function(row){
         var key=row.getAttribute('data-route-stop'),sp=ensureRoutePlace(key),st=row.querySelector('.st_time').value;
-        if(!sp){toast('Enter a name for every intermediate stop');invalidTimeOrder=true;return;}
         var stop={place:sp};
         if(TIME_RE.test(st)){if(st<previousTime)dayOffset++;previousTime=st;stop.time=st;if(dayOffset>0)stop.day_offset=dayOffset;}
         stops.push(stop);
       });
-      if(invalidTimeOrder)return;
       if(TIME_RE.test(arrive)&&arrive<previousTime)dayOffset++;
       var r=editing.index<0?{id:nextNum('r',data.routes)}:data.routes[editing.index];
       r.from=from;r.to=to;r.time=time;delete r.longRoute;delete r.startDate;
