@@ -297,7 +297,27 @@ function communityEditorValues(){var out={};document.querySelectorAll('#dlgBody 
  return out;}
 function showCommunityEditor(kind,record){communityReviewEditor={kind:kind,record:JSON.parse(JSON.stringify(record))};editing=null;routeReviewEditor=null;publishOpen=false;render();}
 
-function communityEditorValues(){var out={};document.querySelectorAll('#dlgBody [data-cr-field]').forEach(function(el){var k=el.getAttribute('data-cr-field');if(el.tagName==='TEXTAREA'){try{out[k]=JSON.parse(el.value);}catch(e){throw new Error('Invalid JSON in '+k+'. Fix it before saving.');}}else if(el.type==='number'){out[k]=el.value.trim()===''?null:Number(el.value);if(el.value.trim()!==''&&!Number.isFinite(out[k]))throw new Error('Invalid number in '+k+'.');}else out[k]=el.value.trim()===''?null:el.value.trim();});return out;}
+function communityEditorValues(){
+ var out={};
+ document.querySelectorAll('#dlgBody [data-cr-field]').forEach(function(el){
+  var k=el.getAttribute('data-cr-field');
+  if(el.tagName==='TEXTAREA'){
+   // Only structured payload fields are JSON. Notes and free-text correction fields are plain text.
+   if(k==='notes'||k==='change_summary'||k==='missing_place_name'){out[k]=el.value.trim()||null;return;}
+   try{out[k]=JSON.parse(el.value);}catch(e){throw new Error('Please check the structured '+k+' field; it must contain valid JSON.');}
+  }else if(el.type==='number'){
+   out[k]=el.value.trim()===''?null:Number(el.value);
+   if(el.value.trim()!==''&&!Number.isFinite(out[k]))throw new Error('Invalid number in '+k+'.');
+  }else out[k]=el.value.trim()===''?null:el.value.trim();
+ });
+ if(communityReviewEditor&&communityReviewEditor.kind==='corrections'&&communityReviewEditor.record.request_type==='route_edit'){
+  out.proposed_stops=Array.prototype.map.call(document.querySelectorAll('#crProposedStops [data-cr-proposed]'),function(row){
+   var place=row.querySelector('[data-cr-place]'),name=row.querySelector('[data-cr-name]'),time=row.querySelector('[data-cr-time]');
+   return {place_id:place&&place.value||null,name:name&&name.value.trim()||'',time:time&&time.value||null,language:'en'};
+  });
+ }
+ return out;
+}
 function showCommunityEditor(kind,record){communityReviewEditor={kind:kind,record:JSON.parse(JSON.stringify(record))};editing=null;routeReviewEditor=null;publishOpen=false;render();}
 
 var publishOpen = false;
