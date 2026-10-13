@@ -25,6 +25,12 @@ android {
         targetSdk = 34
         versionCode = appVersionCode
         versionName = "1.0.$appVersionCode"
+
+        // ARM 32-bit और ARM 64-bit दोनों फोन के लिए native-library compatibility.
+        // minSdk Android version है; ABI filters processor architecture तय करते हैं.
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+        }
     }
 
     signingConfigs {
