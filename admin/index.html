@@ -668,7 +668,7 @@ function render() {
     places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers, autoDrivers:viewDrivers,
     busRequests:viewBusRequests, busDirectory:function(){return viewCommunity('busDirectory');}, taxiReview:function(){return viewCommunity('taxi');},
     autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
-    corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, settings:viewSettings };
+    corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, advertisement:viewAdvertisement, settings:viewSettings };
   if (dataTabs.indexOf(tab) >= 0 && !data) {
     v.innerHTML = '<div class="card"><h2>Load route data first</h2><p class="muted">Open Settings and load the data from GitHub. Submission review tabs can be opened independently after Supabase sign-in.</p><button class="btn primary" data-act="tab" data-t="settings">Open Settings</button></div>';
   } else {
@@ -1049,7 +1049,8 @@ async function uploadAdPoster(file){
   if(!response.ok)throw new Error('Poster upload failed: HTTP '+response.status+' (run ad migration SQL and check Storage policies).');
   adConfig.my.poster_url=cfg.sbUrl.replace(/\/+$/,'')+'/storage/v1/object/public/ads-posters/'+path;
 }
-\nfunction viewSettings() {
+
+function viewSettings() {
   return '<div class="card"><h2>GitHub connection</h2><p class="muted">Data is read from and published to the file below in your repository.</p>' +
     '<div class="row2"><div><label>GitHub username</label><input id="c_owner" value="' + esc(cfg.owner) + '"></div>' +
     '<div><label>Repository</label><input id="c_repo" value="' + esc(cfg.repo) + '"></div></div>' +
@@ -1914,7 +1915,8 @@ document.addEventListener('click', async function (e) {
     if (act === 'analytics-refresh') { loadAnalytics(); }
     else if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render();
-      if (tab === 'analytics' && sbToken) { loadAnalytics(); }\n   if (tab === 'advertisement') { loadAdConfig().then(function(){render();}).catch(function(err){toast('Advertisement settings: '+err.message);}); }
+      if (tab === 'analytics' && sbToken) { loadAnalytics(); }
+   if (tab === 'advertisement') { loadAdConfig().then(function(){render();}).catch(function(err){toast('Advertisement settings: '+err.message);}); }
       if (['review','busRequests','taxiReview','autoReview','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
     else if (act === 'close') { editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render(); }
@@ -2323,7 +2325,7 @@ document.addEventListener('click', async function (e) {
       if(adConfig.my.start_date&&adConfig.my.end_date&&adConfig.my.end_date<adConfig.my.start_date)throw new Error('Campaign end date must be on/after start date.');
       if(adConfig.my.check_route_enabled&&!adConfig.my.route_id)throw new Error('Choose an existing bus route for Check Route.');
       if(adConfig.my.call_enabled&&!adConfig.my.phone)throw new Error('Enter a phone number for Call.');
-      if(adConfig.my.link_enabled&&!/^https?:\\/\\//i.test(adConfig.my.url))throw new Error('Enter a valid http:// or https:// URL.');
+      if(adConfig.my.link_enabled&&!/^https?:\/\//i.test(adConfig.my.url))throw new Error('Enter a valid http:// or https:// URL.');
       await saveAdConfig();toast('My Advertisement settings saved.');render();
     }
     else if (act === 'ad-save-admob') {
@@ -2338,7 +2340,8 @@ document.addEventListener('click', async function (e) {
       await saveAdConfig();toast('AdMob settings saved.');render();
     }
     else if (act === 'ad-upload-poster') { /* file input is handled by change listener */ }
-\n    // ---- publish ----
+
+    // ---- publish ----
     else if (act === 'publish') {
       b.disabled = true; b.textContent = 'Publishing...';
       await publish(); publishOpen = false; toast('Published. Data version ' + baseVersion); render();
@@ -2355,7 +2358,8 @@ document.addEventListener('change',async function(e){
     catch(err){toast('Error: '+err.message);}
   }
 });
-\n// ============ Start ============
+
+// ============ Start ============
 render();
 if (cfg.token) {
   loadData().then(function () { tab = 'dashboard'; render(); }).catch(function (e) { toast('Could not load: ' + e.message); });
