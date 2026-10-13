@@ -274,12 +274,17 @@ function communityEditorHtml() {
    html+='<label>Time at missing stop (optional)</label><input data-cr-field="missing_time" type="time" value="'+esc(x.missing_time||'')+'">';
   }else if(x.request_type==='route_edit'){
    html+='<label>Correction summary</label><input data-cr-field="change_summary" value="'+esc(x.change_summary||'')+'">';
-   html+='<h3>Proposed route stops</h3><p class="muted">Choose an existing place or enter a name for a new place. Set a time when known.</p>';
+   html+='<h3>Proposed route stops</h3><p class="muted">Each stop stays on one horizontal line. Choose an existing Place ID to retain it, or enter a distinct name; a new Place is created only after approval. Hindi and Punjabi translations can be corrected inline.</p>';
    var proposed=Array.isArray(x.proposed_stops)?x.proposed_stops:[];
-   html+='<div id="crProposedStops">'+proposed.map(function(st,i){
-    var p=st.place_id?placeById(st.place_id):null;
-    return '<div class="card" style="padding:12px;margin:10px 0" data-cr-proposed="'+i+'"><b>Stop '+(i+1)+'</b><label>Existing place</label><select data-cr-place>'+placeOptions(st.place_id,true)+'</select><label>Place name</label><input data-cr-name value="'+esc(st.name||(p?pname(p):''))+'"><label>Time</label><input data-cr-time type="time" value="'+esc(st.time||'')+'"></div>';
-   }).join('')+'</div>';
+   html+='<div class="tablewrap"><table class="review-stop-table"><thead><tr><th>#</th><th>Existing Place ID</th><th>Place name</th><th>हिंदी</th><th>ਪੰਜਾਬੀ</th><th>Time</th><th>Move</th></tr></thead><tbody id="crProposedStops">'+proposed.map(function(st,i){
+    var p=st.place_id?placeById(st.place_id):null,raw=String(st.name||(p?pname(p):'')||'').trim(),lang=st.language||detectPlaceLanguage(raw),names=st.names||{};
+    if(!names.en&&!names.hi&&!names.pa&&p)names=p.name||{};
+    if(!names.en&&!names.hi&&!names.pa&&raw)names[lang]=raw;
+    var key='cr-stop-'+i;
+    return '<tr class="review-stop-row" data-cr-proposed="'+i+'"><td class="review-stop-num">'+(i+1)+'</td><td><select data-cr-place>'+placeOptions(st.place_id,true)+'</select></td>' +
+      '<td>'+reviewNameField(key,'en',names.en||'',lang)+'</td><td>'+reviewNameField(key,'hi',names.hi||'',lang)+'</td><td>'+reviewNameField(key,'pa',names.pa||'',lang)+'</td>' +
+      '<td><input data-cr-time type="time" value="'+esc(st.time||'')+'"></td><td class="review-move"><button class="btn sm" data-act="cr-stop-up" data-i="'+i+'">↑</button> <button class="btn sm" data-act="cr-stop-down" data-i="'+i+'">↓</button></td></tr>';
+   }).join('')+'</tbody></table></div>';
    html+='<p class="muted">Original route: '+esc((Array.isArray(x.original_stops)?x.original_stops:[]).map(function(st){return stopLabel(st.place_id||st.place)+' '+(st.time||'');}).join(' · ')||routeLabel)+'</p>';
   }else{
    html+='<p class="muted">This correction type is not recognized. Refresh the request list before approving it.</p>';
