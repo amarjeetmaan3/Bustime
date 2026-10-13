@@ -60,17 +60,17 @@ class BookBusActivity : AppCompatActivity() {
         var allRowsCache: List<org.json.JSONObject> = emptyList()
         val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 12, 0, 0) }
         val areaButton = Button(this).apply {
-            text = "Permanent Area: Select Area ▾"
+            text = "Change Area: Select Area ▾"
             setOnClickListener {
                 val areas = allRowsCache.mapNotNull { row ->
                     row.optString("area_name").ifBlank { row.optString("location") }.trim().takeIf { it.isNotBlank() }
                 }.distinctBy { it.lowercase(java.util.Locale.ROOT) }
                 val choices = listOf("All Areas") + areas
                 AlertDialog.Builder(this@BookBusActivity)
-                    .setTitle("Permanent Area")
+                    .setTitle("Change Area")
                     .setSingleChoiceItems(choices.toTypedArray(), (selectedArea?.let { areas.indexOf(it) + 1 } ?: 0)) { dialog, which ->
                         selectedArea = if (which == 0) null else areas[which - 1]
-                        text = "Permanent Area: " + (selectedArea ?: "All Areas") + " ▾"
+                        text = "Change Area: " + (selectedArea ?: "All Areas") + " ▾"
                         dialog.dismiss()
                         renderOperators(allRowsCache, results, selectedArea)
                     }.setNegativeButton(com.bustime.app.R.string.cancel, null).show()
@@ -87,7 +87,7 @@ class BookBusActivity : AppCompatActivity() {
             val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
             val allRows = (0 until rows.length()).map { rows.getJSONObject(it) }
             allRowsCache = allRows
-            areaButton.text = "Permanent Area: All Areas ▾"
+            areaButton.text = "Change Area: All Areas ▾"
             renderOperators(allRows, results, selectedArea)
         }
     }
