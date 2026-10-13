@@ -76,7 +76,7 @@
     <!-- Custom route and Book Bus labels -->
     <string name="ar_new_route_mode">Enter a completely new route / stops</string>
     <string name="ar_existing_route_mode">Choose an existing route instead</string>
-    <string name="ar_new_route_intro">Enter From and To names in English, Hindi, or Punjabi. Fill at least one correct time; other timings may be left blank. Admin will review your submission.</string>
+    <string name="ar_new_route_intro">Add the stops in order, in English, Hindi, or Punjabi. Tap a stop\'s time to set it; fill at least one correct time, others may stay blank. Admin will review your submission.</string>
     <string name="ar_custom_from">From city / bus stand (any language)</string>
     <string name="ar_custom_to">To city / bus stand (any language)</string>
     <string name="ar_custom_stops">Intermediate stops (optional)</string>
