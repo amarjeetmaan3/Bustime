@@ -25,6 +25,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     private lateinit var layoutSeaters: View
     private lateinit var layoutDrivers: View
     private lateinit var seatersContainer: LinearLayout
+    private lateinit var seatFiltersContainer: LinearLayout
     private lateinit var tvSeatersEmpty: TextView
     private lateinit var btnArea: Button
     private var currentSeats: Int? = null   // None = सीटर वाली स्क्रीन खुली है
@@ -39,6 +40,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
         layoutSeaters = view.findViewById(R.id.layoutSeaters)
         layoutDrivers = view.findViewById(R.id.layoutDrivers)
         seatersContainer = view.findViewById(R.id.seatersContainer)
+        seatFiltersContainer = view.findViewById(R.id.seatFiltersContainer)
         tvSeatersEmpty = view.findViewById(R.id.tvSeatersEmpty)
         btnArea = view.findViewById(R.id.btnSelectArea)
         tvNoDrivers = view.findViewById(R.id.tvNoDrivers)
@@ -77,14 +79,31 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
             val seats = repo.getSeaterGroups()
             val ctx = context ?: return@launch
             seatersContainer.removeAllViews()
+            seatFiltersContainer.removeAllViews()
             tvSeatersEmpty.visibility = if (seats.isEmpty()) View.VISIBLE else View.GONE
 
-            val margin = (12 * resources.displayMetrics.density).toInt()
+            val margin = (8 * resources.displayMetrics.density).toInt()
             for (n in seats) {
+                val filter = MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    text = getString(R.string.seater_format, n)
+                    textSize = 11f
+                    minHeight = (36 * resources.displayMetrics.density).toInt()
+                    minimumHeight = minHeight
+                    setPadding((10 * resources.displayMetrics.density).toInt(), 0, (10 * resources.displayMetrics.density).toInt(), 0)
+                    isAllCaps = false
+                    setOnClickListener {
+                        AnalyticsHelper.logEvent(requireContext(), "taxi_seat_filter", "taxi", org.json.JSONObject().put("seats", n))
+                        showDrivers(n)
+                    }
+                }
+                val filterLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (38 * resources.displayMetrics.density).toInt())
+                filterLp.marginEnd = margin
+                seatFiltersContainer.addView(filter, filterLp)
+
                 val button = MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
                     text = getString(R.string.seater_format, n)
                     textSize = 18f
-                    setOnClickListener { AnalyticsHelper.logEvent(requireContext(), "taxi_seat_filter", "taxi", org.json.JSONObject().put("seats", n)) ; showDrivers(n) }
+                    setOnClickListener { showDrivers(n) }
                 }
                 val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 lp.bottomMargin = margin
