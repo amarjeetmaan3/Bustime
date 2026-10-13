@@ -1190,17 +1190,21 @@ function applyApprovedCorrection(x) {
 // ============ Multilingual route review ============
 function reviewNamesForPlace(id, rawName) {
   var p = id ? placeById(id) : null, source = p && p.name ? p.name : {};
-  if (p) return {en:String(source.en||'').trim(),hi:String(source.hi||'').trim(),pa:String(source.pa||'').trim()};
-  var raw=String(rawName||'').trim(),lang=detectPlaceLanguage(raw),out={en:'',hi:'',pa:''};
+  if (p) return {en:String(source.en||'').trim(),hi:String(source.hi||'').trim(),pa:String(source.pa||'').trim(),_sourceLang:'en'};
+  var raw=String(rawName||'').trim(),lang=detectPlaceLanguage(raw),out={en:'',hi:'',pa:'',_sourceLang:lang};
   if(raw)out[lang]=raw;
   return out;
 }
+function reviewNameField(key, lang, value, sourceLang) {
+  return '<input class="review-' + lang + '" aria-label="' + lang + ' name" placeholder="' + (lang==='en'?'English':lang==='hi'?'हिंदी':'ਪੰਜਾਬੀ') + '" data-rv-name="' + esc(key) + '" data-lang="' + lang + '" data-rv-source-lang="' + esc(sourceLang||lang) + '" data-autofilled="' + (!value?'true':'false') + '" value="' + esc(value || '') + '">';
+}
 function reviewNameInputs(key, names) {
   names = names || {};
+  var sourceLang=names._sourceLang||(names.en?'en':names.hi?'hi':names.pa?'pa':'en');
   return '<div class="review-name-fields" style="display:flex;gap:6px;align-items:center;min-width:0">' +
-    '<input class="review-place" aria-label="English name" placeholder="English" data-rv-name="' + esc(key) + '" data-lang="en" data-autofilled="' + (!names.en?'true':'false') + '" value="' + esc(names.en || '') + '">' +
-    '<input class="review-hi" aria-label="Hindi name" placeholder="हिंदी" data-rv-name="' + esc(key) + '" data-lang="hi" data-autofilled="' + (!names.hi?'true':'false') + '" value="' + esc(names.hi || '') + '">' +
-    '<input class="review-pa" aria-label="Punjabi name" placeholder="ਪੰਜਾਬੀ" data-rv-name="' + esc(key) + '" data-lang="pa" data-autofilled="' + (!names.pa?'true':'false') + '" value="' + esc(names.pa || '') + '</div>';
+    reviewNameField(key,'en',names.en,sourceLang) +
+    reviewNameField(key,'hi',names.hi,sourceLang) +
+    reviewNameField(key,'pa',names.pa,sourceLang) + '</div>';
 }
 function routeReviewEditorHtml() {
   var i = routeReviewEditor.index, sub = subs && subs[i], v = subCardValues(i);
@@ -1224,10 +1228,11 @@ function routeReviewEditorHtml() {
   var stopHtml = '<div class="tablewrap"><table class="review-stop-table"><thead><tr><th>#</th><th>Place name</th><th>Hindi</th><th>Punjabi</th><th>Timing</th><th>Place ID</th><th>Move</th></tr></thead><tbody>' +
     v.stops.map(function(st, index) {
       var names=reviewNamesForPlace(st.place,st.name);
+      var sourceLang=names._sourceLang||(names.en?'en':names.hi?'hi':names.pa?'pa':'en');
       return '<tr class="review-stop-row" data-rv-stop="' + index + '" data-place="' + esc(st.place || '') + '">' +
-        '<td class="review-stop-num">' + (index+1) + '</td><td>' + reviewNameInputs('stop-' + index, names).replace('class="review-name-fields" style="display:flex;gap:6px;align-items:center;min-width:0">','class="review-name-fields" style="display:contents">').replace(/<input class="review-hi"[^>]*>/,'') .replace(/<input class="review-pa"[^>]*>/,'').replace('</div>','') + '</td>' +
-        '<td>' + (names.hi ? '<span class="muted">' + esc(names.hi) + '</span>' : '<span class="muted">Auto</span>') + '</td>' +
-        '<td>' + (names.pa ? '<span class="muted">' + esc(names.pa) + '</span>' : '<span class="muted">Auto</span>') + '</td>' +
+        '<td class="review-stop-num">' + (index+1) + '</td><td>' + reviewNameField('stop-' + index,'en',names.en,sourceLang) + '</td>' +
+        '<td>' + reviewNameField('stop-' + index,'hi',names.hi,sourceLang) + '</td>' +
+        '<td>' + reviewNameField('stop-' + index,'pa',names.pa,sourceLang) + '</td>' +
         '<td><input type="time" data-rv-time="' + index + '" value="' + esc(st.time || '') + '"></td><td><span class="muted">' + esc(st.place || 'New on approval') + '</span></td>' +
         '<td class="review-move"><button class="btn sm" data-act="review-stop-up" data-i="' + index + '">↑</button> <button class="btn sm" data-act="review-stop-down" data-i="' + index + '">↓</button></td></tr>';
     }).join('') + '</tbody></table></div>';
@@ -1248,6 +1253,7 @@ function routeReviewValues() {
     var out = {};
     body.querySelectorAll('[data-rv-name="' + key + '"]').forEach(function(e) {
       var value = String(e.value || '').trim(); if (value) out[e.getAttribute('data-lang')] = value;
+      if(e.getAttribute('data-rv-source-lang'))out._sourceLang=e.getAttribute('data-rv-source-lang');
     });
     return out;
   }
@@ -1264,7 +1270,7 @@ function routeReviewValues() {
 function ensureReviewedPlace(names, preferredId) {
   names=names||{};var clean={};
   ['en','hi','pa'].forEach(function(lang){var value=String(names[lang]||'').trim();if(value)clean[lang]=value;});
-  var lang=clean.en? 'en':clean.hi?'hi':clean.pa?'pa':'';
+  var lang=['en','hi','pa'].indexOf(names._sourceLang)>=0?names._sourceLang:(clean.en?'en':clean.hi?'hi':clean.pa?'pa':'');
   var primary=lang&&clean[lang];if(!primary)return preferredId&&placeById(preferredId)?preferredId:null;
   function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
   var existing=preferredId?placeById(preferredId):null;
