@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 26,
+  "dataVersion": 27,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -223,6 +223,14 @@
         "en": "Bathinda"
       },
       "aliases": []
+    },
+    {
+      "id": "place_miraa_chowk_sri_ganganagar_2",
+      "kind": "place",
+      "name": {
+        "en": "Miraa chowk Sri Ganganagar • मीरा चौक श्री गंगानगर • ਮੀਰਾ ਚੌਕ ਸ੍ਰੀ ਗੰਗਾਨਗਰ"
+      },
+      "aliases": []
     }
   ],
   "routes": [
@@ -259,9 +267,13 @@
         },
         {
           "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_miraa_chowk_sri_ganganagar_2"
         }
       ],
-      "longRoute": false
+      "longRoute": false,
+      "arrive": "11:24"
     },
     {
       "id": "r2",
