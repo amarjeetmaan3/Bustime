@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 32,
+  "dataVersion": 33,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -554,8 +554,7 @@
         },
         {
           "place": "place_user_dabwali",
-          "time": "07:00",
-          "day_offset": 1
+          "time": "19:00"
         }
       ],
       "arrive_day_offset": 1
