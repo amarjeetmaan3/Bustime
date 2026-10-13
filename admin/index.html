@@ -2362,7 +2362,16 @@ document.addEventListener('click', async function (e) {
       adConfig.my.enabled=!!document.getElementById('ad_my_enabled').checked;
       adConfig.my.category=document.getElementById('ad_category').value;
       adConfig.my.close_delay=Math.max(2,Math.min(4,parseInt(document.getElementById('ad_close_delay').value,10)||3));
-      adConfig.my.poster_url=document.getElementById('ad_poster_url').value.trim();
+      var posterInput=document.getElementById('ad_poster_file');
+      var posterFile=posterInput&&posterInput.files&&posterInput.files[0];
+      var manualPosterUrl=document.getElementById('ad_poster_url').value.trim();
+      if(posterFile){
+        toast('Uploading poster…');
+        await uploadAdPoster(posterFile);
+        document.getElementById('ad_poster_url').value=adConfig.my.poster_url;
+      }else{
+        adConfig.my.poster_url=manualPosterUrl;
+      }
       adConfig.my.start_date=document.getElementById('ad_start_date').value;
       adConfig.my.end_date=document.getElementById('ad_end_date').value;
       adConfig.my.check_route_enabled=document.getElementById('ad_check_route_enabled').checked;
