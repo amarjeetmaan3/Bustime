@@ -1306,7 +1306,8 @@ function reviewNamesForPlace(id, rawName) {
 }
 function reviewNameField(key, lang, value, sourceLang) {
   value=String(value||'');
-  return '<input class="review-' + lang + '" aria-label="' + lang + ' name" placeholder="' + (lang==='en'?'English':lang==='hi'?'हिंदी':'ਪੰਜਾਬੀ') + '" list="review-place-' + lang + '" autocomplete="off" data-rv-name="' + esc(key) + '" data-lang="' + lang + '" data-rv-source-lang="' + esc(sourceLang||lang) + '" data-original-value="' + esc(value) + '" data-autofilled="' + (!value?'true':'false') + '" value="' + esc(value) + '">';
+  var source=sourceLang||lang;
+  return '<input class="review-' + lang + '" aria-label="' + lang + ' name" placeholder="' + (lang==='en'?'English':lang==='hi'?'हिंदी':'ਪੰਜਾਬੀ') + '" list="review-place-' + lang + '" autocomplete="off" data-rv-name="' + esc(key) + '" data-lang="' + lang + '" data-rv-source-lang="' + esc(source) + '" data-original-value="' + esc(value) + '" data-autofilled="' + (lang!==source?'true':'false') + '" value="' + esc(value) + '">';
 }
 function reviewNameInputs(key, names) {
   names = names || {};
@@ -1518,9 +1519,11 @@ async function translateReviewGroup(key,sourceLang){
 function autoTranslateReviewGroups(){
  var keys={};document.querySelectorAll('[data-rv-name]').forEach(function(el){var key=el.getAttribute('data-rv-name');(keys[key]||(keys[key]=[])).push(el);});
  Object.keys(keys).forEach(function(key){
-  var fields=keys[key],source=fields.find(function(el){return el.value.trim();});
+  var fields=keys[key];
+  var declared=fields.find(function(el){return el.dataset.lang===el.dataset.rvSourceLang&&el.value.trim();});
+  var source=declared||fields.find(function(el){return el.value.trim();});
   if(!source)return;
-  fields.forEach(function(el){if(el!==source&&!el.value.trim())el.dataset.autofilled='true';});
+  fields.forEach(function(el){if(el!==source&&el.dataset.lang!==source.dataset.lang)el.dataset.autofilled='true';});
   translateReviewGroup(key,source.dataset.lang||detectPlaceLanguage(source.value));
  });
 }
@@ -1657,9 +1660,11 @@ document.addEventListener('click', async function (e) {
         if(TIME_RE.test(st)){if(st<previousTime)dayOffset++;previousTime=st;stop.time=st;if(dayOffset>0)stop.day_offset=dayOffset;}
         stops.push(stop);
       });
-      if(TIME_RE.test(arrive)&&arrive<previousTime)dayOffset++;
+      var arrivalDayOffset=dayOffset;
+      if(TIME_RE.test(arrive)&&arrive<previousTime)arrivalDayOffset++;
       var r=editing.index<0?{id:nextNum('r',data.routes)}:data.routes[editing.index];
       r.from=from;r.to=to;r.time=time;delete r.longRoute;delete r.startDate;
+      if(TIME_RE.test(arrive)&&arrivalDayOffset>0)r.arrive_day_offset=arrivalDayOffset;else delete r.arrive_day_offset;
       ['arrive','service','contact','info'].forEach(function(k){var v=k==='arrive'?(TIME_RE.test(arrive)?arrive:''):val('fr_'+k);if(v)r[k]=v;else delete r[k];});
       if(stops.length)r.stops=stops;else delete r.stops;
       if(editing.index<0)data.routes.push(r);
