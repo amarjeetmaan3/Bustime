@@ -15,7 +15,7 @@ import com.bustime.app.utils.AnalyticsHelper
 
 /**
  * टैक्सी और ऑटो की लिस्ट। मोबाइल नंबर पहले छिपा रहता है:
- * ctx.getString(R.string.show_number_short) दबाओ -> छोटा संदेश -> 3 सेकंड बाद नंबर + Call / WhatsApp।
+ * ctx.getString(R.string.show_details_short) दबाओ -> छोटा संदेश -> 3 सेकंड बाद नंबर + Call / WhatsApp।
  */
 class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
 
@@ -106,10 +106,24 @@ class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
                 holder.btnShow.visibility = View.VISIBLE
                 holder.tvNotice.visibility = View.GONE
                 holder.layoutRevealed.visibility = View.GONE
-                holder.btnShow.setOnClickListener { AnalyticsHelper.logEvent(it.context, "contact_reveal_tap", d.type); startReveal(d.id) }
+                holder.btnShow.setOnClickListener {
+                    AnalyticsHelper.logEvent(it.context, "driver_details_open", d.type)
+                    it.context.startActivity(android.content.Intent(it.context, com.bustime.app.ui.details.DriverDetailActivity::class.java)
+                        .putExtra("driver_type", d.type)
+                        .putExtra("driver_id", d.id)
+                        .putExtra("driver_name", d.name)
+                        .putExtra("driver_vehicle", d.vehicle.orEmpty())
+                        .putExtra("driver_phone", d.phone)
+                        .putExtra("driver_seats", d.seats ?: -1)
+                        .putExtra("driver_fuel", d.fuel.orEmpty())
+                        .putExtra("driver_union", extractUnion(d.info.orEmpty()))
+                        .putExtra("driver_info", d.info.orEmpty()))
+                }
             }
         }
     }
+
+    private fun extractUnion(info: String): String = Regex("(?i)Union:\\s*([^·]+)").find(info)?.groupValues?.getOrNull(1)?.trim().orEmpty()
 
     private fun startReveal(id: String) {
         pending.add(id)
