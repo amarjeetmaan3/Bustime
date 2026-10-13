@@ -12,12 +12,13 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 
 /**
  * पूरा डेटा एक फाइल (routes.json) में है।
  * 1. पहली बार: ऐप के अंदर रखी फाइल से तुरंत डेटा भर जाता है (बिना इंटरनेट भी)।
  * 2. फिर GitHub से फाइल देखता है: बदली न हो (304) तो कुछ डाउनलोड नहीं होता।
- * 3. डेटा तभी बदलता है जब नई फाइल सही हो और उसका dataVersion बड़ा हो। फेल हो तो पुराना डेटा बना रहता है।
+ * 3. नई फाइल सही हो और dataVersion नया हो या JSON content बदला हो तभी डेटाबेस अपडेट होता है।
  */
 class SnapshotSync(private val context: Context, private val dao: TransportDao) {
 
@@ -38,7 +39,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         try {
             if (dao.countPlaces() == 0) {
                 // डेटाबेस खाली है: पुराने वर्ज़न/ETag भूल जाओ और ऐप वाली फाइल से भरो
-                prefs.edit().remove(KEY_VERSION).remove(KEY_ETAG).apply()
+                prefs.edit().remove(KEY_VERSION).remove(KEY_ETAG).remove(KEY_HASH).apply()
                 importBundled()
             }
         } catch (e: Exception) {
@@ -93,9 +94,15 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         val dto = gson.fromJson(text, SnapshotDto::class.java) ?: return false
         val version = dto.dataVersion ?: return false
         val localVersion = prefs.getInt(KEY_VERSION, 0)
+        val contentHash = MessageDigest.getInstance("SHA-256")
+            .digest(text.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        val localHash = prefs.getString(KEY_HASH, null)
 
-        if (version <= localVersion) {
-            if (etag != null) prefs.edit().putString(KEY_ETAG, etag).apply()
+        // Admins may edit routes.json without incrementing dataVersion.
+        // Accept a changed, valid snapshot at the same version, but never roll back.
+        if (version < localVersion || (version == localVersion && contentHash == localHash)) {
+            prefs.edit().putString(KEY_ETAG, etag ?: prefs.getString(KEY_ETAG, null)).apply()
             return false
         }
 
@@ -108,6 +115,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         prefs.edit()
             .putInt(KEY_VERSION, version)
             .putString(KEY_ETAG, etag)
+            .putString(KEY_HASH, contentHash)
             .putLong(KEY_LAST_SYNC, System.currentTimeMillis())
             .apply()
         Log.d(TAG, "Data updated to version $version")
@@ -124,5 +132,6 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         private const val KEY_VERSION = "data_version"
         private const val KEY_ETAG = "data_etag"
         private const val KEY_LAST_SYNC = "data_last_sync"
+        private const val KEY_HASH = "data_content_sha256"
     }
 }
