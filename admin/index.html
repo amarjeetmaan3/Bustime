@@ -967,7 +967,8 @@ function warnNearSubmittedPlaces(names) {
     });
   });
   if (!warnings.length) return true;
-  return confirm('Possible similar place names found. Nothing will be merged automatically.\n\n' + warnings.join('\n') + '\n\nContinue as separate/editable place records?');
+  toast('Similar place name found: ' + warnings.join('; ') + '. Add a state suffix for a different location, or select the existing Place ID.');
+  return false;
 }
 function ensureSubmittedPlace(rawName) {
   var name = String(rawName || '').trim();
