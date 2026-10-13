@@ -149,13 +149,25 @@ class AddRouteActivity : AppCompatActivity() {
     private fun attachPlaceSuggestions(field: AutoCompleteTextView) {
         field.threshold = 1
         field.setAdapter(placeSuggestionAdapter())
+        // Keep the selected Place ID with the field. Any subsequent manual edit
+        // invalidates the selection so typed text cannot accidentally reuse an old ID.
+        if (field.getTag(R.id.etFromText) != true) {
+            field.addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    field.setTag(R.id.etFromText, false)
+                    field.setTag(R.id.etToText, null)
+                }
+                override fun afterTextChanged(s: android.text.Editable?) = Unit
+            })
+            field.setTag(R.id.etFromText, true)
+        }
         field.setOnItemClickListener { parent, _, position, _ ->
             val suggestion = parent.getItemAtPosition(position) as? PlaceSuggestion
             if (suggestion != null) {
-                // Show only the selected-language name in the field; the dropdown
-                // itself keeps all available translations together on one line.
                 field.setText(suggestion.selectedName, false)
                 field.setSelection(field.text.length)
+                field.setTag(R.id.etToText, suggestion.placeId)
             }
         }
         field.setOnFocusChangeListener { _, focused ->
@@ -605,14 +617,14 @@ class AddRouteActivity : AppCompatActivity() {
                 return
             }
             stops.put(JSONObject()
-                .put("place", row.placeId ?: JSONObject.NULL)
+                .put("place", (row.nameEdit?.getTag(R.id.etToText) as? String) ?: row.placeId ?: JSONObject.NULL)
                 .put("name", nm)
                 .put("time", row.time ?: JSONObject.NULL))
         }
         // New routes store the destination as the final stop so its timing is reviewed and published too.
         if (isNew) {
             stops.put(JSONObject()
-                .put("place", JSONObject.NULL)
+                .put("place", (findViewById<EditText>(R.id.etToText).getTag(R.id.etToText) as? String) ?: JSONObject.NULL)
                 .put("name", toText)
                 .put("time", endTime ?: JSONObject.NULL))
         }
@@ -629,8 +641,8 @@ class AddRouteActivity : AppCompatActivity() {
 
         val body = JSONObject()
             .put("submission_type", "new_route")
-            .put("from_id", JSONObject.NULL)
-            .put("to_id", JSONObject.NULL)
+            .put("from_id", (findViewById<EditText>(R.id.etFromText).getTag(R.id.etToText) as? String)?.let { it } ?: JSONObject.NULL)
+            .put("to_id", (findViewById<EditText>(R.id.etToText).getTag(R.id.etToText) as? String)?.let { it } ?: JSONObject.NULL)
             .put("from_text", fromText)
             .put("to_text", toText)
             .put("route_text", "$fromText → $toText")
