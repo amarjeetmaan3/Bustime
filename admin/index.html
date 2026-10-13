@@ -1433,6 +1433,12 @@ document.addEventListener('click', async function (e) {
       var row2 = b.closest('.stoprow'), next = row2.nextElementSibling;
       if (next) row2.parentNode.insertBefore(next, row2);
     }
+    else if (act === 'cr-stop-up' || act === 'cr-stop-down') {
+      var crRow=b.closest('[data-cr-proposed]'),crBody=$('#crProposedStops'),crRows=crBody?Array.prototype.slice.call(crBody.querySelectorAll('[data-cr-proposed]')):[],crIndex=crRows.indexOf(crRow),crOther=act==='cr-stop-up'?crRows[crIndex-1]:crRows[crIndex+1];
+      if(crRow&&crOther){if(act==='cr-stop-up')crBody.insertBefore(crRow,crOther);else crBody.insertBefore(crOther,crRow);
+        Array.prototype.slice.call(crBody.querySelectorAll('[data-cr-proposed]')).forEach(function(row,index){row.setAttribute('data-cr-proposed',index);row.querySelectorAll('[data-rv-name]').forEach(function(inp){inp.setAttribute('data-rv-name','cr-stop-'+index);});row.querySelectorAll('[data-act^="cr-stop-"]').forEach(function(btn){btn.setAttribute('data-i',index);});var num=row.querySelector('.review-stop-num');if(num)num.textContent=index+1;});
+      }
+    }
     else if (act === 'review-stop-up' || act === 'review-stop-down') {
       var reviewRow=b.closest('[data-rv-stop]'), reviewBody=$('#dlgBody'), reviewRows=Array.prototype.slice.call(reviewBody.querySelectorAll('[data-rv-stop]'));
       var ri=reviewRows.indexOf(reviewRow), other=act==='review-stop-up'?reviewRows[ri-1]:reviewRows[ri+1];
