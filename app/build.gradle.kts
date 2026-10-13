@@ -33,7 +33,21 @@ android {
         }
     }
 
+    // Development/testing key restored so every CI Debug APK keeps the same certificate.
+    // The base64 file is decoded locally on demand; generated JKS is ignored by Git.
+    val testingKeyFile = file("bustime.jks")
+    val testingKeyBase64File = file("bustime-testing-keystore.base64")
+    if (!testingKeyFile.exists() && testingKeyBase64File.exists()) {
+        testingKeyFile.writeBytes(java.util.Base64.getMimeDecoder().decode(testingKeyBase64File.readText()))
+    }
+
     signingConfigs {
+        create("debugKey") {
+            storeFile = testingKeyFile
+            storePassword = "bustime123"
+            keyAlias = "bustime"
+            keyPassword = "bustime123"
+        }
         if (hasReleaseKey) {
             create("releaseKey") {
                 storeFile = file(releaseStorePath!!)
@@ -45,7 +59,9 @@ android {
     }
 
     buildTypes {
-        // Android/Gradle का standard debug keystore इस्तेमाल करें; CI में app/bustime.jks जरूरी नहीं।
+        debug {
+            signingConfig = signingConfigs.getByName("debugKey")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
