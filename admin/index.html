@@ -1004,21 +1004,41 @@ function driverFormHtml() {
 var adSubtab = 'my';
 var adConfig = {
   my:{enabled:false,category:'general',poster_url:'',start_date:'',end_date:'',close_delay:3,
-    route_id:'',call_enabled:false,phone:'',link_enabled:false,url:'',check_route_enabled:false,cta_label:'Learn more'},
+    route_id:'',target_kind:'route',target_id:'',call_enabled:false,phone:'',link_enabled:false,url:'',check_route_enabled:false,cta_label:'Learn more'},
   admob:{banner_enabled:false,native_enabled:false,banner_unit_id:'',native_unit_id:'',placements:['bus_search_top'],
     bus_every:4,taxi_every:4,auto_every:4}
 };
 function adEscape(v){return esc(v==null?'':String(v));}
-function adRouteOptions(selected){
-  var routes=(data&&data.routes)||[];
-  return '<option value="">Choose an existing bus route</option>'+routes.map(function(r){
-    var id=String(r.id||r.routeId||r.route_id||'');
-    var from=String(r.fromName||r.from_name||r.from||r.fromId||r.from_id||'');
-    var to=String(r.toName||r.to_name||r.to||r.toId||r.to_id||'');
-    var time=String(r.time||r.departureTime||r.departure_time||'');
-    return '<option value="'+adEscape(id)+'" '+(id===String(selected||'')?'selected':'')+'>'+adEscape(from+' → '+to+(time?' · '+time:''))+'</option>';
-  }).join('');
+var adTargetCache={routes:[],operators:[],taxi:[],auto:[]};
+function adTargetLabel(x,kind){
+  if(kind==='route'){var a=x.fromName||x.from_name||x.from||x.fromId||x.from_id||x.origin||'',z=x.toName||x.to_name||x.to||x.toId||x.to_id||x.destination||'',t=x.time||x.departureTime||x.departure_time||'';return String(a||'Route')+' → '+String(z||'Destination')+(t?' · '+t:'');}
+  if(kind==='operator')return String(x.operator_name||x.service_name||x.name||'Bus operator')+(x.from_text||x.to_text?' · '+String(x.from_text||'')+' → '+String(x.to_text||''):'');
+  return String(x.vehicle_name||x.person_name||x.name||x.driver_name||'Vehicle listing')+(x.location?' · '+x.location:'')+(x.seats?' · '+x.seats+' seats':'');
 }
+function adTargetOptions(){
+  var cat=(document.getElementById('ad_category')||{}).value||adConfig.my.category||'general';
+  var savedKind=adConfig.my.target_kind||'route',savedId=String(adConfig.my.target_id||adConfig.my.route_id||''),groups=[];
+  if(cat==='bus_operator'){groups.push(['Bus routes',adTargetCache.routes,'route']);groups.push(['Bus / operator booking listings',adTargetCache.operators,'operator']);}
+  else if(cat==='taxi')groups.push(['Listed taxi services / drivers',adTargetCache.taxi,'taxi']);
+  else if(cat==='auto')groups.push(['Listed auto services / drivers',adTargetCache.auto,'auto']);
+  var out='<option value="">Choose a listed target</option>';
+  groups.forEach(function(g){out+='<optgroup label="'+g[0]+'">'+g[1].map(function(x){
+    var id=String(x.id||x.routeId||x.route_id||x.operator_id||x.vehicle_id||''),kind=g[2],value=kind+':'+id;
+    return '<option value="'+adEscape(value)+'" '+(savedKind===kind&&savedId===id?'selected':'')+'>'+adEscape(adTargetLabel(x,kind))+'</option>';
+  }).join('')+'</optgroup>';});
+  if(groups.every(function(g){return !g[1].length;}))out+='<option disabled value="">No listings found for this category</option>';
+  return out;
+}
+async function loadAdTargets(){
+  adTargetCache.routes=((data&&data.routes)||[]).slice();
+  try{adTargetCache.operators=await sbFetch('/rest/v1/bus_operators?select=*&active=eq.true&order=operator_name.asc&limit=500');}catch(e){adTargetCache.operators=[];}
+  try{var submittedBuses=await sbFetch('/rest/v1/bus_operator_submissions?select=*&status=eq.approved&order=created_at.desc&limit=500');adTargetCache.operators=adTargetCache.operators.concat(submittedBuses);}catch(e){}
+  var drivers=(data&&data.drivers)||[];
+  adTargetCache.taxi=drivers.filter(function(x){return String(x.type||x.vehicle_type||'').toLowerCase()==='taxi';});
+  adTargetCache.auto=drivers.filter(function(x){return String(x.type||x.vehicle_type||'').toLowerCase()==='auto';});
+  try{var vehicles=await sbFetch('/rest/v1/vehicle_submissions?select=*&status=eq.approved&order=created_at.desc&limit=500');vehicles.forEach(function(x){(String(x.vehicle_type).toLowerCase()==='taxi'?adTargetCache.taxi:adTargetCache.auto).push(x);});}catch(e){}
+}
+function refreshAdTargets(){var select=document.getElementById('ad_target_id');if(select)select.innerHTML=adTargetOptions();}
 function adChecked(v){return v?' checked':'';}
 function viewAdvertisement(){
   var my=adSubtab==='my';
@@ -1026,12 +1046,12 @@ function viewAdvertisement(){
   var html='<div class="ad-workspace"><div class="ad-tabs"><button class="btn '+(my?'primary':'')+'" data-act="ad-subtab" data-sub="my">My Advertisement</button><button class="btn '+(!my?'primary':'')+'" data-act="ad-subtab" data-sub="admob">AdMob Ads</button></div>';
   if(my){
     html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Campaign setup</h2><p class="muted">A framed, dismissible poster shown at app launch — not a fullscreen ad.</p></div><label class="ad-check"><input id="ad_my_enabled" type="checkbox"'+adChecked(c.enabled)+'> Campaign enabled</label></div>'+
-    '<div class="ad-grid"><div class="ad-field"><label>Campaign category</label><select id="ad_category"><option value="general" '+(c.category==='general'?'selected':'')+'>General promotion</option><option value="bus_operator" '+(c.category==='bus_operator'?'selected':'')+'>Bus / operator booking</option><option value="taxi" '+(c.category==='taxi'?'selected':'')+'>Taxi service / driver</option><option value="auto" '+(c.category==='auto'?'selected':'')+'>Auto service / driver</option></select></div><div class="ad-field"><label>Close button delay</label><select id="ad_close_delay"><option value="2" '+(Number(c.close_delay)===2?'selected':'')+'>2 seconds</option><option value="3" '+(Number(c.close_delay||3)===3?'selected':'')+'>3 seconds (recommended)</option><option value="4" '+(Number(c.close_delay)===4?'selected':'')+'>4 seconds</option></select></div></div>'+
+    '<div class="ad-grid"><div class="ad-field"><label>Campaign category</label><select id="ad_category" onchange="refreshAdTargets()"><option value="general" '+(c.category==='general'?'selected':'')+'>General promotion</option><option value="bus_operator" '+(c.category==='bus_operator'?'selected':'')+'>Bus / operator booking</option><option value="taxi" '+(c.category==='taxi'?'selected':'')+'>Taxi service / driver</option><option value="auto" '+(c.category==='auto'?'selected':'')+'>Auto service / driver</option></select></div><div class="ad-field"><label>Close button delay</label><select id="ad_close_delay"><option value="2" '+(Number(c.close_delay)===2?'selected':'')+'>2 seconds</option><option value="3" '+(Number(c.close_delay||3)===3?'selected':'')+'>3 seconds (recommended)</option><option value="4" '+(Number(c.close_delay)===4?'selected':'')+'>4 seconds</option></select></div></div>'+
     '<div class="ad-subhead">Poster artwork</div><div class="ad-field"><label>Public poster image URL</label><input id="ad_poster_url" value="'+adEscape(c.poster_url)+'" placeholder="https://..."></div>'+
     '<div class="ad-grid" style="margin-top:10px"><div class="ad-field"><label>Upload poster</label><input id="ad_poster_file" type="file" accept="image/png,image/jpeg,image/webp"><p class="muted ad-help">Recommended: 1080 × 1350 px (4:5), max 8 MB.</p></div>'+(c.poster_url?'<div class="ad-poster"><img src="'+adEscape(c.poster_url)+'" alt="Poster preview"><span>Current campaign artwork<br>Preview uses the saved image URL.</span></div>':'<div class="ad-poster"><span>Poster preview will appear here after an image URL is set.</span></div>')+'</div>'+
     '<div class="ad-subhead">Campaign schedule</div><div class="ad-grid"><div class="ad-field"><label>Start date</label><input id="ad_start_date" type="date" value="'+adEscape(c.start_date)+'"></div><div class="ad-field"><label>End date</label><input id="ad_end_date" type="date" value="'+adEscape(c.end_date)+'"></div></div>'+
     '<div class="ad-subhead">Optional call-to-action buttons</div><p class="muted ad-help">Only the actions enabled below will appear with the campaign.</p>'+
-    '<div class="ad-grid" style="margin-top:10px"><div><label class="ad-check"><input id="ad_check_route_enabled" type="checkbox"'+adChecked(c.check_route_enabled)+'> Check Route button</label><div class="ad-field" style="margin-top:8px"><label>Existing bus route</label><select id="ad_route_id">'+adRouteOptions(c.route_id)+'</select></div></div>'+
+    '<div class="ad-grid" style="margin-top:10px"><div><label class="ad-check"><input id="ad_check_route_enabled" type="checkbox"'+adChecked(c.check_route_enabled)+'> Check Route button</label><div class="ad-field" style="margin-top:8px"><label>Choose listed route / operator / vehicle</label><select id="ad_target_id" onchange="var s=document.getElementById('ad_route_id');if(s)s.value=this.value.split(':').slice(1).join(':')">'+adTargetOptions()+'</select><input id="ad_route_id" type="hidden" value="'+adEscape(c.route_id)+'"></div></div>'+
     '<div><label class="ad-check"><input id="ad_call_enabled" type="checkbox"'+adChecked(c.call_enabled)+'> Call button</label><div class="ad-field" style="margin-top:8px"><label>Phone number</label><input id="ad_phone" inputmode="tel" value="'+adEscape(c.phone)+'" placeholder="+91..."></div></div>'+
     '<div><label class="ad-check"><input id="ad_link_enabled" type="checkbox"'+adChecked(c.link_enabled)+'> Custom link button</label><div class="ad-field" style="margin-top:8px"><label>Destination URL (https://)</label><input id="ad_url" type="url" value="'+adEscape(c.url)+'" placeholder="https://example.com"></div></div>'+
     '<div class="ad-field"><label>Custom button label</label><input id="ad_cta_label" value="'+adEscape(c.cta_label||'Learn more')+'"></div></div>'+
@@ -1050,6 +1070,7 @@ function viewAdvertisement(){
 }
 async function loadAdConfig(){
   if(!cfg.sbUrl||!cfg.sbKey)return;
+  await loadAdTargets();
   var rows=await sbFetch('/rest/v1/ad_settings?select=config&id=eq.1',{method:'GET'});
   if(rows&&rows[0]&&rows[0].config){
     var saved=rows[0].config;
@@ -2337,7 +2358,10 @@ document.addEventListener('click', async function (e) {
       adConfig.my.start_date=document.getElementById('ad_start_date').value;
       adConfig.my.end_date=document.getElementById('ad_end_date').value;
       adConfig.my.check_route_enabled=document.getElementById('ad_check_route_enabled').checked;
-      adConfig.my.route_id=document.getElementById('ad_route_id').value;
+      var targetValue=document.getElementById('ad_target_id').value;
+      adConfig.my.target_kind=targetValue?targetValue.split(':')[0]:'';
+      adConfig.my.target_id=targetValue?targetValue.substring(targetValue.indexOf(':')+1):'';
+      adConfig.my.route_id=adConfig.my.target_kind==='route'?adConfig.my.target_id:'';
       adConfig.my.call_enabled=document.getElementById('ad_call_enabled').checked;
       adConfig.my.phone=document.getElementById('ad_phone').value.trim();
       adConfig.my.link_enabled=document.getElementById('ad_link_enabled').checked;
@@ -2345,7 +2369,7 @@ document.addEventListener('click', async function (e) {
       adConfig.my.cta_label=document.getElementById('ad_cta_label').value.trim()||'Learn more';
       if(adConfig.my.enabled&&!adConfig.my.poster_url)throw new Error('Upload or enter a poster URL before enabling the campaign.');
       if(adConfig.my.start_date&&adConfig.my.end_date&&adConfig.my.end_date<adConfig.my.start_date)throw new Error('Campaign end date must be on/after start date.');
-      if(adConfig.my.check_route_enabled&&!adConfig.my.route_id)throw new Error('Choose an existing bus route for Check Route.');
+      if(adConfig.my.check_route_enabled&&!adConfig.my.target_id)throw new Error('Choose a listed route, operator, taxi or auto target for this campaign.');
       if(adConfig.my.call_enabled&&!adConfig.my.phone)throw new Error('Enter a phone number for Call.');
       if(adConfig.my.link_enabled&&!/^https?:\/\//i.test(adConfig.my.url))throw new Error('Enter a valid http:// or https:// URL.');
       await saveAdConfig();toast('My Advertisement settings saved.');render();
