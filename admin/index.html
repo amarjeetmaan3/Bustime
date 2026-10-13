@@ -364,7 +364,7 @@ function saveAdminSession(session) {
 }
 async function verifySingleAdmin() {
   if (!sbToken) return false;
-  var res = await fetch(cfg.sbUrl.replace(/\\/+$/, '') + '/auth/v1/user', {
+  var res = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/user', {
     headers:{apikey:cfg.sbKey, Authorization:'Bearer '+sbToken}
   });
   if (!res.ok) { saveAdminSession({}); return false; }
@@ -379,7 +379,7 @@ async function restoreAdminSession() {
   try {
     var stored = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
     if (!stored || !stored.refresh_token || !cfg.sbUrl || !cfg.sbKey) return false;
-    var res = await fetch(cfg.sbUrl.replace(/\\/+$/, '') + '/auth/v1/token?grant_type=refresh_token', {
+    var res = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/token?grant_type=refresh_token', {
       method:'POST', headers:{apikey:cfg.sbKey,'Content-Type':'application/json'},
       body:JSON.stringify({refresh_token:stored.refresh_token})
     });
@@ -2234,7 +2234,7 @@ document.addEventListener('click', async function (e) {
       tab = 'dashboard'; render();
     }
     else if (act === 'sb-logout') {
-      try { if (sbToken) await fetch(cfg.sbUrl.replace(/\\/+$/, '') + '/auth/v1/logout', {method:'POST',headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken}}); } catch (_) {}
+      try { if (sbToken) await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/logout', {method:'POST',headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken}}); } catch (_) {}
       saveAdminSession({}); subs = null; community = {corrections:[],vehicles:[],busSubmissions:[],feedback:[]}; render();
     }
     else if (act === 'sb-refresh') { subs = null; render(); await Promise.all([loadSubs(), loadCommunity()]); render(); }
