@@ -205,6 +205,7 @@ class AddRouteActivity : AppCompatActivity() {
 
     private lateinit var repo: AppRepository
     private lateinit var tvStart: TextView
+    private lateinit var tvEndTime: TextView
     private lateinit var stopsBox: LinearLayout
     private lateinit var newStopsBox: LinearLayout
     private lateinit var btnSubmit: Button
@@ -212,6 +213,7 @@ class AddRouteActivity : AppCompatActivity() {
     private var routes: List<Route> = emptyList()
     private var selected: Route? = null
     private var startTime: String? = null
+    private var endTime: String? = null
     private val existingRows = ArrayList<ExistingStop>()
     private val newRows = ArrayList<NewStop>()
 
@@ -221,6 +223,7 @@ class AddRouteActivity : AppCompatActivity() {
         repo = AppRepository.getInstance(this)
         refreshPlaceSuggestions()
         tvStart = findViewById(R.id.tvStartTime)
+        tvEndTime = findViewById(R.id.tvEndTime)
         stopsBox = findViewById(R.id.stopsBox)
         newStopsBox = findViewById(R.id.newStopsBox)
         btnSubmit = findViewById(R.id.btnSubmitRoute)
@@ -239,6 +242,11 @@ class AddRouteActivity : AppCompatActivity() {
         tvStart.setOnClickListener {
             pickTime(startTime) { t ->
                 if (t == null || fitsOrder(replaceStart = t)) { startTime = t; showTime(tvStart, t) }
+            }
+        }
+        tvEndTime.setOnClickListener {
+            pickTime(endTime) { t ->
+                if (t == null || fitsOrder(replaceEnd = t)) { endTime = t; showTime(tvEndTime, t) }
             }
         }
         btnSubmit.setOnClickListener { submit() }
@@ -271,13 +279,16 @@ class AddRouteActivity : AppCompatActivity() {
             findViewById<EditText>(R.id.etFromText).text.clear()
             findViewById<EditText>(R.id.etToText).text.clear()
             startTime = null
+            endTime = null
             selected = null
             existingRows.clear()
             newRows.clear()
             stopsBox.removeAllViews()
             newStopsBox.removeAllViews()
             showTime(tvStart, null)
+            showTime(tvEndTime, null)
         }
+        tvEndTime.visibility = if (newMode) View.VISIBLE else View.GONE
         // Keep one shared From/To editor on screen in both modes.
         findViewById<View>(R.id.layoutExisting).visibility = if (newMode) View.GONE else View.VISIBLE
         // Both modes use the same stop editor and row layout. Only route selection differs.
@@ -368,7 +379,9 @@ class AddRouteActivity : AppCompatActivity() {
             }
             refreshStopRowNumbers()
             startTime = route.time
+            endTime = stops.lastOrNull { it.placeId == route.toId }?.time
             showTime(tvStart, startTime)
+            showTime(tvEndTime, endTime)
         }
     }
 
@@ -551,11 +564,13 @@ class AddRouteActivity : AppCompatActivity() {
     private fun orderedTimes(
         replaceStart: String? = null,
         existingRow: ExistingStop? = null, existingTime: String? = null,
-        newRow: NewStop? = null, newTime: String? = null
+        newRow: NewStop? = null, newTime: String? = null,
+        replaceEnd: String? = null
     ): List<String?> {
         val out = ArrayList<String?>()
         out.add(replaceStart ?: startTime)
         existingRows.forEach { out.add(if (it === existingRow) existingTime else it.time) }
+        if (isNew) out.add(replaceEnd ?: endTime)
         return out
     }
 
@@ -563,9 +578,10 @@ class AddRouteActivity : AppCompatActivity() {
     private fun fitsOrder(
         replaceStart: String? = null,
         existingRow: ExistingStop? = null, existingTime: String? = null,
-        newRow: NewStop? = null, newTime: String? = null
+        newRow: NewStop? = null, newTime: String? = null,
+        replaceEnd: String? = null
     ): Boolean {
-        val ok = TimeFlow.resolve(orderedTimes(replaceStart, existingRow, existingTime, newRow, newTime)).badIndex < 0
+        val ok = TimeFlow.resolve(orderedTimes(replaceStart, existingRow, existingTime, newRow, newTime, replaceEnd)).badIndex < 0
         if (!ok) Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show()
         return ok
     }
@@ -593,12 +609,19 @@ class AddRouteActivity : AppCompatActivity() {
                 .put("name", nm)
                 .put("time", row.time ?: JSONObject.NULL))
         }
-        val anyTime = !startTime.isNullOrBlank() || existingRows.any { !it.time.isNullOrBlank() }
+        // New routes store the destination as the final stop so its timing is reviewed and published too.
+        if (isNew) {
+            stops.put(JSONObject()
+                .put("place", JSONObject.NULL)
+                .put("name", toText)
+                .put("time", endTime ?: JSONObject.NULL))
+        }
+        val anyTime = !startTime.isNullOrBlank() || !endTime.isNullOrBlank() || existingRows.any { !it.time.isNullOrBlank() }
         if (!anyTime) {
             Toast.makeText(this, R.string.ar_need_time, Toast.LENGTH_LONG).show()
             return
         }
-        // Validate order among only real, non-empty times; blank stop times are optional.
+        // At least one time is mandatory; all other stop times may remain blank.
         if (TimeFlow.resolve(orderedTimes().filterNotNull().filter { it.isNotBlank() }).badIndex >= 0) {
             Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show()
             return
