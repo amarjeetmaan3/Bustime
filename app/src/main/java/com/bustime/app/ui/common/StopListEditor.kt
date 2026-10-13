@@ -118,11 +118,15 @@ class StopListEditor(
                 return order.mapNotNull { p.names[it]?.trim()?.takeIf { v -> v.isNotBlank() } }.distinct().joinToString(" • ")
             }
             var filteredPlaces = allPlaces.toList()
+            // The dropdown may show all translations for identification, but the value saved
+            // in a stop draft must be only the selected language's name (never the whole label).
+            var selectingSuggestion = false
             val adapter = ArrayAdapter(activity, android.R.layout.simple_dropdown_item_1line, filteredPlaces.map { suggestionLabel(it, initialLang) })
             name.setAdapter(adapter)
             name.addTextChangedListener(object : android.text.TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    if (selectingSuggestion) return
                     val q = s?.toString().orEmpty()
                     draft.put("name", q).put("place_id", JSONObject.NULL)
                     val lang = when {
@@ -146,8 +150,12 @@ class StopListEditor(
                 val p = filteredPlaces.getOrNull(pos)
                 if (p != null) {
                     val lang = draft.optString("language", LanguageHelper.current())
-                    draft.put("place_id", p.id).put("name", p.displayName(lang))
-                    name.setText(p.displayName(lang), false)
+                    val selectedName = p.displayName(lang).trim()
+                    selectingSuggestion = true
+                    draft.put("place_id", p.id).put("name", selectedName).put("language", lang)
+                    name.setText(selectedName, false)
+                    name.setSelection(name.text.length)
+                    selectingSuggestion = false
                 }
             }
             row.addView(name, LinearLayout.LayoutParams(0, dp(44), 1f))
