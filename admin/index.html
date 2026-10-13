@@ -800,7 +800,7 @@ function viewRoutes() {
       return '<tr><td><span class="route-time">' + esc(fmtTime(r.time)) + '</span>' +
         (r.arrive ? '<div class="route-subline">Arrival ' + esc(fmtTime(r.arrive)) + '</div>' : '') + '</td>' +
         '<td><div class="route-line"><span class="endpoint">' + esc(from) + '</span><span class="arrow">→</span><span class="endpoint">' + esc(to) + '</span></div>' +
-        '<div class="route-subline">' + esc(r.from || '') + ' · ' + esc(r.to || '') + (r.longRoute ? ' · Long route' : '') + '</div></td>' +
+        '<div class="route-subline">' + esc(r.from || '') + ' · ' + esc(r.to || '') + '</div></td>' +
         '<td>' + (r.service ? '<b>' + esc(r.service) + '</b>' : '<span class="muted">No service name</span>') +
         (r.contact ? '<div class="route-subline">Contact: ' + esc(r.contact) + '</div>' : '') + '</td>' +
         '<td><span class="route-count">' + stopCount + '</span><div class="route-subline">' + (r.stops || []).length + ' intermediate</div></td>' +
@@ -819,8 +819,8 @@ function placeOptions(sel) {
 }
 function routePlaceFields(prefix, placeId) {
   var place=placeId?placeById(placeId):null,names=place&&place.name?place.name:{};
-  function field(lang,label){var opts=(data.places||[]).map(function(p){var v=(p.name||{})[lang];return v?'<option value="'+esc(v)+'"></option>':'';}).join('');
-    return '<div><input aria-label="'+label+'" placeholder="'+label+'" list="route-place-'+lang+'" data-route-name="'+esc(prefix)+'" data-lang="'+lang+'" data-autofilled="'+(lang!=='en'?'true':'false')+'" value="'+esc(names[lang]||'')+'"><datalist id="route-place-'+lang+'">'+opts+'</datalist></div>';}
+  function field(lang,label){var seen={},opts=(data.places||[]).map(function(p){var v=String((p.name||{})[lang]||'').trim(),key=v.toLocaleLowerCase();if(!v||seen[key])return '';seen[key]=true;return '<option value="'+esc(v)+'"></option>';}).join(''),listId='route-place-'+prefix+'-'+lang;
+    return '<div><input aria-label="'+label+'" placeholder="'+label+'" list="'+esc(listId)+'" data-route-name="'+esc(prefix)+'" data-lang="'+lang+'" data-autofilled="'+(lang!=='en'?'true':'false')+'" value="'+esc(names[lang]||'')+'"><datalist id="'+esc(listId)+'">'+opts+'</datalist></div>';}
   return '<div class="route-place-fields"><input type="hidden" data-route-id="'+esc(prefix)+'" value="'+esc(placeId||'')+'">'+field('en','English')+field('hi','हिंदी')+field('pa','ਪੰਜਾਬੀ')+'</div>';
 }
 function stopRow(place, time) {
@@ -1402,6 +1402,7 @@ function renderModal() {
     $('#dlgTitle').textContent = (editing.index < 0 ? 'Add ' : 'Edit ') + titles[editing.type];
     $('#dlgBody').innerHTML = { place: placeFormHtml, route: routeFormHtml, driver: driverFormHtml }[editing.type]();
     ov.classList.add('show');
+    if(editing.type==='route')initRouteAutoTranslation();
   } else {
     ov.classList.remove('show');
   }
@@ -1581,7 +1582,7 @@ document.addEventListener('click', async function (e) {
     else if (act === 'reverse-route') {
       var src = data.routes[i];
       editing = { type: 'route', index: -1, draft: {
-        from: src.to, to: src.from, time: '', service: src.service, contact: src.contact, info: src.info, longRoute: !!src.longRoute, startDate: src.startDate,
+        from: src.to, to: src.from, time: '', service: src.service, contact: src.contact, info: src.info,
         stops: (src.stops || []).slice().reverse().map(function (s) { return { place: s.place }; })
       } };
       render(); toast('Return route prepared. Fill in the times and save.');
