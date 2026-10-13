@@ -283,6 +283,31 @@
     header.top, main { padding:12px; }
     .row2 { grid-template-columns:1fr; }
   }
+
+  /* Advertisement workspace: compact, editorial layout rather than oversized generic cards */
+  .ad-workspace { max-width:1080px; }
+  .ad-workspace .ad-tabs { display:inline-flex; gap:4px; padding:4px; background:#E9EEF7; border:1px solid #DCE4F0; border-radius:11px; margin-bottom:16px; }
+  .ad-workspace .ad-tabs .btn { min-width:148px; border:0; background:transparent; box-shadow:none; padding:8px 13px; }
+  .ad-workspace .ad-tabs .btn.primary { background:#fff; color:#173B91; box-shadow:0 1px 4px rgba(18,35,65,.12); }
+  .ad-workspace .ad-panel { padding:18px 20px; margin-bottom:12px; border-radius:12px; box-shadow:0 2px 8px rgba(22,34,55,.025); }
+  .ad-workspace .ad-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; }
+  .ad-workspace .ad-heading h2 { margin:0 0 4px; font-size:17px; }
+  .ad-workspace .ad-heading p { margin:0; max-width:620px; }
+  .ad-workspace .ad-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 16px; }
+  .ad-workspace .ad-field label { margin:0 0 5px; }
+  .ad-workspace .ad-field input,.ad-workspace .ad-field select { min-height:37px; padding:7px 10px; }
+  .ad-workspace .ad-check { display:flex; align-items:center; gap:9px; margin:0; padding:9px 11px; background:#F7F9FC; border:1px solid #E7ECF4; border-radius:9px; color:#344054; font-size:13px; font-weight:650; text-transform:none; letter-spacing:0; }
+  .ad-workspace .ad-check input { width:15px; min-height:15px; height:15px; margin:0; accent-color:#2458D3; }
+  .ad-workspace .ad-subhead { margin:18px 0 8px; font-size:13px; font-weight:750; color:#344054; }
+  .ad-workspace .ad-help { margin:5px 0 0; font-size:12px; }
+  .ad-workspace .ad-poster { display:flex; align-items:center; gap:14px; margin-top:10px; padding:10px; background:#F8FAFD; border:1px solid #E5EAF2; border-radius:10px; }
+  .ad-workspace .ad-poster img { width:92px; max-height:116px; object-fit:contain; border-radius:6px; background:#fff; }
+  .ad-workspace .ad-poster span { color:#66758A; font-size:12px; }
+  .ad-workspace .ad-placements { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+  .ad-workspace .ad-savebar { display:flex; justify-content:flex-end; margin-top:18px; padding-top:14px; border-top:1px solid #E9EDF4; }
+  .ad-workspace .ad-savebar .btn { min-width:180px; }
+  @media(max-width:760px) { .ad-workspace .ad-grid,.ad-workspace .ad-placements { grid-template-columns:1fr; } .ad-workspace .ad-panel { padding:15px; } .ad-workspace .ad-heading { display:block; } .ad-workspace .ad-tabs { display:flex; width:100%; } .ad-workspace .ad-tabs .btn { min-width:0; flex:1; } }
+
 </style>
 </head>
 <body>
@@ -998,33 +1023,30 @@ function adChecked(v){return v?' checked':'';}
 function viewAdvertisement(){
   var my=adSubtab==='my';
   var c=my?adConfig.my:adConfig.admob;
-  var html='<div class="row2" style="margin-bottom:14px"><button class="btn '+(my?'primary':'')+'" data-act="ad-subtab" data-sub="my">My Advertisement</button><button class="btn '+(!my?'primary':'')+'" data-act="ad-subtab" data-sub="admob">AdMob Ads</button></div>';
+  var html='<div class="ad-workspace"><div class="ad-tabs"><button class="btn '+(my?'primary':'')+'" data-act="ad-subtab" data-sub="my">My Advertisement</button><button class="btn '+(!my?'primary':'')+'" data-act="ad-subtab" data-sub="admob">AdMob Ads</button></div>';
   if(my){
-    html+='<div class="card"><h2>My Advertisement</h2><p class="muted">App launch पर margin वाला poster दिखेगा; यह fullscreen ad नहीं है। Close (×) '+adEscape(c.close_delay)+' सेकंड बाद active होगा।</p>'+
-    '<label><input id="ad_my_enabled" type="checkbox"'+adChecked(c.enabled)+'> Enable My Advertisement</label>'+
-    '<div class="row2"><div><label>Ad category</label><select id="ad_category"><option value="general" '+(c.category==='general'?'selected':'')+'>General promotion</option><option value="bus_operator" '+(c.category==='bus_operator'?'selected':'')+'>Registered bus/operator booking</option><option value="taxi" '+(c.category==='taxi'?'selected':'')+'>Taxi service/driver</option><option value="auto" '+(c.category==='auto'?'selected':'')+'>Auto service/driver</option></select></div><div><label>Close button delay (seconds)</label><input id="ad_close_delay" type="number" min="2" max="4" value="'+adEscape(c.close_delay||3)+'"></div></div>'+
-    '<label>Poster image URL (upload below or use public image URL)</label><input id="ad_poster_url" value="'+adEscape(c.poster_url)+'" placeholder="https://...">'+
-    '<label>Upload poster image</label><input id="ad_poster_file" type="file" accept="image/png,image/jpeg,image/webp"><p class="muted">Recommended custom poster artwork: 1080 × 1350 px (4:5).</p>'+
-    (c.poster_url?'<img src="'+adEscape(c.poster_url)+'" alt="Poster preview" style="display:block;max-width:260px;width:100%;max-height:340px;object-fit:contain;border:1px solid var(--line);border-radius:12px;margin:10px auto">':'')+
-    '<div class="row2"><div><label>Campaign start date</label><input id="ad_start_date" type="date" value="'+adEscape(c.start_date)+'"></div><div><label>Campaign end date</label><input id="ad_end_date" type="date" value="'+adEscape(c.end_date)+'"></div></div>'+
-    '<h3>Optional actions</h3><p class="muted">Only enabled actions will appear on the poster.</p>'+
-    '<label><input id="ad_check_route_enabled" type="checkbox"'+adChecked(c.check_route_enabled)+'> Show Check Route button</label><label>Link to existing bus route</label><select id="ad_route_id">'+adRouteOptions(c.route_id)+'</select>'+
-    '<label><input id="ad_call_enabled" type="checkbox"'+adChecked(c.call_enabled)+'> Show Call button</label><label>Phone number (opens phone dialer)</label><input id="ad_phone" inputmode="tel" value="'+adEscape(c.phone)+'" placeholder="+91...">'+
-    '<label><input id="ad_link_enabled" type="checkbox"'+adChecked(c.link_enabled)+'> Show Custom Link button</label><label>Custom URL (https://...)</label><input id="ad_url" type="url" value="'+adEscape(c.url)+'" placeholder="https://example.com">'+
-    '<label>Custom link button label</label><input id="ad_cta_label" value="'+adEscape(c.cta_label||'Learn more')+'">'+
-    '<div style="margin-top:16px"><button class="btn primary" data-act="ad-save-my">Save My Advertisement</button></div></div>';
+    html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Campaign setup</h2><p class="muted">A framed, dismissible poster shown at app launch — not a fullscreen ad.</p></div><label class="ad-check"><input id="ad_my_enabled" type="checkbox"'+adChecked(c.enabled)+'> Campaign enabled</label></div>'+
+    '<div class="ad-grid"><div class="ad-field"><label>Campaign category</label><select id="ad_category"><option value="general" '+(c.category==='general'?'selected':'')+'>General promotion</option><option value="bus_operator" '+(c.category==='bus_operator'?'selected':'')+'>Bus / operator booking</option><option value="taxi" '+(c.category==='taxi'?'selected':'')+'>Taxi service / driver</option><option value="auto" '+(c.category==='auto'?'selected':'')+'>Auto service / driver</option></select></div><div class="ad-field"><label>Close button delay</label><select id="ad_close_delay"><option value="2" '+(Number(c.close_delay)===2?'selected':'')+'>2 seconds</option><option value="3" '+(Number(c.close_delay||3)===3?'selected':'')+'>3 seconds (recommended)</option><option value="4" '+(Number(c.close_delay)===4?'selected':'')+'>4 seconds</option></select></div></div>'+
+    '<div class="ad-subhead">Poster artwork</div><div class="ad-field"><label>Public poster image URL</label><input id="ad_poster_url" value="'+adEscape(c.poster_url)+'" placeholder="https://..."></div>'+
+    '<div class="ad-grid" style="margin-top:10px"><div class="ad-field"><label>Upload poster</label><input id="ad_poster_file" type="file" accept="image/png,image/jpeg,image/webp"><p class="muted ad-help">Recommended: 1080 × 1350 px (4:5), max 8 MB.</p></div>'+(c.poster_url?'<div class="ad-poster"><img src="'+adEscape(c.poster_url)+'" alt="Poster preview"><span>Current campaign artwork<br>Preview uses the saved image URL.</span></div>':'<div class="ad-poster"><span>Poster preview will appear here after an image URL is set.</span></div>')+'</div>'+
+    '<div class="ad-subhead">Campaign schedule</div><div class="ad-grid"><div class="ad-field"><label>Start date</label><input id="ad_start_date" type="date" value="'+adEscape(c.start_date)+'"></div><div class="ad-field"><label>End date</label><input id="ad_end_date" type="date" value="'+adEscape(c.end_date)+'"></div></div>'+
+    '<div class="ad-subhead">Optional call-to-action buttons</div><p class="muted ad-help">Only the actions enabled below will appear with the campaign.</p>'+
+    '<div class="ad-grid" style="margin-top:10px"><div><label class="ad-check"><input id="ad_check_route_enabled" type="checkbox"'+adChecked(c.check_route_enabled)+'> Check Route button</label><div class="ad-field" style="margin-top:8px"><label>Existing bus route</label><select id="ad_route_id">'+adRouteOptions(c.route_id)+'</select></div></div>'+
+    '<div><label class="ad-check"><input id="ad_call_enabled" type="checkbox"'+adChecked(c.call_enabled)+'> Call button</label><div class="ad-field" style="margin-top:8px"><label>Phone number</label><input id="ad_phone" inputmode="tel" value="'+adEscape(c.phone)+'" placeholder="+91..."></div></div>'+
+    '<div><label class="ad-check"><input id="ad_link_enabled" type="checkbox"'+adChecked(c.link_enabled)+'> Custom link button</label><div class="ad-field" style="margin-top:8px"><label>Destination URL (https://)</label><input id="ad_url" type="url" value="'+adEscape(c.url)+'" placeholder="https://example.com"></div></div>'+
+    '<div class="ad-field"><label>Custom button label</label><input id="ad_cta_label" value="'+adEscape(c.cta_label||'Learn more')+'"></div></div>'+
+    '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-my">Save campaign</button></div></section>';
   }else{
-    var places=[['bus_search_top','Bus tab · below From/To/Search'],['bus_results','Bus results · after every N results'],['taxi_results','Taxi results · after every N results'],['taxi_filter_bottom','Below Taxi seat filters'],['auto_results','Auto/EV results']];
-    html+='<div class="card"><h2>AdMob Ads</h2><p class="muted">Only Banner and Native ads are configurable here. Interstitial/full-screen ads are not included.</p>'+
-    '<label><input id="ad_banner_enabled" type="checkbox"'+adChecked(c.banner_enabled)+'> Enable Banner Ads</label><label>Banner Ad Unit ID</label><input id="ad_banner_unit_id" value="'+adEscape(c.banner_unit_id)+'" placeholder="ca-app-pub-.../...">'+
-    '<label><input id="ad_native_enabled" type="checkbox"'+adChecked(c.native_enabled)+'> Enable Native Ads</label><label>Native Ad Unit ID</label><input id="ad_native_unit_id" value="'+adEscape(c.native_unit_id)+'" placeholder="ca-app-pub-.../...">'+
-    '<h3>Placements</h3>'+places.map(function(p){return '<label><input type="checkbox" name="ad_placement" value="'+p[0]+'"'+((c.placements||[]).indexOf(p[0])>=0?' checked':'')+'> '+p[1]+'</label>';}).join('')+
-    '<div class="row2"><div><label>Insert after every N Bus results</label><input id="ad_bus_every" type="number" min="1" max="20" value="'+adEscape(c.bus_every||4)+'"></div><div><label>Insert after every N Taxi results</label><input id="ad_taxi_every" type="number" min="1" max="20" value="'+adEscape(c.taxi_every||4)+'"></div></div>'+
-    '<label>Insert after every N Auto results</label><input id="ad_auto_every" type="number" min="1" max="20" value="'+adEscape(c.auto_every||4)+'">'+
-    '<p class="muted">Native ads must use Google’s native ad assets and be clearly labelled “Ad” or “Sponsored”; do not style them as real routes or drivers.</p>'+
-    '<button class="btn primary" data-act="ad-save-admob">Save AdMob Settings</button></div>';
+    var places=[['bus_search_top','Bus tab · below search'],['bus_results','Bus results · every N results'],['taxi_results','Taxi results · every N results'],['taxi_filter_bottom','Below taxi seat filters'],['auto_results','Auto / EV results']];
+    html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>AdMob inventory</h2><p class="muted">Configure banner and native placements. Interstitial and fullscreen ads are not included.</p></div></div>'+
+    '<div class="ad-grid"><div><label class="ad-check"><input id="ad_banner_enabled" type="checkbox"'+adChecked(c.banner_enabled)+'> Banner ads enabled</label><div class="ad-field" style="margin-top:8px"><label>Banner Ad Unit ID</label><input id="ad_banner_unit_id" value="'+adEscape(c.banner_unit_id)+'" placeholder="ca-app-pub-…/…"></div></div>'+
+    '<div><label class="ad-check"><input id="ad_native_enabled" type="checkbox"'+adChecked(c.native_enabled)+'> Native ads enabled</label><div class="ad-field" style="margin-top:8px"><label>Native Ad Unit ID</label><input id="ad_native_unit_id" value="'+adEscape(c.native_unit_id)+'" placeholder="ca-app-pub-…/…"></div></div></div>'+
+    '<div class="ad-subhead">Placement rules</div><div class="ad-placements">'+places.map(function(p){return '<label class="ad-check"><input type="checkbox" name="ad_placement" value="'+p[0]+'"'+((c.placements||[]).indexOf(p[0])>=0?' checked':'')+'> '+p[1]+'</label>';}).join('')+'</div>'+
+    '<div class="ad-grid" style="margin-top:12px"><div class="ad-field"><label>Bus results interval (N)</label><input id="ad_bus_every" type="number" min="1" max="20" value="'+adEscape(c.bus_every||4)+'"></div><div class="ad-field"><label>Taxi results interval (N)</label><input id="ad_taxi_every" type="number" min="1" max="20" value="'+adEscape(c.taxi_every||4)+'"></div><div class="ad-field"><label>Auto results interval (N)</label><input id="ad_auto_every" type="number" min="1" max="20" value="'+adEscape(c.auto_every||4)+'"></div></div>'+
+    '<p class="muted ad-help" style="margin-top:12px">Native ads must use Google’s native ad assets and display a clear “Ad” or “Sponsored” label. These settings do not by themselves add ad rendering to the Android app.</p>'+
+    '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-admob">Save AdMob settings</button></div></section>';
   }
-  return html;
+  return html+'</div>';
 }
 async function loadAdConfig(){
   if(!cfg.sbUrl||!cfg.sbKey)return;
