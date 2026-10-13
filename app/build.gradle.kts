@@ -34,13 +34,6 @@ android {
     }
 
     signingConfigs {
-        // सिर्फ़ टेस्ट (debug) बिल्ड के लिए। यह चाबी पब्लिक मानो, इससे Store ऐप कभी साइन मत करना।
-        create("debugKey") {
-            storeFile = file("bustime.jks")
-            storePassword = "bustime123"
-            keyAlias = "bustime"
-            keyPassword = "bustime123"
-        }
         if (hasReleaseKey) {
             create("releaseKey") {
                 storeFile = file(releaseStorePath!!)
@@ -52,9 +45,7 @@ android {
     }
 
     buildTypes {
-        debug {
-            signingConfig = signingConfigs.getByName("debugKey")
-        }
+        // Android/Gradle का standard debug keystore इस्तेमाल करें; CI में app/bustime.jks जरूरी नहीं।
         release {
             isMinifyEnabled = true
             isShrinkResources = true
