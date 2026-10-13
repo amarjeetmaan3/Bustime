@@ -20,7 +20,6 @@
             android:id="@+id/tabLayout"
             android:layout_width="match_parent"
             android:layout_height="42dp"
-            app:tabMinHeight="42dp"
             app:tabPaddingTop="0dp"
             app:tabPaddingBottom="0dp"
             app:tabMode="fixed"> <!-- 'fixed' करने से तीनों टैब पूरी स्क्रीन पर बराबर फ़ैल जाएंगे -->
