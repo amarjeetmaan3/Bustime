@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 34,
+  "dataVersion": 35,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -34,7 +34,8 @@
       "kind": "village",
       "name": {
         "en": "Dhani khichdran",
-        "hi": "ढाणी खिचढा़न"
+        "hi": "ढाणी खिचढा़न",
+        "pa": "ਧਨੀ ਖਿਚਡਰਾਂ"
       }
     },
     {
@@ -375,6 +376,46 @@
         "pa": "ਗੁਰੂ ਹਰ ਸਹਾਇ"
       },
       "aliases": []
+    },
+    {
+      "id": "place_user_amarjeet",
+      "kind": "place",
+      "name": {
+        "en": "Amarjeet",
+        "hi": "अमरजीत",
+        "pa": "ਅਮਰਜੀਤ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_king",
+      "kind": "place",
+      "name": {
+        "en": "King",
+        "hi": "किंग",
+        "pa": "ਕਿੰਗ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_maan",
+      "kind": "place",
+      "name": {
+        "en": "maan",
+        "hi": "जीत",
+        "pa": "ਮਾਨ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_gurdas_maan",
+      "kind": "place",
+      "name": {
+        "en": "Gurdas Maan",
+        "hi": "गुरदास मान",
+        "pa": "ਗੁਰਦਾਸ ਮਾਨ"
+      },
+      "aliases": []
     }
   ],
   "routes": [
@@ -572,13 +613,80 @@
         },
         {
           "place": "place_user_bikaner",
-          "time": "00:00",
-          "day_offset": 1
+          "time": "12:00"
         },
         {
           "place": "place_user_chandigarh",
-          "time": "13:00",
-          "day_offset": 1
+          "time": "13:00"
+        }
+      ]
+    },
+    {
+      "id": "r6",
+      "from": "place_user_amarjeet",
+      "to": "place_user_king",
+      "time": "17:11",
+      "arrive": "18:00",
+      "service": "My",
+      "stops": [
+        {
+          "place": "place_user_maan",
+          "time": "17:24"
+        },
+        {
+          "place": "place_user_gurdas_maan",
+          "time": "17:50"
+        }
+      ]
+    },
+    {
+      "id": "r7",
+      "from": "place_user_gurdaspur",
+      "to": "place_user_bathinda",
+      "time": "08:00",
+      "arrive": "11:00",
+      "stops": [
+        {
+          "place": "place_user_x",
+          "time": "09:00"
+        },
+        {
+          "place": "place_user_amarjeet"
+        }
+      ]
+    },
+    {
+      "id": "r8",
+      "from": "stand_sangriya",
+      "to": "stand_sri_ganganagar",
+      "time": "08:00",
+      "stops": [
+        {
+          "place": "place_bolanwali"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_amargarh"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
         }
       ]
     }
