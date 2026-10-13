@@ -5,10 +5,12 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.LinearLayout
+import android.widget.Button
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.bustime.app.ui.community.CommunitySupabase
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +56,26 @@ class BookBusActivity : AppCompatActivity() {
         root.addView(addBus, LinearLayout.LayoutParams(-1, -2).apply { topMargin = 10; bottomMargin = 12 })
         setContentView(root)
         content.addView(TextView(this).apply { text = getString(com.bustime.app.R.string.bb_intro); textSize = 15f; setPadding(0, 8, 0, 10) })
+        var selectedArea: String? = null
+        var allRowsCache: List<org.json.JSONObject> = emptyList()
+        val areaButton = Button(this).apply {
+            text = "Permanent Area: Select Area ▾"
+            setOnClickListener {
+                val areas = allRowsCache.mapNotNull { row ->
+                    row.optString("area_name").ifBlank { row.optString("location") }.trim().takeIf { it.isNotBlank() }
+                }.distinctBy { it.lowercase(java.util.Locale.ROOT) }
+                val choices = listOf("All Areas") + areas
+                AlertDialog.Builder(this@BookBusActivity)
+                    .setTitle("Permanent Area")
+                    .setSingleChoiceItems(choices.toTypedArray(), (selectedArea?.let { areas.indexOf(it) + 1 } ?: 0)) { dialog, which ->
+                        selectedArea = if (which == 0) null else areas[which - 1]
+                        text = "Permanent Area: " + (selectedArea ?: "All Areas") + " ▾"
+                        dialog.dismiss()
+                        renderOperators(allRowsCache, results, selectedArea)
+                    }.setNegativeButton(R.string.cancel, null).show()
+            }
+        }
+        content.addView(areaButton, LinearLayout.LayoutParams(-1, -2))
         val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 12, 0, 0) }
         content.addView(results)
         lifecycleScope.launch {
@@ -64,8 +86,19 @@ class BookBusActivity : AppCompatActivity() {
             }
             val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
             val allRows = (0 until rows.length()).map { rows.getJSONObject(it) }
-            if (allRows.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_no_operators); textSize = 15f; setPadding(0, 8, 0, 8) })
-            for (item in allRows) {
+            allRowsCache = allRows
+            areaButton.text = "Permanent Area: All Areas ▾"
+            renderOperators(allRows, results, selectedArea)
+        }
+    }
+
+    private fun renderOperators(allRows: List<org.json.JSONObject>, results: LinearLayout, selectedArea: String?) {
+            results.removeAllViews()
+            val visibleRows = allRows.filter { item ->
+                selectedArea == null || (item.optString("area_name").ifBlank { item.optString("location") }.trim().equals(selectedArea, ignoreCase = true))
+            }
+            if (visibleRows.isEmpty()) results.addView(TextView(this@BookBusActivity).apply { text = getString(com.bustime.app.R.string.bb_no_operators); textSize = 15f; setPadding(0, 8, 0, 8) })
+            for (item in visibleRows) {
                 val card = LinearLayout(this@BookBusActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(14, 14, 14, 14); setBackgroundColor(getColor(com.bustime.app.R.color.surfaceVariant)); layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 12 } }
                 val name = item.optString("operator_name", getString(com.bustime.app.R.string.bb_bus_operator))
                 card.addView(TextView(this@BookBusActivity).apply { text = name; textSize = 19f; setTypeface(null, android.graphics.Typeface.BOLD) })
@@ -94,6 +127,5 @@ class BookBusActivity : AppCompatActivity() {
                 })
                 results.addView(card)
             }
-        }
     }
 }
