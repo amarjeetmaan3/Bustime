@@ -324,6 +324,7 @@
       <h1 id="pageTitle">Dashboard</h1>
       <span class="pill" id="verPill"></span>
       <span class="pill dirty" id="dirty" style="display:none">Unpublished changes</span>
+      <button class="btn" data-act="sb-logout" id="adminSignOut" style="display:none">Sign out</button>
       <button class="btn primary" data-act="open-publish" id="pubBtn">Publish</button>
     </header>
     <nav id="workspaceNav" class="workspace-nav" aria-label="Workspace tabs" style="display:none"></nav>
@@ -355,12 +356,10 @@ var sbToken = null, sbRefreshToken = null, subs = null, subsError = '';
 var ADMIN_AUTH_UID = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9';
 var ADMIN_SESSION_KEY = 'bustime_admin_session_v1';
 function saveAdminSession(session) {
+  // Admin access is deliberately session-only: a page refresh must require sign-in again.
   sbToken = session.access_token || null;
-  sbRefreshToken = session.refresh_token || null;
-  try {
-    if (sbRefreshToken) localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({refresh_token:sbRefreshToken}));
-    else localStorage.removeItem(ADMIN_SESSION_KEY);
-  } catch (_) {}
+  sbRefreshToken = null;
+  try { localStorage.removeItem(ADMIN_SESSION_KEY); } catch (_) {}
 }
 async function verifySingleAdmin() {
   if (!sbToken) return false;
@@ -721,6 +720,8 @@ function refreshChrome() {
   $('#verPill').textContent = data ? 'Data v' + baseVersion : 'Not loaded';
   $('#pubBtn').disabled = !data || !dirty;
   $('#pageTitle').textContent = TITLES[tab] || '';
+  var signOut = $('#adminSignOut');
+  if (signOut) signOut.style.display = sbToken ? 'inline-block' : 'none';
 }
 function render() {
   var v = $('#view');
@@ -730,7 +731,8 @@ function render() {
     var workspaceNav = document.getElementById('workspaceNav'); if (workspaceNav) workspaceNav.innerHTML = '';
     $('#pageTitle').textContent = 'Secure Admin Sign-in';
     $('#dirty').style.display = 'none';
-    $('#verPill').textContent = 'Locked';
+    $('#verPill').textContent = 'Sign-in required';
+    var signOut = $('#adminSignOut'); if (signOut) signOut.style.display = 'none';
     v.innerHTML = viewSupabaseSignIn();
     renderModal();
     return;
@@ -2267,8 +2269,21 @@ document.addEventListener('click', async function (e) {
       tab = 'dashboard'; render();
     }
     else if (act === 'sb-logout') {
-      try { if (sbToken) await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/logout', {method:'POST',headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken}}); } catch (_) {}
-      saveAdminSession({}); subs = null; community = {corrections:[],vehicles:[],busSubmissions:[],feedback:[]}; render();
+      try {
+        if (sbToken && cfg.sbUrl && cfg.sbKey) {
+          await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/logout?scope=local', {
+            method:'POST',
+            headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken}
+          });
+        }
+      } catch (_) {}
+      saveAdminSession({});
+      try { localStorage.removeItem(ADMIN_SESSION_KEY); } catch (_) {}
+      subs = null; subsError = '';
+      community = {corrections:[],vehicles:[],busSubmissions:[],feedback:[]};
+      tab = 'dashboard';
+      render();
+      toast('Signed out. Sign in again to open the admin panel.');
     }
     else if (act === 'sb-refresh') { subs = null; render(); await Promise.all([loadSubs(), loadCommunity()]); render(); }
     else if (act === 'review-status') { reviewStatus = b.getAttribute('data-status'); render(); }
@@ -2548,19 +2563,11 @@ document.addEventListener('change',async function(e){
 });
 
 // ============ Start ============
+// Remove sessions created by the older persistent-login implementation.
+// No refresh token is restored automatically; sign-in is required after every reload.
+try { localStorage.removeItem(ADMIN_SESSION_KEY); } catch (_) {}
+saveAdminSession({});
 render();
-restoreAdminSession().then(async function (ok) {
-  if (!ok) { render(); return; }
-  try {
-    await Promise.all([
-      cfg.token ? loadData().catch(function(){return null;}) : Promise.resolve(null),
-      loadSubs().catch(function(e){subsError=e.message;}),
-      loadCommunity().catch(function(){return null;}),
-      loadAdConfig().catch(function(){return null;})
-    ]);
-    tab = 'dashboard'; render();
-  } catch (e) { toast('Could not restore admin data: ' + e.message); render(); }
-});
 </script>
 </body>
 </html>
