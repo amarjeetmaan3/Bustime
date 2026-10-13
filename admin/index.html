@@ -1293,7 +1293,7 @@ function renderModal() {
   var ov = $('#overlay');
   if (communityReviewEditor) {
     $('#dlgTitle').textContent = 'Edit request · ' + (communityReviewEditor.record.vehicle_type || communityReviewEditor.record.request_type || communityReviewEditor.record.category || communityReviewEditor.kind);
-    $('#dlgBody').innerHTML = communityEditorHtml(); ov.classList.add('show');
+    $('#dlgBody').innerHTML = communityEditorHtml(); ov.classList.add('show'); autoTranslateReviewGroups();
   } else if (routeReviewEditor) {
     var reviewSub = subs && subs[routeReviewEditor.index];
     $('#dlgTitle').textContent = 'Review route submission' + (reviewSub && reviewSub.service_name ? ' · ' + reviewSub.service_name : '');
