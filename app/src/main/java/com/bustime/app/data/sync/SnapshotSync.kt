@@ -46,14 +46,15 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         }
     }
 
-    suspend fun sync() {
+    suspend fun sync(): Boolean {
         ensureLocalData()
-        withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.IO) {
             syncMutex.withLock {
                 try {
                     fetchRemote()
                 } catch (e: Exception) {
                     Log.w(TAG, "Sync failed, old data kept: ${e.message}")
+                    false
                 }
             }
         }
@@ -64,22 +65,24 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         applySnapshot(text, null)
     }
 
-    private suspend fun fetchRemote() {
-        if (Constants.GITHUB_OWNER.startsWith("YOUR_")) return
+    private suspend fun fetchRemote(): Boolean {
+        if (Constants.GITHUB_OWNER.startsWith("YOUR_")) return false
         var conn: HttpURLConnection? = null
         try {
             conn = (URL(dataUrl()).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 10000
                 readTimeout = 20000
+                setRequestProperty("Cache-Control", "no-cache")
+                setRequestProperty("Pragma", "no-cache")
                 prefs.getString(KEY_ETAG, null)?.let { setRequestProperty("If-None-Match", it) }
             }
-            when (conn.responseCode) {
+            return when (conn.responseCode) {
                 200 -> {
                     val text = conn.inputStream.bufferedReader().use { it.readText() }
                     applySnapshot(text, conn.getHeaderField("ETag"))
                 }
-                304 -> Log.d(TAG, "Data unchanged")
-                else -> Log.w(TAG, "Data fetch HTTP ${conn.responseCode}")
+                304 -> { Log.d(TAG, "Data unchanged"); false }
+                else -> { Log.w(TAG, "Data fetch HTTP ${conn.responseCode}"); false }
             }
         } finally {
             conn?.disconnect()
