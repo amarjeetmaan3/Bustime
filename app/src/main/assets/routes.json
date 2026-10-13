@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 37,
+  "dataVersion": 38,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -311,10 +311,9 @@
       "kind": "place",
       "name": {
         "en": "Fazlika",
-        "hi": "गुण",
-        "pa": "ਨੇਕੀ"
-      },
-      "aliases": []
+        "hi": "फाजिल्का",
+        "pa": "ਫਾਜਲਿਕਾ"
+      }
     },
     {
       "id": "place_user_firozpur",
