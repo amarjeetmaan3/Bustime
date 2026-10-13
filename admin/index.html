@@ -1279,16 +1279,8 @@ function ensureReviewedPlace(names, preferredId) {
   var lang=['en','hi','pa'].indexOf(names._sourceLang)>=0?names._sourceLang:(clean.en?'en':clean.hi?'hi':clean.pa?'pa':'');
   var primary=lang&&clean[lang];if(!primary)return preferredId&&placeById(preferredId)?preferredId:null;
   function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
-  var existing=preferredId?placeById(preferredId):null;
-  var oldNames=existing&&existing.name?existing.name:{};
-  var sameAsPreferred=!!existing&&Object.keys(oldNames).some(function(k){return norm(oldNames[k])===norm(primary);});
-  // Resolve exact matches in the same source language only. A shared Hindi/Punjabi
-  // transliteration must not merge two locations whose English names are distinct (e.g. Rampur RJ/PB).
-  var exact=data.places.find(function(p){return Object.keys(p.name||{}).some(function(k){return k===lang&&norm(p.name[k])===norm(primary);});})||null;
-  var place=null;
-  if(existing&&sameAsPreferred)place=existing;
-  else if(exact)place=exact;
-  else place=null; // a distinct edited name becomes a new Place at approval; no extra checkbox.
+  var place=preferredId?placeById(preferredId):null;
+  if(!place)place=data.places.find(function(p){return Object.keys(p.name||{}).some(function(k){return k===lang&&norm(p.name[k])===norm(primary);});})||null;
   if(!place){place={id:makeId('place_user_',primary,function(candidate){return !!placeById(candidate);}),kind:'place',name:{},aliases:[]};data.places.push(place);}
   place.name=place.name||{};
   ['en','hi','pa'].forEach(function(code){if(clean[code])place.name[code]=clean[code];});
