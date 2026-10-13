@@ -1144,22 +1144,11 @@ function applyApprovedCorrection(x) {
     if (proposed.length < 2 || proposed.length > 100) throw new Error('The proposed route must contain a start, destination, and no more than 100 stops.');
     var ids = [];
     proposed.forEach(function(st) {
-      var pid = st.place_id || '';
-      if (pid && !placeById(pid)) throw new Error('A selected place no longer exists: ' + pid);
-      if (!pid) {
-        var typed = String(st.name || '').trim();
-        if (!typed) throw new Error('Every proposed stop must have a name.');
-        var found = data.places.find(function(p) {
-          return Object.keys(p.name || {}).some(function(lang) { return String((p.name || {})[lang] || '').trim().toLowerCase() === typed.toLowerCase(); });
-        });
-        if (found) pid = found.id;
-        else {
-          pid = makeId('place_', typed, function(id){return data.places.some(function(p){return p.id===id;});});
-          var lang = ['en','hi','pa'].indexOf(st.language) >= 0 ? st.language : 'en';
-          var names = {}; names[lang] = typed;
-          data.places.push({id:pid,kind:'place',name:names,aliases:[]});
-        }
-      }
+      var pid=st.place_id||'',names=st.names||{},typed=String(st.name||'').trim();
+      if(pid&&!placeById(pid))throw new Error('A selected place no longer exists: '+pid);
+      if(!typed)throw new Error('Every proposed stop must have a name.');
+      pid=ensureReviewedPlace(names,pid||null);
+      if(!pid||!placeById(pid))throw new Error('Could not resolve the proposed stop: '+typed);
       ids.push(pid);
     });
     var times = proposed.map(function(st){return String(st.time || '').trim();});
