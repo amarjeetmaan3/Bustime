@@ -37,6 +37,50 @@ jobs:
       - name: Build Debug APK
         run: gradle assembleDebug -PappVersionCode=${{ github.run_number }}
 
+      # APK में native .so libraries जाँचें: 32-bit library हो तो matching 64-bit भी जरूरी है।
+      - name: Verify APK 64-bit native library compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -print -quit)"
+          test -n "$APK"
+          TMP="$(mktemp -d)"
+          unzip -q "$APK" -d "$TMP"
+          mapfile -t SO_FILES < <(find "$TMP/lib" -type f -name '*.so' 2>/dev/null | sed "s#^$TMP/##" | sort || true)
+
+          if [ "${#SO_FILES[@]}" -eq 0 ]; then
+            echo "PASS: APK में कोई native .so library नहीं है; Kotlin/Java app को अलग 64-bit ABI libraries की जरूरत नहीं।"
+            exit 0
+          fi
+
+          echo "Native libraries मिलीं:"
+          printf ' - %s\n' "${SO_FILES[@]}"
+
+          FAILED=0
+          while IFS= read -r LIB; do
+            case "$LIB" in
+              lib/armeabi-v7a/*)
+                MATCH="lib/arm64-v8a/${LIB##*/}"
+                if [ ! -f "$TMP/$MATCH" ]; then
+                  echo "ERROR: 32-bit $LIB के लिए 64-bit $MATCH नहीं मिली।"
+                  FAILED=1
+                fi
+                ;;
+              lib/x86/*)
+                MATCH="lib/x86_64/${LIB##*/}"
+                if [ ! -f "$TMP/$MATCH" ]; then
+                  echo "ERROR: 32-bit $LIB के लिए 64-bit $MATCH नहीं मिली।"
+                  FAILED=1
+                fi
+                ;;
+            esac
+          done < <(printf '%s\n' "${SO_FILES[@]}")
+
+          if [ "$FAILED" -ne 0 ]; then
+            exit 1
+          fi
+          echo "PASS: packaged 32-bit native libraries की matching 64-bit libraries मौजूद हैं।"
+
       - name: Upload Debug APK as Artifact
         uses: actions/upload-artifact@v4
         with:
