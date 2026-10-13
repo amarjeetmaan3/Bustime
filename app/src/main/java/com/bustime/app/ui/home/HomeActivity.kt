@@ -31,7 +31,7 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
-        AnalyticsHelper.logAppOpened(this)
+        AnalyticsHelper.logAppOpened(this)\n        com.bustime.app.ads.CustomPopupManager.showLocalSponsorshipAd(this)
 
         // भाषा बदलने पर स्क्रीन दोबारा बनती है: जो टैब खुला था वही खुला रहे
         currentTab = savedInstanceState?.getInt("TAB", 0) ?: 0
