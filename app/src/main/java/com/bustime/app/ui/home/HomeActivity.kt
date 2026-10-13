@@ -194,8 +194,13 @@ class HomeActivity : AppCompatActivity() {
             .setTitle(R.string.language_title)
             .setSingleChoiceItems(names, selected) { dialog, which ->
                 // भाषा बदलते ही स्क्रीन अपने-आप नई भाषा में खुल जाती है
-                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tags[which]))
+                val selectedTag = tags[which]
                 dialog.dismiss()
+                if (selectedTag != LanguageHelper.current()) {
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(selectedTag))
+                    // Suppress the visible close/open transition during locale recreation.
+                    overridePendingTransition(0, 0)
+                }
             }
             .show()
     }
