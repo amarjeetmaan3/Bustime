@@ -81,6 +81,16 @@
   .review-stop-row .review-move { white-space:nowrap; width:76px; }
   .review-stop-row .review-place { min-width:170px; }
   .review-stop-row .review-hi, .review-stop-row .review-pa { min-width:130px; }
+  .request-row { display:grid; grid-template-columns:minmax(220px,1.7fr) minmax(130px,1fr) minmax(150px,1.2fr) auto; gap:14px; align-items:center; }
+  .request-row .request-title { font-weight:750; overflow-wrap:anywhere; }
+  .request-row .request-summary { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .route-place-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; flex:1; min-width:0; }
+  .route-place-fields input { min-width:0; width:100%; }
+  .route-place-labels { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; font-size:11px; color:var(--muted); margin:0 0 4px; }
+  .stoprow { display:grid; grid-template-columns:minmax(0,1fr) 112px auto; gap:8px; margin-bottom:8px; align-items:center; }
+  .stoprow .route-place-fields { grid-column:1; }
+  .stoprow .st_time { grid-column:2; }
+  .stoprow .route-stop-actions { grid-column:3; display:flex; gap:4px; white-space:nowrap; }
 
   /* Desktop-first editor: use the available monitor instead of a narrow, clipped popup. */
   .overlay { position:fixed; inset:0; background:rgba(16,24,40,.5); display:none; align-items:stretch; justify-content:center; padding:10px; overflow:hidden; z-index:30; }
@@ -93,6 +103,7 @@
   .dlg-foot { display:flex; justify-content:flex-end; gap:10px; margin-top:16px; flex-wrap:wrap; }
   @media (min-width: 1100px) {
     .dialog { width:100%; }
+    .request-row { grid-template-columns:minmax(200px,1.6fr) minmax(110px,1fr) minmax(130px,1.2fr) auto; }
     .review-stop-table { min-width:0; table-layout:fixed; }
     .review-stop-table th, .review-stop-table td { overflow-wrap:anywhere; }
     .review-stop-row .review-place { min-width:0; width:100%; }
@@ -105,6 +116,10 @@
     .dlg-head { padding:12px 14px; }
     .dlg-body { padding:10px 12px 16px; }
     .review-stop-table { min-width:1040px; }
+    .request-row { grid-template-columns:minmax(0,1fr) auto; gap:5px 10px; }
+    .request-row .request-summary { grid-column:1; white-space:normal; }
+    .request-row .request-actions { grid-column:2; grid-row:1 / span 2; }
+    .stoprow { grid-template-columns:minmax(0,1fr) 95px auto; }
   }
   #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1F2933; color:#fff; padding:11px 20px; border-radius:24px; display:none; z-index:50; max-width:92%; font-size:14px; }
 
@@ -395,8 +410,46 @@ function b64decode(b64) {
   for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return new TextDecoder().decode(bytes);
 }
-function pname(p) { var n = (p && p.name) || {}; return n.en || n.hi || n.pa || (p && p.id) || ''; }
-function placeById(id) { return data.places.find(function (p) { return p.id === id; }); }
+function pname(p) { var n=(p&&p.name)||{};return n.en||n.hi||n.pa||(p&&p.id)||''; }
+function placeById(id) { return data.places.find(function(p){return p.id===id;}); }
+function routeNameValue(prefix,lang){var el=document.querySelector('[data-route-name="'+prefix+'"][data-lang="'+lang+'"]');return el?String(el.value||'').trim():'';}
+function ensureRoutePlace(prefix){
+ var idEl=document.querySelector('[data-route-id="'+prefix+'"]'),preferredId=idEl&&idEl.value||'',names={en:routeNameValue(prefix,'en'),hi:routeNameValue(prefix,'hi'),pa:routeNameValue(prefix,'pa')};
+ var lang=names.en?'en':names.hi?'hi':names.pa?'pa':'',primary=lang&&names[lang];
+ if(!primary)return null;
+ function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
+ var preferred=preferredId?placeById(preferredId):null;
+ var unchanged=!!preferred&&Object.keys(names).some(function(code){return names[code]&&norm((preferred.name||{})[code])===norm(names[code]);});
+ var exact=data.places.find(function(p){return Object.keys(p.name||{}).some(function(code){return code===lang&&norm(p.name[code])===norm(primary);})||(p.aliases||[]).some(function(a){return norm(a)===norm(primary);});})||null;
+ var place=unchanged?preferred:exact;
+ if(!place){place={id:makeId('place_',primary,function(candidate){return !!placeById(candidate);}),kind:'place',name:{},aliases:[]};data.places.push(place);}
+ place.name=place.name||{};
+ ['en','hi','pa'].forEach(function(code){if(names[code])place.name[code]=names[code];});
+ if(idEl)idEl.value=place.id;
+ setDirty(true);return place.id;
+}
+function initRouteAutoTranslation(){
+ document.querySelectorAll('[data-route-name="from"],[data-route-name="to"],[data-route-name^="stop-"]').forEach(function(el){
+  if(el.dataset.routeTranslateBound==='true')return;el.dataset.routeTranslateBound='true';
+  el.addEventListener('input',function(){
+   var lang=el.dataset.lang,key=el.dataset.routeName;
+   if(lang!=='en'){el.dataset.autofilled='false';return;}
+   var source=el.value.trim();if(!source)return;
+   var hi=document.querySelector('[data-route-name="'+key+'"][data-lang="hi"]'),pa=document.querySelector('[data-route-name="'+key+'"][data-lang="pa"]');
+   var fillHi=hi&&(!hi.value.trim()||hi.dataset.autofilled==='true'),fillPa=pa&&(!pa.value.trim()||pa.dataset.autofilled==='true');
+   if(!fillHi&&!fillPa)return;
+   clearTimeout(el._routeTranslateTimer);
+   el._routeTranslateTimer=setTimeout(async function(){
+    try{
+     var results=await Promise.all([fillHi?translatePlaceText(source,'hi'):Promise.resolve(''),fillPa?translatePlaceText(source,'pa'):Promise.resolve('')]);
+     if(el.value.trim()!==source)return;
+     if(fillHi&&results[0]&&(!hi.value.trim()||hi.dataset.autofilled==='true')){hi.value=results[0];hi.dataset.autofilled='true';}
+     if(fillPa&&results[1]&&(!pa.value.trim()||pa.dataset.autofilled==='true')){pa.value=results[1];pa.dataset.autofilled='true';}
+    }catch(err){console.warn('Route place translation failed',err);}
+   },350);
+  });
+ });
+}
 function placeText(p) {
   var n = Object.keys(p.name || {}).map(function (k) { return p.name[k]; });
   return n.concat(p.aliases || [], [p.id]).join(' ').toLowerCase();
@@ -764,27 +817,29 @@ function placeOptions(sel) {
     return '<option value="' + esc(p.id) + '"' + (p.id === sel ? ' selected' : '') + '>' + esc(pname(p)) + '</option>';
   }).join('');
 }
+function routePlaceFields(prefix, placeId) {
+  var place=placeId?placeById(placeId):null,names=place&&place.name?place.name:{};
+  function field(lang,label){var opts=(data.places||[]).map(function(p){var v=(p.name||{})[lang];return v?'<option value="'+esc(v)+'"></option>':'';}).join('');
+    return '<div><input aria-label="'+label+'" placeholder="'+label+'" list="route-place-'+lang+'" data-route-name="'+esc(prefix)+'" data-lang="'+lang+'" data-autofilled="'+(lang!=='en'?'true':'false')+'" value="'+esc(names[lang]||'')+'"><datalist id="route-place-'+lang+'">'+opts+'</datalist></div>';}
+  return '<div class="route-place-fields"><input type="hidden" data-route-id="'+esc(prefix)+'" value="'+esc(placeId||'')+'">'+field('en','English')+field('hi','हिंदी')+field('pa','ਪੰਜਾਬੀ')+'</div>';
+}
 function stopRow(place, time) {
-  return '<div class="stoprow"><select class="st_place">' + placeOptions(place) + '</select>' +
-    '<input type="time" class="st_time" value="' + esc(time || '') + '">' +
-    '<button class="btn sm" data-act="stop-up" title="Move up">&uarr;</button>' +
+  var key='stop-'+Math.random().toString(36).slice(2,10);
+  return '<div class="stoprow" data-route-stop="'+esc(key)+'">'+routePlaceFields(key,place)+
+    '<input type="time" class="st_time" value="'+esc(time||'')+'">' +
+    '<div class="route-stop-actions"><button class="btn sm" data-act="stop-up" title="Move up">&uarr;</button>' +
     '<button class="btn sm" data-act="stop-down" title="Move down">&darr;</button>' +
-    '<button class="btn sm danger" data-act="rm-stop" title="Remove">&times;</button></div>';
+    '<button class="btn sm danger" data-act="rm-stop" title="Remove">&times;</button></div></div>';
 }
 function routeFormHtml() {
-  var r = editing.draft;
-  return '<label>From</label><select id="fr_from">' + placeOptions(r.from) + '</select>' +
-    '<label>To</label><select id="fr_to">' + placeOptions(r.to) + '</select>' +
-    '<div class="row2"><div><label>Departure time</label><input id="fr_time" type="time" value="' + esc(r.time) + '"></div>' +
-    '<div><label>Arrival time (optional)</label><input id="fr_arrive" type="time" value="' + esc(r.arrive) + '"></div></div>' +
-    '<label><input type="checkbox" id="fr_long"' + (r.longRoute ? ' checked' : '') + '> Long Route (रात 12 बजे के बाद तारीख आगे बढ़ेगी)</label>' +
-    '<label>Long route start date</label><input id="fr_start_date" type="date" value="' + esc(r.startDate || '') + '">' +
-    '<label>Service / company (optional)</label><input id="fr_service" value="' + esc(r.service) + '">' +
-    '<label>Contact number (optional)</label><input id="fr_contact" inputmode="tel" value="' + esc(r.contact) + '">' +
-    '<label>Additional info (optional)</label><input id="fr_info" value="' + esc(r.info) + '">' +
-    '<label>Intermediate stops, in order</label><div id="stops">' +
-    (r.stops || []).map(function (s) { return stopRow(s.place, s.time); }).join('') + '</div>' +
-    '<button class="btn sm" data-act="add-stop">+ Add stop</button>' + foot('save-route');
+  var r=editing.draft;
+  return '<p class="muted">Each location has one Place ID and editable English, Hindi and Punjabi names. A new Place is added when you save and publish this admin route data.</p>' +
+    '<div class="route-place-labels"><span>English</span><span>हिंदी</span><span>ਪੰਜਾਬੀ</span></div><label>From</label>'+routePlaceFields('from',r.from)+
+    '<div class="route-place-labels" style="margin-top:12px"><span>English</span><span>हिंदी</span><span>ਪੰਜਾਬੀ</span></div><label>To</label>'+routePlaceFields('to',r.to)+
+    '<div class="row2"><div><label>Departure time</label><input id="fr_time" type="time" value="'+esc(r.time||'')+'"></div><div><label>Arrival time (optional)</label><input id="fr_arrive" type="time" value="'+esc(r.arrive||'')+'"></div></div>'+
+    '<label>Service / company (optional)</label><input id="fr_service" value="'+esc(r.service||'')+'"><label>Contact number (optional)</label><input id="fr_contact" inputmode="tel" value="'+esc(r.contact||'')+'"><label>Additional info (optional)</label><input id="fr_info" value="'+esc(r.info||'')+'">'+
+    '<label>Intermediate stops, in order (English · हिंदी · ਪੰਜਾਬੀ · timing · move)</label><div id="stops">'+(r.stops||[]).map(function(s){return stopRow(s.place,s.time);}).join('')+'</div>'+
+    '<button class="btn sm" data-act="add-stop">+ Add stop</button>'+foot('save-route');
 }
 
 function viewSeats() {
@@ -1109,14 +1164,13 @@ function viewCommunity(mode) {
     } else {
       details = '<p><b>'+esc(x.category)+'</b> · Route '+esc(x.related_route||'-')+'</p><p>'+esc(x.message)+'</p><p class="muted">Contact: '+esc(x.contact||'-')+'</p>';
     }
-    var isCompactBusCorrection=x._kind==='corrections'&&communityStatus==='pending';
-    if(isCompactBusCorrection) details='';
-    var actions = x.status==='pending' ? (x._kind==='feedback' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve feedback</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>') : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
-    var correctionRoute=isCompactBusCorrection?(data.routes||[]).find(function(r){return String(r.id)===String(x.route_id);}):null;
-    var correctionRouteName=correctionRoute?(pname(placeById(correctionRoute.from))+' → '+pname(placeById(correctionRoute.to))):'bus route';
-    var cardTitle=isCompactBusCorrection?'Correction request received for '+correctionRouteName:(x._label+' · '+(x.request_type||x.vehicle_type||x.category||'Request'));
-    var cardMeta=isCompactBusCorrection?'':(new Date(x.created_at).toLocaleString()+' · ID '+x.id);
-    html += '<div class="card"><h2>'+esc(cardTitle)+'</h2>'+(cardMeta?'<p class="muted">'+esc(cardMeta)+'</p>':'')+details+'<div class="dlg-foot" style="justify-content:flex-start">'+actions+'</div></div>';
+    var actions = x.status==='pending' ? (x._kind==='feedback' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open review</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>') : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
+    var correctionRoute=x._kind==='corrections'?(data.routes||[]).find(function(r){return String(r.id)===String(x.route_id);}):null;
+    var correctionRouteName=correctionRoute?(pname(placeById(correctionRoute.from))+' → '+pname(placeById(correctionRoute.to))):'';
+    var cardTitle=x._kind==='corrections'?(correctionRouteName||('Route '+String(x.route_id||'correction')))+' · '+String(x.request_type||'correction'):(x._label+' · '+(x.request_type||x.vehicle_type||x.category||'Request'));
+    var summary=x._kind==='corrections'?(x.request_type==='route_edit'?'Full route edit':x.request_type==='missing_stop'?'Missing stop: '+String(x.missing_place_name||'name pending'):x.request_type==='correct_time'?'Timing correction: '+String(x.corrected_time||'time pending'):String(x.notes||'')):(x._kind==='vehicles'?[x.person_name,x.vehicle_name,x.area_name||x.location].filter(Boolean).join(' · '):x._kind==='busSubmissions'?[x.operator_name,x.service_name,x.location].filter(Boolean).join(' · '):String(x.category||'')+' '+String(x.message||'')).trim();
+    var cardMeta=(x.created_at?new Date(x.created_at).toLocaleString()+' · ':'')+'ID '+x.id;
+    html += '<div class="card" style="padding:12px 16px;margin-bottom:8px"><div class="request-row"><div class="request-title">'+esc(cardTitle)+'</div><div class="request-summary">'+esc(summary||cardMeta)+'</div><div class="request-summary">'+esc(cardMeta)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">'+actions+'</div></div></div>';
   });
   if (mode === 'busDirectory') {
     html += '<div class="card"><h2>Published Bus Operator Directory</h2><p class="muted">Public operator information only. This is separate from scheduled routes and is not a booking queue.</p>'+
@@ -1468,7 +1522,7 @@ document.addEventListener('click', async function (e) {
       b.disabled = true; b.textContent = 'Loading...';
       await loadData(); toast('Data loaded'); tab = 'dashboard'; render();
     }
-    else if (act === 'add-stop') { $('#stops').insertAdjacentHTML('beforeend', stopRow('', '')); }
+    else if (act === 'add-stop') { $('#stops').insertAdjacentHTML('beforeend', stopRow('', '')); initRouteAutoTranslation(); }
     else if (act === 'rm-stop') { b.closest('.stoprow').remove(); }
     else if (act === 'stop-up') {
       var row = b.closest('.stoprow'), prev = row.previousElementSibling;
@@ -1537,36 +1591,26 @@ document.addEventListener('click', async function (e) {
       if (confirm('Delete this route?')) { data.routes.splice(i, 1); setDirty(true); render(); }
     }
     else if (act === 'save-route') {
-      var from = val('fr_from'), to = val('fr_to'), time = val('fr_time'), arrive = val('fr_arrive');
-      if (!from || !to) { toast('Select both From and To'); return; }
-      if (from === to) { toast('From and To must be different'); return; }
-      if (!TIME_RE.test(time)) { toast('Enter the departure time'); return; }
-      var isLong = $('#fr_long') ? $('#fr_long').checked : false, startDate = val('fr_start_date');
-      if (isLong && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) { toast('Choose the long-route start date'); return; }
-      var stops = [], previousTime = time, dayOffset = 0;
-      var invalidTimeOrder = false;
-      document.querySelectorAll('#stops .stoprow').forEach(function (row) {
-        var sp = row.querySelector('.st_place').value, st = row.querySelector('.st_time').value;
-        if (sp) {
-          var stop = { place:sp };
-          if (TIME_RE.test(st)) {
-            if (st < previousTime) { if (!isLong) invalidTimeOrder = true; else dayOffset++; }
-            previousTime = st; stop.time = st; if (isLong) stop.day_offset = dayOffset;
-          }
-          stops.push(stop);
-        }
+      var from=ensureRoutePlace('from'),to=ensureRoutePlace('to'),time=val('fr_time'),arrive=val('fr_arrive');
+      if(!from||!to){toast('Enter a name for both From and To');return;}
+      if(from===to){toast('From and To must be different places');return;}
+      if(!TIME_RE.test(time)){toast('Enter the departure time');return;}
+      var stops=[],previousTime=time,dayOffset=0,invalidTimeOrder=false;
+      document.querySelectorAll('#stops .stoprow').forEach(function(row){
+        var key=row.getAttribute('data-route-stop'),sp=ensureRoutePlace(key),st=row.querySelector('.st_time').value;
+        if(!sp){toast('Enter a name for every intermediate stop');invalidTimeOrder=true;return;}
+        var stop={place:sp};
+        if(TIME_RE.test(st)){if(st<previousTime)dayOffset++;previousTime=st;stop.time=st;if(dayOffset>0)stop.day_offset=dayOffset;}
+        stops.push(stop);
       });
-      if (TIME_RE.test(arrive) && arrive < previousTime && !isLong) invalidTimeOrder = true;
-      if (invalidTimeOrder) { toast('A stop/arrival time cannot be earlier than the previous time. Enable Long Route to cross midnight.'); return; }
-      var r = editing.index < 0 ? { id: nextNum('r', data.routes) } : data.routes[editing.index];
-      r.from = from; r.to = to; r.time = time; r.longRoute = isLong; if (isLong) r.startDate = startDate; else delete r.startDate;
-      ['arrive', 'service', 'contact', 'info'].forEach(function (k) {
-        var v = k === 'arrive' ? (TIME_RE.test(arrive) ? arrive : '') : val('fr_' + k);
-        if (v) r[k] = v; else delete r[k];
-      });
-      if (stops.length) r.stops = stops; else delete r.stops;
-      if (editing.index < 0) data.routes.push(r);
-      editing = null; setDirty(true); toast('Route saved'); render();
+      if(invalidTimeOrder)return;
+      if(TIME_RE.test(arrive)&&arrive<previousTime)dayOffset++;
+      var r=editing.index<0?{id:nextNum('r',data.routes)}:data.routes[editing.index];
+      r.from=from;r.to=to;r.time=time;delete r.longRoute;delete r.startDate;
+      ['arrive','service','contact','info'].forEach(function(k){var v=k==='arrive'?(TIME_RE.test(arrive)?arrive:''):val('fr_'+k);if(v)r[k]=v;else delete r[k];});
+      if(stops.length)r.stops=stops;else delete r.stops;
+      if(editing.index<0)data.routes.push(r);
+      editing=null;setDirty(true);toast('Route saved');render();
     }
 
     // ---- taxi seats ----
