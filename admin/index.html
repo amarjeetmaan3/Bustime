@@ -2890,7 +2890,8 @@ document.addEventListener('click', async function (e) {
         if(!(merged.service_name||merged.operator_name)||!merged.location||!Array.isArray(merged.bus_types)||!merged.bus_types.length||!merged.phone){toast('Service name, bus types, operating location and phone are required.');return;}
         await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:merged.service_name||merged.operator_name,service_name:merged.service_name||merged.operator_name,bus_types:Array.isArray(merged.bus_types)?merged.bus_types:[],location:merged.location||null,phone:merged.phone,whatsapp:merged.whatsapp||null,details:merged.details||null,active:true})});
       }
-      var durableReviewed=Object.assign({},merged,{_bustime_publish_pending:true});
+      var durableReviewed=Object.assign({},merged);
+      if(rk==='vehicles'||rk==='corrections')durableReviewed._bustime_publish_pending=true;
       await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:durableReviewed,reviewed_at:stamp,approved_at:stamp,status:'approved'})});
       orig.reviewed_data=durableReviewed;orig.reviewed_at=stamp;orig.approved_at=stamp;orig.status='approved';communityReviewEditor=null;
       toast('Approved reviewed data; original submission retained. Publish separately to make snapshot changes live.');render();return;
