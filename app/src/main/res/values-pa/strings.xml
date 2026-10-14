@@ -277,4 +277,8 @@
     <string name="bb_seats_format">%1$d ਸੀਟਾਂ</string>
     <string name="bb_not_specified">ਦੱਸਿਆ ਨਹੀਂ ਗਿਆ</string>
     <string name="fuel_oil">ਪੈਟਰੋਲ / CNG</string>
+    <string name="area_change_title">ਇਲਾਕਾ ਬਦਲੋ</string>
+    <string name="area_change_label">ਇਲਾਕਾ ਬਦਲੋ: %1$s ▾</string>
+    <string name="area_select_prompt">ਇਲਾਕਾ ਚੁਣੋ</string>
+    <string name="area_all_areas">ਸਾਰੇ ਇਲਾਕੇ</string>
 </resources>
