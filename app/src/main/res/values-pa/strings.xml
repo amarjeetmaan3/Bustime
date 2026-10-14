@@ -228,8 +228,6 @@
     </string>
     <string name="community_year_invalid">ਵਾਹਨ ਦਾ ਸਾਲ ਠੀਕ ਚਾਰ ਅੰਕਾਂ ਵਿੱਚ ਭਰੋ, ਜਿਵੇਂ 2022।</string>
     <string name="community_listing_sent">ਲਿਸਟਿੰਗ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ।</string>
-    <string name="community_bus_form_intro">ਬੱਸ ਦੀ ਜਾਣਕਾਰੀ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭਰੋ। ਮਨਜ਼ੂਰੀ ਤੋਂ ਬਾਅਦ ਹੀ ਤੁਹਾਡੀ ਲਿਸਟਿੰਗ ਜਨਤਕ ਹੋਵੇਗੀ।</string>
-    <string name="community_fill_bus_required">ਬੱਸ ਦੀ ਕਿਸਮ, ਬਰਥਾਂ/ਸੀਟਾਂ ਦੀ ਗਿਣਤੀ ਅਤੇ ਮੋਬਾਈਲ ਨੰਬਰ ਸਮੇਤ ਸਾਰੇ ਲਾਜ਼ਮੀ ਖਾਨੇ ਭਰੋ।</string>
     <string name="community_bus_submitted">ਬੱਸ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ।</string>
     <string name="community_correction_intro">ਇਸ %1$s ਲਿਸਟਿੰਗ ਦੀ ਜਾਣਕਾਰੀ ਠੀਕ ਕਰੋ। ਤੁਹਾਡੀ ਬੇਨਤੀ ਐਡਮਿਨ ਜਾਂਚੇਗਾ।</string>
     <string name="community_driver_vehicle">ਡਰਾਈਵਰ: %1$s · ਵਾਹਨ: %2$s</string>
