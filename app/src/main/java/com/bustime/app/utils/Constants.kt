@@ -12,10 +12,9 @@ object Constants {
     const val GITHUB_OWNER = "amarjeetmaan3"
     const val GITHUB_REPO = "Bustime"
 
-    // Supabase (यूज़र से मिले रूट के लिए)। Supabase में Settings -> API से लेकर यहाँ भरो।
-    // anon key सार्वजनिक रहती है, यही उसका काम है: यह सिर्फ़ नया रूट भेजने की इजाज़त देती है, पढ़ने की नहीं।
+    // Supabase client: publishable keys belong in the apikey header, not Authorization: Bearer.
     const val SUPABASE_URL = "https://mdryxbvmqsphbfkvqtnf.supabase.co"
-    const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kcnl4YnZtcXNwaGJma3ZxdG5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1NDA0NzEsImV4cCI6MjEwNzExNjQ3MX0.Hc577LoBVsLFQIZnJ7thhpCSuRBV5Odplj7uua6BWP0"
+    const val SUPABASE_ANON_KEY = "sb_publishable_1J6qNzpvPH-TTI-qxRU8wA_RVO7EpfM"
 
     // SharedPreferences
     const val PREFS_NAME = "BustimePrefs"
