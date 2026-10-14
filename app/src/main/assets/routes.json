@@ -1,5 +1,5 @@
 {
-  "dataVersion": 55,
+  "dataVersion": 56,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -4001,6 +4001,21 @@
       "fuel": "oil",
       "union_name": "dev autos",
       "area": "amargarh"
+    },
+    {
+      "id": "t3",
+      "type": "taxi",
+      "name": "ravi kumar",
+      "vehicle": "maruti",
+      "year": "2085",
+      "vehicle_number": "RJ 31 fhgh",
+      "phone": "9685741236",
+      "area": "sadulshahar",
+      "areaId": "sadulshahar",
+      "info": "Union: Balaji · Vehicle No: RJ 31 fhgh · ",
+      "union_name": "Balaji",
+      "seats": 4,
+      "sourceSubmissionId": "51035ea0-ca54-4c04-a584-c7d053bc4049"
     }
   ]
 }
