@@ -188,6 +188,7 @@
     <string name="community_driver_name">Driver name</string>
     <string name="community_vehicle_name">Vehicle name</string>
     <string name="community_vehicle_model">Vehicle model number</string>
+    <string name="community_vehicle_year">Year (4 digits)</string>
     <string name="community_seat_count">Number of seats</string>
     <string name="community_vehicle_registration">Vehicle registration number</string>
     <string name="community_location_area">Location address / service area (enter once)</string>
@@ -229,6 +230,7 @@
     <string name="community_route_correction_sent">Complete route correction sent for admin review.</string>
     <string name="community_vehicle_type_label">Vehicle type</string>
     <string name="community_fill_vehicle_required">Complete all required fields, including seat count, vehicle number, service area and union name.</string>
+    <string name="community_year_invalid">Enter the vehicle year as exactly four digits, e.g. 2022.</string>
     <string name="community_listing_sent">Listing sent for admin review.</string>
     <string name="community_bus_form_intro">Enter bus details for admin review. Your listing appears publicly only after approval.</string>
     <string name="community_fill_bus_required">Fill every required field, including bus variant, berth/seat counts and mobile number.</string>
