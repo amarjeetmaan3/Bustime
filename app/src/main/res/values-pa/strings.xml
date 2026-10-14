@@ -85,7 +85,7 @@
     <string name="bb_service">ਬੱਸ ਸੇਵਾ</string>
     <string name="bb_seat_unspecified">ਸੀਟਾਂ ਦੀ ਕਿਸਮ ਨਹੀਂ ਦਿੱਤੀ</string>
     <string name="bb_route">ਰੂਟ</string>
-    <string name="bb_location">ਟਿਕਾਣਾ / ਚੜ੍ਹਨ ਵਾਲੀ ਥਾਂ</string>
+    <string name="bb_location">ਟਿਕਾਣਾ</string>
     <string name="bb_expand">ਪੂਰੀ ਜਾਣਕਾਰੀ ਲਈ ਟੈਪ ਕਰੋ ▾</string>
     <string name="bb_contact">ਆਪਰੇਟਰ ਨਾਲ ਸੰਪਰਕ</string>
     <string name="bb_whatsapp">ਵਟਸਐਪ</string>
