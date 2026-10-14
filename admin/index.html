@@ -2490,6 +2490,21 @@ document.addEventListener('click', async function (e) {
       await sbLogin(cfg.sbEmail, document.getElementById('sb_pass').value);
       subs = null; render();
       await Promise.all([loadData().catch(function(){return null;}), loadSubs(), loadCommunity(), loadAdConfig().catch(function(){return null;})]);
+      // Restore approved route submissions into the editable admin data immediately after login,
+      // not only when Publish is clicked. This keeps approved-but-unpublished routes recoverable
+      // after a browser refresh and marks the dataset dirty when routes need to be restored.
+      if (data && sbToken) {
+        try {
+          var routeCountBeforeRecovery = data.routes.length;
+          await mergeApprovedRouteSubmissions();
+          var recoveredRouteCount = data.routes.length - routeCountBeforeRecovery;
+          if (recoveredRouteCount > 0) {
+            toast(recoveredRouteCount + ' approved route(s) recovered into Admin data. Publish when ready to update the app.');
+          }
+        } catch (recoveryError) {
+          toast('Approved route recovery warning: ' + recoveryError.message);
+        }
+      }
       tab = 'dashboard'; render();
     }
     else if (act === 'sb-logout') {
