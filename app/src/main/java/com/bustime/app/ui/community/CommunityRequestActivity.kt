@@ -54,7 +54,8 @@ class CommunityRequestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mode = intent.getStringExtra("mode") ?: "feedback"
-        val screenTitle = when (mode) { "correction" -> getString(com.bustime.app.R.string.community_title_correction); "vehicle" -> getString(com.bustime.app.R.string.community_title_vehicle); "bus_operator" -> getString(com.bustime.app.R.string.community_title_bus); "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") getString(com.bustime.app.R.string.community_title_taxi_correction) else getString(com.bustime.app.R.string.community_title_auto_correction); else -> getString(com.bustime.app.R.string.community_title_feedback) }
+        val requestedVehicleType = intent.getStringExtra("vehicle_type")
+        val screenTitle = when (mode) { "vehicle" -> if (requestedVehicleType == "taxi") getString(com.bustime.app.R.string.community_taxi_title) else getString(com.bustime.app.R.string.community_auto_title); "correction" -> getString(com.bustime.app.R.string.community_title_correction); "vehicle" -> getString(com.bustime.app.R.string.community_title_vehicle); "bus_operator" -> getString(com.bustime.app.R.string.community_title_bus); "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") getString(com.bustime.app.R.string.community_title_taxi_correction) else getString(com.bustime.app.R.string.community_title_auto_correction); else -> getString(com.bustime.app.R.string.community_title_feedback) }
         title = screenTitle
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
         val scroll = ScrollView(this).apply { addView(root) }
@@ -208,13 +209,13 @@ class CommunityRequestActivity : AppCompatActivity() {
             if (!year.matches(Regex("^[0-9]{4}$"))) {
                 toast(getString(com.bustime.app.R.string.community_year_invalid)); return@button
             }
-            val body = JSONObject().put("vehicle_type", type).put("person_name", name).put("vehicle_name", vehicle)
+            val body = JSONObject().put("person_name", name).put("vehicle_name", vehicle)
                 .put("year", year).put("vehicle_number", value("vehicle_number"))
                 .put("seats", seats).put("location", area).put("area_name", area)
                 .put("union_name", value("union_name")).put("phone", phone)
                 .put("fuel_type", if (type == "auto") listOf("ev", "oil", "cng", "other").getOrNull(spinners["fuel_type"]?.selectedItemPosition ?: -1) else JSONObject.NULL)
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-            sendRequests(listOf(body), "vehicle_submissions", getString(com.bustime.app.R.string.community_listing_sent))
+            sendRequests(listOf(body), if (type == "taxi") "taxi_submissions" else "auto_submissions", getString(com.bustime.app.R.string.community_listing_sent))
         }
     }
 
