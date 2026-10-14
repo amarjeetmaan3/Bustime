@@ -2700,6 +2700,17 @@ document.addEventListener('click', async function (e) {
       if (!/^[0-9]{4}$/.test(year)) { toast('Enter a valid four-digit vehicle year.'); return; }
       if (!(seats > 0)) { toast('Enter the seat count. Taxi uses it for filtering; Auto displays it as information only.'); return; }
       if (digits < 10 || digits > 13) { toast('Enter a valid mobile number'); return; }
+      if(editing.index < 0){
+        if(!sbToken){toast('Sign in to Supabase before adding a Taxi/Auto listing.');return;}
+        if(!/^[0-9]{4}$/.test(year)){toast('Enter a valid four-digit vehicle year.');return;}
+        var fuelValue=String(val('fd_fuel')||'ev').toLowerCase();
+        var submission={person_name:dn,vehicle_name:vehicleName,year:year,seats:seats,vehicle_number:registration,location:area,area_name:area,union_name:unionName,phone:ph,details:extraInfo||null,status:'pending'};
+        if(type==='auto')submission.fuel_type=fuelValue;
+        try{
+          await sbFetch('/rest/v1/'+(type==='taxi'?'taxi_submissions':'auto_submissions'),{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(submission)});
+          editing=null;await loadCommunity();toast((type==='taxi'?'Taxi':'Auto')+' listing sent for admin review.');render();return;
+        }catch(submitError){toast('Could not submit listing: '+submitError.message);return;}
+      }
       var d = editing.index < 0 ? { id: nextNum(type === 'taxi' ? 't' : 'a', data.drivers) } : data.drivers[editing.index];
       d.type = type; d.name = dn; d.phone = ph; d.vehicle = vehicleName; d.year = year;
       d.vehicle_number = registration; d.seats = seats; d.area = area;
