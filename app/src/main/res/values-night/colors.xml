@@ -16,4 +16,7 @@
     <color name="textGreen">#81C784</color>
     <color name="stopFromHighlight">#81C784</color>
     <color name="stopToHighlight">#EF9A9A</color>
+    <color name="stopNumberText">#FFFFFF</color>
+    <color name="stopNumberStartBg">#2E7D32</color>
+    <color name="stopNumberOtherBg">#4B5563</color>
 </resources>
