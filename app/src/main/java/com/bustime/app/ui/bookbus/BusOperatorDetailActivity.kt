@@ -89,7 +89,7 @@ class BusOperatorDetailActivity : AppCompatActivity() {
             detailsCard.addView(View(this).apply { setBackgroundColor(borderColor) }, LinearLayout.LayoutParams(-1, dp(1)))
         }
         detail(getString(R.string.bb_service), serviceName)
-        detail("Bus types", types.joinToString(" · "))
+        detail(getString(R.string.bb_bus_types), types.joinToString(" · "))
         detail(getString(R.string.bb_location), location)
         detail(getString(R.string.bb_extra_details_label), extraDetails)
         root.addView(detailsCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
