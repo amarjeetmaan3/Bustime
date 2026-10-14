@@ -121,7 +121,10 @@ object SnapshotImporter {
             // If an old record holds a bus-place ID, use that place's English name as the area text.
             val rawArea = clean(d.area)
             val area = rawArea?.let { a -> places[a]?.let { it.names["en"] ?: it.names.values.firstOrNull() } ?: a }
-            drivers.add(Driver(id, type, name, phone, clean(d.vehicle), seats, fuel, clean(d.info), area))
+            val vehicleName = clean(d.vehicle)
+            val year = clean(d.year)?.takeIf { it.matches(Regex("^[0-9]{4}$")) }
+            val vehicleLabel = if (vehicleName != null && year != null) "$vehicleName · $year" else vehicleName
+            drivers.add(Driver(id, type, name, phone, vehicleLabel, seats, fuel, clean(d.info), area))
         }
 
         // सीटर के विकल्प वही दिखेंगे जो तुमने taxiSeaters में लिखे हैं (जिस सीटर की गाड़ी नहीं, उसे सूची से हटा दो)।
