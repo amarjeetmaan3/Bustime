@@ -81,7 +81,7 @@ class BookBusActivity : AppCompatActivity() {
         var searchQuery = ""
         var allRowsCache: List<JSONObject> = emptyList()
         val searchBox = EditText(this).apply {
-            hint = "Search company, bus type or location"
+            hint = getString(R.string.bb_search_hint)
             singleLine = true
             textSize = 15f
             setPadding(dp(14), dp(10), dp(14), dp(10))
@@ -188,7 +188,7 @@ class BookBusActivity : AppCompatActivity() {
         }
         if (visibleRows.isEmpty()) {
             results.addView(TextView(this).apply {
-                text = if (searchQuery.isNotBlank()) "No bus services match “$searchQuery”." else if (selectedArea == null) getString(R.string.bb_no_operators) else getString(R.string.bb_no_options_area, selectedArea)
+                text = if (searchQuery.isNotBlank()) getString(R.string.bb_search_no_results, searchQuery) else if (selectedArea == null) getString(R.string.bb_no_operators) else getString(R.string.bb_no_options_area, selectedArea)
                 textSize = 15f
                 setTextColor(secondaryText)
                 setPadding(dp(4), dp(12), dp(4), dp(12))
