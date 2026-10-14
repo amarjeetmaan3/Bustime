@@ -1,5 +1,5 @@
 {
-  "dataVersion": 59,
+  "dataVersion": 60,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -4011,5 +4011,21 @@
     7,
     8
   ],
-  "drivers": []
+  "drivers": [
+    {
+      "id": "t1",
+      "type": "taxi",
+      "name": "Gurdas",
+      "vehicle": "Swift · desire",
+      "year": "2508",
+      "vehicle_number": "Rj 31 ki 5666",
+      "phone": "9529403003",
+      "area": "Amargarh",
+      "areaId": "Amargarh",
+      "info": "Union: Maan · Vehicle No: Rj 31 ki 5666 · ",
+      "union_name": "Maan",
+      "seats": 4,
+      "sourceSubmissionId": "45d0277e-0132-4042-a2a7-97ece7e1654b"
+    }
+  ]
 }
