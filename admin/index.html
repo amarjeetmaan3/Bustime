@@ -836,10 +836,89 @@ async function mergeApprovedRouteSubmissions() {
   if(changed)setDirty(true);
   return updates;
 }
+async function correctionAlreadyApplied(x){
+  var r=(data.routes||[]).find(function(z){return String(z.id)===String(x.route_id);});
+  if(!r)return false;
+  if(x.request_type==='correct_time'){
+    if(x.stop_id===r.from)return String(r.time||'')===String(x.corrected_time||'');
+    if(x.stop_id===r.to)return String(r.arrive||'')===String(x.corrected_time||'');
+    var timeStop=(r.stops||[]).find(function(z){return String(z.place)===String(x.stop_id);});
+    return !!timeStop&&String(timeStop.time||'')===String(x.corrected_time||'');
+  }
+  if(x.request_type==='missing_stop'){
+    var sequence=[r.from].concat((r.stops||[]).map(function(z){return z.place;}),[r.to]);
+    var bi=sequence.indexOf(x.before_stop_id),ai=sequence.indexOf(x.after_stop_id);
+    if(bi>=0&&ai===bi+2){
+      var middle=sequence[bi+1],p=placeById(middle),raw=String(x.missing_place_name||'').trim(),names=x.missing_place_names||{};
+      return middle===x.missing_place_id || !!(p&&((raw&&Object.keys(p.name||{}).some(function(k){return String(p.name[k]||'').trim().toLowerCase()===raw.toLowerCase();}))||Object.keys(names).some(function(k){return names[k]&&String(p.name&&p.name[k]||'').trim().toLowerCase()===String(names[k]).trim().toLowerCase();})));
+    }
+    return false;
+  }
+  if(x.request_type==='route_edit'&&Array.isArray(x.proposed_stops)&&x.proposed_stops.length>=2){
+    var seq=[r.from].concat((r.stops||[]).map(function(z){return z.place;}),[r.to]);
+    if(seq.length!==x.proposed_stops.length)return false;
+    return x.proposed_stops.every(function(st,i){
+      var p=placeById(seq[i]),raw=String(st.name||'').trim(),id=st.place_id||'';
+      var sameId=!!id&&String(id)===String(seq[i]);
+      var sameName=!!p&&raw&&Object.keys(p.name||{}).some(function(k){return String(p.name[k]||'').trim().toLowerCase()===raw.toLowerCase();});
+      var expectedTime=String(st.time||'').trim();
+      var actualTime=i===0?String(r.time||''):i===seq.length-1?String(r.arrive||''):String(((r.stops||[])[i-1]||{}).time||'');
+      return (sameId||sameName)&&expectedTime===actualTime;
+    });
+  }
+  return false;
+}
+async function mergeApprovedCommunitySubmissions(nextVersion){
+  if(!cfg.sbUrl||!cfg.sbKey||!sbToken)throw new Error('Sign in to Supabase before publishing so approved requests survive refreshes.');
+  var updates=[],changed=false;
+  var specs=[{kind:'vehicles',table:'vehicle_submissions'},{kind:'corrections',table:'correction_submissions'}];
+  for(var si=0;si<specs.length;si++){
+    var spec=specs[si],rows=[],offset=0,pageSize=500;
+    while(true){
+      var page=await sbFetch('/rest/v1/'+spec.table+'?select=*&status=eq.approved&order=created_at.asc&limit='+pageSize+'&offset='+offset);
+      page=Array.isArray(page)?page:[];
+      rows=rows.concat(page);
+      if(page.length<pageSize)break;
+      offset+=pageSize;
+    }
+    for(var ri=0;ri<rows.length;ri++){
+      var sub=rows[ri],rd=sub.reviewed_data&&typeof sub.reviewed_data==='object'?sub.reviewed_data:{};
+      if(rd._bustime_published_version)continue;
+      var reviewed=Object.assign({},sub,rd);
+      if(spec.kind==='vehicles'){
+        if(!reviewed.person_name||!reviewed.vehicle_name||!reviewed.phone)throw new Error('Approved vehicle request '+sub.id+' is missing owner/vehicle/phone; review it before publishing.');
+        var sourceId=String(sub.id);
+        var existing=data.drivers.find(function(d){return String(d.sourceSubmissionId||'')===sourceId;});
+        if(!existing){
+          var phoneDigits=String(reviewed.phone||'').replace(/\D/g,'');
+          existing=data.drivers.find(function(d){
+            return d.type===reviewed.vehicle_type&&String(d.phone||'').replace(/\D/g,'')===phoneDigits&&String(d.name||'').trim().toLowerCase()===String(reviewed.person_name||'').trim().toLowerCase()&&String(d.vehicle||'').indexOf(String(reviewed.vehicle_name||''))===0;
+          });
+        }
+        if(!existing){
+          existing={id:nextNum(reviewed.vehicle_type==='taxi'?'t':'a',data.drivers),type:reviewed.vehicle_type,name:reviewed.person_name,vehicle:reviewed.vehicle_name+((reviewed.year||reviewed.vehicle_model_number)?' · '+(reviewed.year||reviewed.vehicle_model_number):''),phone:reviewed.phone,areaId:reviewed.area_name||reviewed.location||null,info:(reviewed.union_name?'Union: '+reviewed.union_name+' · ':'')+(reviewed.vehicle_number?'Vehicle No: '+reviewed.vehicle_number+' · ':'')+(reviewed.details||''),sourceSubmissionId:sourceId};
+          if(reviewed.vehicle_type==='auto')existing.fuel=(reviewed.fuel_type||reviewed.fuel||'oil').toLowerCase();
+          if(reviewed.union_name)existing.union_name=reviewed.union_name;
+          if(reviewed.seats)existing.seats=reviewed.seats;
+          data.drivers.push(existing);changed=true;
+        }else if(!existing.sourceSubmissionId){existing.sourceSubmissionId=sourceId;changed=true;}
+      }else{
+        if(!await correctionAlreadyApplied(reviewed)){applyApprovedCorrection(reviewed);changed=true;}
+      }
+      var durable=Object.assign({},rd);
+      if(!Object.keys(durable).length)durable=Object.assign({},sub);
+      durable._bustime_published_version=nextVersion;
+      updates.push({table:spec.table,id:sub.id,reviewed_data:durable});
+    }
+  }
+  if(changed)setDirty(true);
+  return updates;
+}
 var publishSyncWarnings=0;
 async function publish() {
   if (!cfg.token) { toast('Add your GitHub token in Settings first'); return; }
   var approvedUpdates=await mergeApprovedRouteSubmissions();
+  var communityUpdates=await mergeApprovedCommunitySubmissions(baseVersion+1);
   var v = validate();
   if (v.errors.length) { toast('Fix the errors first'); return; }
   var out = {};
@@ -869,6 +948,15 @@ async function publish() {
         body:JSON.stringify({route_id:upd.route_id,reviewed_data:upd.reviewed_data,approved_at:upd.approved_at})
       });
     }catch(syncError){publishSyncWarnings++;}
+  }
+  for(var ci=0;ci<communityUpdates.length;ci++){
+    var cu=communityUpdates[ci];
+    try{
+      await sbFetch('/rest/v1/'+cu.table+'?id=eq.'+encodeURIComponent(cu.id),{
+        method:'PATCH',headers:{Prefer:'return=minimal'},
+        body:JSON.stringify({reviewed_data:cu.reviewed_data})
+      });
+    }catch(communitySyncError){publishSyncWarnings++;}
   }
 }
 
@@ -1332,7 +1420,7 @@ function viewAdvertisement(){
     html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Campaign setup</h2><p class="muted">A framed, dismissible poster shown at app launch — not a fullscreen ad.</p></div><label class="ad-check"><input id="ad_my_enabled" type="checkbox"'+adChecked(c.enabled)+'> Campaign enabled</label></div>'+
     '<div class="ad-grid"><div class="ad-field"><label>Campaign category</label><select id="ad_category" onchange="refreshAdTargets()"><option value="general" '+(c.category==='general'?'selected':'')+'>General promotion</option><option value="bus_route" '+((c.category==='bus_route'||(c.category==='bus_operator'&&c.target_kind==='route'))?'selected':'')+'>Bus Route</option><option value="bus_operator" '+((c.category==='bus_operator'&&c.target_kind!=='route')?'selected':'')+'>Bus Operator / Book Bus</option><option value="taxi" '+(c.category==='taxi'?'selected':'')+'>Taxi service / driver</option><option value="auto" '+(c.category==='auto'?'selected':'')+'>Auto service / driver</option></select></div><div class="ad-field"><label>Close button delay</label><select id="ad_close_delay"><option value="2" '+(Number(c.close_delay)===2?'selected':'')+'>2 seconds</option><option value="3" '+(Number(c.close_delay||3)===3?'selected':'')+'>3 seconds (recommended)</option><option value="4" '+(Number(c.close_delay)===4?'selected':'')+'>4 seconds</option></select></div></div>'+
     '<div class="ad-subhead">Poster artwork</div><div class="ad-field"><label>Public poster image URL</label><input id="ad_poster_url" value="'+adEscape(c.poster_url)+'" placeholder="https://..."></div>'+
-    '<div class="ad-grid" style="margin-top:10px"><div class="ad-field"><label>Upload poster</label><input id="ad_poster_file" type="file" accept="image/png,image/jpeg,image/webp"><p class="muted ad-help">Recommended: 1080 × 1350 px (4:5), max 8 MB.</p></div>'+(c.poster_url?'<div class="ad-poster"><img src="'+adEscape(c.poster_url)+'" alt="Poster preview"><span>Current campaign artwork<br>Preview uses the saved image URL.</span></div>':'<div class="ad-poster"><span>Poster preview will appear here after an image URL is set.</span></div>')+'</div>'+
+    '<div class="ad-grid" style="margin-top:10px"><div class="ad-field"><label>Upload poster</label><input id="ad_poster_file" type="file" accept="image/png,image/jpeg,image/webp"><p class="muted ad-help">Recommended: 1080 × 1350 px (4:5), max 8 MB.</p></div>'+(c.poster_url?'<div><div class="ad-poster"><img src="'+adEscape(c.poster_url)+'" alt="Poster preview"><span>Current campaign artwork<br>Preview uses the saved image URL.</span></div><button class="btn danger" type="button" data-act="ad-delete-poster" style="margin-top:10px">Delete uploaded poster</button></div>':'<div class="ad-poster"><span>Poster preview will appear here after an image URL is set.</span></div>')+'</div>'+
     '<div class="ad-subhead">Campaign schedule</div><div class="ad-grid"><div class="ad-field"><label>Start date</label><input id="ad_start_date" type="date" value="'+adEscape(c.start_date)+'"></div><div class="ad-field"><label>End date</label><input id="ad_end_date" type="date" value="'+adEscape(c.end_date)+'"></div></div>'+
     '<div class="ad-subhead">Optional call-to-action buttons</div><p class="muted ad-help">Only the actions enabled below will appear with the campaign.</p>'+
     '<div class="ad-grid" style="margin-top:10px"><div><label class="ad-check"><input id="ad_check_route_enabled" type="checkbox"'+adChecked(c.check_route_enabled)+'> '+adEscape(adActionLabel(c.target_kind||(c.category==='bus_route'?'route':c.category==='bus_operator'?'operator':c.category==='taxi'?'taxi':c.category==='auto'?'auto':'')))+' button</label><div class="ad-field" style="margin-top:8px"><label>Choose the matching listing</label><select id="ad_target_id" onchange="refreshAdActionLabel()">'+adTargetOptions()+'</select><input id="ad_route_id" type="hidden" value="'+adEscape(c.route_id)+'"></div></div>'+
@@ -1375,7 +1463,8 @@ async function uploadAdPoster(file){
   var ext=allowed[file.type];
   var path='campaign-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext;
   var base=cfg.sbUrl.replace(/\/+$/,'');
-  var headers={apikey:cfg.sbKey,Authorization:'Bearer '+cfg.sbKey,'Content-Type':file.type,'x-upsert':'false'};
+  if(!sbToken)throw new Error('Sign in with the owner Admin account before uploading a poster.');
+  var headers={apikey:cfg.sbKey,Authorization:'Bearer '+sbToken,'Content-Type':file.type,'x-upsert':'false'};
   var response=await fetch(base+'/storage/v1/object/ads-posters/'+path,{method:'POST',headers:headers,body:file});
   if(!response.ok){
     var detail='';
@@ -1383,6 +1472,28 @@ async function uploadAdPoster(file){
     throw new Error('Poster upload failed: HTTP '+response.status+(detail?' — '+detail:'')+'.');
   }
   adConfig.my.poster_url=base+'/storage/v1/object/public/ads-posters/'+path;
+}
+async function deleteAdPoster(){
+  if(!sbToken)throw new Error('Sign in with the owner Admin account before deleting a poster.');
+  var base=cfg.sbUrl.replace(/\/+$/,'');
+  var savedUrl=String(adConfig.my.poster_url||'').trim();
+  var marker='/storage/v1/object/public/ads-posters/';
+  var markerAt=savedUrl.indexOf(marker);
+  if(!savedUrl||markerAt<0||savedUrl.slice(0,markerAt)!==base)throw new Error('The saved poster is not a managed ads-posters file, so it cannot be deleted here.');
+  var objectPath;
+  try{objectPath=decodeURIComponent(savedUrl.slice(markerAt+marker.length).split('?')[0]);}catch(_){throw new Error('The saved poster URL is invalid.');}
+  if(!objectPath||objectPath.split('/').some(function(part){return !part||part==='.'||part==='..';}))throw new Error('The saved poster path is invalid.');
+  // Clear the saved URL first so the app will not keep showing a broken image if Storage cleanup fails.
+  adConfig.my.poster_url='';
+  await saveAdConfig();
+  var encodedPath=objectPath.split('/').map(encodeURIComponent).join('/');
+  var response=await fetch(base+'/storage/v1/object/ads-posters/'+encodedPath,{method:'DELETE',headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken}});
+  if(!response.ok){
+    var detail='';
+    try{var payload=await response.json();detail=payload.message||payload.error||payload.error_description||JSON.stringify(payload);}catch(_){}
+    throw new Error('Poster URL cleared, but Storage file deletion failed: HTTP '+response.status+(detail?' — '+detail:'')+'.');
+  }
+  toast('Poster deleted and campaign URL cleared.');
 }
 
 function viewSettings() {
@@ -2776,8 +2887,9 @@ document.addEventListener('click', async function (e) {
         if(!(merged.service_name||merged.operator_name)||!merged.location||!Array.isArray(merged.bus_types)||!merged.bus_types.length||!merged.phone){toast('Service name, bus types, operating location and phone are required.');return;}
         await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:merged.service_name||merged.operator_name,service_name:merged.service_name||merged.operator_name,bus_types:Array.isArray(merged.bus_types)?merged.bus_types:[],location:merged.location||null,phone:merged.phone,whatsapp:merged.whatsapp||null,details:merged.details||null,active:true})});
       }
-      await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:rv,reviewed_at:stamp,approved_at:stamp,status:'approved'})});
-      orig.reviewed_data=rv;orig.reviewed_at=stamp;orig.approved_at=stamp;orig.status='approved';communityReviewEditor=null;
+      var durableReviewed=Object.assign({},merged);
+      await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:durableReviewed,reviewed_at:stamp,approved_at:stamp,status:'approved'})});
+      orig.reviewed_data=durableReviewed;orig.reviewed_at=stamp;orig.approved_at=stamp;orig.status='approved';communityReviewEditor=null;
       toast('Approved reviewed data; original submission retained. Publish separately to make snapshot changes live.');render();return;
     }
     else if (act === 'community-refresh') { await loadCommunity(); render(); }
@@ -2790,7 +2902,7 @@ document.addEventListener('click', async function (e) {
       if (act === 'community-approve') {
         if (kind === 'corrections') applyApprovedCorrection(record);
         if (kind === 'vehicles') {
-          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name + ((record.year || record.vehicle_model_number) ? ' · '+(record.year || record.vehicle_model_number) : ''), phone:record.phone, areaId:record.area_name || record.location || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.vehicle_number ? 'Vehicle No: '+record.vehicle_number+' · ' : '') + (record.details || '') };
+          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name + ((record.year || record.vehicle_model_number) ? ' · '+(record.year || record.vehicle_model_number) : ''), phone:record.phone, areaId:record.area_name || record.location || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.vehicle_number ? 'Vehicle No: '+record.vehicle_number+' · ' : '') + (record.details || ''), sourceSubmissionId:String(record.id) };
           if (record.vehicle_type==='auto') driver.fuel=(record.fuel_type||record.fuel||'oil').toLowerCase();
           if (record.union_name) driver.union_name=record.union_name;
           if (record.seats) driver.seats = record.seats;
@@ -2801,7 +2913,13 @@ document.addEventListener('click', async function (e) {
           await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.service_name||record.operator_name,service_name:record.service_name||record.operator_name,bus_types:record.bus_types,location:record.location,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
         }
       } else if (!confirm('Reject this request?')) return;
-      await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({status:act==='community-approve'?'approved':'rejected'}) });
+      var approvalStamp=new Date().toISOString();
+      var approvalPatch={status:act==='community-approve'?'approved':'rejected'};
+      if(act==='community-approve'){
+        approvalPatch.approved_at=approvalStamp;
+        if(kind==='vehicles'||kind==='corrections')approvalPatch.reviewed_data=Object.assign({},record,record.reviewed_data&&typeof record.reviewed_data==='object'?record.reviewed_data:{});
+      }
+      await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify(approvalPatch) });
       record.status = act==='community-approve'?'approved':'rejected'; toast(act==='community-approve'?(kind==='vehicles'?'Approved in Admin data. Press Publish at the top to make this Taxi/Auto listing visible in the app.':kind==='busSubmissions'?'Bus operator approved and published to the operator directory.':'Approved. If route data changed, press Publish to make it live.'):'Moved to Rejected.'); render();
     }
     else if (act === 'community-delete') {
@@ -2914,6 +3032,10 @@ document.addEventListener('click', async function (e) {
       await saveAdConfig();toast('AdMob settings saved.');render();
     }
     else if (act === 'ad-upload-poster') { /* file input is handled by change listener */ }
+    else if (act === 'ad-delete-poster') {
+      if(!confirm('Delete the saved campaign poster and clear its URL?'))return;
+      await deleteAdPoster();render();
+    }
 
     // ---- publish ----
     else if (act === 'publish') {
