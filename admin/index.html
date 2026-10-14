@@ -424,7 +424,7 @@ var communityReviewEditor = null;
 var operatorEditingId=null;
 function busOperatorFormHtml(bus,reviewMode){
  bus=bus||{};var name=String(bus.service_name||bus.operator_name||''),location=String(bus.location||''),phone=String(bus.phone||''),whatsapp=String(bus.whatsapp||''),details=String(bus.details||'');
- var types=Array.isArray(bus.bus_types)?bus.bus_types.map(String):[],known=['Ordinary','Seater','Sleeper','AC Bus','Non-AC Bus','Luxury Bus','Volvo Bus','Mini Bus'];
+ var types=Array.isArray(bus.bus_types)?bus.bus_types.map(String):[],known=['Ordinary','Seater','Sleeper','AC Bus','Non-AC Bus','Luxury Bus','Volvo Bus','Mini Bus','Other'];
  var custom=types.filter(function(t){return known.indexOf(t)<0;}),hasOther=types.indexOf('Other')>=0||custom.length>0,otherValue=custom.join(', ');
  var attr=reviewMode?'data-cr-field="':'data-bus-field="';
  var html='<label>Bus service / company name</label><input '+attr+'service_name" value="'+esc(name)+'">';
