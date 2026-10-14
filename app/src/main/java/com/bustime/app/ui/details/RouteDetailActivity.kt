@@ -1,6 +1,7 @@
 package com.bustime.app.ui.details
 
 import android.os.Bundle
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
@@ -100,8 +101,24 @@ class RouteDetailActivity : AppCompatActivity() {
             val inflater = LayoutInflater.from(this@RouteDetailActivity)
             for ((i, s) in stops.withIndex()) {
                 val row = inflater.inflate(R.layout.item_stop, container, false)
-                row.findViewById<TextView>(R.id.tvStopTime).text = TimeFormat.format(s.time)
-                row.findViewById<TextView>(R.id.tvStopName).text = name(s.placeId)
+                val tvStopTime = row.findViewById<TextView>(R.id.tvStopTime)
+                val tvStopName = row.findViewById<TextView>(R.id.tvStopName)
+                tvStopTime.text = TimeFormat.format(s.time)
+                tvStopName.text = name(s.placeId)
+
+                // In route-search results, highlight the exact searched stops, even when intermediate.
+                val highlightColor = when (s.placeId) {
+                    intent.getStringExtra("SEARCH_FROM_ID") -> getColor(R.color.stopFromHighlight)
+                    intent.getStringExtra("SEARCH_TO_ID") -> getColor(R.color.stopToHighlight)
+                    else -> null
+                }
+                if (highlightColor != null) {
+                    tvStopTime.setTextColor(highlightColor)
+                    tvStopName.setTextColor(highlightColor)
+                    row.findViewById<View>(R.id.stopDot).backgroundTintList =
+                        ColorStateList.valueOf(highlightColor)
+                }
+
                 if (i == 0) {
                     row.findViewById<TextView>(R.id.tvStopTime).textSize = 18f
                     row.findViewById<TextView>(R.id.tvStopName).textSize = 18f
