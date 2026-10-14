@@ -661,8 +661,145 @@ async function loadData() {
   data = normalize(JSON.parse(b64decode(j.content)));
   sha = j.sha; baseVersion = data.dataVersion || 0; editing = null; publishOpen = false; setDirty(false);
 }
+// Approved submissions must survive page refreshes until the GitHub snapshot is published.
+function approvedPlaceNameMap(place) {
+  var n=place&&place.name&&typeof place.name==='object'?place.name:{};
+  return {en:String(n.en||'').trim(),hi:String(n.hi||'').trim(),pa:String(n.pa||'').trim()};
+}
+function mergeApprovedPlaceRecord(place) {
+  if(!place||!place.id)return;
+  var current=placeById(place.id);
+  if(!current){
+    if(!Object.keys(approvedPlaceNameMap(place)).some(function(k){return !!approvedPlaceNameMap(place)[k];}))return;
+    data.places.push(JSON.parse(JSON.stringify(place)));
+    return;
+  }
+  current.name=current.name||{};
+  var incoming=approvedPlaceNameMap(place);
+  ['en','hi','pa'].forEach(function(lang){if(!current.name[lang]&&incoming[lang])current.name[lang]=incoming[lang];});
+  if(Array.isArray(place.aliases)){
+    current.aliases=current.aliases||[];
+    place.aliases.forEach(function(a){if(a&&current.aliases.indexOf(a)<0)current.aliases.push(a);});
+  }
+}
+function approvedResolvePlace(preferredId,names,fallbackName) {
+  names=names&&typeof names==='object'?names:{};
+  var clean={};
+  ['en','hi','pa'].forEach(function(lang){var value=String(names[lang]||'').trim();if(value)clean[lang]=value;});
+  if(!Object.keys(clean).length&&fallbackName)clean.en=String(fallbackName).trim();
+  if(preferredId&&placeById(preferredId))return preferredId;
+  function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\\s+/g,' ');}
+  var found=data.places.find(function(p){
+    return Object.keys(clean).some(function(lang){return norm((p.name||{})[lang])===norm(clean[lang]);})||
+      (p.aliases||[]).some(function(a){return Object.keys(clean).some(function(lang){return norm(a)===norm(clean[lang]);});});
+  });
+  if(found){
+    found.name=found.name||{};
+    ['en','hi','pa'].forEach(function(lang){if(!found.name[lang]&&clean[lang])found.name[lang]=clean[lang];});
+    return found.id;
+  }
+  var primary=clean.en||clean.hi||clean.pa||String(fallbackName||preferredId||'').trim();
+  if(!primary)return null;
+  var id=preferredId&&!placeById(preferredId)?preferredId:makeId('place_user_',primary,function(candidate){return !!placeById(candidate);});
+  data.places.push({id:id,kind:'place',name:clean.en||clean.hi||clean.pa?clean:{en:primary},aliases:[]});
+  return id;
+}
+function approvedRouteSignature(route) {
+  return JSON.stringify({
+    from:String(route.from||''),to:String(route.to||''),time:String(route.time||''),service:String(route.service||''),
+    arrive:String(route.arrive||''),
+    stops:(Array.isArray(route.stops)?route.stops:[]).map(function(st){return [String(st.place||''),String(st.time||''),Number(st.day_offset||0)];})
+  });
+}
+function cloneApprovedRoute(route) { return JSON.parse(JSON.stringify(route)); }
+function persistApprovedPayload(route) {
+  var ids=[route.from,route.to].concat((route.stops||[]).map(function(st){return st.place;}));
+  var seen={};
+  return data.places.filter(function(p){if(ids.indexOf(p.id)<0||seen[p.id])return false;seen[p.id]=true;return true;}).map(function(p){return JSON.parse(JSON.stringify(p));});
+}
+async function mergeApprovedRouteSubmissions() {
+  if(!cfg.sbUrl||!cfg.sbKey)throw new Error('Configure Supabase and sign in before publishing so approved routes are not missed.');
+  if(!sbToken)throw new Error('Sign in to Supabase before publishing. This lets Publish include every approved route, even after a page refresh.');
+  var all=[],offset=0,pageSize=500;
+  while(true){
+    var page=await sbFetch('/rest/v1/route_submissions?select=*&status=eq.approved&order=created_at.asc&limit='+pageSize+'&offset='+offset);
+    page=Array.isArray(page)?page:[];
+    all=all.concat(page);
+    if(page.length<pageSize)break;
+    offset+=pageSize;
+  }
+  var updates=[],changed=false;
+  all.forEach(function(sub){
+    // Existing-route edits change a known record rather than create a new service.
+    // Their approved draft is handled by the edit workflow, not appended as a new route.
+    if(sub.submission_type==='edit_existing_route')return;
+    var rd=sub.reviewed_data&&typeof sub.reviewed_data==='object'?sub.reviewed_data:{};
+    var route=null;
+    if(rd.version===1&&rd.route&&typeof rd.route==='object'){
+      (Array.isArray(rd.places)?rd.places:[]).forEach(mergeApprovedPlaceRecord);
+      route=cloneApprovedRoute(rd.route);
+    }else{
+      var stopRows=Array.isArray(sub.stops)?sub.stops:[];
+      var first=stopRows.length?stopRows[0]:{},last=stopRows.length?stopRows[stopRows.length-1]:{};
+      var fromName=sub.from_text||first.name||'',toName=sub.to_text||last.name||'';
+      var fromId=approvedResolvePlace(sub.from_id,first.names||{},fromName);
+      var toId=approvedResolvePlace(sub.to_id,last.names||{},toName);
+      if(!fromId||!toId)return;
+      var start=String(sub.start_time||'');
+      if(!TIME_RE.test(start))start=String((stopRows.find(function(st){return TIME_RE.test(st.time||'');})||{}).time||'');
+      if(!TIME_RE.test(start))return;
+      var mid=[],arrive=null,previous=start,day=0;
+      stopRows.forEach(function(st,index){
+        var fallback=String(st.name||((index===0)?fromName:(index===stopRows.length-1?toName:''))||'');
+        var pid=approvedResolvePlace(st.place,st.names||{},fallback);
+        if(!pid)return;
+        var tm=TIME_RE.test(st.time||'')?st.time:null;
+        if(tm&&tm<previous)day++;
+        if(tm)previous=tm;
+        if(pid===toId){if(tm)arrive=tm;return;}
+        if(pid!==fromId){
+          var item={place:pid};
+          if(tm)item.time=tm;
+          if(day)item.day_offset=day;
+          mid.push(item);
+        }
+      });
+      route={id:'',from:fromId,to:toId,time:start};
+      if(arrive)route.arrive=arrive;
+      if(sub.service_name)route.service=String(sub.service_name);
+      if(mid.length)route.stops=mid;
+      if(sub.long_route)route.longRoute=true;
+      if(sub.start_date)route.startDate=String(sub.start_date);
+    }
+    if(!route||!route.from||!route.to||!TIME_RE.test(String(route.time||'')))return;
+    // Resolve missing Place IDs before publishing; never publish a route with broken references.
+    if(!placeById(route.from))route.from=approvedResolvePlace(route.from,{en:sub.from_text||''},sub.from_text||route.from);
+    if(!placeById(route.to))route.to=approvedResolvePlace(route.to,{en:sub.to_text||''},sub.to_text||route.to);
+    (route.stops||[]).forEach(function(st){
+      if(st.place&&!placeById(st.place))st.place=approvedResolvePlace(st.place,{en:st.name||''},st.name||st.place);
+    });
+    if(!placeById(route.from)||!placeById(route.to))return;
+    var existingById=sub.route_id&&data.routes.find(function(r){return String(r.id)===String(sub.route_id);});
+    var existing=existingById||data.routes.find(function(r){return approvedRouteSignature(r)===approvedRouteSignature(route);});
+    if(existing){
+      route=existing;
+    }else{
+      var wanted=String(route.id||'');
+      if(!wanted||data.routes.some(function(r){return String(r.id)===wanted;}))wanted=nextNum('r',data.routes);
+      route.id=wanted;
+      data.routes.push(route);
+      changed=true;
+    }
+    var payload={version:1,route:cloneApprovedRoute(route),places:persistApprovedPayload(route)};
+    updates.push({id:sub.id,route_id:String(route.id),reviewed_data:payload,approved_at:sub.approved_at||new Date().toISOString()});
+  });
+  if(changed)setDirty(true);
+  return updates;
+}
+var publishSyncWarnings=0;
 async function publish() {
   if (!cfg.token) { toast('Add your GitHub token in Settings first'); return; }
+  var approvedUpdates=await mergeApprovedRouteSubmissions();
   var v = validate();
   if (v.errors.length) { toast('Fix the errors first'); return; }
   var out = {};
@@ -672,7 +809,7 @@ async function publish() {
   out.taxiSeaters = data.taxiSeaters; out.drivers = data.drivers;
   var body = {
     message: 'Data update v' + out.dataVersion + ' [skip ci]',
-    content: b64encode(JSON.stringify(out, null, 2) + '\n'),
+    content: b64encode(JSON.stringify(out, null, 2) + '\\n'),
     sha: sha, branch: cfg.branch
   };
   var h = ghHeaders(); h['Content-Type'] = 'application/json';
@@ -683,6 +820,16 @@ async function publish() {
   if (!r.ok) throw new Error('GitHub ' + r.status + ' - ' + (await r.text()).slice(0, 160));
   var j = await r.json();
   sha = j.content.sha; baseVersion = out.dataVersion; data.dataVersion = out.dataVersion; setDirty(false);
+  publishSyncWarnings=0;
+  for(var ui=0;ui<approvedUpdates.length;ui++){
+    var upd=approvedUpdates[ui];
+    try{
+      await sbFetch('/rest/v1/route_submissions?id=eq.'+encodeURIComponent(upd.id),{
+        method:'PATCH',headers:{Prefer:'return=minimal'},
+        body:JSON.stringify({route_id:upd.route_id,reviewed_data:upd.reviewed_data,approved_at:upd.approved_at})
+      });
+    }catch(syncError){publishSyncWarnings++;}
+  }
 }
 
 // ============ Validation (same rules the app applies on import) ============
@@ -2469,8 +2616,16 @@ document.addEventListener('click', async function (e) {
       if (v.service) nr.service = v.service;
       if (mid.length) nr.stops = mid;
       data.routes.push(nr); setDirty(true);
-      await sbFetch('/rest/v1/route_submissions?id=eq.' + sub.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'approved' }) });
-      subs[i].status = 'approved'; routeReviewEditor = null; toast('Approved and retained in Approved list. Press Publish to make it live.'); render();
+      var approvedAt=new Date().toISOString();
+      var approvedPlaceIds=[nr.from,nr.to].concat((nr.stops||[]).map(function(st){return st.place;}));
+      var approvedPlaces=data.places.filter(function(p){return approvedPlaceIds.indexOf(p.id)>=0;}).map(function(p){return JSON.parse(JSON.stringify(p));});
+      var approvedPayload={version:1,route:JSON.parse(JSON.stringify(nr)),places:approvedPlaces};
+      await sbFetch('/rest/v1/route_submissions?id=eq.' + encodeURIComponent(sub.id), {
+        method:'PATCH',headers:{Prefer:'return=minimal'},
+        body:JSON.stringify({status:'approved',route_id:nr.id,reviewed_data:approvedPayload,approved_at:approvedAt})
+      });
+      subs[i].status = 'approved'; subs[i].route_id=nr.id; subs[i].reviewed_data=approvedPayload; subs[i].approved_at=approvedAt;
+      routeReviewEditor = null; toast('Approved and saved safely. Publish will include this route even after a refresh.'); render();
     }
 
     // ---- community requests ----
@@ -2629,7 +2784,7 @@ document.addEventListener('click', async function (e) {
     // ---- publish ----
     else if (act === 'publish') {
       b.disabled = true; b.textContent = 'Publishing...';
-      await publish(); publishOpen = false; toast('Published. Data version ' + baseVersion); render();
+      await publish(); publishOpen = false; toast('Published. Data version ' + baseVersion + (publishSyncWarnings ? ' · Warning: '+publishSyncWarnings+' approval record(s) could not be marked as published; the routes are in the snapshot and will not be duplicated next time.' : '')); render();
     }
   } catch (err) {
     toast('Error: ' + err.message); render();
