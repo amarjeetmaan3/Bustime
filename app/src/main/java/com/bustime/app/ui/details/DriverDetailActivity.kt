@@ -2,6 +2,9 @@ package com.bustime.app.ui.details
 
 import android.os.Bundle
 import android.view.Gravity
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -31,28 +34,106 @@ class DriverDetailActivity : AppCompatActivity() {
         val numberLabel = when(language) { "hi" -> "फ़ोन नंबर"; "pa" -> "ਫ਼ੋਨ ਨੰਬਰ"; else -> "Phone number" }
         val vehicleLabel = when(language) { "hi" -> "वाहन"; "pa" -> "ਵਾਹਨ"; else -> "Vehicle" }
         val unionLabel = when(language) { "hi" -> "यूनियन"; "pa" -> "ਯੂਨੀਅਨ"; else -> "Union" }
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(16), dp(20), dp(24)) }
-        val scroll = ScrollView(this).apply { addView(root) }
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(24))
+            setBackgroundColor(Color.rgb(245, 247, 251))
+        }
+        val scroll = ScrollView(this).apply { clipToPadding = false; addView(root) }
         setContentView(scroll)
-        root.addView(TextView(this).apply { text = name.ifBlank { if(type=="taxi") "Taxi Details" else "Auto Details" }; textSize=24f; setPadding(0,0,0,dp(16)) })
+
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(20), dp(24), dp(20), dp(22))
+            background = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(18).toFloat()
+                setStroke(dp(1), Color.rgb(229, 234, 242))
+            }
+        }
+        val avatar = TextView(this).apply {
+            text = if (type.equals("auto", true)) "🛺" else "🚕"
+            textSize = 38f
+            gravity = Gravity.CENTER
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.rgb(234, 240, 255))
+            }
+        }
+        header.addView(avatar, LinearLayout.LayoutParams(dp(84), dp(84)).apply { bottomMargin = dp(12) })
+        header.addView(TextView(this).apply {
+            text = name.ifBlank { if(type=="taxi") "Taxi Driver" else "Auto Driver" }
+            textSize = 23f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(24, 34, 48))
+            gravity = Gravity.CENTER
+        })
+        header.addView(TextView(this).apply {
+            val meta = buildList {
+                if (vehicle.isNotBlank()) add(vehicle)
+                if (seats > 0) add("$seats " + when(language) { "hi" -> "सीटर"; "pa" -> "ਸੀਟਰ"; else -> "seater" })
+                if (fuel.isNotBlank()) add(if (fuel.equals("ev", true)) "EV" else fuel.replaceFirstChar { it.uppercase() })
+            }.joinToString("  ·  ")
+            text = meta.ifBlank { if(language=="hi") "ड्राइवर विवरण" else if(language=="pa") "ਡਰਾਈਵਰ ਵੇਰਵੇ" else "Driver details" }
+            textSize = 14f
+            setTextColor(Color.rgb(102, 117, 138))
+            gravity = Gravity.CENTER
+            setPadding(0, dp(6), 0, 0)
+        })
+        root.addView(header, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
+
+        val detailsCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(6), dp(16), dp(6))
+            background = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), Color.rgb(229, 234, 242))
+            }
+        }
         fun detail(label: String, value: String) {
             if (value.isBlank()) return
-            root.addView(TextView(this).apply { text = "$label\n$value"; textSize=17f; setPadding(0,dp(8),0,dp(8)) })
+            val item = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(0, dp(11), 0, dp(11))
+            }
+            item.addView(TextView(this).apply {
+                text = label
+                textSize = 12f
+                setTextColor(Color.rgb(102, 117, 138))
+            })
+            item.addView(TextView(this).apply {
+                text = value
+                textSize = 16f
+                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(Color.rgb(24, 34, 48))
+                setPadding(0, dp(3), 0, 0)
+            })
+            detailsCard.addView(item)
+            val divider = android.view.View(this).apply { setBackgroundColor(Color.rgb(238, 241, 246)) }
+            detailsCard.addView(divider, LinearLayout.LayoutParams(-1, dp(1)))
         }
         detail(vehicleLabel, vehicle)
         if (seats > 0) detail(if(language=="hi") "सीटें" else if(language=="pa") "ਸੀਟਾਂ" else "Seats", seats.toString())
-        if (fuel.isNotBlank()) detail(if(language=="hi") "ईंधन" else if(language=="pa") "ਬਾਲਣ" else "Fuel", fuel)
+        if (fuel.isNotBlank()) detail(if(language=="hi") "ईंधन" else if(language=="pa") "ਬਾਲਣ" else "Fuel", fuel.uppercase())
         detail(unionLabel, union)
-        detail(if(language=="hi") "अन्य जानकारी" else if(language=="pa") "ਹੋਰ ਜਾਣਕਾਰੀ" else "Other information", info)
+        detail(if(language=="hi") "अन्य जानकारी" else if(language=="pa") "ਹੋਰ ਜਾਣਕਾਰੀ" else "Additional information", info)
         detail(numberLabel, phone)
+        root.addView(detailsCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
+
         root.addView(Button(this).apply {
-            text = if(language=="hi") "कॉल करें" else if(language=="pa") "ਕਾਲ ਕਰੋ" else "Call"
+            text = if(language=="hi") "कॉल करें" else if(language=="pa") "ਕਾਲ ਕਰੋ" else "Call driver"
+            setTextColor(Color.WHITE)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.rgb(36, 88, 211))
             setOnClickListener { ContactActions.dial(this@DriverDetailActivity, phone) }
-        }, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin=dp(10) })
+        }, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(8) })
         root.addView(Button(this).apply {
             text = "WhatsApp"
+            setTextColor(Color.rgb(24, 111, 68))
+            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.rgb(225, 245, 234))
             setOnClickListener { ContactActions.whatsapp(this@DriverDetailActivity, phone) }
-        }, LinearLayout.LayoutParams(-1, dp(50)))
+        }, LinearLayout.LayoutParams(-1, dp(52)))
         lifecycleScope.launch {
             val settings = withContext(Dispatchers.IO) { RemoteContentSettings.refresh() }
             if (!settings.popupEnabled) return@launch
