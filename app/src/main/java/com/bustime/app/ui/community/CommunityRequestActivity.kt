@@ -235,15 +235,25 @@ class CommunityRequestActivity : AppCompatActivity() {
         text(getString(com.bustime.app.R.string.community_bus_form_intro), 14f)
         field("service_name", getString(com.bustime.app.R.string.community_service_name))
         field("location", getString(com.bustime.app.R.string.bb_location))
-        text("Bus types (select all that apply)", 15f, true)
-        val typeOptions = listOf("Ordinary", "Seater", "Sleeper", "AC Bus", "Non-AC Bus", "Luxury Bus", "Volvo Bus", "Mini Bus", "Other")
+        text(getString(com.bustime.app.R.string.bus_types_select_label), 15f, true)
+        val typeOptions = listOf(
+            "Ordinary" to getString(com.bustime.app.R.string.bus_type_ordinary),
+            "Seater" to getString(com.bustime.app.R.string.bus_type_seater),
+            "Sleeper" to getString(com.bustime.app.R.string.bus_type_sleeper),
+            "AC Bus" to getString(com.bustime.app.R.string.bus_type_ac),
+            "Non-AC Bus" to getString(com.bustime.app.R.string.bus_type_non_ac),
+            "Luxury Bus" to getString(com.bustime.app.R.string.bus_type_luxury),
+            "Volvo Bus" to getString(com.bustime.app.R.string.bus_type_volvo),
+            "Mini Bus" to getString(com.bustime.app.R.string.bus_type_mini),
+            "Other" to getString(com.bustime.app.R.string.bus_type_other)
+        )
         val typeChecks = linkedMapOf<String, CheckBox>()
-        typeOptions.forEach { type ->
-            val check = CheckBox(this).apply { text = type; textSize = 15f }
+        typeOptions.forEach { (type, label) ->
+            val check = CheckBox(this).apply { text = label; textSize = 15f }
             typeChecks[type] = check
             root.addView(check)
         }
-        field("bus_other_type", "Other bus type (if selected)").apply { isSingleLine = true }
+        field("bus_other_type", getString(com.bustime.app.R.string.bus_type_other_hint)).apply { isSingleLine = true }
         field("phone", getString(com.bustime.app.R.string.community_operator_mobile))
         field("whatsapp", getString(com.bustime.app.R.string.community_whatsapp_optional))
         field("details", getString(com.bustime.app.R.string.community_other_info)).apply {
@@ -257,12 +267,12 @@ class CommunityRequestActivity : AppCompatActivity() {
             val selected = typeChecks.filterValues { it.isChecked }.keys.toMutableList()
             val other = value("bus_other_type").trim()
             if ("Other" in selected) {
-                if (other.isBlank()) { toast("Enter the other bus type."); return@button }
+                if (other.isBlank()) { toast(getString(com.bustime.app.R.string.bus_type_required_error)); return@button }
                 selected.remove("Other")
                 selected.add(other)
             }
             if (service.isBlank() || location.isBlank() || phone.length !in 10..13 || selected.isEmpty()) {
-                toast("Enter the company/service name, bus type, operating location and a valid phone number.")
+                toast(getString(com.bustime.app.R.string.community_fill_bus_required))
                 return@button
             }
             val types = org.json.JSONArray()
