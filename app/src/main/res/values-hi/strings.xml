@@ -277,4 +277,8 @@
     <string name="bb_seats_format">%1$d सीटें</string>
     <string name="bb_not_specified">निर्दिष्ट नहीं</string>
     <string name="fuel_oil">पेट्रोल / CNG</string>
+    <string name="area_change_title">क्षेत्र बदलें</string>
+    <string name="area_change_label">क्षेत्र बदलें: %1$s ▾</string>
+    <string name="area_select_prompt">इलाका चुनें</string>
+    <string name="area_all_areas">सभी इलाके</string>
 </resources>
