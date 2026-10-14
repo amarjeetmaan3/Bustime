@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
@@ -77,7 +78,28 @@ class BookBusActivity : AppCompatActivity() {
         })
 
         var selectedArea: String? = null
+        var searchQuery = ""
         var allRowsCache: List<JSONObject> = emptyList()
+        val searchBox = EditText(this).apply {
+            hint = "Search company, bus type or location"
+            singleLine = true
+            textSize = 15f
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            background = GradientDrawable().apply {
+                setColor(cardBg)
+                cornerRadius = dp(12).toFloat()
+                setStroke(dp(1), borderColor)
+            }
+            addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    searchQuery = s?.toString()?.trim().orEmpty()
+                    renderOperators(allRowsCache, results, selectedArea, searchQuery, cardBg, primaryText, secondaryText, borderColor)
+                }
+                override fun afterTextChanged(s: android.text.Editable?) {}
+            })
+        }
+        content.addView(searchBox, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
         val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val loading = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -104,7 +126,7 @@ class BookBusActivity : AppCompatActivity() {
                         selectedArea = if (which == 0) null else areas[which - 1]
                         text = getString(R.string.area_change_label, selectedArea ?: getString(R.string.area_all_areas))
                         dialog.dismiss()
-                        renderOperators(allRowsCache, results, selectedArea, cardBg, primaryText, secondaryText, borderColor)
+                        renderOperators(allRowsCache, results, selectedArea, searchQuery, cardBg, primaryText, secondaryText, borderColor)
                     }
                     .setNegativeButton(R.string.cancel, null)
                     .show()
@@ -147,6 +169,7 @@ class BookBusActivity : AppCompatActivity() {
         allRows: List<JSONObject>,
         results: LinearLayout,
         selectedArea: String?,
+        searchQuery: String,
         cardBg: Int,
         primaryText: Int,
         secondaryText: Int,
@@ -154,91 +177,65 @@ class BookBusActivity : AppCompatActivity() {
     ) {
         results.removeAllViews()
         val visibleRows = allRows.filter { item ->
-            selectedArea == null || item.optString("location").trim().equals(selectedArea, ignoreCase = true)
+            val areaMatches = selectedArea == null || item.optString("location").trim().equals(selectedArea, ignoreCase = true)
+            val types = try {
+                val arr = item.optJSONArray("bus_types")
+                if (arr != null) (0 until arr.length()).mapNotNull { arr.optString(it).takeIf(String::isNotBlank) }
+                else listOf(item.optString("bus_type")).filter(String::isNotBlank)
+            } catch (_: Exception) { listOf(item.optString("bus_type")).filter(String::isNotBlank) }
+            val searchable = listOf(item.optString("service_name"), item.optString("operator_name"), item.optString("location"), item.optString("details")) .plus(types).joinToString(" ")
+            areaMatches && (searchQuery.isBlank() || searchable.contains(searchQuery, ignoreCase = true))
         }
         if (visibleRows.isEmpty()) {
             results.addView(TextView(this).apply {
-                text = if (selectedArea == null) getString(R.string.bb_no_operators) else getString(R.string.bb_no_options_area, selectedArea)
+                text = if (searchQuery.isNotBlank()) "No bus services match “$searchQuery”." else if (selectedArea == null) getString(R.string.bb_no_operators) else getString(R.string.bb_no_options_area, selectedArea)
                 textSize = 15f
                 setTextColor(secondaryText)
                 setPadding(dp(4), dp(12), dp(4), dp(12))
             })
             return
         }
-
         visibleRows.forEach { item ->
-            val serviceName = item.optString("service_name").trim().ifBlank { getString(R.string.bb_service) }
+            val serviceName = item.optString("service_name").trim().ifBlank { item.optString("operator_name").trim() }.ifBlank { getString(R.string.bb_service) }
             val operatorName = item.optString("operator_name").trim()
-            val busType = localizedCategory(item.optString("bus_type").ifBlank { getString(R.string.bb_bus) })
-            val variant = item.optString("custom_category").trim()
-            val seatType = localizedSeatType(item.optString("seat_type").trim().ifBlank { getString(R.string.bb_not_specified) })
-            val capacity = listOfNotNull(
-                item.optInt("sleeper_count", -1).takeIf { it >= 0 }?.let { getString(R.string.bb_sleeper_berths_format, it) },
-                item.optInt("seater_count", -1).takeIf { it >= 0 }?.let { getString(R.string.bb_seats_format, it) }
-            ).joinToString(" · ")
-            val typeLine = listOfNotNull(
-                busType,
-                variant.takeIf(String::isNotBlank),
-                seatType.takeIf { it != getString(R.string.bb_not_specified) },
-                capacity.takeIf(String::isNotBlank)
-            ).joinToString(" · ")
-
+            val types = try {
+                val arr = item.optJSONArray("bus_types")
+                if (arr != null) (0 until arr.length()).mapNotNull { arr.optString(it).trim().takeIf(String::isNotBlank) }
+                else listOf(item.optString("bus_type").trim()).filter(String::isNotBlank)
+            } catch (_: Exception) { listOf(item.optString("bus_type").trim()).filter(String::isNotBlank) }
+            val typeLine = types.joinToString(" · ") { localizedCategory(it) }
+            val location = item.optString("location").trim()
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(dp(16), dp(15), dp(16), dp(15))
                 background = GradientDrawable().apply {
-                    setColor(cardBg)
-                    cornerRadius = dp(16).toFloat()
-                    setStroke(dp(1), borderColor)
+                    setColor(cardBg); cornerRadius = dp(16).toFloat(); setStroke(dp(1), borderColor)
                 }
                 layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
             }
             card.addView(TextView(this).apply {
-                text = serviceName
-                textSize = 19f
-                typeface = Typeface.DEFAULT_BOLD
-                setTextColor(primaryText)
+                text = serviceName; textSize = 19f; typeface = Typeface.DEFAULT_BOLD; setTextColor(primaryText)
             })
             if (typeLine.isNotBlank()) card.addView(TextView(this).apply {
-                text = typeLine
-                textSize = 14f
-                setTextColor(secondaryText)
-                setPadding(0, dp(5), 0, 0)
+                text = typeLine; textSize = 14f; setTextColor(secondaryText); setPadding(0, dp(5), 0, 0)
             })
-            if (operatorName.isNotBlank() && !operatorName.equals(serviceName, true)) card.addView(TextView(this).apply {
-                text = getString(R.string.bb_operator_label, operatorName)
-                textSize = 13f
-                setTextColor(secondaryText)
-                setPadding(0, dp(5), 0, 0)
-            })
-            val location = item.optString("location").trim()
             if (location.isNotBlank()) card.addView(TextView(this).apply {
-                text = "${getString(R.string.bb_location)}: $location"
-                textSize = 13f
-                setTextColor(secondaryText)
-                setPadding(0, dp(4), 0, 0)
+                text = "${getString(R.string.bb_location)}: $location"; textSize = 13f; setTextColor(secondaryText); setPadding(0, dp(4), 0, 0)
             })
-            val detailsButton = com.google.android.material.button.MaterialButton(this).apply {
+            card.addView(com.google.android.material.button.MaterialButton(this).apply {
                 text = getString(R.string.bb_details_button)
                 setOnClickListener {
                     startActivity(Intent(this@BookBusActivity, BusOperatorDetailActivity::class.java).apply {
                         putExtra("operator_name", operatorName)
                         putExtra("service_name", serviceName)
-                        putExtra("bus_type", item.optString("bus_type"))
-                        putExtra("custom_category", variant)
-                        putExtra("seat_type", item.optString("seat_type"))
-                        putExtra("sleeper_count", item.optInt("sleeper_count", -1))
-                        putExtra("seater_count", item.optInt("seater_count", -1))
-                        putExtra("from_text", item.optString("from_text"))
-                        putExtra("to_text", item.optString("to_text"))
+                        putExtra("bus_types", org.json.JSONArray(types).toString())
                         putExtra("location", location)
                         putExtra("details", item.optString("details"))
                         putExtra("phone", item.optString("phone"))
                         putExtra("whatsapp", item.optString("whatsapp"))
                     })
                 }
-            }
-            card.addView(detailsButton, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(12) })
+            }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(12) })
             results.addView(card)
         }
     }
