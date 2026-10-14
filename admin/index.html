@@ -883,7 +883,9 @@ async function mergeApprovedCommunitySubmissions(nextVersion){
     }
     for(var ri=0;ri<rows.length;ri++){
       var sub=rows[ri],rd=sub.reviewed_data&&typeof sub.reviewed_data==='object'?sub.reviewed_data:{};
-      if(rd._bustime_published_version)continue;
+      // Only approvals made by this durable-queue version should be auto-published.
+      // Legacy approved test records are deliberately left alone.
+      if(rd._bustime_published_version||rd._bustime_publish_pending!==true)continue;
       var reviewed=Object.assign({},sub,rd);
       if(spec.kind==='vehicles'){
         if(!reviewed.person_name||!reviewed.vehicle_name||!reviewed.phone)throw new Error('Approved vehicle request '+sub.id+' is missing owner/vehicle/phone; review it before publishing.');
@@ -908,6 +910,7 @@ async function mergeApprovedCommunitySubmissions(nextVersion){
       var durable=Object.assign({},rd);
       if(!Object.keys(durable).length)durable=Object.assign({},sub);
       durable._bustime_published_version=nextVersion;
+      durable._bustime_publish_pending=false;
       updates.push({table:spec.table,id:sub.id,reviewed_data:durable});
     }
   }
@@ -2887,7 +2890,7 @@ document.addEventListener('click', async function (e) {
         if(!(merged.service_name||merged.operator_name)||!merged.location||!Array.isArray(merged.bus_types)||!merged.bus_types.length||!merged.phone){toast('Service name, bus types, operating location and phone are required.');return;}
         await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:merged.service_name||merged.operator_name,service_name:merged.service_name||merged.operator_name,bus_types:Array.isArray(merged.bus_types)?merged.bus_types:[],location:merged.location||null,phone:merged.phone,whatsapp:merged.whatsapp||null,details:merged.details||null,active:true})});
       }
-      var durableReviewed=Object.assign({},merged);
+      var durableReviewed=Object.assign({},merged,{_bustime_publish_pending:true});
       await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:durableReviewed,reviewed_at:stamp,approved_at:stamp,status:'approved'})});
       orig.reviewed_data=durableReviewed;orig.reviewed_at=stamp;orig.approved_at=stamp;orig.status='approved';communityReviewEditor=null;
       toast('Approved reviewed data; original submission retained. Publish separately to make snapshot changes live.');render();return;
@@ -2917,7 +2920,7 @@ document.addEventListener('click', async function (e) {
       var approvalPatch={status:act==='community-approve'?'approved':'rejected'};
       if(act==='community-approve'){
         approvalPatch.approved_at=approvalStamp;
-        if(kind==='vehicles'||kind==='corrections')approvalPatch.reviewed_data=Object.assign({},record,record.reviewed_data&&typeof record.reviewed_data==='object'?record.reviewed_data:{});
+        if(kind==='vehicles'||kind==='corrections')approvalPatch.reviewed_data=Object.assign({},record,record.reviewed_data&&typeof record.reviewed_data==='object'?record.reviewed_data:{},{_bustime_publish_pending:true});
       }
       await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify(approvalPatch) });
       record.status = act==='community-approve'?'approved':'rejected'; toast(act==='community-approve'?(kind==='vehicles'?'Approved in Admin data. Press Publish at the top to make this Taxi/Auto listing visible in the app.':kind==='busSubmissions'?'Bus operator approved and published to the operator directory.':'Approved. If route data changed, press Publish to make it live.'):'Moved to Rejected.'); render();
