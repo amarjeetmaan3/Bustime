@@ -1314,11 +1314,11 @@ function adTargetOptions(){
 async function loadAdTargets(){
   adTargetCache.routes=((data&&data.routes)||[]).slice();
   try{adTargetCache.operators=await sbFetch('/rest/v1/bus_operators?select=*&active=eq.true&order=operator_name.asc&limit=500');}catch(e){adTargetCache.operators=[];}
-  try{var submittedBuses=await sbFetch('/rest/v1/bus_operator_submissions?select=*&status=eq.approved&order=created_at.desc&limit=500');adTargetCache.operators=adTargetCache.operators.concat(submittedBuses);}catch(e){}
+  // Only offer published app listings as CTA targets. Submission-review rows may be
+  // private and cannot be opened by the public Android app until published.
   var drivers=(data&&data.drivers)||[];
   adTargetCache.taxi=drivers.filter(function(x){return String(x.type||x.vehicle_type||'').toLowerCase()==='taxi';});
   adTargetCache.auto=drivers.filter(function(x){return String(x.type||x.vehicle_type||'').toLowerCase()==='auto';});
-  try{var vehicles=await sbFetch('/rest/v1/vehicle_submissions?select=*&status=eq.approved&order=created_at.desc&limit=500');vehicles.forEach(function(x){(String(x.vehicle_type).toLowerCase()==='taxi'?adTargetCache.taxi:adTargetCache.auto).push(x);});}catch(e){}
 }
 function adActionLabel(kind){return kind==='operator'?'Book Bus':kind==='taxi'?'Book Taxi':kind==='auto'?'Book Auto':kind==='route'?'Check Route':'Learn more';}
 function refreshAdTargets(){var select=document.getElementById('ad_target_id');if(select)select.innerHTML=adTargetOptions();refreshAdActionLabel();}
