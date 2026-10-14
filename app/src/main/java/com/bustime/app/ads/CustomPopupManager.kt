@@ -150,7 +150,7 @@ object CustomPopupManager {
         val targetKind = config.optString("target_kind", "route").ifBlank { "route" }
         val targetId = config.optString("target_id").ifBlank { config.optString("route_id") }
         val defaultLabel = when (targetKind) {
-            "operator" -> "Check Bus"
+            "operator" -> "Book Bus"
             "taxi" -> "Book Taxi"
             "auto" -> "Book Auto"
             "route" -> "Check Route"
