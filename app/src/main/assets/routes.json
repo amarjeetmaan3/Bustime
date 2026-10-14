@@ -399,7 +399,6 @@
       "id": "r29",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "07:45",
       "stops": [
         {
           "place": "place_bolanwali"
