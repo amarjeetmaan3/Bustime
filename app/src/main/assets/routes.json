@@ -1,5 +1,5 @@
 {
-  "dataVersion": 60,
+  "dataVersion": 61,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -4026,6 +4026,21 @@
       "union_name": "Maan",
       "seats": 4,
       "sourceSubmissionId": "45d0277e-0132-4042-a2a7-97ece7e1654b"
+    },
+    {
+      "id": "t2",
+      "type": "taxi",
+      "name": "Amarjeet",
+      "vehicle": "alto",
+      "year": "2569",
+      "vehicle_number": "gamfsns",
+      "phone": "9685745869",
+      "area": "vajhsgs",
+      "areaId": "vajhsgs",
+      "info": "Union: vskjs · Vehicle No: gamfsns · ",
+      "union_name": "vskjs",
+      "seats": 5,
+      "sourceSubmissionId": "9c8ce893-1d6c-47e6-b5b4-60ac183ba90c"
     }
   ]
 }
