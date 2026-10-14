@@ -67,15 +67,15 @@ object SnapshotImporter {
             val id = clean(r.id)
             val from = clean(r.from)
             val to = clean(r.to)
-            val time = clean(r.time)
-            if (id == null || from == null || to == null || time == null ||
-                !TIME.matches(time) || from == to ||
+            val time = clean(r.time)?.takeIf { TIME.matches(it) }
+            if (id == null || from == null || to == null || from == to ||
                 !places.containsKey(from) || !places.containsKey(to) ||
                 !routeIds.add(id)
             ) {
                 skipped++; continue
             }
             var order = 0
+            // The first stop uses only its own configured time. Missing time stays missing.
             stops.add(RouteStop(id, order++, from, time))
             for (s in r.stops.orEmpty()) {
                 val pid = clean(s.place)
@@ -86,7 +86,7 @@ object SnapshotImporter {
             }
             stops.add(RouteStop(id, order++, to, clean(r.arrive)?.takeIf { TIME.matches(it) }))
             routes.add(
-                Route(id, from, to, time, clean(r.service), clean(r.routeName), clean(r.contact), clean(r.info), r.longRoute == true, clean(r.startDate))
+                Route(id, from, to, time.orEmpty(), clean(r.service), clean(r.routeName), clean(r.contact), clean(r.info), r.longRoute == true, clean(r.startDate))
             )
         }
 
