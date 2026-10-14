@@ -14,6 +14,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import android.util.TypedValue
 import com.bustime.app.ui.details.RouteDetailActivity
 import com.bustime.app.ui.details.DriverDetailActivity
@@ -68,6 +69,28 @@ object CustomPopupManager {
         }.start()
     }
 
+    private fun fetchOperator(id: String): JSONObject? {
+        val encodedId = java.net.URLEncoder.encode(id, "UTF-8")
+        val endpoint = Constants.SUPABASE_URL.trimEnd('/') +
+            "/rest/v1/bus_operators?select=*&id=eq.$encodedId&active=eq.true&limit=1"
+        val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 7000
+            readTimeout = 7000
+            setRequestProperty("apikey", Constants.SUPABASE_ANON_KEY)
+            setRequestProperty("Authorization", "Bearer " + Constants.SUPABASE_ANON_KEY)
+            setRequestProperty("Accept", "application/json")
+        }
+        return try {
+            val raw = conn.inputStream.bufferedReader().use { it.readText() }
+            val rows = org.json.JSONArray(raw)
+            if (rows.length() == 0) null else rows.optJSONObject(0)
+        } catch (_: Exception) {
+            null
+        } finally {
+            conn.disconnect()
+        }
+    }
+
     private fun showDialog(activity: Activity, config: JSONObject, bitmap: android.graphics.Bitmap) {
         val dp = activity.resources.displayMetrics.density
         fun px(v: Int) = (v * dp).toInt()
@@ -112,11 +135,71 @@ object CustomPopupManager {
             })
         }
         val dialog = AlertDialog.Builder(activity).setView(root).create()
-        action("Check Route", config.optBoolean("check_route_enabled", false)) {
-            val id = config.optString("route_id")
-            if (id.isNotBlank()) {
-                activity.startActivity(Intent(activity, RouteDetailActivity::class.java).putExtra("ROUTE_ID", id))
-                dialog.dismiss()
+        val targetKind = config.optString("target_kind", "route").ifBlank { "route" }
+        val targetId = config.optString("target_id").ifBlank { config.optString("route_id") }
+        val defaultLabel = when (targetKind) {
+            "operator" -> "Check Bus"
+            "taxi" -> "Book Taxi"
+            "auto" -> "Book Auto"
+            "route" -> "Check Route"
+            else -> "Learn more"
+        }
+        action(config.optString("cta_label", defaultLabel).ifBlank { defaultLabel },
+            config.optBoolean("check_route_enabled", false)) {
+            if (targetId.isBlank()) {
+                Toast.makeText(activity, "This advertisement has no selected listing.", Toast.LENGTH_SHORT).show()
+                return@action
+            }
+            when (targetKind) {
+                "route" -> {
+                    activity.startActivity(Intent(activity, RouteDetailActivity::class.java).putExtra("ROUTE_ID", targetId))
+                    dialog.dismiss()
+                }
+                "operator" -> GlobalScope.launch {
+                    val operator = withContext(Dispatchers.IO) { fetchOperator(targetId) }
+                    main.post {
+                        if (activity.isFinishing || activity.isDestroyed) return@post
+                        if (operator == null) {
+                            Toast.makeText(activity, "Bus listing could not be loaded. Please publish the latest data and try again.", Toast.LENGTH_LONG).show()
+                            return@post
+                        }
+                        activity.startActivity(Intent(activity, com.bustime.app.ui.bookbus.BusOperatorDetailActivity::class.java).apply {
+                            putExtra("operator_name", operator.optString("operator_name"))
+                            putExtra("service_name", operator.optString("service_name"))
+                            putExtra("bus_types", operator.optJSONArray("bus_types")?.toString() ?: "[]")
+                            putExtra("location", operator.optString("location"))
+                            putExtra("details", operator.optString("details"))
+                            putExtra("phone", operator.optString("phone"))
+                            putExtra("whatsapp", operator.optString("whatsapp"))
+                        })
+                        dialog.dismiss()
+                    }
+                }
+                "taxi", "auto" -> GlobalScope.launch {
+                    val driver = withContext(Dispatchers.IO) {
+                        AppRepository.getInstance(activity).getDriver(targetId)
+                    }
+                    main.post {
+                        if (activity.isFinishing || activity.isDestroyed) return@post
+                        if (driver == null) {
+                            Toast.makeText(activity, "Vehicle listing not found. Publish the latest Taxi/Auto data and try again.", Toast.LENGTH_LONG).show()
+                            return@post
+                        }
+                        activity.startActivity(Intent(activity, DriverDetailActivity::class.java).apply {
+                            putExtra("driver_id", driver.id)
+                            putExtra("driver_type", driver.type)
+                            putExtra("driver_name", driver.name)
+                            putExtra("driver_vehicle", driver.vehicle.orEmpty())
+                            putExtra("driver_phone", driver.phone)
+                            putExtra("driver_seats", driver.seats ?: -1)
+                            putExtra("driver_fuel", driver.fuel.orEmpty())
+                            putExtra("driver_info", driver.info.orEmpty())
+                            putExtra("driver_area", driver.areaId.orEmpty())
+                        })
+                        dialog.dismiss()
+                    }
+                }
+                else -> Toast.makeText(activity, "Unsupported advertisement target.", Toast.LENGTH_SHORT).show()
             }
         }
         action("Call", config.optBoolean("call_enabled", false)) {
