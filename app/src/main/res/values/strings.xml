@@ -90,7 +90,7 @@
     <string name="bb_service">Bus service</string>
     <string name="bb_seat_unspecified">Seat type not specified</string>
     <string name="bb_route">Route</string>
-    <string name="bb_location">Location / boarding point</string>
+    <string name="bb_location">Location</string>
     <string name="bb_expand">Tap for full details ▾</string>
     <string name="bb_contact">Contact operator</string>
     <string name="bb_whatsapp">WhatsApp</string>
