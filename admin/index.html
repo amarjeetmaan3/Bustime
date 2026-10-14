@@ -768,7 +768,8 @@ async function mergeApprovedRouteSubmissions() {
       });
       route={id:'',from:fromId,to:toId,time:start};
       if(arrive)route.arrive=arrive;
-      var approvedService=String(rd.service||sub.service_name||'').trim();\n      if(approvedService)route.service=approvedService;
+      var approvedService=String(rd.service||sub.service_name||'').trim();
+      if(approvedService)route.service=approvedService;
       if(mid.length)route.stops=mid;
       if(sub.long_route)route.longRoute=true;
       if(sub.start_date)route.startDate=String(sub.start_date);
