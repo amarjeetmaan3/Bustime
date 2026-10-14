@@ -892,7 +892,7 @@ async function mergeApprovedCommunitySubmissions(nextVersion){
       offset+=pageSize;
     }
     for(var ri=0;ri<rows.length;ri++){
-      var sub=rows[ri],rd=sub.reviewed_data&&typeof sub.reviewed_data==='object'?sub.reviewed_data:{};
+      var sub=rows[ri],rd=sub.reviewed_data&&typeof sub.reviewed_data==='object'?sub.reviewed_data:{}; if(spec.table==='taxi_submissions')sub.vehicle_type='taxi';else if(spec.table==='auto_submissions')sub.vehicle_type='auto';
       // Only approvals made by this durable-queue version should be auto-published.
       // Legacy approved test records are deliberately left alone.
       if(rd._bustime_published_version||rd._bustime_publish_pending!==true)continue;
@@ -1379,19 +1379,17 @@ function viewDrivers() {
 }
 function driverFormHtml() {
   var d = editing.draft, isTaxi = d.type !== 'auto';
-  return '<label>Listing type (required)</label><select id="fd_type"><option value="taxi"' + (isTaxi ? ' selected' : '') + '>Taxi</option>' +
-    '<option value="auto"' + (!isTaxi ? ' selected' : '') + '>Auto</option></select>' +
-    '<label>Contact person / driver name (required)</label><input id="fd_name" value="' + esc(d.name) + '">' +
+  return '<h3>'+(isTaxi?'Taxi listing':'Auto listing')+'</h3>' +
+    '<input type="hidden" id="fd_type" value="'+(isTaxi?'taxi':'auto')+'">' +
+    '<label>Driver name (required)</label><input id="fd_name" value="' + esc(d.name) + '">' +
     '<label>Vehicle name (required)</label><input id="fd_vehicle" value="' + esc(d.vehicle) + '">' +
-    '<label>Year (required, e.g. 2021)</label><input id="fd_year" inputmode="numeric" maxlength="4" value="' + esc(d.year) + '">' +
-    '<label>Number of seats (required; Taxi filter / Auto information only)</label><input id="fd_seats" type="number" min="1" value="' + esc(d.seats) + '">' +
+    '<label>Year (4 digits)</label><input id="fd_year" inputmode="numeric" maxlength="4" value="' + esc(d.year) + '">' +
+    '<label>Number of seats (required)</label><input id="fd_seats" type="number" min="1" value="' + esc(d.seats) + '">' +
     '<label>Vehicle registration number (required)</label><input id="fd_vehicle_number" value="' + esc(d.vehicle_number) + '">' +
-    '<label>Location / area (required)</label><input id="fd_area" value="' + esc(d.area) + '" placeholder="Sadhusar / Sri Ganganagar">' +
+    '<label>Location address / service area (required)</label><input id="fd_area" value="' + esc(d.area) + '">' +
     '<label>Union name (required)</label><input id="fd_union" value="' + esc(d.union_name) + '">' +
     '<label>Mobile number (required)</label><input id="fd_phone" inputmode="tel" value="' + esc(d.phone) + '">' +
-    '<div id="fuelRow" style="display:' + (!isTaxi ? 'block' : 'none') + '"><label>Auto fuel type</label><select id="fd_fuel">' +
-    '<option value="">Select</option><option value="ev"' + (d.fuel === 'ev' ? ' selected' : '') + '>EV</option>' +
-    '<option value="oil"' + (d.fuel === 'oil' ? ' selected' : '') + '>Oil</option><option value="cng"' + (d.fuel === 'cng' ? ' selected' : '') + '>CNG</option><option value="other"' + (d.fuel === 'other' ? ' selected' : '') + '>Other</option></select></div>' +
+    (isTaxi ? '' : '<label>Fuel type (required)</label><select id="fd_fuel"><option value="ev"'+(String(d.fuel||'ev').toLowerCase()==='ev'?' selected':'')+'>EV</option><option value="oil"'+(String(d.fuel||'').toLowerCase()==='oil'?' selected':'')+'>Oil</option><option value="cng"'+(String(d.fuel||'').toLowerCase()==='cng'?' selected':'')+'>CNG</option><option value="other"'+(String(d.fuel||'').toLowerCase()==='other'?' selected':'')+'>Other</option></select>') +
     '<label>Other information (optional)</label><input id="fd_info" value="' + esc(d.info) + '">' + foot('save-driver');
 }
 
@@ -2674,7 +2672,7 @@ document.addEventListener('click', async function (e) {
     }
 
     // ---- drivers ----
-    else if (act === 'new-driver') { editing = { type: 'driver', index: -1, draft: { type: 'taxi' } }; render(); }
+    else if (act === 'new-driver') { editing = { type: 'driver', index: -1, draft: { type: tab === 'autoDrivers' ? 'auto' : 'taxi' } }; render(); }
     else if (act === 'edit-driver') { editing = { type: 'driver', index: i, draft: JSON.parse(JSON.stringify(data.drivers[i])) }; render(); }
     else if (act === 'toggle-driver-hidden') { data.drivers[i].hidden = !data.drivers[i].hidden; setDirty(true); render(); toast(data.drivers[i].hidden ? 'Listing hidden from app; publish to apply.' : 'Listing shown in app; publish to apply.'); }
     else if (act === 'del-driver') {
