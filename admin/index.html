@@ -1396,7 +1396,7 @@ function driverFormHtml() {
     '<input type="hidden" id="fd_type" value="'+(isTaxi?'taxi':'auto')+'">' +
     '<label>Driver name (required)</label><input id="fd_name" value="' + esc(d.name) + '">' +
     '<label>Vehicle name (required)</label><input id="fd_vehicle" value="' + esc(d.vehicle) + '">' +
-    '<label>Year (4 digits)</label><input id="fd_year" inputmode="numeric" maxlength="4" value="' + esc(d.year) + '">' +
+    '<label>Year (4 digits, required)</label><input id="fd_year" inputmode="numeric" maxlength="4" value="' + esc(d.year) + '">' +
     '<label>Number of seats (required)</label><input id="fd_seats" type="number" min="1" value="' + esc(d.seats) + '">' +
     '<label>Vehicle registration number (required)</label><input id="fd_vehicle_number" value="' + esc(d.vehicle_number) + '">' +
     '<label>Location address / service area (required)</label><input id="fd_area" value="' + esc(d.area) + '">' +
