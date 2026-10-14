@@ -199,7 +199,13 @@ class HomeActivity : AppCompatActivity() {
         val languageMark = TextView(this).apply {
             text = "A ਅ अ"
             setTextColor(android.graphics.Color.WHITE)
-            textSize = 16f
+            textSize = 15f
+            minWidth = (68 * resources.displayMetrics.density).toInt()
+            layoutParams = android.widget.FrameLayout.LayoutParams(
+                (68 * resources.displayMetrics.density).toInt(),
+                (48 * resources.displayMetrics.density).toInt(),
+                Gravity.CENTER
+            )
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
             setPadding(
