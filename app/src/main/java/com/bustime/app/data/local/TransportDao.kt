@@ -89,6 +89,9 @@ abstract class TransportDao {
     )
     abstract suspend fun getDrivers(type: String, seats: Int?, fuel: String?, areaId: String?): List<Driver>
 
+    @Query("SELECT * FROM drivers WHERE id = :driverId LIMIT 1")
+    abstract suspend fun getDriver(driverId: String): Driver?
+
     // ---------- सिंक ----------
 
     @Query("SELECT COUNT(*) FROM places")
