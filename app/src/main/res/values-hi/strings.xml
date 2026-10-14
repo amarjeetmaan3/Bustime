@@ -227,8 +227,6 @@
     <string name="community_fill_vehicle_required">सीटों की संख्या, वाहन नंबर, सेवा क्षेत्र और यूनियन के नाम सहित सभी ज़रूरी फ़ील्ड भरें।</string>
     <string name="community_year_invalid">वाहन का वर्ष ठीक चार अंकों में भरें, जैसे 2022।</string>
     <string name="community_listing_sent">लिस्टिंग एडमिन की जाँच के लिए भेज दी गई है।</string>
-    <string name="community_bus_form_intro">बस की जानकारी एडमिन की जाँच के लिए भरें। मंज़ूरी के बाद ही आपकी लिस्टिंग सार्वजनिक होगी।</string>
-    <string name="community_fill_bus_required">बस का प्रकार, बर्थ/सीटों की संख्या और मोबाइल नंबर सहित सभी ज़रूरी फ़ील्ड भरें।</string>
     <string name="community_bus_submitted">बस एडमिन की जाँच के लिए भेज दी गई है।</string>
     <string name="community_correction_intro">इस %1$s लिस्टिंग की जानकारी ठीक करें। आपका अनुरोध एडमिन जाँचेगा।</string>
     <string name="community_driver_vehicle">ड्राइवर: %1$s · वाहन: %2$s</string>
