@@ -511,7 +511,7 @@ function communityEditorValues(){
   var k=el.getAttribute('data-cr-field');
   if(el.tagName==='TEXTAREA'){
    // Only structured payload fields are JSON. Notes and free-text correction fields are plain text.
-   if(k==='notes'||k==='change_summary'||k==='missing_place_name'){out[k]=el.value.trim()||null;return;}
+   if(k==='notes'||k==='change_summary'||k==='missing_place_name'||(k==='details'&&communityReviewEditor&&communityReviewEditor.kind==='busSubmissions')){out[k]=el.value.trim()||null;return;}
    try{out[k]=JSON.parse(el.value);}catch(e){throw new Error('Please check the structured '+k+' field; it must contain valid JSON.');}
   }else if(el.type==='number'){
    out[k]=el.value.trim()===''?null:Number(el.value);
