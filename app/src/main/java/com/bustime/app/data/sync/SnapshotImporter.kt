@@ -75,8 +75,10 @@ object SnapshotImporter {
                 skipped++; continue
             }
             var order = 0
-            // The first stop uses only its own configured time. Missing time stays missing.
-            stops.add(RouteStop(id, order++, from, time))
+            // route.time is the route's departure metadata, not a stop time.
+            // Keep the first stop blank unless a dedicated first-stop time field exists.
+            // This prevents a departure time from being duplicated beside the first stop.
+            stops.add(RouteStop(id, order++, from, null))
             for (s in r.stops.orEmpty()) {
                 val pid = clean(s.place)
                 if (pid == null || !places.containsKey(pid) || pid == from || pid == to) {
