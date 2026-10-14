@@ -117,6 +117,7 @@ class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
                         .putExtra("driver_seats", d.seats ?: -1)
                         .putExtra("driver_fuel", d.fuel.orEmpty())
                         .putExtra("driver_union", extractUnion(d.info.orEmpty()))
+                        .putExtra("driver_area", d.areaId.orEmpty())
                         .putExtra("driver_info", d.info.orEmpty()))
                 }
             }
