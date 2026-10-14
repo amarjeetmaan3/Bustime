@@ -79,11 +79,16 @@ class DriverAdapter : RecyclerView.Adapter<DriverAdapter.VH>() {
         }
 
         val seats = d.seats
-        val meta = when {
-            seats != null -> ctx.getString(R.string.seater_format, seats)
-            d.fuel == "ev" -> ctx.getString(R.string.auto_ev)
-            d.fuel == "oil" -> ctx.getString(R.string.auto_oil)
-            else -> null
+        val meta = if (d.type.equals("taxi", true)) {
+            seats?.let { ctx.getString(R.string.seater_format, it) }
+        } else {
+            val fuelLabel = when (d.fuel) {
+                "ev" -> ctx.getString(R.string.auto_ev)
+                "oil" -> ctx.getString(R.string.auto_oil)
+                else -> null
+            }
+            listOfNotNull(seats?.let { ctx.getString(R.string.seater_format, it) }, fuelLabel)
+                .joinToString(" · ").takeIf { it.isNotBlank() }
         }
         setOptional(holder.tvMeta, meta)
 
