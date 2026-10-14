@@ -35,6 +35,11 @@ class BookBusActivity : AppCompatActivity() {
         "seater" -> getString(R.string.bus_category_seater)
         "sleeper + seater" -> getString(R.string.bus_category_sleeper_seater)
         "custom" -> getString(R.string.bus_category_custom)
+        "ac bus" -> getString(R.string.bus_type_ac)
+        "non-ac bus" -> getString(R.string.bus_type_non_ac)
+        "volvo bus" -> getString(R.string.bus_type_volvo)
+        "mini bus" -> getString(R.string.bus_type_mini)
+        "other" -> getString(R.string.bus_type_other)
         else -> value
     }
 
@@ -183,7 +188,7 @@ class BookBusActivity : AppCompatActivity() {
                 if (arr != null) (0 until arr.length()).mapNotNull { arr.optString(it).takeIf(String::isNotBlank) }
                 else listOf(item.optString("bus_type")).filter(String::isNotBlank)
             } catch (_: Exception) { listOf(item.optString("bus_type")).filter(String::isNotBlank) }
-            val searchable = listOf(item.optString("service_name"), item.optString("operator_name"), item.optString("location"), item.optString("details")) .plus(types).joinToString(" ")
+            val searchable = listOf(item.optString("service_name"), item.optString("operator_name"), item.optString("location"), item.optString("details")) .plus(types).plus(types.map(::localizedCategory)).joinToString(" ")
             areaMatches && (searchQuery.isBlank() || searchable.contains(searchQuery, ignoreCase = true))
         }
         if (visibleRows.isEmpty()) {
