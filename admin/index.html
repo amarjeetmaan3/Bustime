@@ -2919,7 +2919,7 @@ document.addEventListener('click', async function (e) {
       if(rk==='corrections')applyApprovedCorrection(merged);
       if(rk==='vehicles'){
         if(!merged.person_name||!merged.vehicle_name||!merged.phone){toast('Owner/driver name, vehicle name and phone are required.');return;}
-        var vd={id:nextNum(merged.vehicle_type==='taxi'?'t':'a',data.drivers),type:merged.vehicle_type,name:merged.person_name,vehicle:merged.vehicle_name+(merged.vehicle_model_number?' · '+merged.vehicle_model_number:''),phone:merged.phone,areaId:merged.area_name||merged.location||null,info:(merged.union_name?'Union: '+merged.union_name+' · ':'')+(merged.vehicle_number?'Vehicle No: '+merged.vehicle_number+' · ':'')+(merged.details||'')};
+        var vd={id:nextNum(merged.vehicle_type==='taxi'?'t':'a',data.drivers),type:merged.vehicle_type,name:merged.person_name,vehicle:merged.vehicle_name+(merged.vehicle_model_number?' · '+merged.vehicle_model_number:''),year:merged.year||'',vehicle_number:merged.vehicle_number||'',phone:merged.phone,area:merged.area_name||merged.location||'',areaId:merged.area_name||merged.location||null,info:(merged.union_name?'Union: '+merged.union_name+' · ':'')+(merged.vehicle_number?'Vehicle No: '+merged.vehicle_number+' · ':'')+(merged.details||'')};
         if(merged.vehicle_type==='auto')vd.fuel=(merged.fuel_type||merged.fuel||'oil').toLowerCase();if(merged.union_name)vd.union_name=merged.union_name;if(merged.seats)vd.seats=merged.seats;data.drivers.push(vd);setDirty(true);
       }
       if(rk==='busSubmissions'){
@@ -2942,7 +2942,7 @@ document.addEventListener('click', async function (e) {
       if (act === 'community-approve') {
         if (kind === 'corrections') applyApprovedCorrection(record);
         if (kind === 'vehicles') {
-          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name + ((record.year || record.vehicle_model_number) ? ' · '+(record.year || record.vehicle_model_number) : ''), phone:record.phone, areaId:record.area_name || record.location || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.vehicle_number ? 'Vehicle No: '+record.vehicle_number+' · ' : '') + (record.details || ''), sourceSubmissionId:String(record.id) };
+          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name + (record.vehicle_model_number ? ' · '+record.vehicle_model_number : ''), year:record.year || '', vehicle_number:record.vehicle_number || '', phone:record.phone, area:record.area_name || record.location || '', areaId:record.area_name || record.location || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.vehicle_number ? 'Vehicle No: '+record.vehicle_number+' · ' : '') + (record.details || ''), sourceSubmissionId:String(record.id) };
           if (record.vehicle_type==='auto') driver.fuel=(record.fuel_type||record.fuel||'oil').toLowerCase();
           if (record.union_name) driver.union_name=record.union_name;
           if (record.seats) driver.seats = record.seats;
