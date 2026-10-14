@@ -34,10 +34,16 @@ class DriverDetailActivity : AppCompatActivity() {
         val numberLabel = when(language) { "hi" -> "फ़ोन नंबर"; "pa" -> "ਫ਼ੋਨ ਨੰਬਰ"; else -> "Phone number" }
         val vehicleLabel = when(language) { "hi" -> "वाहन"; "pa" -> "ਵਾਹਨ"; else -> "Vehicle" }
         val unionLabel = when(language) { "hi" -> "यूनियन"; "pa" -> "ਯੂਨੀਅਨ"; else -> "Union" }
+        val night = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val pageBg = if (night) Color.rgb(18, 22, 29) else Color.rgb(245, 247, 251)
+        val cardBg = if (night) Color.rgb(29, 35, 44) else Color.WHITE
+        val primaryText = if (night) Color.rgb(238, 242, 247) else Color.rgb(24, 34, 48)
+        val secondaryText = if (night) Color.rgb(174, 185, 200) else Color.rgb(102, 117, 138)
+        val borderColor = if (night) Color.rgb(57, 66, 80) else Color.rgb(229, 234, 242)
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(16), dp(16), dp(24))
-            setBackgroundColor(Color.rgb(245, 247, 251))
+            setBackgroundColor(pageBg)
         }
         val scroll = ScrollView(this).apply { clipToPadding = false; addView(root) }
         setContentView(scroll)
@@ -47,9 +53,9 @@ class DriverDetailActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             setPadding(dp(20), dp(24), dp(20), dp(22))
             background = GradientDrawable().apply {
-                setColor(Color.WHITE)
+                setColor(cardBg)
                 cornerRadius = dp(18).toFloat()
-                setStroke(dp(1), Color.rgb(229, 234, 242))
+                setStroke(dp(1), borderColor)
             }
         }
         val avatar = TextView(this).apply {
@@ -58,7 +64,7 @@ class DriverDetailActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(Color.rgb(234, 240, 255))
+                setColor(if (night) Color.rgb(42, 54, 76) else Color.rgb(234, 240, 255))
             }
         }
         header.addView(avatar, LinearLayout.LayoutParams(dp(84), dp(84)).apply { bottomMargin = dp(12) })
@@ -66,7 +72,7 @@ class DriverDetailActivity : AppCompatActivity() {
             text = name.ifBlank { if(type=="taxi") "Taxi Driver" else "Auto Driver" }
             textSize = 23f
             typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.rgb(24, 34, 48))
+            setTextColor(primaryText)
             gravity = Gravity.CENTER
         })
         header.addView(TextView(this).apply {
@@ -77,7 +83,7 @@ class DriverDetailActivity : AppCompatActivity() {
             }.joinToString("  ·  ")
             text = meta.ifBlank { if(language=="hi") "ड्राइवर विवरण" else if(language=="pa") "ਡਰਾਈਵਰ ਵੇਰਵੇ" else "Driver details" }
             textSize = 14f
-            setTextColor(Color.rgb(102, 117, 138))
+            setTextColor(secondaryText)
             gravity = Gravity.CENTER
             setPadding(0, dp(6), 0, 0)
         })
@@ -87,9 +93,9 @@ class DriverDetailActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(6), dp(16), dp(6))
             background = GradientDrawable().apply {
-                setColor(Color.WHITE)
+                setColor(cardBg)
                 cornerRadius = dp(16).toFloat()
-                setStroke(dp(1), Color.rgb(229, 234, 242))
+                setStroke(dp(1), borderColor)
             }
         }
         fun detail(label: String, value: String) {
@@ -107,11 +113,11 @@ class DriverDetailActivity : AppCompatActivity() {
                 text = value
                 textSize = 16f
                 typeface = Typeface.DEFAULT_BOLD
-                setTextColor(Color.rgb(24, 34, 48))
+                setTextColor(primaryText)
                 setPadding(0, dp(3), 0, 0)
             })
             detailsCard.addView(item)
-            val divider = android.view.View(this).apply { setBackgroundColor(Color.rgb(238, 241, 246)) }
+            val divider = android.view.View(this).apply { setBackgroundColor(borderColor) }
             detailsCard.addView(divider, LinearLayout.LayoutParams(-1, dp(1)))
         }
         detail(vehicleLabel, vehicle)
@@ -130,8 +136,8 @@ class DriverDetailActivity : AppCompatActivity() {
         }, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(8) })
         root.addView(Button(this).apply {
             text = "WhatsApp"
-            setTextColor(Color.rgb(24, 111, 68))
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.rgb(225, 245, 234))
+            setTextColor(if (night) Color.rgb(180, 238, 204) else Color.rgb(24, 111, 68))
+            backgroundTintList = android.content.res.ColorStateList.valueOf(if (night) Color.rgb(34, 67, 53) else Color.rgb(225, 245, 234))
             setOnClickListener { ContactActions.whatsapp(this@DriverDetailActivity, phone) }
         }, LinearLayout.LayoutParams(-1, dp(52)))
         lifecycleScope.launch {
