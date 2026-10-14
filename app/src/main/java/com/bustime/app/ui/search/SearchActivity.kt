@@ -43,7 +43,14 @@ class SearchActivity : AppCompatActivity() {
         val recycler = findViewById<RecyclerView>(R.id.recyclerViewResults)
         recycler.layoutManager = LinearLayoutManager(this)
         val adapter = BusAdapter { item ->
-            startActivity(Intent(this, RouteDetailActivity::class.java).putExtra("ROUTE_ID", item.routeId))
+            val detailIntent = Intent(this, RouteDetailActivity::class.java)
+                .putExtra("ROUTE_ID", item.routeId)
+            // Route search context lets the detail screen highlight the exact selected From/To stops.
+            if (mode == "route") {
+                intent.getStringExtra("FROM_ID")?.let { detailIntent.putExtra("SEARCH_FROM_ID", it) }
+                intent.getStringExtra("TO_ID")?.let { detailIntent.putExtra("SEARCH_TO_ID", it) }
+            }
+            startActivity(detailIntent)
         }
         recycler.adapter = adapter
 
