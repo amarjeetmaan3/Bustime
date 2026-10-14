@@ -88,10 +88,10 @@ class StopListEditor(
             val number = TextView(activity).apply {
                 text = (index + 1).toString()
                 textSize = 13f
-                setTextColor(textColor)
+                setTextColor(activity.getColor(R.color.stopNumberText))
                 gravity = Gravity.CENTER
                 background = android.graphics.drawable.GradientDrawable().apply {
-                    setColor(if (index == 0 || index == drafts.lastIndex) android.graphics.Color.rgb(44, 115, 83) else android.graphics.Color.rgb(83, 91, 108))
+                    setColor(activity.getColor(if (index == 0 || index == drafts.lastIndex) R.color.stopNumberStartBg else R.color.stopNumberOtherBg))
                     cornerRadius = dp(14).toFloat()
                 }
                 minWidth = dp(28)
