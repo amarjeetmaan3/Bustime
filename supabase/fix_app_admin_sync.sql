@@ -107,3 +107,9 @@ create policy "admin manage feedback" on public.feedback_submissions
 
 -- Reload PostgREST's schema cache after creating the missing tables.
 notify pgrst, 'reload schema';
+
+-- Book Bus service directory fields (no seat reservation inventory).
+alter table public.bus_operators
+  add column if not exists bus_types jsonb not null default '[]'::jsonb;
+alter table public.bus_operator_submissions
+  add column if not exists bus_types jsonb not null default '[]'::jsonb;
