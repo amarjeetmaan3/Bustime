@@ -97,6 +97,19 @@ class HomeActivity : AppCompatActivity() {
         })
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Marquee can miss its first start while the window is still gaining focus.
+        // Re-arm it after layout whenever the app returns to the foreground.
+        findViewById<TextView?>(R.id.warningTicker)?.post {
+            val ticker = findViewById<TextView>(R.id.warningTicker)
+            if (ticker.visibility == View.VISIBLE && ticker.text.isNotBlank()) {
+                ticker.isSelected = false
+                ticker.isSelected = true
+            }
+        }
+    }
+
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -241,8 +254,11 @@ class HomeActivity : AppCompatActivity() {
             }
             ticker.text = ("     " + pieces.joinToString("     •     ") + "     •     ").repeat(4)
             ticker.visibility = View.VISIBLE
-            ticker.isSelected = true
-            ticker.post { ticker.requestFocus() }
+            ticker.isSelected = false
+            ticker.post {
+                ticker.isSelected = true
+                ticker.requestLayout()
+            }
         }
     }
 
