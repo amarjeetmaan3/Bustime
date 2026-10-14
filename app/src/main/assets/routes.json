@@ -1,6 +1,6 @@
 {
   "_note": "Reset for clean form testing. Existing place records are preserved; route and driver records cleared.",
-  "dataVersion": 41,
+  "dataVersion": 42,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -301,10 +301,9 @@
       "kind": "place",
       "name": {
         "en": "Dhuri",
-        "hi": "दीवार",
-        "pa": "ਕੰਧ"
-      },
-      "aliases": []
+        "hi": "धूरी",
+        "pa": "ਧੁਰਿ"
+      }
     },
     {
       "id": "place_user_fazlika",
@@ -372,46 +371,6 @@
         "en": "Guru Har Sahai",
         "hi": "गुरू हर सहाई",
         "pa": "ਗੁਰੂ ਹਰ ਸਹਾਇ"
-      },
-      "aliases": []
-    },
-    {
-      "id": "place_user_amarjeet",
-      "kind": "place",
-      "name": {
-        "en": "Amarjeet",
-        "hi": "अमरजीत",
-        "pa": "ਅਮਰਜੀਤ"
-      },
-      "aliases": []
-    },
-    {
-      "id": "place_user_king",
-      "kind": "place",
-      "name": {
-        "en": "King",
-        "hi": "किंग",
-        "pa": "ਕਿੰਗ"
-      },
-      "aliases": []
-    },
-    {
-      "id": "place_user_maan",
-      "kind": "place",
-      "name": {
-        "en": "maan",
-        "hi": "जीत",
-        "pa": "ਮਾਨ"
-      },
-      "aliases": []
-    },
-    {
-      "id": "place_user_gurdas_maan",
-      "kind": "place",
-      "name": {
-        "en": "Gurdas Maan",
-        "hi": "गुरदास मान",
-        "pa": "ਗੁਰਦਾਸ ਮਾਨ"
       },
       "aliases": []
     }
