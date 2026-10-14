@@ -37,7 +37,7 @@ object AreaPicker {
         val name = place?.displayName(com.bustime.app.utils.LanguageHelper.current())
             ?.takeIf { it.isNotBlank() }
             ?: areaId.removePrefix("place_").replace('_', ' ').replaceFirstChar { it.uppercase() }
-        return "Change Area: $name  ▾"
+        return ctx.getString(R.string.area_change_label, name)
     }
 
     /** No context.getString(R.string.home_all_areas) option: the user must choose a driver service area. */
@@ -50,7 +50,7 @@ object AreaPicker {
         val adapter = ArrayAdapter<String>(ctx, android.R.layout.simple_list_item_1, ArrayList())
         list.adapter = adapter
         val dialog = AlertDialog.Builder(ctx)
-            .setTitle("Change Area")
+            .setTitle(R.string.area_change_title)
             .setView(view)
             .setNegativeButton(R.string.cancel, null)
             .create()
