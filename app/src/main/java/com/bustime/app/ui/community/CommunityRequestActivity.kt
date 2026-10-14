@@ -234,44 +234,44 @@ class CommunityRequestActivity : AppCompatActivity() {
         heading(getString(com.bustime.app.R.string.community_title_bus))
         text(getString(com.bustime.app.R.string.community_bus_form_intro), 14f)
         field("service_name", getString(com.bustime.app.R.string.community_service_name))
-        field("operator_name", getString(com.bustime.app.R.string.community_bus_owner))
-        val defaultCategories = listOf("Ordinary", "Luxury", "Sleeper", "Sleeper Plus", "Seater Plus", "Seater", "Sleeper + Seater", "Custom")
-        var categoryValues = defaultCategories
-        val categorySpinner = spinner(getString(com.bustime.app.R.string.community_bus_category), defaultCategories.map(::busCategoryLabel), "bus_type")
-        lifecycleScope.launch {
-            val categories = withContext(Dispatchers.IO) { CommunitySupabase.getBusCategories() }
-            if (categories.isNotEmpty()) {
-                val selected = categoryValues.getOrNull(categorySpinner.selectedItemPosition)
-                categoryValues = categories
-                categorySpinner.adapter = ArrayAdapter(this@CommunityRequestActivity, android.R.layout.simple_spinner_dropdown_item, categories.map(::busCategoryLabel))
-                val index = categories.indexOf(selected)
-                if (index >= 0) categorySpinner.setSelection(index)
-            }
+        field("location", getString(com.bustime.app.R.string.bb_location))
+        text("Bus types (select all that apply)", 15f, true)
+        val typeOptions = listOf("Ordinary", "Seater", "Sleeper", "AC Bus", "Non-AC Bus", "Luxury Bus", "Volvo Bus", "Mini Bus", "Other")
+        val typeChecks = linkedMapOf<String, CheckBox>()
+        typeOptions.forEach { type ->
+            val check = CheckBox(this).apply { text = type; textSize = 15f }
+            typeChecks[type] = check
+            root.addView(check)
         }
-        field("custom_category", getString(com.bustime.app.R.string.community_custom_bus_type)).apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
-        field("sleeper_count", getString(com.bustime.app.R.string.community_sleeper_berths))
-        field("seater_count", getString(com.bustime.app.R.string.community_seater_seats))
+        field("bus_other_type", "Other bus type (if selected)").apply { isSingleLine = true }
         field("phone", getString(com.bustime.app.R.string.community_operator_mobile))
         field("whatsapp", getString(com.bustime.app.R.string.community_whatsapp_optional))
-        field("details", getString(com.bustime.app.R.string.community_other_info)).apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
+        field("details", getString(com.bustime.app.R.string.community_other_info)).apply {
+            minLines = 2; maxLines = 4
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        }
         button(getString(com.bustime.app.R.string.community_add_bus_submit)) {
-            val operator = value("operator_name")
             val service = value("service_name")
+            val location = value("location")
             val phone = digits(value("phone"))
-            val category = categoryValues.getOrNull(spinners["bus_type"]?.selectedItemPosition ?: -1).orEmpty()
-            val variant = value("custom_category")
-            val sleeper = value("sleeper_count").toIntOrNull()
-            val seater = value("seater_count").toIntOrNull()
-            if (service.isBlank() || operator.isBlank() || phone.length !in 10..13 || category.isBlank() || variant.isBlank() ||
-                sleeper == null || sleeper < 0 || seater == null || seater < 0 ) {
-                toast(getString(com.bustime.app.R.string.community_fill_bus_required)); return@button
+            val selected = typeChecks.filterValues { it.isChecked }.keys.toMutableList()
+            val other = value("bus_other_type").trim()
+            if ("Other" in selected) {
+                if (other.isBlank()) { toast("Enter the other bus type."); return@button }
+                selected.remove("Other")
+                selected.add(other)
             }
+            if (service.isBlank() || location.isBlank() || phone.length !in 10..13 || selected.isEmpty()) {
+                toast("Enter the company/service name, bus type, operating location and a valid phone number.")
+                return@button
+            }
+            val types = org.json.JSONArray()
+            selected.forEach { types.put(it) }
             val body = JSONObject()
-                .put("operator_name", operator).put("service_name", service)
-                .put("bus_type", category).put("custom_category", variant)
-                .put("seat_type", if (sleeper > 0 && seater > 0) "Sleeper + Seater" else if (sleeper > 0) "Sleeper" else if (seater > 0) "Seater" else "Not specified")
-                .put("sleeper_count", sleeper).put("seater_count", seater)
-                .put("from_text", JSONObject.NULL).put("to_text", JSONObject.NULL)
+                .put("operator_name", service)
+                .put("service_name", service)
+                .put("bus_types", types)
+                .put("location", location)
                 .put("phone", phone)
                 .put("whatsapp", digits(value("whatsapp")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
