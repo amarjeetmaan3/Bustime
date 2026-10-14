@@ -308,4 +308,7 @@
     <string name="bus_type_other">अन्य</string>
     <string name="bus_type_other_hint">अन्य बस का प्रकार (यदि चुना है)</string>
     <string name="bus_type_required_error">अन्य बस का प्रकार लिखें।</string>
+    <string name="bb_bus_types">बस के प्रकार</string>
+    <string name="bb_search_hint">कंपनी, बस का प्रकार या स्थान खोजें</string>
+    <string name="bb_search_no_results">“%1$s” से मेल खाने वाली कोई बस सेवा नहीं मिली।</string>
 </resources>
