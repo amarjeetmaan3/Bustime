@@ -1,5 +1,5 @@
 {
-  "dataVersion": 53,
+  "dataVersion": 54,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -3704,7 +3704,6 @@
       "id": "r80",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "18:20",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
