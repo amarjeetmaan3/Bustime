@@ -38,3 +38,9 @@ CREATE POLICY "public submit bus listing" ON public.bus_operator_submissions
 DROP POLICY IF EXISTS "admin manage bus listings" ON public.bus_operator_submissions;
 CREATE POLICY "admin manage bus listings" ON public.bus_operator_submissions
   FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Book Bus service directory fields (no seat reservation inventory).
+alter table public.bus_operators
+  add column if not exists bus_types jsonb not null default '[]'::jsonb;
+alter table public.bus_operator_submissions
+  add column if not exists bus_types jsonb not null default '[]'::jsonb;
