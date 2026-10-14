@@ -294,4 +294,18 @@
     <string name="bb_contact_prompt">ऑपरेटर से संपर्क करने से पहले सेवा की जानकारी देख लें।</string>
     <string name="bb_contact_reveal">संपर्क जानकारी देखें</string>
     <string name="bb_contact_unavailable">संपर्क नंबर उपलब्ध नहीं है।</string>
+    <string name="community_bus_form_intro">बस सेवा/कंपनी की जानकारी एडमिन की जाँच के लिए भरें। केवल मंज़ूर लिस्टिंग ही सार्वजनिक होगी। Bustime सीट बुक नहीं करता और उपलब्धता की पुष्टि नहीं करता।</string>
+    <string name="community_fill_bus_required">कंपनी/सेवा का नाम, कम से कम एक बस प्रकार, संचालन का स्थान और सही फ़ोन नंबर भरें।</string>
+    <string name="bus_types_select_label">बस के प्रकार (एक से अधिक चुन सकते हैं)</string>
+    <string name="bus_type_ordinary">साधारण बस</string>
+    <string name="bus_type_seater">सीटर बस</string>
+    <string name="bus_type_sleeper">स्लीपर बस</string>
+    <string name="bus_type_ac">एसी बस</string>
+    <string name="bus_type_non_ac">नॉन-एसी बस</string>
+    <string name="bus_type_luxury">लग्ज़री बस</string>
+    <string name="bus_type_volvo">वोल्वो बस</string>
+    <string name="bus_type_mini">मिनी बस</string>
+    <string name="bus_type_other">अन्य</string>
+    <string name="bus_type_other_hint">अन्य बस का प्रकार (यदि चुना है)</string>
+    <string name="bus_type_required_error">अन्य बस का प्रकार लिखें।</string>
 </resources>
