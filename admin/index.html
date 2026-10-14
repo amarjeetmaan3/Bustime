@@ -2964,8 +2964,8 @@ document.addEventListener('click', async function (e) {
     else if (act === 'community-status') { communityStatus = b.getAttribute('data-status'); render(); }
     else if (act === 'community-section') { communitySection = b.getAttribute('data-section') || 'corrections'; render(); }
     else if (act === 'community-reject' || act === 'community-approve') {
-      var kind = b.getAttribute('data-kind'), cid = b.getAttribute('data-id'), table = communityTable(kind);
-      var listKey = kind, record = (community[listKey] || []).find(function(x){return x.id===cid;});
+      var kind = b.getAttribute('data-kind'), cid = b.getAttribute('data-id');
+      var listKey = kind, record = (community[listKey] || []).find(function(x){return x.id===cid;}), table = communityTable(kind,record);
       if (!record || record.status !== 'pending') { toast('This request is no longer pending. Refresh the list.'); return; }
       if (act === 'community-approve') {
         if (kind === 'corrections') applyApprovedCorrection(record);
@@ -2991,8 +2991,8 @@ document.addEventListener('click', async function (e) {
       record.status = act==='community-approve'?'approved':'rejected'; toast(act==='community-approve'?(kind==='vehicles'?'Approved in Admin data. Press Publish at the top to make this Taxi/Auto listing visible in the app.':kind==='busSubmissions'?'Bus operator approved and published to the operator directory.':'Approved. If route data changed, press Publish to make it live.'):'Moved to Rejected.'); render();
     }
     else if (act === 'community-delete') {
-      var dk=b.getAttribute('data-kind'), did=b.getAttribute('data-id'), dtable=communityTable(dk);
-      var drec=(community[dk]||[]).find(function(x){return x.id===did;});
+      var dk=b.getAttribute('data-kind'), did=b.getAttribute('data-id');
+      var drec=(community[dk]||[]).find(function(x){return x.id===did;}), dtable=communityTable(dk,drec);
       if (!drec) { toast('Request not found. Refresh the list and try again.'); return; }
       if (!confirm('Permanently delete this '+String(drec.status||'')+' '+String(drec._label||dk)+' request? This cannot be undone.')) return;
       await sbFetch('/rest/v1/'+dtable+'?id=eq.'+encodeURIComponent(did),{method:'DELETE',headers:{Prefer:'return=minimal'}});
