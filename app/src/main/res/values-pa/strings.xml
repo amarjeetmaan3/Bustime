@@ -183,6 +183,7 @@
     <string name="community_driver_name">ਡਰਾਈਵਰ ਦਾ ਨਾਮ</string>
     <string name="community_vehicle_name">ਵਾਹਨ ਦਾ ਨਾਮ</string>
     <string name="community_vehicle_model">ਵਾਹਨ ਦਾ ਮਾਡਲ ਨੰਬਰ</string>
+    <string name="community_vehicle_year">ਸਾਲ (4 ਅੰਕ)</string>
     <string name="community_seat_count">ਸੀਟਾਂ ਦੀ ਗਿਣਤੀ</string>
     <string name="community_vehicle_registration">ਵਾਹਨ ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨੰਬਰ</string>
     <string name="community_location_area">ਟਿਕਾਣਾ / ਸੇਵਾ ਖੇਤਰ ਦਾ ਪਤਾ (ਇੱਕ ਵਾਰ ਭਰੋ)</string>
@@ -223,7 +224,9 @@
     <string name="community_stop_invalid_time">ਪੜਾਅ %1$d ਦਾ ਸਮਾਂ ਸਹੀ ਨਹੀਂ ਹੈ।</string>
     <string name="community_route_correction_sent">ਪੂਰੇ ਰੂਟ ਦਾ ਸੁਧਾਰ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤਾ ਗਿਆ ਹੈ।</string>
     <string name="community_vehicle_type_label">ਵਾਹਨ ਦੀ ਕਿਸਮ</string>
-    <string name="community_fill_vehicle_required">ਸੀਟਾਂ ਦੀ ਗਿਣਤੀ, ਵਾਹਨ ਨੰਬਰ, ਸੇਵਾ ਖੇਤਰ ਅਤੇ ਯੂਨੀਅਨ ਦੇ ਨਾਮ ਸਮੇਤ ਸਾਰੇ ਲਾਜ਼ਮੀ ਖਾਨੇ ਭਰੋ।</string>
+    <string name="community_fill_vehicle_required">ਸੀਟਾਂ ਦੀ ਗਿਣਤੀ, ਵਾਹਨ ਨੰਬਰ, ਸੇਵਾ ਖੇਤਰ ਅਤੇ ਯੂਨੀਅਨ ਦੇ ਨਾਮ ਸਮੇਤ ਸਾਰੇ ਲਾਜ਼ਮੀ ਖਾਨੇ ਭਰੋ।
+    </string>
+    <string name="community_year_invalid">ਵਾਹਨ ਦਾ ਸਾਲ ਠੀਕ ਚਾਰ ਅੰਕਾਂ ਵਿੱਚ ਭਰੋ, ਜਿਵੇਂ 2022।</string>
     <string name="community_listing_sent">ਲਿਸਟਿੰਗ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ।</string>
     <string name="community_bus_form_intro">ਬੱਸ ਦੀ ਜਾਣਕਾਰੀ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭਰੋ। ਮਨਜ਼ੂਰੀ ਤੋਂ ਬਾਅਦ ਹੀ ਤੁਹਾਡੀ ਲਿਸਟਿੰਗ ਜਨਤਕ ਹੋਵੇਗੀ।</string>
     <string name="community_fill_bus_required">ਬੱਸ ਦੀ ਕਿਸਮ, ਬਰਥਾਂ/ਸੀਟਾਂ ਦੀ ਗਿਣਤੀ ਅਤੇ ਮੋਬਾਈਲ ਨੰਬਰ ਸਮੇਤ ਸਾਰੇ ਲਾਜ਼ਮੀ ਖਾਨੇ ਭਰੋ।</string>
