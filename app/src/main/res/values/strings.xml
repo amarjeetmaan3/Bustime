@@ -282,4 +282,8 @@
     <string name="bb_seats_format">%1$d seats</string>
     <string name="bb_not_specified">Not specified</string>
     <string name="fuel_oil">Oil (Petrol/CNG)</string>
+    <string name="area_change_title">Change Area</string>
+    <string name="area_change_label">Change Area: %1$s ▾</string>
+    <string name="area_select_prompt">Select Area</string>
+    <string name="area_all_areas">All Areas</string>
 </resources>

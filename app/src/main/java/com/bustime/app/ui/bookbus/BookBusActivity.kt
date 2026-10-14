@@ -60,17 +60,17 @@ class BookBusActivity : AppCompatActivity() {
         var allRowsCache: List<org.json.JSONObject> = emptyList()
         val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 12, 0, 0) }
         val areaButton = Button(this).apply {
-            text = "Change Area: Select Area ▾"
+            text = getString(com.bustime.app.R.string.area_change_label, getString(com.bustime.app.R.string.area_select_prompt))
             setOnClickListener {
                 val areas = allRowsCache.mapNotNull { row ->
                     row.optString("area_name").ifBlank { row.optString("location") }.trim().takeIf { it.isNotBlank() }
                 }.distinctBy { it.lowercase(java.util.Locale.ROOT) }
-                val choices = listOf("All Areas") + areas
+                val choices = listOf(getString(com.bustime.app.R.string.area_all_areas)) + areas
                 AlertDialog.Builder(this@BookBusActivity)
-                    .setTitle("Change Area")
+                    .setTitle(com.bustime.app.R.string.area_change_title)
                     .setSingleChoiceItems(choices.toTypedArray(), (selectedArea?.let { areas.indexOf(it) + 1 } ?: 0)) { dialog, which ->
                         selectedArea = if (which == 0) null else areas[which - 1]
-                        text = "Change Area: " + (selectedArea ?: "All Areas") + " ▾"
+                        text = getString(com.bustime.app.R.string.area_change_label, selectedArea ?: getString(com.bustime.app.R.string.area_all_areas))
                         dialog.dismiss()
                         renderOperators(allRowsCache, results, selectedArea)
                     }.setNegativeButton(com.bustime.app.R.string.cancel, null).show()
@@ -87,7 +87,7 @@ class BookBusActivity : AppCompatActivity() {
             val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
             val allRows = (0 until rows.length()).map { rows.getJSONObject(it) }
             allRowsCache = allRows
-            areaButton.text = "Change Area: All Areas ▾"
+            areaButton.text = getString(com.bustime.app.R.string.area_change_label, getString(com.bustime.app.R.string.area_all_areas))
             renderOperators(allRows, results, selectedArea)
         }
     }

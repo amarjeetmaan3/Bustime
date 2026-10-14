@@ -67,6 +67,10 @@ abstract class TransportDao {
     @Query("SELECT * FROM route_stops WHERE routeId = :routeId ORDER BY stopOrder")
     abstract suspend fun getStops(routeId: String): List<RouteStop>
 
+    // One bulk read for Existing Route: deduplicate by the complete ordered stop sequence.
+    @Query("SELECT * FROM route_stops ORDER BY routeId, stopOrder")
+    abstract suspend fun getAllStops(): List<RouteStop>
+
     // ---------- टैक्सी / ऑटो ----------
 
     @Query("SELECT seats FROM seater_groups ORDER BY seats")

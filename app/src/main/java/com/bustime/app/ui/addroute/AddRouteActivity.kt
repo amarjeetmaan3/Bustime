@@ -71,13 +71,27 @@ class AddRouteActivity : AppCompatActivity() {
             )
             editor?.render()
 
-            routes = repo.getAllRoutes()
-            val ids = routes.flatMap { listOf(it.fromId, it.toId) }.toSet()
+            val allRoutes = repo.getAllRoutes()
+            val stopsByRoute = repo.getAllRouteStops()
+                .groupBy { it.routeId }
+                .mapValues { (_, stops) -> stops.sortedBy { it.stopOrder }.map { it.placeId } }
+
+            // Existing Route is a stop-copy picker, not a list of individual bus services.
+            // Routes with the same complete ordered stop sequence appear only once.
+            routes = allRoutes.distinctBy { route ->
+                stopsByRoute[route.id].orEmpty().ifEmpty { listOf(route.fromId, route.toId) }
+            }
+
+            val ids = routes.flatMap { route ->
+                stopsByRoute[route.id].orEmpty().ifEmpty { listOf(route.fromId, route.toId) }
+            }.toSet()
             val names = repo.getPlacesById(ids)
             val lang = LanguageHelper.current()
             val labels = routes.map { route ->
-                val endpoints = "${names[route.fromId]?.displayName(lang) ?: route.fromId} → ${names[route.toId]?.displayName(lang) ?: route.toId}"
-                if (route.time.isNotBlank()) "$endpoints • ${route.time}" else endpoints
+                val sequence = stopsByRoute[route.id].orEmpty().ifEmpty { listOf(route.fromId, route.toId) }
+                sequence.joinToString(" → ") { placeId ->
+                    names[placeId]?.displayName(lang)?.takeIf { it.isNotBlank() } ?: placeId
+                }
             }
             spinner.adapter = ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_spinner_dropdown_item, labels)
             spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
