@@ -1496,8 +1496,9 @@ function viewRouteReview() {
       return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><input class="grow sub_name" aria-label="Stop name" data-place="' + esc(st.place || '') + '" value="' + esc(stopName) + '" ' + (s.status !== 'pending' ? 'disabled' : '') + '>' + dayText +
         '<input type="time" class="sub_t" data-place="' + esc(st.place || '') + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '></div>';
     }).join('');
-    var actions = s.status === 'pending' ? '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Open</button><button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button>' :
-      s.status === 'rejected' ? '<button class="btn danger" data-act="sb-delete" data-i="' + i + '">Delete rejected request</button>' : '<span class="badge">Approved · retained</span>';
+    var actions = (s.status === 'pending' ? '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Open</button><button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button>' :
+      s.status === 'approved' ? '<span class="badge">Approved</span>' : '<span class="badge gray">Rejected</span>') +
+      '<button class="btn danger" data-act="sb-delete" data-i="' + i + '">Delete</button>';
     var fromLabel = s.from_text || pname(placeById(s.from_id)) || s.from_id || '(missing From)';
     var toLabel = s.to_text || pname(placeById(s.to_id)) || s.to_id || '(missing To)';
     var requestTitle = s.submission_type === 'edit_existing_route' ? ' <span class="badge">Edit existing route #' + esc(s.route_id) + '</span>' : (s.submission_type === 'new_route' ? ' <span class="badge">New free-text route</span>' : '');
@@ -1684,7 +1685,8 @@ function viewCommunity(mode) {
     } else {
       details = '<p><b>'+esc(x.category)+'</b> · Route '+esc(x.related_route||'-')+'</p><p>'+esc(x.message)+'</p><p class="muted">Contact: '+esc(x.contact||'-')+'</p>';
     }
-    var actions = x.status==='pending' ? (x._kind==='feedback' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open review</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>') : (x.status==='rejected' ? '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete rejected</button>' : '<span class="badge green">Approved · retained</span>');
+    var actions = (x.status==='pending' ? (x._kind==='feedback' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open review</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>') : (x.status==='rejected' ? '<span class="badge gray">Rejected</span>' : '<span class="badge green">Approved</span>')) +
+      '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete</button>';
     var correctionRoute=x._kind==='corrections'?(data.routes||[]).find(function(r){return String(r.id)===String(x.route_id);}):null;
     var correctionRouteName=correctionRoute?(pname(placeById(correctionRoute.from))+' → '+pname(placeById(correctionRoute.to))):'';
     var cardTitle=x._kind==='corrections'?(correctionRouteName||('Route '+String(x.route_id||'correction')))+' · '+String(x.request_type||'correction'):(x._label+' · '+(x.request_type||x.vehicle_type||x.category||'Request'));
@@ -2515,10 +2517,19 @@ document.addEventListener('click', async function (e) {
       subs[i].status = 'rejected'; toast('Moved to Rejected list'); render();
     }
     else if (act === 'sb-delete') {
-      if (!subs[i] || subs[i].status !== 'rejected') { toast('Only rejected requests can be deleted'); return; }
-      if (!confirm('Permanently delete this rejected request?')) return;
-      await sbFetch('/rest/v1/route_submissions?id=eq.' + encodeURIComponent(subs[i].id) + '&status=eq.rejected', { method:'DELETE', headers:{ Prefer:'return=minimal' } });
-      subs.splice(i, 1); toast('Rejected request deleted'); render();
+      var deleteSub = subs && subs[i];
+      if (!deleteSub) { toast('Request not found. Refresh the list and try again.'); return; }
+      var deleteRouteId = deleteSub.route_id;
+      var deleteRoute = deleteRouteId ? (data.routes || []).find(function(route){ return String(route.id) === String(deleteRouteId); }) : null;
+      var deleteMessage = 'Permanently delete this ' + String(deleteSub.status || '') + ' route request? This cannot be undone.';
+      if (deleteRoute) deleteMessage += '\n\nThe associated approved route will also be removed from the admin data. Press Publish afterward to remove it from the app snapshot.';
+      if (!confirm(deleteMessage)) return;
+      await sbFetch('/rest/v1/route_submissions?id=eq.' + encodeURIComponent(deleteSub.id), { method:'DELETE', headers:{ Prefer:'return=minimal' } });
+      if (deleteRoute) {
+        data.routes = data.routes.filter(function(route){ return String(route.id) !== String(deleteRouteId); });
+        setDirty(true);
+      }
+      subs.splice(i, 1); toast(deleteRoute ? 'Request and associated route deleted. Press Publish to apply the route removal.' : 'Route request deleted'); render();
     }
     else if (act === 'sb-approve') {
       if (!subs || !subs[i] || !document.querySelector('[data-sub="' + i + '"]')) {
@@ -2693,10 +2704,12 @@ document.addEventListener('click', async function (e) {
     else if (act === 'community-delete') {
       var dk=b.getAttribute('data-kind'), did=b.getAttribute('data-id'), dtable=communityTable(dk);
       var drec=(community[dk]||[]).find(function(x){return x.id===did;});
-      if (!drec || drec.status!=='rejected') { toast('Only rejected requests can be deleted.'); return; }
-      if (!confirm('Permanently delete this rejected request?')) return;
-      await sbFetch('/rest/v1/'+dtable+'?id=eq.'+encodeURIComponent(did)+'&status=eq.rejected',{method:'DELETE',headers:{Prefer:'return=minimal'}});
-      community[dk]=community[dk].filter(function(x){return x.id!==did;}); render();
+      if (!drec) { toast('Request not found. Refresh the list and try again.'); return; }
+      if (!confirm('Permanently delete this '+String(drec.status||'')+' '+String(drec._label||dk)+' request? This cannot be undone.')) return;
+      await sbFetch('/rest/v1/'+dtable+'?id=eq.'+encodeURIComponent(did),{method:'DELETE',headers:{Prefer:'return=minimal'}});
+      community[dk]=community[dk].filter(function(x){return x.id!==did;});
+      if(communityReviewEditor&&communityReviewEditor.record&&communityReviewEditor.record.id===did)communityReviewEditor=null;
+      toast('Request deleted.'); render();
     }
     else if (act === 'category-add') {
       var categoryName=val('bus_category_name').trim();
