@@ -1,5 +1,5 @@
 {
-  "dataVersion": 58,
+  "dataVersion": 59,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -390,6 +390,46 @@
         "en": "khajuwala",
         "hi": "खाजूवाला",
         "pa": "ਖਾਜੁਵਾਲਾ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_sitapur",
+      "kind": "place",
+      "name": {
+        "en": "sitapur",
+        "hi": "सीतापुर",
+        "pa": "ਸਿਤਾਪੂਰ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_raigarh",
+      "kind": "place",
+      "name": {
+        "en": "raigarh",
+        "hi": "रायगढ़",
+        "pa": "ਰੈਗੜ੍ਹ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_rampur",
+      "kind": "place",
+      "name": {
+        "en": "rampur",
+        "hi": "रामपुर",
+        "pa": "ਰਾਮਪੁਰ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_devipur",
+      "kind": "place",
+      "name": {
+        "en": "devipur",
+        "hi": "देवीपुर",
+        "pa": "ਦੇਵੀਪੁਰ"
       },
       "aliases": []
     }
@@ -3943,6 +3983,23 @@
         },
         {
           "place": "place_sadulshahar"
+        }
+      ]
+    },
+    {
+      "id": "r85",
+      "from": "place_user_sitapur",
+      "to": "place_user_raigarh",
+      "time": "13:00",
+      "arrive": "16:41",
+      "stops": [
+        {
+          "place": "place_user_rampur",
+          "time": "14:00"
+        },
+        {
+          "place": "place_user_devipur",
+          "time": "15:41"
         }
       ]
     }
