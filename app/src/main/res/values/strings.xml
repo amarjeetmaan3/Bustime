@@ -313,4 +313,7 @@
     <string name="bus_type_other">Other</string>
     <string name="bus_type_other_hint">Other bus type (if selected)</string>
     <string name="bus_type_required_error">Enter the other bus type.</string>
+    <string name="bb_bus_types">Bus types</string>
+    <string name="bb_search_hint">Search company, bus type or location</string>
+    <string name="bb_search_no_results">No bus services match “%1$s”.</string>
 </resources>
