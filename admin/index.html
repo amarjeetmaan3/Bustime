@@ -785,8 +785,7 @@ async function mergeApprovedRouteSubmissions() {
       var toId=approvedResolvePlace(sub.to_id,rd.toNames||last.names||{},toName);
       if(!fromId||!toId)return;
       var start=String(rd.start||sub.start_time||'');
-      if(!TIME_RE.test(start))start=String((stopRows.find(function(st){return TIME_RE.test(st.time||'');})||{}).time||'');
-      if(!TIME_RE.test(start))return;
+      // A missing start-stop time must stay missing; never borrow an intermediate stop's time.
       var mid=[],arrive=null,previous=start,day=0;
       stopRows.forEach(function(st,index){
         var fallback=String(st.name||((index===0)?fromName:(index===stopRows.length-1?toName:''))||'');
@@ -803,7 +802,8 @@ async function mergeApprovedRouteSubmissions() {
           mid.push(item);
         }
       });
-      route={id:'',from:fromId,to:toId,time:start};
+      route={id:'',from:fromId,to:toId};
+      if(TIME_RE.test(start))route.time=start;
       if(arrive)route.arrive=arrive;
       var approvedService=String(rd.service||sub.service_name||'').trim();
       if(approvedService)route.service=approvedService;
@@ -811,7 +811,7 @@ async function mergeApprovedRouteSubmissions() {
       if(sub.long_route)route.longRoute=true;
       if(sub.start_date)route.startDate=String(sub.start_date);
     }
-    if(!route||!route.from||!route.to||!TIME_RE.test(String(route.time||'')))return;
+    if(!route||!route.from||!route.to)return;
     // Resolve missing Place IDs before publishing; never publish a route with broken references.
     if(!placeById(route.from))route.from=approvedResolvePlace(route.from,{en:sub.from_text||''},sub.from_text||route.from);
     if(!placeById(route.to))route.to=approvedResolvePlace(route.to,{en:sub.to_text||''},sub.to_text||route.to);
