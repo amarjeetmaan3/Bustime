@@ -28,7 +28,7 @@ import org.json.JSONObject
 class BookBusActivity : AppCompatActivity() {
     private fun localizedCategory(value: String): String = when (value.trim().lowercase(java.util.Locale.ROOT)) {
         "ordinary" -> getString(R.string.bus_category_ordinary)
-        "luxury" -> getString(R.string.bus_category_luxury)
+        "luxury", "luxury bus" -> getString(R.string.bus_type_luxury)
         "sleeper" -> getString(R.string.bus_category_sleeper)
         "sleeper plus" -> getString(R.string.bus_category_sleeper_plus)
         "seater plus" -> getString(R.string.bus_category_seater_plus)
