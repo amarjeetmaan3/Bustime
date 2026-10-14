@@ -15,4 +15,6 @@
     <color name="textPrimary">#1F2933</color>
     <color name="textSecondary">#5F6B7A</color>
     <color name="textGreen">#2E7D32</color>
+    <color name="stopFromHighlight">#2E7D32</color>
+    <color name="stopToHighlight">#C62828</color>
 </resources>
