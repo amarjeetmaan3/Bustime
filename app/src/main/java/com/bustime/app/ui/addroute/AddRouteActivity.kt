@@ -87,11 +87,18 @@ class AddRouteActivity : AppCompatActivity() {
             }.toSet()
             val names = repo.getPlacesById(ids)
             val lang = LanguageHelper.current()
-            val labels = routes.map { route ->
-                val sequence = stopsByRoute[route.id].orEmpty().ifEmpty { listOf(route.fromId, route.toId) }
-                sequence.joinToString(" → ") { placeId ->
-                    names[placeId]?.displayName(lang)?.takeIf { it.isNotBlank() } ?: placeId
-                }
+            // Keep the picker focused on the main From → To route, not a long village chain.
+            // If multiple variants share the same endpoints, add a short service/route hint to distinguish them.
+            fun placeName(placeId: String): String =
+                names[placeId]?.displayName(lang)?.takeIf { it.isNotBlank() } ?: placeId
+            val endpointKeys = routes.map { "${it.fromId}→${it.toId}" }
+            val endpointCounts = endpointKeys.groupingBy { it }.eachCount()
+            val labels = routes.mapIndexed { index, route ->
+                val mainLabel = "${placeName(route.fromId)} → ${placeName(route.toId)}"
+                if ((endpointCounts[endpointKeys[index]] ?: 0) > 1) {
+                    val variant = (route.routeName ?: route.serviceName)?.takeIf { it.isNotBlank() } ?: route.id
+                    "$mainLabel · $variant"
+                } else mainLabel
             }
             spinner.adapter = ArrayAdapter(this@AddRouteActivity, android.R.layout.simple_spinner_dropdown_item, labels)
             spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -134,7 +141,8 @@ class AddRouteActivity : AppCompatActivity() {
             stops.forEach { stop ->
                 drafts.add(JSONObject().put("place_id", stop.placeId)
                     .put("name", names[stop.placeId]?.displayName(lang) ?: stop.placeId)
-                    .put("language", lang).put("time", JSONObject.NULL))
+                    .put("language", lang)
+                    .put("time", stop.time ?: JSONObject.NULL))
             }
             editor?.render()
         }
