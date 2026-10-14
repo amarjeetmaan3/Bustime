@@ -25,6 +25,19 @@ import org.json.JSONArray
 
 /** Contact-only bus service details. No seat reservation or availability is offered. */
 class BusOperatorDetailActivity : AppCompatActivity() {
+    private fun localizedType(value: String): String = when (value.trim().lowercase(java.util.Locale.ROOT)) {
+        "ordinary" -> getString(R.string.bus_type_ordinary)
+        "seater" -> getString(R.string.bus_type_seater)
+        "sleeper" -> getString(R.string.bus_type_sleeper)
+        "ac bus" -> getString(R.string.bus_type_ac)
+        "non-ac bus" -> getString(R.string.bus_type_non_ac)
+        "luxury bus", "luxury" -> getString(R.string.bus_type_luxury)
+        "volvo bus" -> getString(R.string.bus_type_volvo)
+        "mini bus" -> getString(R.string.bus_type_mini)
+        "other" -> getString(R.string.bus_type_other)
+        else -> value
+    }
+
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,7 +82,7 @@ class BusOperatorDetailActivity : AppCompatActivity() {
             gravity = Gravity.CENTER; setPadding(0, dp(8), 0, 0)
         })
         if (types.isNotEmpty()) header.addView(TextView(this).apply {
-            text = types.joinToString(" · "); textSize = 14f; setTextColor(secondaryText)
+            text = types.joinToString(" · ", transform = ::localizedType); textSize = 14f; setTextColor(secondaryText)
             gravity = Gravity.CENTER; setPadding(0, dp(7), 0, 0)
         })
         root.addView(header, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
@@ -89,7 +102,7 @@ class BusOperatorDetailActivity : AppCompatActivity() {
             detailsCard.addView(View(this).apply { setBackgroundColor(borderColor) }, LinearLayout.LayoutParams(-1, dp(1)))
         }
         detail(getString(R.string.bb_service), serviceName)
-        detail(getString(R.string.bb_bus_types), types.joinToString(" · "))
+        detail(getString(R.string.bb_bus_types), types.joinToString(" · ", transform = ::localizedType))
         detail(getString(R.string.bb_location), location)
         detail(getString(R.string.bb_extra_details_label), extraDetails)
         root.addView(detailsCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
