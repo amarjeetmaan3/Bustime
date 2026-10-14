@@ -101,7 +101,7 @@ class HomeActivity : AppCompatActivity() {
         super.onResume()
         // Marquee can miss its first start while the window is still gaining focus.
         // Re-arm it after layout whenever the app returns to the foreground.
-        findViewById<TextView?>(R.id.warningTicker)?.post {
+        findViewById<TextView>(R.id.warningTicker).post {
             val ticker = findViewById<TextView>(R.id.warningTicker)
             if (ticker.visibility == View.VISIBLE && ticker.text.isNotBlank()) {
                 ticker.isSelected = false
