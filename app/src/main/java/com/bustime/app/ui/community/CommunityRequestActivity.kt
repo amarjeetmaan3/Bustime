@@ -209,12 +209,15 @@ class CommunityRequestActivity : AppCompatActivity() {
             if (!year.matches(Regex("^[0-9]{4}$"))) {
                 toast(getString(com.bustime.app.R.string.community_year_invalid)); return@button
             }
+            val cleanArea = area.trim().replace(Regex("\\s+"), " ")
             val body = JSONObject().put("person_name", name).put("vehicle_name", vehicle)
                 .put("year", year).put("vehicle_number", value("vehicle_number"))
-                .put("seats", seats).put("location", area).put("area_name", area)
+                .put("seats", seats).put("location", cleanArea).put("area_name", cleanArea)
                 .put("union_name", value("union_name")).put("phone", phone)
-                .put("fuel_type", if (type == "auto") listOf("ev", "oil", "cng", "other").getOrNull(spinners["fuel_type"]?.selectedItemPosition ?: -1) else JSONObject.NULL)
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+            if (type == "auto") {
+                body.put("fuel_type", listOf("ev", "oil", "cng", "other").getOrNull(spinners["fuel_type"]?.selectedItemPosition ?: -1) ?: "other")
+            }
             sendRequests(listOf(body), if (type == "taxi") "taxi_submissions" else "auto_submissions", getString(com.bustime.app.R.string.community_listing_sent))
         }
     }
