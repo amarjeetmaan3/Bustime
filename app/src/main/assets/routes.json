@@ -1,5 +1,5 @@
 {
-  "dataVersion": 57,
+  "dataVersion": 58,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -3954,68 +3954,5 @@
     7,
     8
   ],
-  "drivers": [
-    {
-      "id": "a1",
-      "type": "auto",
-      "name": "ravi",
-      "vehicle": "auto · g255",
-      "phone": "9529403003",
-      "area": "Sadulshahar",
-      "info": "Union: bala ji · Vehicle No: rj 56 2525 · I'm so proud",
-      "fuel": "ev",
-      "union_name": "bala ji",
-      "seats": 5
-    },
-    {
-      "id": "t1",
-      "type": "taxi",
-      "name": "Gurdas",
-      "vehicle": "Swift · desire",
-      "phone": "9529403003",
-      "area": "Sadulshahar",
-      "info": "Union: sachdev · Union: sachdev · Vehicle No: Rj 56 2025 · to b end",
-      "union_name": "sachdev",
-      "seats": 4
-    },
-    {
-      "id": "t2",
-      "type": "taxi",
-      "name": "jai",
-      "vehicle": "luna · 2033",
-      "phone": "9649885866",
-      "areaId": "Amargarh",
-      "info": "Union: maan · Union: maan · Vehicle No: rj 31 56 ·",
-      "union_name": "maan",
-      "seats": 5,
-      "area": "amargarh"
-    },
-    {
-      "id": "a2",
-      "type": "auto",
-      "name": "Ravi",
-      "vehicle": "auto · 22",
-      "phone": "9649885866",
-      "areaId": "Hunmangarh",
-      "info": "Union: dev autos · Union: dev autos · Union: dev autos · Vehicle No: rj 15 ·",
-      "fuel": "oil",
-      "union_name": "dev autos",
-      "area": "amargarh"
-    },
-    {
-      "id": "t3",
-      "type": "taxi",
-      "name": "ravi kumar",
-      "vehicle": "maruti",
-      "year": "2085",
-      "vehicle_number": "RJ 31 fhgh",
-      "phone": "9685741236",
-      "area": "sadulshahar",
-      "areaId": "sadulshahar",
-      "info": "Union: Balaji · Vehicle No: RJ 31 fhgh ·",
-      "union_name": "Balaji",
-      "seats": 4,
-      "sourceSubmissionId": "51035ea0-ca54-4c04-a584-c7d053bc4049"
-    }
-  ]
+  "drivers": []
 }
