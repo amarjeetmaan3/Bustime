@@ -926,7 +926,23 @@ async function mergeApprovedCommunitySubmissions(nextVersion){
           if(reviewed.union_name)existing.union_name=reviewed.union_name;
           if(reviewed.seats)existing.seats=reviewed.seats;
           data.drivers.push(existing);changed=true;
-        }else if(!existing.sourceSubmissionId){existing.sourceSubmissionId=sourceId;changed=true;}
+        }else {
+          if(!existing.sourceSubmissionId){existing.sourceSubmissionId=sourceId;changed=true;}
+          existing.type=reviewed.vehicle_type;
+          existing.name=reviewed.person_name;
+          existing.vehicle=reviewed.vehicle_name+((reviewed.year||reviewed.vehicle_model_number)?' · '+(reviewed.year||reviewed.vehicle_model_number):'');
+          existing.year=String(reviewed.year||reviewed.vehicle_model_number||'');
+          existing.vehicle_number=reviewed.vehicle_number||'';
+          existing.phone=reviewed.phone;
+          existing.area=String(reviewed.location||reviewed.area_name||'').normalize('NFKC').trim().replace(/\s+/g,' ');
+          existing.areaId=resolveVehicleAreaId(reviewed.location||reviewed.area_name);
+          existing.union_name=reviewed.union_name||'';
+          existing.details=reviewed.details||'';
+          existing.seats=Number(reviewed.seats)||existing.seats;
+          existing.info=(reviewed.union_name?'Union: '+reviewed.union_name+' · ':'')+(reviewed.vehicle_number?'Vehicle No: '+reviewed.vehicle_number+' · ':'')+(reviewed.details||'');
+          if(reviewed.vehicle_type==='auto')existing.fuel=(reviewed.fuel_type||reviewed.fuel||'oil').toLowerCase();
+          changed=true;
+        }
       }else{
         if(!await correctionAlreadyApplied(reviewed)){applyApprovedCorrection(reviewed);changed=true;}
       }
