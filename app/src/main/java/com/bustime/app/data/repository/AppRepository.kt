@@ -71,6 +71,8 @@ class AppRepository private constructor(context: Context) {
     // fuel: null = सारे, "ev" या "oil"
     suspend fun getAutos(fuel: String? = null, areaId: String? = null): List<Driver> = query { dao.getDrivers("auto", null, fuel, areaId) }
 
+    suspend fun getDriver(driverId: String): Driver? = query { dao.getDriver(driverId) }
+
     companion object {
         @Volatile
         private var INSTANCE: AppRepository? = null
