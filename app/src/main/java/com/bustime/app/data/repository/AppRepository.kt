@@ -57,6 +57,8 @@ class AppRepository private constructor(context: Context) {
 
     suspend fun getRouteStops(routeId: String): List<RouteStop> = query { dao.getStops(routeId) }
 
+    suspend fun getAllRouteStops(): List<RouteStop> = query { dao.getAllStops() }
+
     // ---------- टैक्सी / ऑटो ----------
     suspend fun getSeaterGroups(): List<Int> = query { dao.getSeaterGroups() }
 
