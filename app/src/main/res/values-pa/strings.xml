@@ -284,4 +284,15 @@
     <string name="area_change_label">ਇਲਾਕਾ ਬਦਲੋ: %1$s ▾</string>
     <string name="area_select_prompt">ਇਲਾਕਾ ਚੁਣੋ</string>
     <string name="area_all_areas">ਸਾਰੇ ਇਲਾਕੇ</string>
+    <string name="bb_loading">ਬੱਸ ਸੇਵਾਵਾਂ ਲੋਡ ਹੋ ਰਹੀਆਂ ਹਨ…</string>
+    <string name="bb_details_button">ਪੂਰੀ ਜਾਣਕਾਰੀ ਵੇਖੋ</string>
+    <string name="bb_detail_title">ਬੱਸ ਸੇਵਾ ਦੀ ਜਾਣਕਾਰੀ</string>
+    <string name="bb_operator_label">ਆਪਰੇਟਰ: %1$s</string>
+    <string name="bb_operator_label_short">ਆਪਰੇਟਰ</string>
+    <string name="bb_sleeper_label">ਸਲੀਪਰ ਬਰਥਾਂ</string>
+    <string name="bb_seater_label">ਸੀਟਰ ਸੀਟਾਂ</string>
+    <string name="bb_extra_details_label">ਵਾਧੂ ਜਾਣਕਾਰੀ</string>
+    <string name="bb_contact_prompt">ਆਪਰੇਟਰ ਨਾਲ ਸੰਪਰਕ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਸੇਵਾ ਦੀ ਜਾਣਕਾਰੀ ਵੇਖੋ।</string>
+    <string name="bb_contact_reveal">ਸੰਪਰਕ ਜਾਣਕਾਰੀ ਵੇਖੋ</string>
+    <string name="bb_contact_unavailable">ਸੰਪਰਕ ਨੰਬਰ ਉਪਲਬਧ ਨਹੀਂ ਹੈ।</string>
 </resources>
