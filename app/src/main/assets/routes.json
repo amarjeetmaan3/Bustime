@@ -1,5 +1,5 @@
 {
-  "dataVersion": 50,
+  "dataVersion": 51,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -377,7 +377,9 @@
       "id": "place_user_tibbi",
       "kind": "place",
       "name": {
-        "en": "Tibbi"
+        "en": "Tibbi",
+        "hi": "टिब्बी",
+        "pa": "ਟਿੱਬੀ"
       },
       "aliases": []
     }
@@ -3689,7 +3691,7 @@
     {
       "id": "r79",
       "from": "stand_sri_ganganagar",
-      "to": "stand_sangriya",
+      "to": "place_user_tibbi",
       "time": "17:45",
       "stops": [
         {
@@ -3749,6 +3751,9 @@
         },
         {
           "place": "place_bolanwali"
+        },
+        {
+          "place": "stand_sangriya"
         }
       ]
     },
