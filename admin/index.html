@@ -472,6 +472,22 @@ function communityEditorHtml() {
   html+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Approve reviewed correction</button></div>';
   return html;
  }
+
+ if(kind==='busSubmissions'){
+  var busDraft=communityReviewEditor.record.reviewed_data&&typeof communityReviewEditor.record.reviewed_data==='object'?communityReviewEditor.record.reviewed_data:{};
+  var bus=Object.assign({},communityReviewEditor.record,busDraft);
+  var busTypes=Array.isArray(bus.bus_types)?bus.bus_types:[];
+  var busHtml='<p class="muted">Bus service contact listing only. This request does not reserve seats or confirm availability. Opening does not approve it; save the reviewed draft first if edits are needed.</p>';
+  busHtml+='<label>Bus service / company name</label><input data-cr-field="service_name" value="'+esc(bus.service_name||bus.operator_name||'')+'">';
+  busHtml+='<label>Bus types · JSON list</label><textarea data-cr-field="bus_types" rows="3" style="width:100%;font-family:monospace">'+esc(JSON.stringify(busTypes))+'</textarea><p class="muted">Example: ["Ordinary","AC Bus","Sleeper"]. Keep this valid JSON.</p>';
+  busHtml+='<label>Operating location</label><input data-cr-field="location" value="'+esc(bus.location||'')+'">';
+  busHtml+='<label>Booking phone</label><input data-cr-field="phone" value="'+esc(bus.phone||'')+'">';
+  busHtml+='<label>WhatsApp number · optional</label><input data-cr-field="whatsapp" value="'+esc(bus.whatsapp||'')+'">';
+  busHtml+='<label>Extra message · optional</label><textarea data-cr-field="details" rows="3">'+esc(bus.details||'')+'</textarea>';
+  busHtml+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(communityReviewEditor.record.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(communityReviewEditor.record.id)+'">Approve reviewed service</button></div>';
+  return busHtml;
+ }
+
  var rec=communityReviewEditor.record,kind=communityReviewEditor.kind,draft=rec.reviewed_data&&typeof rec.reviewed_data==='object'?rec.reviewed_data:rec;
  var skip={id:1,status:1,created_at:1,updated_at:1,reviewed_data:1,reviewed_at:1,approved_at:1};
  var labels={vehicle_type:'Vehicle type',person_name:'Owner/driver name',vehicle_name:'Vehicle name',year:'Year',vehicle_model_number:'Legacy model number',vehicle_number:'Registration number',seats:'Seats',area_name:'Service area',location:'Location',union_name:'Union',fuel_type:'Fuel type',phone:'Phone',whatsapp:'WhatsApp',details:'Details',operator_name:'Operator name',service_name:'Service name',bus_type:'Bus type',custom_category:'Custom category',seat_type:'Seat type',sleeper_count:'Sleeper berths',seater_count:'Seater seats',from_text:'From',to_text:'To',request_type:'Request type',route_id:'Route ID',before_stop_id:'Before stop ID',after_stop_id:'After stop ID',missing_place_name:'Missing stop',missing_time:'Missing stop time',stop_id:'Stop ID',corrected_time:'Corrected time',change_summary:'Change summary',proposed_stops:'Proposed stops',category:'Category',related_route:'Related route',message:'Message',contact:'Contact',notes:'Notes'};
@@ -1701,15 +1717,13 @@ function viewCommunity(mode) {
   });
   if (mode === 'busDirectory') {
     html += '<div class="card"><h2>Published Bus Operator Directory</h2><p class="muted">Public operator information only. This is separate from scheduled routes and is not a booking queue.</p>'+
-      '<div class="row2"><div><label>Operator name</label><input id="op_name"></div><div><label>Service name</label><input id="op_service"></div></div>'+
-      '<div class="row2"><div><label>Bus type / custom category</label><input id="op_type" placeholder="AC / Sleeper / Prime A"></div><div><label>Phone</label><input id="op_phone"></div></div>'+
-      '<div class="row2"><div><label>Seat configuration</label><input id="op_seat_type" placeholder="Sleeper / Seater / Both"></div><div><label>WhatsApp</label><input id="op_whatsapp"></div></div>'+
-      '<div class="row2"><div><label>Sleeper berths</label><input id="op_sleeper_count" type="number" min="0"></div><div><label>Seats</label><input id="op_seater_count" type="number" min="0"></div></div>'+
-      
-      '<label>Operating area</label><input id="op_location"><label>Details</label><input id="op_details"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-add">Add operator</button></div></div>';
+      '<label>Bus service / company name</label><input id="op_name" placeholder="e.g. AJ Express Bus Service">'+
+      '<label>Bus types (comma-separated)</label><input id="op_types" placeholder="Ordinary, AC Bus, Sleeper">'+
+      '<div class="row2"><div><label>Booking phone</label><input id="op_phone"></div><div><label>WhatsApp · optional</label><input id="op_whatsapp"></div></div>'+
+      '<label>Operating location</label><input id="op_location" placeholder="e.g. Jaipur, Rajasthan"><label>Extra message · optional</label><input id="op_details"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-add">Add operator</button></div></div>';
     html += '<div class="card"><h2>Manage bus categories</h2><p class="muted">Categories added here appear in the Add Your Bus form. Operators can enter a specific variant for any category.</p><div class="row2"><div><label>New category name</label><input id="bus_category_name" placeholder="e.g. Seater Plus"></div><div style="display:flex;align-items:end"><button class="btn primary" data-act="category-add">Add category</button></div></div><div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Category</th><th>Status</th><th></th></tr></thead><tbody>'+(community.categories||[]).map(function(cat){return '<tr><td>'+esc(cat.name)+'</td><td>'+(cat.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="category-toggle" data-id="'+esc(cat.id)+'" data-active="'+(!cat.active)+'">'+(cat.active?'Hide':'Activate')+'</button></td></tr>';}).join('')+'</tbody></table></div></div>';
     html += '<div class="card"><h2>Published operator listings <span class="badge gray">' + community.operators.length + '</span></h2><div class="tablewrap"><table><thead><tr><th>Operator</th><th>Service / type</th><th>Operating area</th><th>Phone</th><th>Visibility</th><th></th></tr></thead><tbody>' +
-      community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||'-')+' / '+esc(o.bus_type)+(o.custom_category?' · '+esc(o.custom_category):'')+'</td><td>'+esc(o.location||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
+      community.operators.map(function(o){return '<tr><td>'+esc(o.operator_name)+'</td><td>'+esc(o.service_name||o.operator_name||'-')+' / '+esc(Array.isArray(o.bus_types)?o.bus_types.join(' · '):(o.bus_type||''))+'</td><td>'+esc(o.location||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
   }
   return html;
 }
@@ -2740,7 +2754,7 @@ document.addEventListener('click', async function (e) {
       }
       if(rk==='busSubmissions'){
         if(!merged.operator_name||!merged.phone){toast('Operator name and phone are required.');return;}
-        await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:merged.operator_name,service_name:merged.service_name||null,bus_type:merged.bus_type||'Ordinary',custom_category:merged.custom_category||null,seat_type:merged.seat_type||null,sleeper_count:merged.sleeper_count,seater_count:merged.seater_count,from_text:merged.from_text||null,to_text:merged.to_text||null,location:merged.location||null,phone:merged.phone,whatsapp:merged.whatsapp||null,details:merged.details||null,active:true})});
+        await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:merged.service_name||merged.operator_name,service_name:merged.service_name||merged.operator_name,bus_types:Array.isArray(merged.bus_types)?merged.bus_types:[],location:merged.location||null,phone:merged.phone,whatsapp:merged.whatsapp||null,details:merged.details||null,active:true})});
       }
       await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:rv,reviewed_at:stamp,approved_at:stamp,status:'approved'})});
       orig.reviewed_data=rv;orig.reviewed_at=stamp;orig.approved_at=stamp;orig.status='approved';communityReviewEditor=null;
@@ -2763,7 +2777,7 @@ document.addEventListener('click', async function (e) {
           data.drivers.push(driver); setDirty(true);
         }
         if (kind === 'busSubmissions') {
-          await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.operator_name,service_name:record.service_name||null,bus_type:record.bus_type||'Ordinary',custom_category:record.custom_category||null,seat_type:record.seat_type||null,sleeper_count:record.sleeper_count,seater_count:record.seater_count,from_text:record.from_text||null,to_text:record.to_text||null,location:record.location||null,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
+          await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.service_name||record.operator_name,service_name:record.service_name||record.operator_name,bus_types:Array.isArray(record.bus_types)?record.bus_types:[],location:record.location||null,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
         }
       } else if (!confirm('Reject this request?')) return;
       await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({status:act==='community-approve'?'approved':'rejected'}) });
@@ -2793,7 +2807,9 @@ document.addEventListener('click', async function (e) {
     else if (act === 'operator-add') {
       var on=val('op_name'), op=val('op_phone').replace(/[^+0-9 -]/g,'');
       if (!on || op.replace(/\D/g,'').length<9) { toast('Enter operator name and valid phone.'); return; }
-      await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:val('op_service')||null,bus_type:val('op_type')||'Bus',seat_type:val('op_seat_type')||null,sleeper_count:parseInt(val('op_sleeper_count'),10)||null,seater_count:parseInt(val('op_seater_count'),10)||null,phone:op,whatsapp:val('op_whatsapp')||null,location:val('op_location')||null,from_text:null,to_text:null,details:val('op_details')||null,active:true})});
+      var busTypes=val('op_types').split(',').map(function(x){return x.trim();}).filter(Boolean);
+      if(!busTypes.length){toast('Enter at least one bus type.');return;}
+      await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:on,bus_types:busTypes,phone:op,whatsapp:val('op_whatsapp')||null,location:val('op_location')||null,details:val('op_details')||null,active:true})});
       await loadCommunity(); toast('Operator added and published.'); render();
     }
     else if (act === 'operator-toggle') {
