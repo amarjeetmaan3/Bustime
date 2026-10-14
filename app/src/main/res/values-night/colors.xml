@@ -14,4 +14,6 @@
     <color name="textPrimary">#ECEFF4</color>
     <color name="textSecondary">#AEB7C2</color>
     <color name="textGreen">#81C784</color>
+    <color name="stopFromHighlight">#81C784</color>
+    <color name="stopToHighlight">#EF9A9A</color>
 </resources>
