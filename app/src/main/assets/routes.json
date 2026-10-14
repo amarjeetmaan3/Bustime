@@ -1,5 +1,5 @@
 {
-  "dataVersion": 54,
+  "dataVersion": 55,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -464,7 +464,6 @@
       "id": "r31",
       "from": "place_user_tibbi",
       "to": "stand_sri_ganganagar",
-      "time": "09:00",
       "stops": [
         {
           "place": "stand_sangriya"
@@ -533,7 +532,6 @@
       "id": "r32",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "08:15",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -599,7 +597,6 @@
       "id": "r33",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "08:45",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -665,7 +662,6 @@
       "id": "r34",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "09:25",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -731,7 +727,6 @@
       "id": "r35",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "09:50",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -797,7 +792,6 @@
       "id": "r36",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "10:25",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -863,7 +857,6 @@
       "id": "r37",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "10:50",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -929,7 +922,6 @@
       "id": "r38",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "11:15",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -995,7 +987,6 @@
       "id": "r39",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "11:35",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1061,7 +1052,6 @@
       "id": "r40",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "12:00",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1127,7 +1117,6 @@
       "id": "r41",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "12:20",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1193,7 +1182,6 @@
       "id": "r42",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "12:40",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1259,7 +1247,6 @@
       "id": "r43",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "14:00",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1325,7 +1312,6 @@
       "id": "r44",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "14:35",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1391,7 +1377,6 @@
       "id": "r45",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "15:00",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1457,7 +1442,6 @@
       "id": "r46",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "15:40",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1523,7 +1507,6 @@
       "id": "r47",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "16:10",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1589,7 +1572,6 @@
       "id": "r48",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "16:30",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1655,7 +1637,6 @@
       "id": "r49",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "16:45",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1721,7 +1702,6 @@
       "id": "r50",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "16:50",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1787,7 +1767,6 @@
       "id": "r51",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "17:00",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1853,7 +1832,6 @@
       "id": "r52",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "17:20",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1919,7 +1897,6 @@
       "id": "r53",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "17:45",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -1985,7 +1962,6 @@
       "id": "r54",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "18:20",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -2051,7 +2027,6 @@
       "id": "r55",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "18:30",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -2117,7 +2092,6 @@
       "id": "r56",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
-      "time": "19:00",
       "stops": [
         {
           "place": "place_bolanwali"
@@ -2183,7 +2157,6 @@
       "id": "r57",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "07:40",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2249,7 +2222,6 @@
       "id": "r58",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "08:15",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2315,7 +2287,6 @@
       "id": "r59",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "08:40",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2381,7 +2352,6 @@
       "id": "r60",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "09:00",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2447,7 +2417,6 @@
       "id": "r61",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "09:25",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2513,7 +2482,6 @@
       "id": "r62",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "09:45",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2579,7 +2547,6 @@
       "id": "r63",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "10:15",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2645,7 +2612,6 @@
       "id": "r64",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "10:50",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2711,7 +2677,6 @@
       "id": "r65",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "11:10",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2777,7 +2742,6 @@
       "id": "r66",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "11:35",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2843,7 +2807,6 @@
       "id": "r67",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "12:15",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2909,7 +2872,6 @@
       "id": "r68",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "12:40",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -2975,7 +2937,6 @@
       "id": "r69",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "13:10",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3041,7 +3002,6 @@
       "id": "r70",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "13:40",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3107,7 +3067,6 @@
       "id": "r71",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "14:00",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3173,7 +3132,6 @@
       "id": "r72",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "14:30",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3239,7 +3197,6 @@
       "id": "r73",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "15:00",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3305,7 +3262,6 @@
       "id": "r74",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "15:30",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3371,7 +3327,6 @@
       "id": "r75",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "16:10",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3437,7 +3392,6 @@
       "id": "r76",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "16:35",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3503,7 +3457,6 @@
       "id": "r77",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "17:00",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3569,7 +3522,6 @@
       "id": "r78",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "17:35",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3635,7 +3587,6 @@
       "id": "r79",
       "from": "stand_sri_ganganagar",
       "to": "place_user_tibbi",
-      "time": "17:45",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3769,7 +3720,6 @@
       "id": "r81",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "18:40",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3835,7 +3785,6 @@
       "id": "r82",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "19:30",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3901,7 +3850,6 @@
       "id": "r83",
       "from": "stand_sri_ganganagar",
       "to": "stand_sangriya",
-      "time": "20:00",
       "stops": [
         {
           "place": "place_miraa_chowk_sri_ganganagar"
@@ -3967,7 +3915,6 @@
       "id": "r84",
       "from": "stand_sangriya",
       "to": "place_khajuwala",
-      "time": "05:50",
       "stops": [
         {
           "place": "place_bolanwali"
