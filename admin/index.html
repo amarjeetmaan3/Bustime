@@ -2410,7 +2410,21 @@ document.addEventListener('click', async function (e) {
     }
     else if (act === 'toggle-route-hidden') { data.routes[i].hidden = !data.routes[i].hidden; setDirty(true); render(); toast(data.routes[i].hidden ? 'Route hidden from app; publish to apply.' : 'Route shown in app; publish to apply.'); }
     else if (act === 'del-route') {
-      if (confirm('Delete this route?')) { data.routes.splice(i, 1); setDirty(true); render(); }
+      var routeToDelete = data.routes[i];
+      if (!routeToDelete) { toast('Route not found. Refresh and try again.'); return; }
+      if (confirm('Delete this route and its linked approved submissions? Publish afterward to remove it from the app.')) {
+        // Remove linked approvals too, otherwise Publish can re-import the deleted route.
+        if (routeToDelete.id && cfg.sbUrl && cfg.sbKey && sbToken) {
+          await sbFetch('/rest/v1/route_submissions?route_id=eq.' + encodeURIComponent(routeToDelete.id), {
+            method: 'DELETE', headers: { Prefer: 'return=minimal' }
+          });
+          if (Array.isArray(subs)) {
+            subs = subs.filter(function (sub) { return String(sub.route_id || '') !== String(routeToDelete.id); });
+          }
+        }
+        data.routes.splice(i, 1); setDirty(true); render();
+        toast('Route deleted. Publish to remove it from the app snapshot.');
+      }
     }
     else if (act === 'save-route') {
       var time=val('fr_time'),arrive=val('fr_arrive');
@@ -2545,12 +2559,23 @@ document.addEventListener('click', async function (e) {
       var deleteMessage = 'Permanently delete this ' + String(deleteSub.status || '') + ' route request? This cannot be undone.';
       if (deleteRoute) deleteMessage += '\n\nThe associated approved route will also be removed from the admin data. Press Publish afterward to remove it from the app snapshot.';
       if (!confirm(deleteMessage)) return;
-      await sbFetch('/rest/v1/route_submissions?id=eq.' + encodeURIComponent(deleteSub.id), { method:'DELETE', headers:{ Prefer:'return=minimal' } });
+      // If this request owns a published route, delete every submission linked to that route ID.
+      // Otherwise another approved duplicate could recreate the route during Publish.
+      if (deleteRouteId) {
+        await sbFetch('/rest/v1/route_submissions?route_id=eq.' + encodeURIComponent(deleteRouteId), { method:'DELETE', headers:{ Prefer:'return=minimal' } });
+      } else {
+        await sbFetch('/rest/v1/route_submissions?id=eq.' + encodeURIComponent(deleteSub.id), { method:'DELETE', headers:{ Prefer:'return=minimal' } });
+      }
       if (deleteRoute) {
         data.routes = data.routes.filter(function(route){ return String(route.id) !== String(deleteRouteId); });
         setDirty(true);
       }
-      subs.splice(i, 1); toast(deleteRoute ? 'Request and associated route deleted. Press Publish to apply the route removal.' : 'Route request deleted'); render();
+      if (deleteRouteId) {
+        subs = (subs || []).filter(function (sub) { return String(sub.route_id || '') !== String(deleteRouteId); });
+      } else {
+        subs.splice(i, 1);
+      }
+      toast(deleteRoute ? 'Request and associated route deleted. Press Publish to apply the route removal.' : 'Route request deleted'); render();
     }
     else if (act === 'sb-approve') {
       if (!subs || !subs[i] || !document.querySelector('[data-sub="' + i + '"]')) {
