@@ -510,7 +510,9 @@ function communityEditorHtml() {
 
 
  if(kind==='vehicles'){
-  var vr=communityReviewEditor.record,vd=Object.assign({},vr,vr.reviewed_data&&typeof vr.reviewed_data==='object'?vr.reviewed_data:{}),vt=vr.vehicle_type==='taxi'?'taxi':'auto';
+  var vr=communityReviewEditor.record,vd=Object.assign({},vr,vr.reviewed_data&&typeof vr.reviewed_data==='object'?vr.reviewed_data:{}),vt=vr._table==='taxi_submissions'||vr.vehicle_type==='taxi'?'taxi':'auto';
+  // Location is vehicle-specific; do not fall back to a legacy area field.
+  vd.location=String((vr.reviewed_data&&Object.prototype.hasOwnProperty.call(vr.reviewed_data,'location'))?vr.reviewed_data.location:(vr.location||'')||'').normalize('NFKC').trim().replace(/\s+/g,' ');
   function vfield(key,label,type){var value=vd[key]==null?'':String(vd[key]);return '<label>'+label+'</label><input data-cr-field="'+key+'" '+(type==='number'?'type="number" min="1"':type==='tel'?'inputmode="tel"':'')+' value="'+esc(value)+'">';}
   var vh='<p class="muted">Review '+(vt==='taxi'?'Taxi':'Auto')+' listing. These fields match the app form; Other information is optional.</p>';
   vh+=vfield('person_name','Driver name','text')+vfield('vehicle_name','Vehicle name','text')+vfield('year','Year (4 digits)','text')+vfield('seats','Number of seats','number')+vfield('vehicle_number','Vehicle registration number','text')+vfield('location','Location address / service area','text')+vfield('union_name','Union name','text')+vfield('phone','Mobile number','tel');
@@ -934,8 +936,8 @@ async function mergeApprovedCommunitySubmissions(nextVersion){
           existing.year=String(reviewed.year||reviewed.vehicle_model_number||'');
           existing.vehicle_number=reviewed.vehicle_number||'';
           existing.phone=reviewed.phone;
-          existing.area=String(reviewed.location||reviewed.area_name||'').normalize('NFKC').trim().replace(/\s+/g,' ');
-          existing.areaId=resolveVehicleAreaId(reviewed.location||reviewed.area_name);
+          existing.area=String(reviewed.location==null?'':reviewed.location).normalize('NFKC').trim().replace(/\s+/g,' ');
+          existing.areaId=existing.area?resolveVehicleAreaId(existing.area):null;
           existing.union_name=reviewed.union_name||'';
           existing.details=reviewed.details||'';
           existing.seats=Number(reviewed.seats)||existing.seats;
@@ -2995,7 +2997,7 @@ document.addEventListener('click', async function (e) {
       if(rk==='vehicles'){
         var vehiclePhoneDigits=String(merged.phone||'').replace(/\\D/g,'');
         if(!merged.person_name||!merged.vehicle_name||!merged.year||! /^[0-9]{4}$/.test(String(merged.year))||!(Number(merged.seats)>0)||!merged.vehicle_number||!merged.location||!merged.union_name||vehiclePhoneDigits.length<10||vehiclePhoneDigits.length>13||(merged.vehicle_type==='auto'&&!merged.fuel_type)){toast('Complete all required Taxi/Auto fields. Other information is optional.');return;}
-        var cleanArea=String(merged.location||merged.area_name||'').normalize('NFKC').trim().replace(/\s+/g,' '); var vd={id:nextNum(merged.vehicle_type==='taxi'?'t':'a',data.drivers),type:merged.vehicle_type,name:merged.person_name,vehicle:merged.vehicle_name+((merged.year||merged.vehicle_model_number)?' · '+(merged.year||merged.vehicle_model_number):''),year:String(merged.year||merged.vehicle_model_number||''),vehicle_number:merged.vehicle_number||'',phone:merged.phone,area:cleanArea,areaId:resolveVehicleAreaId(cleanArea),sourceSubmissionId:String(orig.id),union_name:merged.union_name||'',details:merged.details||'',info:(merged.union_name?'Union: '+merged.union_name+' · ':'')+(merged.vehicle_number?'Vehicle No: '+merged.vehicle_number+' · ':'')+(merged.details||'')};
+        var cleanArea=String(merged.location==null?'':merged.location).normalize('NFKC').trim().replace(/\s+/g,' '); var vd={id:nextNum(merged.vehicle_type==='taxi'?'t':'a',data.drivers),type:merged.vehicle_type,name:merged.person_name,vehicle:merged.vehicle_name+((merged.year||merged.vehicle_model_number)?' · '+(merged.year||merged.vehicle_model_number):''),year:String(merged.year||merged.vehicle_model_number||''),vehicle_number:merged.vehicle_number||'',phone:merged.phone,area:cleanArea,areaId:cleanArea?resolveVehicleAreaId(cleanArea):null,sourceSubmissionId:String(orig.id),union_name:merged.union_name||'',details:merged.details||'',info:(merged.union_name?'Union: '+merged.union_name+' · ':'')+(merged.vehicle_number?'Vehicle No: '+merged.vehicle_number+' · ':'')+(merged.details||'')};
         if(merged.vehicle_type==='auto')vd.fuel=(merged.fuel_type||merged.fuel||'oil').toLowerCase();if(merged.union_name)vd.union_name=merged.union_name;if(merged.seats)vd.seats=merged.seats;data.drivers.push(vd);setDirty(true);
       }
       if(rk==='busSubmissions'){
