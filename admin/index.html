@@ -2197,6 +2197,7 @@ document.addEventListener('change',function(e){var t=e.target;if(t&&t.closest&&t
 
 // ============ Events ============
 function val(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
+function busField(key) { var e=document.querySelector('[data-bus-field="'+key+'"]'); return e?e.value.trim():''; }
 
 document.addEventListener('input', function (e) {
   var key = e.target.getAttribute && e.target.getAttribute('data-filter');
@@ -2820,7 +2821,7 @@ document.addEventListener('click', async function (e) {
       await loadCommunity(); render();
     }
     else if (act === 'operator-add' || act === 'operator-update') {
-      var editingId=b.getAttribute('data-id'),on=val('bus_field_service_name'),loc=val('bus_field_location'),op=val('bus_field_phone').replace(/[^+0-9 -]/g,''),wa=val('bus_field_whatsapp').replace(/[^+0-9 -]/g,''),extra=val('bus_field_details');
+      var editingId=b.getAttribute('data-id'),on=busField('service_name'),loc=busField('location'),op=busField('phone').replace(/[^+0-9 -]/g,''),wa=busField('whatsapp').replace(/[^+0-9 -]/g,''),extra=busField('details');
       var selected=Array.prototype.map.call(document.querySelectorAll('.bus-type-options [data-bus-type]:checked'),function(el){return el.getAttribute('data-bus-type');});
       var custom=String((document.querySelector('[data-bus-other]')||{}).value||'').trim();
       if(selected.indexOf('Other')>=0){if(!custom){toast('Enter the custom bus type selected under Other.');return;}selected=selected.filter(function(t){return t!=='Other';}).concat(custom.split(',').map(function(t){return t.trim();}).filter(Boolean));}
