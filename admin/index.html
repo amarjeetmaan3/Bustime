@@ -384,6 +384,11 @@ var ADMIN_SESSION_KEY = 'bustime_admin_session_v1';
 function saveAdminSession(session) {
   session = session || {};
   sbToken = session.access_token || null;
+  if (!sbToken) {
+    sbRefreshToken = null;
+    try { localStorage.removeItem(ADMIN_SESSION_KEY); } catch (_) {}
+    return;
+  }
   sbRefreshToken = session.refresh_token || sbRefreshToken || null;
   // Persist only the rotating refresh token; never store the short-lived access token.
   try {
@@ -1072,7 +1077,7 @@ function render() {
     autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
     corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, content:viewContentSettings, advertisement:viewAdvertisement, settings:viewSettings };
   if (dataTabs.indexOf(tab) >= 0 && !data) {
-    v.innerHTML = '<div class="card"><h2>Load route data first</h2><p class="muted">Open Settings and load the data from GitHub. Submission review tabs can be opened independently after Supabase sign-in.</p><button class="btn primary" data-act="tab" data-t="settings">Open Settings</button></div>';
+    v.innerHTML = '<div class="card"><h2>' + (dataLoadError ? 'Could not load route data' : 'Loading route data…') + '</h2><p class="muted">' + esc(dataLoadError || 'Fetching the current routes, places and Taxi/Auto listings from GitHub.') + '</p>' + (dataLoadError ? '<button class="btn primary" data-act="data-retry">Retry loading</button> ' : '') + '<button class="btn" data-act="tab" data-t="settings">Open Settings</button></div>';
   } else {
     v.innerHTML = (views[tab] || viewDashboard)();
   }
@@ -2739,7 +2744,13 @@ document.addEventListener('click', async function (e) {
       render();
       toast('Signed out. Sign in again to open the admin panel.');
     }
-    else if (act === 'sb-refresh') { subs = null; render(); await Promise.all([loadSubs(), loadCommunity()]); render(); }
+    else if (act === 'data-retry') {
+      dataLoadError = ''; render();
+      try { await loadData(); dataLoadError = ''; toast('GitHub route data loaded.'); }
+      catch (e) { dataLoadError = e.message || 'Could not load route data.'; toast('GitHub data error: ' + dataLoadError); }
+      render();
+    }
+    else if (act === 'sb-refresh') { subs = null; render(); await Promise.allSettled([loadSubs(), loadCommunity()]); render(); }
     else if (act === 'review-status') { reviewStatus = b.getAttribute('data-status'); render(); }
     else if (act === 'sb-reject') {
       if (!confirm('Reject this submission?')) return;
