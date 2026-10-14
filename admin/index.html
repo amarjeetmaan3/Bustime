@@ -508,6 +508,18 @@ function communityEditorHtml() {
   return busHtml;
  }
 
+
+ if(kind==='vehicles'){
+  var vr=communityReviewEditor.record,vd=Object.assign({},vr,vr.reviewed_data&&typeof vr.reviewed_data==='object'?vr.reviewed_data:{}),vt=vr.vehicle_type==='taxi'?'taxi':'auto';
+  function vfield(key,label,type){var value=vd[key]==null?'':String(vd[key]);return '<label>'+label+'</label><input data-cr-field="'+key+'" '+(type==='number'?'type="number" min="1"':type==='tel'?'inputmode="tel"':'')+' value="'+esc(value)+'">';}
+  var vh='<p class="muted">Review '+(vt==='taxi'?'Taxi':'Auto')+' listing. These fields match the app form; Other information is optional.</p>';
+  vh+=vfield('person_name','Driver name','text')+vfield('vehicle_name','Vehicle name','text')+vfield('year','Year (4 digits)','text')+vfield('seats','Number of seats','number')+vfield('vehicle_number','Vehicle registration number','text')+vfield('location','Location address / service area','text')+vfield('union_name','Union name','text')+vfield('phone','Mobile number','tel');
+  if(vt==='auto'){var fuel=String(vd.fuel_type||'ev').toLowerCase();vh+='<label>Fuel type</label><select data-cr-field="fuel_type"><option value="ev"'+(fuel==='ev'?' selected':'')+'>EV</option><option value="oil"'+(fuel==='oil'?' selected':'')+'>Oil</option><option value="cng"'+(fuel==='cng'?' selected':'')+'>CNG</option><option value="other"'+(fuel==='other'?' selected':'')+'>Other</option></select>';}
+  vh+='<label>Other information (optional)</label><textarea data-cr-field="details" rows="3">'+esc(vd.details||'')+'</textarea>';
+  vh+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(vr.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(vr.id)+'">Approve reviewed listing</button></div>';
+  return vh;
+ }
+
  var rec=communityReviewEditor.record,kind=communityReviewEditor.kind,draft=rec.reviewed_data&&typeof rec.reviewed_data==='object'?rec.reviewed_data:rec;
  var skip={id:1,status:1,created_at:1,updated_at:1,reviewed_data:1,reviewed_at:1,approved_at:1};
  var labels={vehicle_type:'Listing type',person_name:'Contact person / driver name',vehicle_name:'Vehicle name',year:'Year',vehicle_model_number:'Legacy model number',vehicle_number:'Registration number',seats:'Seats',area_name:'Service area',location:'Location',union_name:'Union',fuel_type:'Fuel type',phone:'Phone',whatsapp:'WhatsApp',details:'Details',operator_name:'Operator name',service_name:'Service name',bus_type:'Bus type',custom_category:'Custom category',seat_type:'Seat type',sleeper_count:'Sleeper berths',seater_count:'Seater seats',from_text:'From',to_text:'To',request_type:'Request type',route_id:'Route ID',before_stop_id:'Before stop ID',after_stop_id:'After stop ID',missing_place_name:'Missing stop',missing_time:'Missing stop time',stop_id:'Stop ID',corrected_time:'Corrected time',change_summary:'Change summary',proposed_stops:'Proposed stops',category:'Category',related_route:'Related route',message:'Message',contact:'Contact',notes:'Notes'};
@@ -538,6 +550,7 @@ function communityEditorValues(){
    if(el.value.trim()!==''&&!Number.isFinite(out[k]))throw new Error('Invalid number in '+k+'.');
   }else out[k]=el.value.trim()===''?null:el.value.trim();
  });
+ if(communityReviewEditor&&communityReviewEditor.kind==='vehicles'){out.area_name=out.location||null;}
  if(communityReviewEditor&&communityReviewEditor.kind==='busSubmissions'){
    var selectedBusTypes=Array.prototype.map.call(document.querySelectorAll('#dlgBody [data-bus-type]:checked'),function(el){return el.getAttribute('data-bus-type');});
    var customBusType=String((document.querySelector('#dlgBody [data-bus-other]')||{}).value||'').trim();
@@ -2921,7 +2934,8 @@ document.addEventListener('click', async function (e) {
       if(rk==='corrections'&&merged.request_type==='route_edit'&&!warnNearSubmittedPlaces((merged.proposed_stops||[]).map(function(st){return st.name;})))return;
       if(rk==='corrections')applyApprovedCorrection(merged);
       if(rk==='vehicles'){
-        if(!merged.person_name||!merged.vehicle_name||!merged.phone){toast('Owner/driver name, vehicle name and phone are required.');return;}
+        var vehiclePhoneDigits=String(merged.phone||'').replace(/\\D/g,'');
+        if(!merged.person_name||!merged.vehicle_name||!merged.year||! /^[0-9]{4}$/.test(String(merged.year))||!(Number(merged.seats)>0)||!merged.vehicle_number||!merged.location||!merged.union_name||vehiclePhoneDigits.length<10||vehiclePhoneDigits.length>13||(merged.vehicle_type==='auto'&&!merged.fuel_type)){toast('Complete all required Taxi/Auto fields. Other information is optional.');return;}
         var vd={id:nextNum(merged.vehicle_type==='taxi'?'t':'a',data.drivers),type:merged.vehicle_type,name:merged.person_name,vehicle:merged.vehicle_name+(merged.vehicle_model_number?' · '+merged.vehicle_model_number:''),year:merged.year||'',vehicle_number:merged.vehicle_number||'',phone:merged.phone,area:merged.area_name||merged.location||'',areaId:merged.area_name||merged.location||null,info:(merged.union_name?'Union: '+merged.union_name+' · ':'')+(merged.vehicle_number?'Vehicle No: '+merged.vehicle_number+' · ':'')+(merged.details||'')};
         if(merged.vehicle_type==='auto')vd.fuel=(merged.fuel_type||merged.fuel||'oil').toLowerCase();if(merged.union_name)vd.union_name=merged.union_name;if(merged.seats)vd.seats=merged.seats;data.drivers.push(vd);setDirty(true);
       }
