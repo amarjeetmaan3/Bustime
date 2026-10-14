@@ -183,6 +183,7 @@
     <string name="community_driver_name">ड्राइवर का नाम</string>
     <string name="community_vehicle_name">वाहन का नाम</string>
     <string name="community_vehicle_model">वाहन का मॉडल नंबर</string>
+    <string name="community_vehicle_year">वर्ष (4 अंक)</string>
     <string name="community_seat_count">सीटों की संख्या</string>
     <string name="community_vehicle_registration">वाहन रजिस्ट्रेशन नंबर</string>
     <string name="community_location_area">लोकेशन / सेवा क्षेत्र का पता (एक बार भरें)</string>
@@ -224,6 +225,7 @@
     <string name="community_route_correction_sent">पूरे रूट का सुधार एडमिन की जाँच के लिए भेज दिया गया है।</string>
     <string name="community_vehicle_type_label">वाहन का प्रकार</string>
     <string name="community_fill_vehicle_required">सीटों की संख्या, वाहन नंबर, सेवा क्षेत्र और यूनियन के नाम सहित सभी ज़रूरी फ़ील्ड भरें।</string>
+    <string name="community_year_invalid">वाहन का वर्ष ठीक चार अंकों में भरें, जैसे 2022।</string>
     <string name="community_listing_sent">लिस्टिंग एडमिन की जाँच के लिए भेज दी गई है।</string>
     <string name="community_bus_form_intro">बस की जानकारी एडमिन की जाँच के लिए भरें। मंज़ूरी के बाद ही आपकी लिस्टिंग सार्वजनिक होगी।</string>
     <string name="community_fill_bus_required">बस का प्रकार, बर्थ/सीटों की संख्या और मोबाइल नंबर सहित सभी ज़रूरी फ़ील्ड भरें।</string>
