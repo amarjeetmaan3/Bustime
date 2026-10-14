@@ -164,9 +164,10 @@ class StopListEditor(
 
             val time = TextView(activity).apply {
                 val t = timeOf(draft).orEmpty()
-                text = if (t.isBlank()) "◷" else t
+                text = if (t.isBlank()) "" else t
                 contentDescription = if (t.isBlank()) activity.getString(R.string.ar_tap_time) else t
-                textSize = if (t.isBlank()) 24f else 12f
+                textSize = 12f
+                if (t.isBlank()) setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_time_outline, 0, 0, 0) else setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
                 gravity = Gravity.CENTER
                 setTextColor(if (t.isBlank()) (if (night) 0xFFB0BEC5.toInt() else 0xFF64748B.toInt()) else android.graphics.Color.rgb(58, 133, 190))
                 setPadding(dp(5), dp(4), dp(5), dp(4))
