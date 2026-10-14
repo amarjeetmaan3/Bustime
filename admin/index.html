@@ -739,13 +739,15 @@ async function mergeApprovedRouteSubmissions() {
       (Array.isArray(rd.places)?rd.places:[]).forEach(mergeApprovedPlaceRecord);
       route=cloneApprovedRoute(rd.route);
     }else{
-      var stopRows=Array.isArray(sub.stops)?sub.stops:[];
+      // Older approvals may have a saved review draft but not the durable version-1 payload.
+      // Prefer those reviewed names/times when recovering them; otherwise use the original submission.
+      var stopRows=Array.isArray(rd.stops)&&rd.stops.length?rd.stops:(Array.isArray(sub.stops)?sub.stops:[]);
       var first=stopRows.length?stopRows[0]:{},last=stopRows.length?stopRows[stopRows.length-1]:{};
-      var fromName=sub.from_text||first.name||'',toName=sub.to_text||last.name||'';
-      var fromId=approvedResolvePlace(sub.from_id,first.names||{},fromName);
-      var toId=approvedResolvePlace(sub.to_id,last.names||{},toName);
+      var fromName=String(rd.from||sub.from_text||first.name||''),toName=String(rd.to||sub.to_text||last.name||'');
+      var fromId=approvedResolvePlace(sub.from_id,rd.fromNames||first.names||{},fromName);
+      var toId=approvedResolvePlace(sub.to_id,rd.toNames||last.names||{},toName);
       if(!fromId||!toId)return;
-      var start=String(sub.start_time||'');
+      var start=String(rd.start||sub.start_time||'');
       if(!TIME_RE.test(start))start=String((stopRows.find(function(st){return TIME_RE.test(st.time||'');})||{}).time||'');
       if(!TIME_RE.test(start))return;
       var mid=[],arrive=null,previous=start,day=0;
@@ -766,7 +768,7 @@ async function mergeApprovedRouteSubmissions() {
       });
       route={id:'',from:fromId,to:toId,time:start};
       if(arrive)route.arrive=arrive;
-      if(sub.service_name)route.service=String(sub.service_name);
+      var approvedService=String(rd.service||sub.service_name||'').trim();\n      if(approvedService)route.service=approvedService;
       if(mid.length)route.stops=mid;
       if(sub.long_route)route.longRoute=true;
       if(sub.start_date)route.startDate=String(sub.start_date);
@@ -809,7 +811,7 @@ async function publish() {
   out.taxiSeaters = data.taxiSeaters; out.drivers = data.drivers;
   var body = {
     message: 'Data update v' + out.dataVersion + ' [skip ci]',
-    content: b64encode(JSON.stringify(out, null, 2) + '\\n'),
+    content: b64encode(JSON.stringify(out, null, 2) + '\n'),
     sha: sha, branch: cfg.branch
   };
   var h = ghHeaders(); h['Content-Type'] = 'application/json';
