@@ -50,6 +50,7 @@
             android:background="@color/divider" />
 
         <View
+            android:id="@+id/stopDot"
             android:layout_width="12dp"
             android:layout_height="12dp"
             android:layout_gravity="center_horizontal"
