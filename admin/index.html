@@ -1217,11 +1217,14 @@ function stopRow(place, time) {
 }
 function routeFormHtml() {
   var r=editing.draft;
+  // Legacy routes sometimes copied a middle-stop time into route.time as well.
+  // When it duplicates an intermediate stop, treat it as that stop's time, not From.
+  var fromTime = r.time && (r.stops || []).some(function(s){return String(s.time||'')===String(r.time);}) ? '' : (r.time||'');
   return '<p class="muted">Type a name in any language — matching existing places appear below the box; tap one to fill English, हिंदी and ਪੰਜਾਬੀ together (places already in this route are not suggested). A brand-new name becomes a new Place when you save. Use <b>+</b> to insert a stop right below a row.</p>' +
     '<p class="muted">At least one valid time is required anywhere on this route; From, To and middle-stop times may otherwise be blank. Enter each time beside its stop.</p><div class="ed-meta"><div><label>Service / company</label><input id="fr_service" value="'+esc(r.service||'')+'"></div><div><label>Contact number</label><input id="fr_contact" inputmode="tel" value="'+esc(r.contact||'')+'"></div></div>'+
     '<label>Additional info (optional)</label><input id="fr_info" value="'+esc(r.info||'')+'">'+
     '<label>Route · English / हिंदी / ਪੰਜਾਬੀ · time</label>'+
-    '<div class="edlist">'+edEndRow('From',routePlaceFields('from',r.from),'stop-insert-first','fr_time',r.time)+
+    '<div class="edlist">'+edEndRow('From',routePlaceFields('from',r.from),'stop-insert-first','fr_time',fromTime)+
     '<div id="stops" class="ed-stops">'+(r.stops||[]).map(function(s){return stopRow(s.place,s.time);}).join('')+'</div>'+
     edEndRow('To',routePlaceFields('to',r.to),'','fr_arrive',r.arrive)+'</div>'+
     '<button class="btn sm" data-act="add-stop">+ Add stop at end</button>'+foot('save-route');
