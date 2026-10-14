@@ -1169,8 +1169,11 @@ function edActions(a,i){
     '<button class="btn sm ed-plus" data-act="'+a.ins+'"'+di+' title="Insert a new stop below this one">+</button>'+
     '<button class="btn sm danger" data-act="'+a.rm+'"'+di+' title="Remove this stop">&times;</button>';
 }
-function edEndRow(label,inner,plusAct){
-  return '<div class="edstop edend"><span class="ed-num">'+label+'</span>'+inner+'<span class="ed-time"></span><div class="ed-actions">'+
+function edEndRow(label,inner,plusAct,timeId,timeValue){
+  var timeField=timeId
+    ? '<input id="'+timeId+'" type="time" class="ed-time" aria-label="'+label+' time" title="'+label+' time" value="'+esc(timeValue||'')+'">'
+    : '<span class="ed-time"></span>';
+  return '<div class="edstop edend"><span class="ed-num">'+label+'</span>'+inner+timeField+'<div class="ed-actions">'+
     (plusAct?'<button class="btn sm ed-plus" data-act="'+plusAct+'" title="Insert a stop right after '+label+'">+</button>':'')+'</div></div>';
 }
 function stopRow(place, time) {
@@ -1182,12 +1185,12 @@ function stopRow(place, time) {
 function routeFormHtml() {
   var r=editing.draft;
   return '<p class="muted">Type a name in any language — matching existing places appear below the box; tap one to fill English, हिंदी and ਪੰਜਾਬੀ together (places already in this route are not suggested). A brand-new name becomes a new Place when you save. Use <b>+</b> to insert a stop right below a row.</p>' +
-    '<p class="muted">At least one valid time is required anywhere on this route; From, To and middle-stop times may otherwise be blank.</p><div class="ed-meta"><div><label>Departure (optional)</label><input id="fr_time" type="time" value="'+esc(r.time||'')+'"></div><div><label>Arrival (optional)</label><input id="fr_arrive" type="time" value="'+esc(r.arrive||'')+'"></div><div><label>Service / company</label><input id="fr_service" value="'+esc(r.service||'')+'"></div><div><label>Contact number</label><input id="fr_contact" inputmode="tel" value="'+esc(r.contact||'')+'"></div></div>'+
+    '<p class="muted">At least one valid time is required anywhere on this route; From, To and middle-stop times may otherwise be blank. Enter each time beside its stop.</p><div class="ed-meta"><div><label>Service / company</label><input id="fr_service" value="'+esc(r.service||'')+'"></div><div><label>Contact number</label><input id="fr_contact" inputmode="tel" value="'+esc(r.contact||'')+'"></div></div>'+
     '<label>Additional info (optional)</label><input id="fr_info" value="'+esc(r.info||'')+'">'+
     '<label>Route · English / हिंदी / ਪੰਜਾਬੀ · time</label>'+
-    '<div class="edlist">'+edEndRow('From',routePlaceFields('from',r.from),'stop-insert-first')+
+    '<div class="edlist">'+edEndRow('From',routePlaceFields('from',r.from),'stop-insert-first','fr_time',r.time)+
     '<div id="stops" class="ed-stops">'+(r.stops||[]).map(function(s){return stopRow(s.place,s.time);}).join('')+'</div>'+
-    edEndRow('To',routePlaceFields('to',r.to),'')+'</div>'+
+    edEndRow('To',routePlaceFields('to',r.to),'','fr_arrive',r.arrive)+'</div>'+
     '<button class="btn sm" data-act="add-stop">+ Add stop at end</button>'+foot('save-route');
 }
 
