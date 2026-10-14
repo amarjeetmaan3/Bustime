@@ -686,12 +686,17 @@ function approvedResolvePlace(preferredId,names,fallbackName) {
   names=names&&typeof names==='object'?names:{};
   var clean={};
   ['en','hi','pa'].forEach(function(lang){var value=String(names[lang]||'').trim();if(value)clean[lang]=value;});
-  if(!Object.keys(clean).length&&fallbackName)clean.en=String(fallbackName).trim();
+  if(!Object.keys(clean).length&&fallbackName){
+    var rawFallback=String(fallbackName).trim();
+    var fallbackLang=/[\u0A00-\u0A7F]/.test(rawFallback)?'pa':(/[\u0900-\u097F]/.test(rawFallback)?'hi':'en');
+    clean[fallbackLang]=rawFallback;
+  }
   if(preferredId&&placeById(preferredId))return preferredId;
-  function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\\s+/g,' ');}
+  function norm(v){return String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');}
+  var candidateNames=Object.keys(clean).map(function(lang){return norm(clean[lang]);}).filter(Boolean);
   var found=data.places.find(function(p){
-    return Object.keys(clean).some(function(lang){return norm((p.name||{})[lang])===norm(clean[lang]);})||
-      (p.aliases||[]).some(function(a){return Object.keys(clean).some(function(lang){return norm(a)===norm(clean[lang]);});});
+    return Object.keys(p.name||{}).some(function(lang){return candidateNames.indexOf(norm(p.name[lang]))>=0;})||
+      (p.aliases||[]).some(function(a){return candidateNames.indexOf(norm(a))>=0;});
   });
   if(found){
     found.name=found.name||{};
@@ -707,7 +712,7 @@ function approvedResolvePlace(preferredId,names,fallbackName) {
 function approvedRouteSignature(route) {
   return JSON.stringify({
     from:String(route.from||''),to:String(route.to||''),time:String(route.time||''),service:String(route.service||''),
-    arrive:String(route.arrive||''),
+    arrive:String(route.arrive||''),longRoute:!!route.longRoute,startDate:String(route.startDate||''),
     stops:(Array.isArray(route.stops)?route.stops:[]).map(function(st){return [String(st.place||''),String(st.time||''),Number(st.day_offset||0)];})
   });
 }
