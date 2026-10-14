@@ -57,6 +57,7 @@
 
         <activity android:name=".ui.community.CommunityRequestActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ui.bookbus.BookBusActivity" android:exported="false" />
+        <activity android:name=".ui.bookbus.BusOperatorDetailActivity" android:exported="false" />
 
         <activity
             android:name=".ui.addroute.AddRouteActivity"
