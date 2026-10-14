@@ -31,8 +31,15 @@ class DriverDetailActivity : AppCompatActivity() {
         val fuel = intent.getStringExtra("driver_fuel").orEmpty()
         val union = intent.getStringExtra("driver_union").orEmpty()
         val info = intent.getStringExtra("driver_info").orEmpty()
+        val area = intent.getStringExtra("driver_area").orEmpty()
+        val registration = Regex("(?i)(?:Vehicle No|Registration Number):\\s*([^·]+)")
+            .find(info)?.groupValues?.getOrNull(1)?.trim().orEmpty()
+        val additionalInfo = info.split("·").map { it.trim() }
+            .filterNot { it.matches(Regex("(?i)^Union:.*")) || it.matches(Regex("(?i)^(?:Vehicle No|Registration Number):.*")) }
+            .joinToString(" · ")
         val numberLabel = when(language) { "hi" -> "फ़ोन नंबर"; "pa" -> "ਫ਼ੋਨ ਨੰਬਰ"; else -> "Phone number" }
-        val vehicleLabel = when(language) { "hi" -> "वाहन"; "pa" -> "ਵਾਹਨ"; else -> "Vehicle" }
+        val registrationLabel = when(language) { "hi" -> "रजिस्ट्रेशन नंबर"; "pa" -> "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨੰਬਰ"; else -> "Registration number" }
+        val areaLabel = when(language) { "hi" -> "एरिया"; "pa" -> "ਇਲਾਕਾ"; else -> "Area" }
         val unionLabel = when(language) { "hi" -> "यूनियन"; "pa" -> "ਯੂਨੀਅਨ"; else -> "Union" }
         val night = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
         val pageBg = if (night) Color.rgb(18, 22, 29) else Color.rgb(245, 247, 251)
@@ -120,11 +127,10 @@ class DriverDetailActivity : AppCompatActivity() {
             val divider = android.view.View(this).apply { setBackgroundColor(borderColor) }
             detailsCard.addView(divider, LinearLayout.LayoutParams(-1, dp(1)))
         }
-        detail(vehicleLabel, vehicle)
-        if (seats > 0) detail(if(language=="hi") "सीटें" else if(language=="pa") "ਸੀਟਾਂ" else "Seats", seats.toString())
-        if (fuel.isNotBlank()) detail(if(language=="hi") "ईंधन" else if(language=="pa") "ਬਾਲਣ" else "Fuel", fuel.uppercase())
+        detail(registrationLabel, registration)
         detail(unionLabel, union)
-        detail(if(language=="hi") "अन्य जानकारी" else if(language=="pa") "ਹੋਰ ਜਾਣਕਾਰੀ" else "Additional information", info)
+        detail(areaLabel, area)
+        detail(if(language=="hi") "अन्य जानकारी" else if(language=="pa") "ਹੋਰ ਜਾਣਕਾਰੀ" else "Additional information", additionalInfo)
         detail(numberLabel, phone)
         root.addView(detailsCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
 
