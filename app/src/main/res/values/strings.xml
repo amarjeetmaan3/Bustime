@@ -299,4 +299,18 @@
     <string name="bb_contact_prompt">Review the service details before contacting the operator.</string>
     <string name="bb_contact_reveal">Show contact details</string>
     <string name="bb_contact_unavailable">Contact number is not available.</string>
+    <string name="community_bus_form_intro">Enter the bus service/company details for admin review. Only approved listings become public. Bustime does not reserve seats or confirm availability.</string>
+    <string name="community_fill_bus_required">Enter the company/service name, at least one bus type, operating location and a valid phone number.</string>
+    <string name="bus_types_select_label">Bus types (select all that apply)</string>
+    <string name="bus_type_ordinary">Ordinary</string>
+    <string name="bus_type_seater">Seater</string>
+    <string name="bus_type_sleeper">Sleeper</string>
+    <string name="bus_type_ac">AC Bus</string>
+    <string name="bus_type_non_ac">Non-AC Bus</string>
+    <string name="bus_type_luxury">Luxury Bus</string>
+    <string name="bus_type_volvo">Volvo Bus</string>
+    <string name="bus_type_mini">Mini Bus</string>
+    <string name="bus_type_other">Other</string>
+    <string name="bus_type_other_hint">Other bus type (if selected)</string>
+    <string name="bus_type_required_error">Enter the other bus type.</string>
 </resources>
