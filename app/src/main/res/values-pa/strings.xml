@@ -295,4 +295,18 @@
     <string name="bb_contact_prompt">ਆਪਰੇਟਰ ਨਾਲ ਸੰਪਰਕ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਸੇਵਾ ਦੀ ਜਾਣਕਾਰੀ ਵੇਖੋ।</string>
     <string name="bb_contact_reveal">ਸੰਪਰਕ ਜਾਣਕਾਰੀ ਵੇਖੋ</string>
     <string name="bb_contact_unavailable">ਸੰਪਰਕ ਨੰਬਰ ਉਪਲਬਧ ਨਹੀਂ ਹੈ।</string>
+    <string name="community_bus_form_intro">ਬੱਸ ਸੇਵਾ/ਕੰਪਨੀ ਦੀ ਜਾਣਕਾਰੀ ਐਡਮਿਨ ਸਮੀਖਿਆ ਲਈ ਭਰੋ। ਸਿਰਫ਼ ਮਨਜ਼ੂਰ ਲਿਸਟਿੰਗ ਹੀ ਜਨਤਕ ਹੋਵੇਗੀ। Bustime ਸੀਟਾਂ ਬੁੱਕ ਨਹੀਂ ਕਰਦਾ ਅਤੇ ਉਪਲਬਧਤਾ ਦੀ ਪੁਸ਼ਟੀ ਨਹੀਂ ਕਰਦਾ।</string>
+    <string name="community_fill_bus_required">ਕੰਪਨੀ/ਸੇਵਾ ਦਾ ਨਾਮ, ਘੱਟੋ-ਘੱਟ ਇੱਕ ਬੱਸ ਕਿਸਮ, ਚਲਾਉਣ ਵਾਲੀ ਥਾਂ ਅਤੇ ਸਹੀ ਫ਼ੋਨ ਨੰਬਰ ਭਰੋ।</string>
+    <string name="bus_types_select_label">ਬੱਸ ਦੀਆਂ ਕਿਸਮਾਂ (ਇੱਕ ਤੋਂ ਵੱਧ ਚੁਣ ਸਕਦੇ ਹੋ)</string>
+    <string name="bus_type_ordinary">ਆਮ ਬੱਸ</string>
+    <string name="bus_type_seater">ਸੀਟਰ ਬੱਸ</string>
+    <string name="bus_type_sleeper">ਸਲੀਪਰ ਬੱਸ</string>
+    <string name="bus_type_ac">ਏਸੀ ਬੱਸ</string>
+    <string name="bus_type_non_ac">ਨਾਨ-ਏਸੀ ਬੱਸ</string>
+    <string name="bus_type_luxury">ਲਗਜ਼ਰੀ ਬੱਸ</string>
+    <string name="bus_type_volvo">ਵੋਲਵੋ ਬੱਸ</string>
+    <string name="bus_type_mini">ਮਿੰਨੀ ਬੱਸ</string>
+    <string name="bus_type_other">ਹੋਰ</string>
+    <string name="bus_type_other_hint">ਹੋਰ ਬੱਸ ਕਿਸਮ (ਜੇ ਚੁਣੀ ਹੈ)</string>
+    <string name="bus_type_required_error">ਹੋਰ ਬੱਸ ਦੀ ਕਿਸਮ ਲਿਖੋ।</string>
 </resources>
