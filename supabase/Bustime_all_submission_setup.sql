@@ -34,19 +34,16 @@ drop policy if exists "app can submit"    on public.route_submissions;
 drop policy if exists "admin can read"    on public.route_submissions;
 drop policy if exists "admin can update"  on public.route_submissions;
 drop policy if exists "admin can delete rejected" on public.route_submissions;
+drop policy if exists "single owner manages route submissions" on public.route_submissions;
 
 create policy "app can submit" on public.route_submissions
   for insert to anon with check (status = 'pending');
 
--- लॉगिन किया हुआ एडमिन (authenticated) देख और बदल सकता है
-create policy "admin can read" on public.route_submissions
-  for select to authenticated using (true);
-
-create policy "admin can update" on public.route_submissions
-  for update to authenticated using (true) with check (true);
-
-create policy "admin can delete rejected" on public.route_submissions
-  for delete to authenticated using (status = 'rejected');
+-- Only the Bustime owner admin can read, edit, approve, or delete submissions.
+create policy "single owner manages route submissions" on public.route_submissions
+  for all to authenticated
+  using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid)
+  with check ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
 
 -- स्पैम रोक: एक नंबर से 24 घंटे में 5 से ज़्यादा नहीं, और कुल मिलाकर घंटे में 200 से ज़्यादा नहीं
 create or replace function public.limit_route_submissions() returns trigger
@@ -147,22 +144,30 @@ grant insert, update, delete on public.bus_operators to authenticated;
 drop policy if exists "public submit correction" on public.correction_submissions;
 create policy "public submit correction" on public.correction_submissions for insert to anon with check (status = 'pending');
 drop policy if exists "admin manage corrections" on public.correction_submissions;
-create policy "admin manage corrections" on public.correction_submissions for all to authenticated using (true) with check (true);
+drop policy if exists "single owner manages route corrections" on public.correction_submissions;
+create policy "single owner manages route corrections" on public.correction_submissions for all to authenticated
+using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with check ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
 
 drop policy if exists "public submit vehicle" on public.vehicle_submissions;
 create policy "public submit vehicle" on public.vehicle_submissions for insert to anon with check (status = 'pending');
 drop policy if exists "admin manage vehicles" on public.vehicle_submissions;
-create policy "admin manage vehicles" on public.vehicle_submissions for all to authenticated using (true) with check (true);
+drop policy if exists "single owner manages vehicle submissions" on public.vehicle_submissions;
+create policy "single owner manages vehicle submissions" on public.vehicle_submissions for all to authenticated
+using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with check ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
 
 drop policy if exists "public submit feedback" on public.feedback_submissions;
 create policy "public submit feedback" on public.feedback_submissions for insert to anon with check (status = 'pending');
 drop policy if exists "admin manage feedback" on public.feedback_submissions;
-create policy "admin manage feedback" on public.feedback_submissions for all to authenticated using (true) with check (true);
+drop policy if exists "single owner manages feedback" on public.feedback_submissions;
+create policy "single owner manages feedback" on public.feedback_submissions for all to authenticated
+using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with check ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
 
 drop policy if exists "public read active bus operators" on public.bus_operators;
 create policy "public read active bus operators" on public.bus_operators for select to anon, authenticated using (active = true);
 drop policy if exists "admin manage bus operators" on public.bus_operators;
-create policy "admin manage bus operators" on public.bus_operators for all to authenticated using (true) with check (true);
+drop policy if exists "single owner manages bus operators" on public.bus_operators;
+create policy "single owner manages bus operators" on public.bus_operators for all to authenticated
+using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with check ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
 
 
 -- ==================== migration_free_text_new_routes.sql ====================
@@ -226,7 +231,9 @@ grant select, update, delete on public.bus_operator_submissions to authenticated
 drop policy if exists "public submit bus listing" on public.bus_operator_submissions;
 create policy "public submit bus listing" on public.bus_operator_submissions for insert to anon with check(status='pending');
 drop policy if exists "admin manage bus listings" on public.bus_operator_submissions;
-create policy "admin manage bus listings" on public.bus_operator_submissions for all to authenticated using(true) with check(true);
+drop policy if exists "single owner manages bus operator submissions" on public.bus_operator_submissions;
+create policy "single owner manages bus operator submissions" on public.bus_operator_submissions for all to authenticated
+using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with check ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
 
 alter table public.vehicle_submissions add column if not exists fuel text;
 alter table public.vehicle_submissions add column if not exists union_name text;
