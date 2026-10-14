@@ -161,7 +161,7 @@ class BookBusActivity : AppCompatActivity() {
             allRowsCache = (0 until rows.length()).mapNotNull { rows.optJSONObject(it) }
             areaButton.isEnabled = allRowsCache.any { it.optString("location").isNotBlank() }
             areaButton.text = getString(R.string.area_change_label, getString(R.string.area_all_areas))
-            renderOperators(allRowsCache, results, selectedArea, cardBg, primaryText, secondaryText, borderColor)
+            renderOperators(allRowsCache, results, selectedArea, searchQuery, cardBg, primaryText, secondaryText, borderColor)
         }
     }
 
