@@ -214,6 +214,7 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("year", year).put("vehicle_number", value("vehicle_number"))
                 .put("seats", seats).put("location", cleanArea).put("area_name", cleanArea)
                 .put("union_name", value("union_name")).put("phone", phone)
+                .put("status", "pending")
                 .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
             if (type == "auto") {
                 body.put("fuel_type", listOf("ev", "oil", "cng", "other").getOrNull(spinners["fuel_type"]?.selectedItemPosition ?: -1) ?: "other")
