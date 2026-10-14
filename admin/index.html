@@ -881,7 +881,7 @@ async function correctionAlreadyApplied(x){
 async function mergeApprovedCommunitySubmissions(nextVersion){
   if(!cfg.sbUrl||!cfg.sbKey||!sbToken)throw new Error('Sign in to Supabase before publishing so approved requests survive refreshes.');
   var updates=[],changed=false;
-  var specs=[{kind:'vehicles',table:'vehicle_submissions'},{kind:'corrections',table:'correction_submissions'}];
+  var specs=[{kind:'vehicles',table:'taxi_submissions'},{kind:'vehicles',table:'auto_submissions'},{kind:'corrections',table:'correction_submissions'}];
   for(var si=0;si<specs.length;si++){
     var spec=specs[si],rows=[],offset=0,pageSize=500;
     while(true){
@@ -1760,7 +1760,8 @@ function ensureSubmittedPlace(rawName) {
 async function loadCommunity() {
   var specs = [
     ['corrections','correction_submissions'],
-    ['vehicles','vehicle_submissions'],
+    ['taxiSubmissions','taxi_submissions'],
+    ['autoSubmissions','auto_submissions'],
     ['feedback','feedback_submissions'],
     ['busSubmissions','bus_operator_submissions'],
     ['operators','bus_operators'],
@@ -1770,11 +1771,15 @@ async function loadCommunity() {
   for (var i = 0; i < specs.length; i++) {
     try {
       community[specs[i][0]] = await sbFetch('/rest/v1/' + specs[i][1] + '?select=*&order=created_at.desc&limit=500');
+      if(specs[i][0]==='taxiSubmissions'||specs[i][0]==='autoSubmissions'){
+        community[specs[i][0]].forEach(function(row){row._table=specs[i][1];row.vehicle_type=specs[i][0]==='taxiSubmissions'?'taxi':'auto';});
+      }
     } catch (e) {
       community[specs[i][0]] = [];
       failed.push(specs[i][1] + ' (' + e.message + ')');
     }
   }
+  community.vehicles=(community.taxiSubmissions||[]).concat(community.autoSubmissions||[]).sort(function(a,b){return String(b.created_at||'').localeCompare(String(a.created_at||''));});
   community._failed = failed;
   if (failed.length) toast('Some tables could not load: ' + failed.join('; ') + '. Run supabase/fix_app_admin_sync.sql in Supabase SQL Editor, then Refresh.');
 }
@@ -1907,7 +1912,7 @@ function viewReview() {
     '<div class="bus-route-stat"><div class="iconbox">✉</div><div><strong>'+pendingFeedback+'</strong><span>Pending feedback</span><button class="btn sm" data-act="tab" data-t="corrections">Open review →</button></div></div>'+
     '</div><div class="card"><h2>How requests are organized</h2><p class="muted">Bus route submissions, taxi and auto submissions, corrections, and Add Bus operator submissions now have separate navigation tabs. Review Center is an overview instead of a long mixed list.</p></div>';
 }
-function communityTable(kind) { return kind==='corrections'?'correction_submissions':kind==='vehicles'?'vehicle_submissions':kind==='busSubmissions'?'bus_operator_submissions':'feedback_submissions'; }
+function communityTable(kind, record) { if(kind==='vehicles'&&record&&record._table)return record._table; return kind==='corrections'?'correction_submissions':kind==='vehicles'?'vehicle_submissions':kind==='busSubmissions'?'bus_operator_submissions':'feedback_submissions'; }
 function applyApprovedCorrection(x) {
   var r = data.routes.find(function(z){ return z.id === x.route_id; });
   if (!r) throw new Error('Route '+x.route_id+' was not found in routes.json; request not approved.');
@@ -2909,7 +2914,7 @@ document.addEventListener('click', async function (e) {
       if(!orec||orec.status!=='pending'){toast('Only pending requests can be opened. Refresh the list.');return;} showCommunityEditor(okind,orec);return;
     }
     else if (act === 'community-save-draft' || act === 'community-approve-reviewed') {
-      var rk=b.getAttribute('data-kind'),rid=b.getAttribute('data-id'),rt=communityTable(rk),orig=(community[rk]||[]).find(function(x){return x.id===rid;});
+      var rk=b.getAttribute('data-kind'),rid=b.getAttribute('data-id'),orig=(community[rk]||[]).find(function(x){return x.id===rid;}),rt=communityTable(rk,orig);
       if(!orig||orig.status!=='pending'||!communityReviewEditor||communityReviewEditor.record.id!==rid){toast('Request is no longer pending. Refresh and reopen it.');return;}
       if(act==='community-approve-reviewed'&&edBlockIfProblems())return;
       var rv=communityEditorValues(),merged=Object.assign({},orig,rv),stamp=new Date().toISOString();
