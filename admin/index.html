@@ -311,6 +311,30 @@
   .ad-workspace .ad-savebar .btn { min-width:180px; }
   @media(max-width:760px) { .ad-workspace .ad-grid,.ad-workspace .ad-placements { grid-template-columns:1fr; } .ad-workspace .ad-panel { padding:15px; } .ad-workspace .ad-heading { display:block; } .ad-workspace .ad-tabs { display:flex; width:100%; } .ad-workspace .ad-tabs .btn { min-width:0; flex:1; } }
 
+  /* Compact professional layout for Text & Terms settings */
+  .content-settings { max-width:980px; }
+  .content-settings .content-intro { display:flex; align-items:flex-start; gap:12px; margin:0 0 16px; padding:16px 18px; background:#EAF0FF; border:1px solid #D6E2FF; border-radius:14px; }
+  .content-settings .content-intro .content-mark { display:grid; place-items:center; flex:0 0 38px; height:38px; border-radius:11px; background:#2458D3; color:#fff; font-weight:800; font-size:18px; }
+  .content-settings .content-intro h2 { margin:0 0 4px; font-size:17px; }
+  .content-settings .content-intro p { margin:0; line-height:1.5; }
+  .content-settings .content-panel { padding:18px 20px; margin-bottom:14px; border-radius:14px; box-shadow:0 3px 12px rgba(24,42,74,.035); }
+  .content-settings .content-panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; }
+  .content-settings .content-panel-head h2 { margin:0 0 4px; font-size:16px; }
+  .content-settings .content-panel-head p { margin:0; max-width:690px; }
+  .content-settings .content-label { display:block; margin:12px 0 6px; font-size:12px; font-weight:750; color:#526176; text-transform:uppercase; letter-spacing:.035em; }
+  .content-settings .content-languages { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:14px; }
+  .content-settings .content-language { min-width:0; padding:12px; border:1px solid #E5EAF2; border-radius:11px; background:#FAFBFE; }
+  .content-settings .content-language-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; font-weight:750; color:#344054; }
+  .content-settings .content-language-head span { display:grid; place-items:center; width:27px; height:27px; border-radius:8px; background:#EAF0FF; color:#173B91; font-size:12px; }
+  .content-settings textarea { display:block; width:100%; min-height:116px; resize:vertical; padding:10px 11px; border:1px solid #D6DDE8; border-radius:8px; background:#fff; color:#182230; font:inherit; font-size:13px; line-height:1.55; }
+  .content-settings textarea:focus { outline:2px solid #D6E2FF; border-color:#2458D3; }
+  .content-settings .content-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 13px; background:#F7F9FC; border:1px solid #E7ECF4; border-radius:10px; }
+  .content-settings .content-toggle label { margin:0; text-transform:none; letter-spacing:0; font-size:13px; color:#344054; }
+  .content-settings .content-toggle input { width:17px; height:17px; min-height:17px; accent-color:#2458D3; }
+  .content-settings .content-savebar { position:sticky; bottom:10px; display:flex; justify-content:flex-end; padding:12px; background:rgba(255,255,255,.94); border:1px solid #E5EAF2; border-radius:12px; box-shadow:0 5px 18px rgba(24,42,74,.09); backdrop-filter:blur(8px); }
+  .content-settings .content-savebar .btn { min-width:190px; }
+  @media(max-width:760px) { .content-settings .content-languages { grid-template-columns:1fr; } .content-settings .content-panel { padding:14px; } .content-settings .content-intro { padding:13px; } .content-settings .content-savebar .btn { width:100%; } }
+
 </style>
 </head>
 <body>
@@ -1193,22 +1217,32 @@ async function loadContentSettings() {
   }
 }
 function contentTextField(id, title, value, rows) {
-  return '<label>'+title+'</label><textarea id="'+id+'" rows="'+(rows||4)+'" style="width:100%;min-height:90px;padding:10px 12px;border:1px solid #C9D1DA;border-radius:8px;font:inherit">'+esc(value||'')+'</textarea>';
+  var lang = id.endsWith('_en') ? ['EN','English'] : id.endsWith('_hi') ? ['हि','Hindi'] : ['ਪੰ','Punjabi'];
+  return '<div class="content-language"><div class="content-language-head"><span>'+lang[0]+'</span>'+lang[1]+'</div><label class="content-label" for="'+id+'">'+title+'</label><textarea id="'+id+'" rows="'+(rows||4)+'">'+esc(value||'')+'</textarea></div>';
+}
+function contentLanguageFields(prefix, title, values, rows) {
+  return '<div class="content-languages">'+
+    contentTextField(prefix+'_en',title+' — English',values.en,rows)+
+    contentTextField(prefix+'_hi',title+' — Hindi',values.hi,rows)+
+    contentTextField(prefix+'_pa',title+' — Punjabi',values.pa,rows)+'</div>';
 }
 function viewContentSettings() {
   var s=contentSettings;
-  return '<div class="card"><h2>Terms & Conditions / Information-only Disclaimer</h2><p class="muted">The first-launch page shows the selected language plus Hindi for Punjabi/English language pairing rules. Add all translations here; a blank translation falls back to the app’s built-in safety notice.</p>'+
-    '<label class="ad-check"><input id="content_terms_enabled" type="checkbox" '+(s.terms_enabled?'checked':'')+'> Enable Terms text from this panel</label>'+
-    contentTextField('content_terms_en','Terms — English',s.terms.en,5)+contentTextField('content_terms_hi','Terms — Hindi',s.terms.hi,5)+contentTextField('content_terms_pa','Terms — Punjabi',s.terms.pa,5)+
-    '</div><div class="card"><h2>Driver Details warning popup</h2><p class="muted">Shown when Taxi/Auto user opens Show Details. Popup auto-closes after the selected duration; minimum is 5 seconds.</p>'+
-    '<label class="ad-check"><input id="content_popup_enabled" type="checkbox" '+(s.popup_enabled?'checked':'')+'> Enable driver warning popup</label>'+
-    '<div class="row2"><div>'+contentTextField('content_popup_en','Popup — English',s.popup.en,4)+'</div><div>'+contentTextField('content_popup_hi','Popup — Hindi',s.popup.hi,4)+'</div></div>'+
-    contentTextField('content_popup_pa','Popup — Punjabi',s.popup.pa,4)+
-    '<label>Auto-dismiss duration (seconds, minimum 5)</label><input id="content_popup_seconds" type="number" min="5" max="60" value="'+Math.max(5,Math.min(60,parseInt(s.popup_seconds,10)||5))+'">'+
-    '</div><div class="card"><h2>Scrolling warning ticker</h2><p class="muted">Runs continuously from right to left below Bus / Taxi / Auto tabs. The app shows two languages according to the selected app language: English+Hindi, Hindi+English, or Punjabi+Hindi.</p>'+
-    '<label class="ad-check"><input id="content_ticker_enabled" type="checkbox" '+(s.ticker_enabled?'checked':'')+'> Enable warning ticker</label>'+
-    contentTextField('content_ticker_en','Ticker — English',s.ticker.en,3)+contentTextField('content_ticker_hi','Ticker — Hindi',s.ticker.hi,3)+contentTextField('content_ticker_pa','Ticker — Punjabi',s.ticker.pa,3)+
-    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="content-save">Save app text and warnings</button></div></div>';
+  return '<div class="content-settings">'+
+    '<div class="content-intro"><div class="content-mark">T</div><div><h2>Text & Terms Centre</h2><p class="muted">Manage the app’s legal notice, driver warning and scrolling message. Edit each language independently; blank translations use the app’s built-in fallback.</p></div></div>'+
+    '<section class="card content-panel"><div class="content-panel-head"><div><h2>Terms & Conditions</h2><p class="muted">Shown on first launch. Keep the disclaimer clear and easy to read.</p></div></div>'+
+    '<div class="content-toggle"><label for="content_terms_enabled">Enable Terms text from this panel</label><input id="content_terms_enabled" type="checkbox" '+(s.terms_enabled?'checked':'')+'></div>'+
+    contentLanguageFields('content_terms','Terms',s.terms,5)+
+    '</section>'+
+    '<section class="card content-panel"><div class="content-panel-head"><div><h2>Driver Details Warning</h2><p class="muted">Shown when a user opens Taxi/Auto driver details. The popup closes automatically after the selected duration.</p></div></div>'+
+    '<div class="content-toggle"><label for="content_popup_enabled">Enable driver warning popup</label><input id="content_popup_enabled" type="checkbox" '+(s.popup_enabled?'checked':'')+'></div>'+
+    contentLanguageFields('content_popup','Warning message',s.popup,4)+
+    '<label class="content-label" for="content_popup_seconds">Auto-dismiss duration · 5–60 seconds</label><input id="content_popup_seconds" type="number" min="5" max="60" value="'+Math.max(5,Math.min(60,parseInt(s.popup_seconds,10)||5))+'" style="max-width:180px">'+
+    '</section>'+
+    '<section class="card content-panel"><div class="content-panel-head"><div><h2>Scrolling Warning Ticker</h2><p class="muted">Message scrolling below Bus, Taxi and Auto tabs. The app pairs the selected language with Hindi where applicable.</p></div></div>'+
+    '<div class="content-toggle"><label for="content_ticker_enabled">Enable warning ticker</label><input id="content_ticker_enabled" type="checkbox" '+(s.ticker_enabled?'checked':'')+'></div>'+
+    contentLanguageFields('content_ticker','Ticker message',s.ticker,3)+
+    '<div class="content-savebar"><button class="btn primary" data-act="content-save">Save text settings</button></div></section></div>';
 }
 
 
