@@ -510,8 +510,8 @@ function communityEditorHtml() {
 
  var rec=communityReviewEditor.record,kind=communityReviewEditor.kind,draft=rec.reviewed_data&&typeof rec.reviewed_data==='object'?rec.reviewed_data:rec;
  var skip={id:1,status:1,created_at:1,updated_at:1,reviewed_data:1,reviewed_at:1,approved_at:1};
- var labels={vehicle_type:'Vehicle type',person_name:'Owner/driver name',vehicle_name:'Vehicle name',year:'Year',vehicle_model_number:'Legacy model number',vehicle_number:'Registration number',seats:'Seats',area_name:'Service area',location:'Location',union_name:'Union',fuel_type:'Fuel type',phone:'Phone',whatsapp:'WhatsApp',details:'Details',operator_name:'Operator name',service_name:'Service name',bus_type:'Bus type',custom_category:'Custom category',seat_type:'Seat type',sleeper_count:'Sleeper berths',seater_count:'Seater seats',from_text:'From',to_text:'To',request_type:'Request type',route_id:'Route ID',before_stop_id:'Before stop ID',after_stop_id:'After stop ID',missing_place_name:'Missing stop',missing_time:'Missing stop time',stop_id:'Stop ID',corrected_time:'Corrected time',change_summary:'Change summary',proposed_stops:'Proposed stops',category:'Category',related_route:'Related route',message:'Message',contact:'Contact',notes:'Notes'};
- var html='<p class="muted">Opening never approves a request. Edit and save a reviewed draft first; approve is a separate action. </p>';
+ var labels={vehicle_type:'Listing type',person_name:'Contact person / driver name',vehicle_name:'Vehicle name',year:'Year',vehicle_model_number:'Legacy model number',vehicle_number:'Registration number',seats:'Seats',area_name:'Service area',location:'Location',union_name:'Union',fuel_type:'Fuel type',phone:'Phone',whatsapp:'WhatsApp',details:'Details',operator_name:'Operator name',service_name:'Service name',bus_type:'Bus type',custom_category:'Custom category',seat_type:'Seat type',sleeper_count:'Sleeper berths',seater_count:'Seater seats',from_text:'From',to_text:'To',request_type:'Request type',route_id:'Route ID',before_stop_id:'Before stop ID',after_stop_id:'After stop ID',missing_place_name:'Missing stop',missing_time:'Missing stop time',stop_id:'Stop ID',corrected_time:'Corrected time',change_summary:'Change summary',proposed_stops:'Proposed stops',category:'Category',related_route:'Related route',message:'Message',contact:'Contact',notes:'Notes'};
+ var html='<p class="muted">Taxi/Auto listing review: fields match Add Taxi / Add Auto. Other information is optional. Saving a draft does not approve the listing.</p>';
  Object.keys(rec).forEach(function(k){if(skip[k]||typeof rec[k]==='function')return;var value=Object.prototype.hasOwnProperty.call(draft,k)?draft[k]:rec[k],label=labels[k]||k.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});if(k==='original_stops'){html+='<label>'+esc(label)+' · original/read-only</label><pre style="white-space:pre-wrap">'+esc(JSON.stringify(value,null,2))+'</pre>';return;}if(value!==null&&typeof value==='object'){html+='<label>'+esc(label)+' · JSON</label><textarea data-cr-field="'+esc(k)+'" rows="5" style="width:100%;font-family:monospace">'+esc(JSON.stringify(value,null,2))+'</textarea>';}else{var type=/(time)$/.test(k)?'time':(/count$|^seats$/.test(k)?'number':'text');html+='<label>'+esc(label)+'</label><input data-cr-field="'+esc(k)+'" type="'+type+'" value="'+esc(value==null?'':String(value))+'">';}});
  html+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Approve reviewed data</button></div>';return html;
 }
@@ -1379,9 +1379,9 @@ function viewDrivers() {
 }
 function driverFormHtml() {
   var d = editing.draft, isTaxi = d.type !== 'auto';
-  return '<label>Vehicle type (required)</label><select id="fd_type"><option value="taxi"' + (isTaxi ? ' selected' : '') + '>Taxi</option>' +
+  return '<label>Listing type (required)</label><select id="fd_type"><option value="taxi"' + (isTaxi ? ' selected' : '') + '>Taxi</option>' +
     '<option value="auto"' + (!isTaxi ? ' selected' : '') + '>Auto</option></select>' +
-    '<label>Driver name (required)</label><input id="fd_name" value="' + esc(d.name) + '">' +
+    '<label>Contact person / driver name (required)</label><input id="fd_name" value="' + esc(d.name) + '">' +
     '<label>Vehicle name (required)</label><input id="fd_vehicle" value="' + esc(d.vehicle) + '">' +
     '<label>Year (required, e.g. 2021)</label><input id="fd_year" inputmode="numeric" maxlength="4" value="' + esc(d.year) + '">' +
     '<label>Number of seats (required; Taxi filter / Auto information only)</label><input id="fd_seats" type="number" min="1" value="' + esc(d.seats) + '">' +
@@ -2692,7 +2692,7 @@ document.addEventListener('click', async function (e) {
       d.union_name = unionName;
       if (extraInfo) d.info = extraInfo; else delete d.info;
       if (editing.index < 0) data.drivers.push(d);
-      editing = null; setDirty(true); toast('Driver saved'); render();
+      editing = null; setDirty(true); toast('Taxi / Auto listing saved'); render();
     }
 
 
