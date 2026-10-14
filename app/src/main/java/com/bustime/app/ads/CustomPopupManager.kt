@@ -97,10 +97,9 @@ object CustomPopupManager {
 
     private fun fetchVehicle(id: String): JSONObject? {
         val encodedId = java.net.URLEncoder.encode(id, "UTF-8")
-        return fetchRows(
-            Constants.SUPABASE_URL.trimEnd('/') +
-                "/rest/v1/vehicle_submissions?select=*&id=eq.$encodedId&status=eq.approved&limit=1"
-        )
+        val base = Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/"
+        return fetchRows(base + "taxi_submissions?select=*&id=eq.$encodedId&status=eq.approved&limit=1")
+            ?: fetchRows(base + "auto_submissions?select=*&id=eq.$encodedId&status=eq.approved&limit=1")
     }
 
     private fun showDialog(activity: Activity, config: JSONObject, bitmap: android.graphics.Bitmap) {
