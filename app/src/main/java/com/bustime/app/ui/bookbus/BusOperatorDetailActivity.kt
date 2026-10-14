@@ -137,7 +137,7 @@ class BusOperatorDetailActivity : AppCompatActivity() {
         detail(getString(R.string.bb_bus_types), types.joinToString(" · ", transform = ::localizedType))
         detail(getString(R.string.bb_location), location)
         detail(getString(R.string.bb_extra_details_label), extraDetails)
-        detail(getString(R.string.bb_contact_number_label), phone.ifBlank { getString(R.string.bb_contact_unavailable) })
+        detail(getString(R.string.bb_contact), phone.ifBlank { getString(R.string.bb_contact_unavailable) })
         root.addView(detailsCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
 
         root.addView(Button(this).apply {
