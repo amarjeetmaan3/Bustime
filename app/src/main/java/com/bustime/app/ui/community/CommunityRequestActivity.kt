@@ -367,9 +367,11 @@ class CommunityRequestActivity : AppCompatActivity() {
             }
         }
         fun labelFor(place: Place, lang: String): String {
-            val order = when (lang) { "hi" -> listOf("hi", "en", "pa"); "pa" -> listOf("pa", "hi", "en"); else -> listOf("en", "hi", "pa") }
-            return order.mapNotNull { place.names[it]?.trim()?.takeIf { name -> name.isNotBlank() } }
-                .distinct().joinToString(" • ").ifBlank { place.displayName(lang) }
+            // Suggestions stay in the script the user is typing; do not insert a
+            // combined "English • Hindi • Punjabi" label into the correction field.
+            return place.displayName(lang).trim().ifBlank {
+                place.names.values.firstOrNull { it.isNotBlank() }.orEmpty()
+            }
         }
         var activeLanguage = LanguageHelper.current()
         var shownPlaces = allPlaces
