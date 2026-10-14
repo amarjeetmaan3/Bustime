@@ -283,4 +283,15 @@
     <string name="area_change_label">क्षेत्र बदलें: %1$s ▾</string>
     <string name="area_select_prompt">इलाका चुनें</string>
     <string name="area_all_areas">सभी इलाके</string>
+    <string name="bb_loading">बस सेवाएँ लोड हो रही हैं…</string>
+    <string name="bb_details_button">पूरी जानकारी देखें</string>
+    <string name="bb_detail_title">बस सेवा की जानकारी</string>
+    <string name="bb_operator_label">ऑपरेटर: %1$s</string>
+    <string name="bb_operator_label_short">ऑपरेटर</string>
+    <string name="bb_sleeper_label">स्लीपर बर्थ</string>
+    <string name="bb_seater_label">सीटर सीटें</string>
+    <string name="bb_extra_details_label">अतिरिक्त जानकारी</string>
+    <string name="bb_contact_prompt">ऑपरेटर से संपर्क करने से पहले सेवा की जानकारी देख लें।</string>
+    <string name="bb_contact_reveal">संपर्क जानकारी देखें</string>
+    <string name="bb_contact_unavailable">संपर्क नंबर उपलब्ध नहीं है।</string>
 </resources>
