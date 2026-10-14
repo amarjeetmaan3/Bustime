@@ -2719,6 +2719,11 @@ document.addEventListener('click', async function (e) {
       d.union_name = unionName;
       if (extraInfo) d.info = extraInfo; else delete d.info;
       if (editing.index < 0) data.drivers.push(d);
+      else if(d.sourceSubmissionId && sbToken){
+        var sqlListing={person_name:dn,vehicle_name:vehicleName,year:year,seats:seats,vehicle_number:registration,location:area,area_name:area,union_name:unionName,phone:ph,details:extraInfo||null,status:'approved'};
+        if(type==='auto')sqlListing.fuel_type=String(val('fd_fuel')||'ev').toLowerCase();
+        await sbFetch('/rest/v1/'+(type==='taxi'?'taxi_submissions':'auto_submissions')+'?id=eq.'+encodeURIComponent(d.sourceSubmissionId),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(sqlListing)});
+      }
       editing = null; setDirty(true); toast('Taxi / Auto listing saved'); render();
     }
 
