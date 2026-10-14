@@ -69,10 +69,7 @@ object CustomPopupManager {
         }.start()
     }
 
-    private fun fetchOperator(id: String): JSONObject? {
-        val encodedId = java.net.URLEncoder.encode(id, "UTF-8")
-        val endpoint = Constants.SUPABASE_URL.trimEnd('/') +
-            "/rest/v1/bus_operators?select=*&id=eq.$encodedId&active=eq.true&limit=1"
+    private fun fetchRows(endpoint: String): JSONObject? {
         val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
             connectTimeout = 7000
             readTimeout = 7000
@@ -89,6 +86,21 @@ object CustomPopupManager {
         } finally {
             conn.disconnect()
         }
+    }
+
+    private fun fetchOperator(id: String): JSONObject? {
+        val encodedId = java.net.URLEncoder.encode(id, "UTF-8")
+        val base = Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/"
+        return fetchRows(base + "bus_operators?select=*&id=eq.$encodedId&active=eq.true&limit=1")
+            ?: fetchRows(base + "bus_operator_submissions?select=*&id=eq.$encodedId&status=eq.approved&limit=1")
+    }
+
+    private fun fetchVehicle(id: String): JSONObject? {
+        val encodedId = java.net.URLEncoder.encode(id, "UTF-8")
+        return fetchRows(
+            Constants.SUPABASE_URL.trimEnd('/') +
+                "/rest/v1/vehicle_submissions?select=*&id=eq.$encodedId&status=eq.approved&limit=1"
+        )
     }
 
     private fun showDialog(activity: Activity, config: JSONObject, bitmap: android.graphics.Bitmap) {
@@ -144,8 +156,9 @@ object CustomPopupManager {
             "route" -> "Check Route"
             else -> "Learn more"
         }
-        action(config.optString("cta_label", defaultLabel).ifBlank { defaultLabel },
-            config.optBoolean("check_route_enabled", false)) {
+        // Keep the primary action label tied to the selected listing type. Older saved
+        // campaigns may still contain a stale "Check Route" label.
+        action(defaultLabel, config.optBoolean("check_route_enabled", false)) {
             if (targetId.isBlank()) {
                 Toast.makeText(activity, "This advertisement has no selected listing.", Toast.LENGTH_SHORT).show()
                 return@action
@@ -176,25 +189,28 @@ object CustomPopupManager {
                     }
                 }
                 "taxi", "auto" -> GlobalScope.launch {
-                    val driver = withContext(Dispatchers.IO) {
-                        AppRepository.getInstance(activity).getDriver(targetId)
+                    val result = withContext(Dispatchers.IO) {
+                        val driver = AppRepository.getInstance(activity).getDriver(targetId)
+                        Pair(driver, if (driver == null) fetchVehicle(targetId) else null)
                     }
                     main.post {
                         if (activity.isFinishing || activity.isDestroyed) return@post
-                        if (driver == null) {
+                        val driver = result.first
+                        val submitted = result.second
+                        if (driver == null && submitted == null) {
                             Toast.makeText(activity, "Vehicle listing not found. Publish the latest Taxi/Auto data and try again.", Toast.LENGTH_LONG).show()
                             return@post
                         }
                         activity.startActivity(Intent(activity, DriverDetailActivity::class.java).apply {
-                            putExtra("driver_id", driver.id)
-                            putExtra("driver_type", driver.type)
-                            putExtra("driver_name", driver.name)
-                            putExtra("driver_vehicle", driver.vehicle.orEmpty())
-                            putExtra("driver_phone", driver.phone)
-                            putExtra("driver_seats", driver.seats ?: -1)
-                            putExtra("driver_fuel", driver.fuel.orEmpty())
-                            putExtra("driver_info", driver.info.orEmpty())
-                            putExtra("driver_area", driver.areaId.orEmpty())
+                            putExtra("driver_id", driver?.id ?: submitted?.optString("id").orEmpty())
+                            putExtra("driver_type", driver?.type ?: submitted?.optString("vehicle_type").orEmpty().ifBlank { targetKind })
+                            putExtra("driver_name", driver?.name ?: submitted?.optString("person_name").orEmpty().ifBlank { submitted?.optString("name").orEmpty() })
+                            putExtra("driver_vehicle", driver?.vehicle.orEmpty().ifBlank { submitted?.optString("vehicle_name").orEmpty() })
+                            putExtra("driver_phone", driver?.phone ?: submitted?.optString("phone").orEmpty())
+                            putExtra("driver_seats", driver?.seats ?: submitted?.optString("seats")?.toIntOrNull() ?: submitted?.optString("seat_type")?.toIntOrNull() ?: -1)
+                            putExtra("driver_fuel", driver?.fuel.orEmpty().ifBlank { submitted?.optString("fuel").orEmpty().ifBlank { submitted?.optString("fuel_type").orEmpty() } })
+                            putExtra("driver_info", driver?.info.orEmpty().ifBlank { submitted?.optString("info").orEmpty().ifBlank { submitted?.optString("details").orEmpty() } })
+                            putExtra("driver_area", driver?.areaId.orEmpty().ifBlank { submitted?.optString("area_id").orEmpty().ifBlank { submitted?.optString("area_name").orEmpty() } })
                         })
                         dialog.dismiss()
                     }
@@ -206,7 +222,7 @@ object CustomPopupManager {
             val phone = config.optString("phone")
             if (phone.isNotBlank()) activity.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + Uri.encode(phone))))
         }
-        action(config.optString("cta_label", "Learn more").ifBlank { "Learn more" }, config.optBoolean("link_enabled", false)) {
+        action(config.optString("link_label", "Learn more").ifBlank { "Learn more" }, config.optBoolean("link_enabled", false)) {
             val url = config.optString("url")
             if (url.startsWith("https://") || url.startsWith("http://")) activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
