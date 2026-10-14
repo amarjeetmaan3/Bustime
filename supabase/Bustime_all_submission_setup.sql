@@ -237,3 +237,9 @@ using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with 
 
 alter table public.vehicle_submissions add column if not exists fuel text;
 alter table public.vehicle_submissions add column if not exists union_name text;
+
+-- Book Bus service directory fields (no seat reservation inventory).
+alter table public.bus_operators
+  add column if not exists bus_types jsonb not null default '[]'::jsonb;
+alter table public.bus_operator_submissions
+  add column if not exists bus_types jsonb not null default '[]'::jsonb;
