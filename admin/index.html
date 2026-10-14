@@ -896,7 +896,7 @@ function validate() {
     if (!pids[r.from]) errors.push(tag + ': "From" place does not exist');
     if (!pids[r.to]) errors.push(tag + ': "To" place does not exist');
     if (r.from && r.from === r.to) errors.push(tag + ': From and To are the same');
-    if (!TIME_RE.test(r.time || '')) errors.push(tag + ': invalid departure time');
+    if (!TIME_RE.test(r.time || '') && !TIME_RE.test(r.arrive || '') && !(r.stops || []).some(function (s) { return TIME_RE.test(s.time || ''); })) errors.push(tag + ': no valid time anywhere on the route');
     (r.stops || []).forEach(function (s) { if (!pids[s.place]) errors.push(tag + ': a stop refers to a missing place'); });
   });
 
@@ -2485,23 +2485,22 @@ document.addEventListener('click', async function (e) {
       if(routeRows.some(function(row){var key=row.getAttribute('data-route-stop');return !routeNameValue(key,'en')&&!routeNameValue(key,'hi')&&!routeNameValue(key,'pa');})){toast('Enter a name for every intermediate stop');return;}
       // Rule: only one valid time is required anywhere on the route (From, To, or any middle stop).
       var enteredStopTimes=routeRows.map(function(row){var el=row.querySelector('.st_time');return el&&TIME_RE.test(el.value||'')?el.value:'';});
-      if(!TIME_RE.test(time))time=enteredStopTimes.find(function(t){return !!t;})||(TIME_RE.test(arrive)?arrive:'');
-      if(!TIME_RE.test(time)){toast('Enter at least one valid time at From, To, or any stop');return;}
+      if(!TIME_RE.test(time)&&!enteredStopTimes.some(function(t){return !!t;})&&!TIME_RE.test(arrive)){toast('Enter at least one valid time at From, To, or any stop');return;}
       var dupRoute=edDuplicateError('route');if(dupRoute){toast(dupRoute);return;}
       var from=ensureRoutePlace('from'),to=ensureRoutePlace('to');
       if(!from||!to){toast('Could not resolve From and To names');return;}
       if(from===to){toast('From and To must be different places');return;}
-      var stops=[],previousTime=time,dayOffset=0;
+      var stops=[],previousTime=TIME_RE.test(time)?time:'',dayOffset=0;
       routeRows.forEach(function(row){
         var key=row.getAttribute('data-route-stop'),sp=ensureRoutePlace(key),st=row.querySelector('.st_time').value;
         var stop={place:sp};
-        if(TIME_RE.test(st)){if(st<previousTime)dayOffset++;previousTime=st;stop.time=st;if(dayOffset>0)stop.day_offset=dayOffset;}
+        if(TIME_RE.test(st)){if(previousTime&&st<previousTime)dayOffset++;previousTime=st;stop.time=st;if(dayOffset>0)stop.day_offset=dayOffset;}
         stops.push(stop);
       });
       var arrivalDayOffset=dayOffset;
       if(TIME_RE.test(arrive)&&arrive<previousTime)arrivalDayOffset++;
       var r=editing.index<0?{id:nextNum('r',data.routes)}:data.routes[editing.index];
-      r.from=from;r.to=to;r.time=time;delete r.longRoute;delete r.startDate;
+      r.from=from;r.to=to;if(TIME_RE.test(time))r.time=time;else delete r.time;delete r.longRoute;delete r.startDate;
       if(TIME_RE.test(arrive)&&arrivalDayOffset>0)r.arrive_day_offset=arrivalDayOffset;else delete r.arrive_day_offset;
       ['arrive','service','contact','info'].forEach(function(k){var v=k==='arrive'?(TIME_RE.test(arrive)?arrive:''):val('fr_'+k);if(v)r[k]=v;else delete r[k];});
       if(stops.length)r.stops=stops;else delete r.stops;
@@ -2674,17 +2673,17 @@ document.addEventListener('click', async function (e) {
         resolvedStops[0].place = ensureReviewedPlace(v.fromNames, v.fromNames._selectedPlaceId || resolvedStops[0].place);
         resolvedStops[resolvedStops.length - 1].place = ensureReviewedPlace(v.toNames, v.toNames._selectedPlaceId || resolvedStops[resolvedStops.length - 1].place);
         if (!resolvedStops[0].place || !resolvedStops[resolvedStops.length - 1].place) { toast('From and To must have valid names.'); return; }
-        var editStart = TIME_RE.test(v.start) ? v.start : ((v.stops.find(function(st){ return TIME_RE.test(st.time || ''); }) || {}).time || '');
-        if (!editStart) { toast('Add at least one valid time before approving.'); return; }
+        var editStart = TIME_RE.test(v.start) ? v.start : '';
+        if (!editStart && !v.stops.some(function(st){ return TIME_RE.test(st.time || ''); })) { toast('Add at least one valid time before approving.'); return; }
         var prevEditTime = editStart, editDay = 0, editTimeInvalid = false;
         resolvedStops.slice(1).forEach(function (st) {
-          if (st.time && st.time < prevEditTime) editDay++;
+          if (st.time && prevEditTime && st.time < prevEditTime) editDay++;
           if (st.time) prevEditTime = st.time;
           st.day_offset = editDay;
         });
         targetRoute.from = resolvedStops[0].place;
         targetRoute.to = resolvedStops[resolvedStops.length - 1].place;
-        targetRoute.time = editStart;
+        if (editStart) targetRoute.time = editStart; else delete targetRoute.time;
         var finalArrival = resolvedStops[resolvedStops.length - 1].time;
         if (finalArrival) targetRoute.arrive = finalArrival; else delete targetRoute.arrive;
         var editedMidStops = resolvedStops.slice(1, -1).map(function (st) {
@@ -2705,8 +2704,8 @@ document.addEventListener('click', async function (e) {
         return;
       }
       var isFreeText = sub.submission_type === 'new_route' || (!!sub.from_text && !!sub.to_text);
-      var effectiveStart = TIME_RE.test(v.start) ? v.start : (v.stops.find(function(st){ return TIME_RE.test(st.time || ''); }) || {}).time;
-      if (!TIME_RE.test(effectiveStart || '')) { toast('Add at least one time before approving'); return; }
+      var effectiveStart = TIME_RE.test(v.start) ? v.start : '';
+      if (!effectiveStart && !v.stops.some(function(st){ return TIME_RE.test(st.time || ''); })) { toast('Add at least one time before approving'); return; }
       if (!isFreeText && (!placeById(sub.from_id) || !placeById(sub.to_id))) { toast('This route uses a place that no longer exists'); return; }
       // New free-text names become editable place records; translations can be added in Places later.
       var reviewedFrom = String(v.from || '').trim(), reviewedTo = String(v.to || '').trim();
@@ -2716,7 +2715,7 @@ document.addEventListener('click', async function (e) {
       var toId = isFreeText ? ensureReviewedPlace(v.toNames, v.toNames._selectedPlaceId || sub.to_id) : sub.to_id;
       var previousReviewTime = effectiveStart, inferredDayOffset = 0;
       v.stops.forEach(function (st) {
-        if (st.time && st.time < previousReviewTime) inferredDayOffset++;
+        if (st.time && previousReviewTime && st.time < previousReviewTime) inferredDayOffset++;
         if (st.time) previousReviewTime = st.time;
         if (inferredDayOffset > 0) st.day_offset = inferredDayOffset;
       });
