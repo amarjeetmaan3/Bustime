@@ -309,4 +309,7 @@
     <string name="bus_type_other">ਹੋਰ</string>
     <string name="bus_type_other_hint">ਹੋਰ ਬੱਸ ਕਿਸਮ (ਜੇ ਚੁਣੀ ਹੈ)</string>
     <string name="bus_type_required_error">ਹੋਰ ਬੱਸ ਦੀ ਕਿਸਮ ਲਿਖੋ।</string>
+    <string name="bb_bus_types">ਬੱਸ ਦੀਆਂ ਕਿਸਮਾਂ</string>
+    <string name="bb_search_hint">ਕੰਪਨੀ, ਬੱਸ ਦੀ ਕਿਸਮ ਜਾਂ ਥਾਂ ਖੋਜੋ</string>
+    <string name="bb_search_no_results">“%1$s” ਨਾਲ ਮੇਲ ਖਾਂਦੀ ਕੋਈ ਬੱਸ ਸੇਵਾ ਨਹੀਂ ਮਿਲੀ।</string>
 </resources>
