@@ -183,7 +183,10 @@ class CommunityRequestActivity : AppCompatActivity() {
         if (requestedType == "auto" || requestedType == "taxi") typeSpinner.visibility = View.GONE
         field("person_name", getString(com.bustime.app.R.string.community_driver_name))
         field("vehicle_name", getString(com.bustime.app.R.string.community_vehicle_name))
-        field("vehicle_model_number", getString(com.bustime.app.R.string.community_vehicle_model))
+        field("year", getString(com.bustime.app.R.string.community_vehicle_year)).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+        }
         field("seats", getString(com.bustime.app.R.string.community_seat_count))
         field("vehicle_number", getString(com.bustime.app.R.string.community_vehicle_registration))
         field("location", getString(com.bustime.app.R.string.community_location_area))
@@ -197,12 +200,16 @@ class CommunityRequestActivity : AppCompatActivity() {
             val name = value("person_name"); val vehicle = value("vehicle_name"); val phone = digits(value("phone"))
             val seats = value("seats").toIntOrNull()
             val area = value("location")
-            if (name.isBlank() || vehicle.isBlank() || value("vehicle_model_number").isBlank() || value("vehicle_number").isBlank() ||
+            if (name.isBlank() || vehicle.isBlank() || value("vehicle_number").isBlank() ||
                 area.isBlank() || value("union_name").isBlank() || phone.length !in 10..13 || seats == null || seats < 1) {
                 toast(getString(com.bustime.app.R.string.community_fill_vehicle_required)); return@button
             }
+            val year = value("year")
+            if (!year.matches(Regex("^[0-9]{4}$"))) {
+                toast(getString(com.bustime.app.R.string.community_year_invalid)); return@button
+            }
             val body = JSONObject().put("vehicle_type", type).put("person_name", name).put("vehicle_name", vehicle)
-                .put("vehicle_model_number", value("vehicle_model_number")).put("vehicle_number", value("vehicle_number"))
+                .put("year", year).put("vehicle_number", value("vehicle_number"))
                 .put("seats", seats).put("location", area).put("area_name", area)
                 .put("union_name", value("union_name")).put("phone", phone)
                 .put("fuel_type", if (type == "auto") listOf("ev", "oil", "cng", "other").getOrNull(spinners["fuel_type"]?.selectedItemPosition ?: -1) else JSONObject.NULL)
