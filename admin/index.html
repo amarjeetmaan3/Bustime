@@ -1320,7 +1320,7 @@ async function loadAdTargets(){
   adTargetCache.auto=drivers.filter(function(x){return String(x.type||x.vehicle_type||'').toLowerCase()==='auto';});
   try{var vehicles=await sbFetch('/rest/v1/vehicle_submissions?select=*&status=eq.approved&order=created_at.desc&limit=500');vehicles.forEach(function(x){(String(x.vehicle_type).toLowerCase()==='taxi'?adTargetCache.taxi:adTargetCache.auto).push(x);});}catch(e){}
 }
-function adActionLabel(kind){return kind==='operator'?'Check Bus':kind==='taxi'?'Book Taxi':kind==='auto'?'Book Auto':kind==='route'?'Check Route':'Learn more';}
+function adActionLabel(kind){return kind==='operator'?'Book Bus':kind==='taxi'?'Book Taxi':kind==='auto'?'Book Auto':kind==='route'?'Check Route':'Learn more';}
 function refreshAdTargets(){var select=document.getElementById('ad_target_id');if(select)select.innerHTML=adTargetOptions();refreshAdActionLabel();}
 function refreshAdActionLabel(){var select=document.getElementById('ad_target_id'),box=document.getElementById('ad_check_route_enabled'),category=(document.getElementById('ad_category')||{}).value||'';if(!box||!box.parentElement)return;var kind=select&&select.value?select.value.split(':')[0]:(category==='bus_route'?'route':category==='bus_operator'?'operator':category==='taxi'?'taxi':category==='auto'?'auto':'');var label=adActionLabel(kind);box.parentElement.lastChild.textContent=' '+label+' button';}
 function adChecked(v){return v?' checked':'';}
