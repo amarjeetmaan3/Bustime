@@ -85,9 +85,10 @@ class BookBusActivity : AppCompatActivity() {
         var selectedArea: String? = null
         var searchQuery = ""
         var allRowsCache: List<JSONObject> = emptyList()
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val searchBox = EditText(this).apply {
             hint = getString(R.string.bb_search_hint)
-            singleLine = true
+            isSingleLine = true
             textSize = 15f
             setPadding(dp(14), dp(10), dp(14), dp(10))
             background = GradientDrawable().apply {
@@ -105,7 +106,6 @@ class BookBusActivity : AppCompatActivity() {
             })
         }
         content.addView(searchBox, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
-        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val loading = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
