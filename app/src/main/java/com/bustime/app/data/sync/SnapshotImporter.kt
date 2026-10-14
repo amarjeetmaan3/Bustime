@@ -109,9 +109,10 @@ object SnapshotImporter {
             ) {
                 skipped++; continue
             }
-            var seats: Int? = null
+            // Keep seat count on both vehicle types for display, but only Taxi
+            // seat counts contribute to the selectable Taxi seater filters.
+            val seats: Int? = d.seats?.takeIf { it > 0 }
             if (type == "taxi") {
-                seats = d.seats?.takeIf { it > 0 }
                 if (seats == null) { skipped++; continue }   // टैक्सी में सीटर ज़रूरी
                 driverSeats.add(seats)
             }
