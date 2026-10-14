@@ -1142,6 +1142,7 @@ function viewRoutes() {
         (r.contact ? '<div class="route-subline">Contact: ' + esc(r.contact) + '</div>' : '') + '</td>' +
         '<td><span class="route-count">' + stopCount + '</span><div class="route-subline">' + (r.stops || []).length + ' intermediate</div></td>' +
         '<td class="actions"><button class="btn sm" data-act="reverse-route" data-i="' + x.i + '" title="Create return route">↔ Return</button>' +
+        '<button class="btn sm" data-act="copy-route" data-i="' + x.i + '" title="Create a new route with the same stops and blank timings">Copy</button>' +
         '<button class="btn sm" data-act="edit-route" data-i="' + x.i + '">Edit</button>' +
         '<button class="btn sm" data-act="toggle-route-hidden" data-i="' + x.i + '">' + (r.hidden ? 'Show' : 'Hide') + '</button>' +
         '<button class="btn sm danger" data-act="del-route" data-i="' + x.i + '">Delete</button></td></tr>';
@@ -1962,7 +1963,7 @@ function renderModal() {
     ov.classList.add('show');
   } else if (editing) {
     var titles = { place: 'place', route: 'route', driver: 'driver' };
-    $('#dlgTitle').textContent = (editing.index < 0 ? 'Add ' : 'Edit ') + titles[editing.type];
+    $('#dlgTitle').textContent = editing.sourceCopy ? 'New Route · copied stops' : (editing.index < 0 ? 'Add ' : 'Edit ') + titles[editing.type];
     $('#dlgBody').innerHTML = { place: placeFormHtml, route: routeFormHtml, driver: driverFormHtml }[editing.type]();
     ov.classList.add('show');
     if(editing.type==='route')initRouteAutoTranslation();
@@ -2400,6 +2401,27 @@ document.addEventListener('click', async function (e) {
     // ---- routes ----
     else if (act === 'new-route') { editing = { type: 'route', index: -1, draft: { stops: [] } }; render(); }
     else if (act === 'edit-route') { editing = { type: 'route', index: i, draft: JSON.parse(JSON.stringify(data.routes[i])) }; render(); }
+    else if (act === 'copy-route') {
+      var sourceRoute = data.routes[i];
+      if (!sourceRoute) { toast('Could not find the route to copy'); return; }
+      editing = {
+        type: 'route',
+        index: -1,
+        sourceCopy: true,
+        draft: {
+          from: sourceRoute.from,
+          to: sourceRoute.to,
+          service: '',
+          contact: '',
+          info: '',
+          time: '',
+          arrive: '',
+          stops: (sourceRoute.stops || []).map(function (stop) { return { place: stop.place }; })
+        }
+      };
+      render();
+      toast('Route copied. Add a service name and timings, then save as a new route.');
+    }
     else if (act === 'reverse-route') {
       var src = data.routes[i];
       editing = { type: 'route', index: -1, draft: {
