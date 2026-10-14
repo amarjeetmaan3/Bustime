@@ -1,5 +1,5 @@
 {
-  "dataVersion": 48,
+  "dataVersion": 49,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -2231,6 +2231,798 @@
         },
         {
           "place": "place_miraa_chowk_sri_ganganagar"
+        }
+      ]
+    },
+    {
+      "id": "r57",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "07:40",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "07:40"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r58",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "08:15",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "08:15"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r59",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "08:40",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "08:40"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r60",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "09:00",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "09:00"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r61",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "09:25",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "09:25"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r62",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "09:45",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "09:45"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r63",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "10:15",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "10:15"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r64",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "10:50",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "10:50"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r65",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "11:10",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "11:10"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r66",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "11:35",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "11:35"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r67",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "12:15",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "12:15"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r68",
+      "from": "stand_sri_ganganagar",
+      "to": "stand_sangriya",
+      "time": "12:40",
+      "stops": [
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "12:40"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_bolanwali"
         }
       ]
     }
