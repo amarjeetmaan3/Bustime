@@ -164,13 +164,15 @@ class StopListEditor(
 
             val time = TextView(activity).apply {
                 val t = timeOf(draft).orEmpty()
-                text = if (t.isBlank()) "＋ ${activity.getString(R.string.ar_tap_time)}" else t
-                textSize = 12f
+                text = if (t.isBlank()) "◷" else t
+                contentDescription = if (t.isBlank()) activity.getString(R.string.ar_tap_time) else t
+                textSize = if (t.isBlank()) 24f else 12f
                 gravity = Gravity.CENTER
-                setTextColor(if (t.isBlank()) textColor else android.graphics.Color.rgb(58, 133, 190))
+                setTextColor(if (t.isBlank()) (if (night) 0xFFB0BEC5.toInt() else 0xFF64748B.toInt()) else android.graphics.Color.rgb(58, 133, 190))
                 setPadding(dp(5), dp(4), dp(5), dp(4))
                 background = android.graphics.drawable.GradientDrawable().apply {
-                    setColor(if (t.isBlank()) android.graphics.Color.TRANSPARENT else if (night) 0xFF263746.toInt() else 0xFFEAF3FA.toInt())
+                    setColor(if (night) 0xFF303943.toInt() else if (t.isBlank()) 0xFFF1F5F9.toInt() else 0xFFEAF3FA.toInt())
+                    setStroke(dp(1), if (night) 0xFF4B5563.toInt() else 0xFFD5DDE7.toInt())
                     cornerRadius = dp(6).toFloat()
                 }
                 setOnClickListener {
