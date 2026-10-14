@@ -2752,7 +2752,7 @@ document.addEventListener('click', async function (e) {
         if(merged.vehicle_type==='auto')vd.fuel=(merged.fuel_type||merged.fuel||'oil').toLowerCase();if(merged.union_name)vd.union_name=merged.union_name;if(merged.seats)vd.seats=merged.seats;data.drivers.push(vd);setDirty(true);
       }
       if(rk==='busSubmissions'){
-        if(!merged.operator_name||!merged.phone){toast('Operator name and phone are required.');return;}
+        if(!(merged.service_name||merged.operator_name)||!merged.location||!Array.isArray(merged.bus_types)||!merged.bus_types.length||!merged.phone){toast('Service name, bus types, operating location and phone are required.');return;}
         await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:merged.service_name||merged.operator_name,service_name:merged.service_name||merged.operator_name,bus_types:Array.isArray(merged.bus_types)?merged.bus_types:[],location:merged.location||null,phone:merged.phone,whatsapp:merged.whatsapp||null,details:merged.details||null,active:true})});
       }
       await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:rv,reviewed_at:stamp,approved_at:stamp,status:'approved'})});
@@ -2776,7 +2776,8 @@ document.addEventListener('click', async function (e) {
           data.drivers.push(driver); setDirty(true);
         }
         if (kind === 'busSubmissions') {
-          await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.service_name||record.operator_name,service_name:record.service_name||record.operator_name,bus_types:Array.isArray(record.bus_types)?record.bus_types:[],location:record.location||null,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
+          if (!(record.service_name||record.operator_name) || !record.location || !Array.isArray(record.bus_types) || !record.bus_types.length || !record.phone) { toast('Service name, bus types, operating location and phone are required.'); return; }
+          await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.service_name||record.operator_name,service_name:record.service_name||record.operator_name,bus_types:record.bus_types,location:record.location,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
         }
       } else if (!confirm('Reject this request?')) return;
       await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({status:act==='community-approve'?'approved':'rejected'}) });
@@ -2805,7 +2806,7 @@ document.addEventListener('click', async function (e) {
     }
     else if (act === 'operator-add') {
       var on=val('op_name'), op=val('op_phone').replace(/[^+0-9 -]/g,'');
-      if (!on || op.replace(/\D/g,'').length<9) { toast('Enter operator name and valid phone.'); return; }
+      if (!on || !val('op_location') || op.replace(/\D/g,'').length<9) { toast('Enter service name, operating location and valid phone.'); return; }
       var busTypes=val('op_types').split(',').map(function(x){return x.trim();}).filter(Boolean);
       if(!busTypes.length){toast('Enter at least one bus type.');return;}
       await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:on,service_name:on,bus_types:busTypes,phone:op,whatsapp:val('op_whatsapp')||null,location:val('op_location')||null,details:val('op_details')||null,active:true})});
