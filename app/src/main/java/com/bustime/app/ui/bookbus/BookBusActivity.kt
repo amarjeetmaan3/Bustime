@@ -83,29 +83,8 @@ class BookBusActivity : AppCompatActivity() {
         })
 
         var selectedArea: String? = null
-        var searchQuery = ""
         var allRowsCache: List<JSONObject> = emptyList()
         val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val searchBox = EditText(this).apply {
-            hint = getString(R.string.bb_search_hint)
-            isSingleLine = true
-            textSize = 15f
-            setPadding(dp(14), dp(10), dp(14), dp(10))
-            background = GradientDrawable().apply {
-                setColor(cardBg)
-                cornerRadius = dp(12).toFloat()
-                setStroke(dp(1), borderColor)
-            }
-            addTextChangedListener(object : android.text.TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    searchQuery = s?.toString()?.trim().orEmpty()
-                    renderOperators(allRowsCache, results, selectedArea, searchQuery, cardBg, primaryText, secondaryText, borderColor)
-                }
-                override fun afterTextChanged(s: android.text.Editable?) {}
-            })
-        }
-        content.addView(searchBox, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
         val loading = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -131,7 +110,7 @@ class BookBusActivity : AppCompatActivity() {
                         selectedArea = if (which == 0) null else areas[which - 1]
                         text = getString(R.string.area_change_label, selectedArea ?: getString(R.string.area_all_areas))
                         dialog.dismiss()
-                        renderOperators(allRowsCache, results, selectedArea, searchQuery, cardBg, primaryText, secondaryText, borderColor)
+                        renderOperators(allRowsCache, results, selectedArea, cardBg, primaryText, secondaryText, borderColor)
                     }
                     .setNegativeButton(R.string.cancel, null)
                     .show()
@@ -166,7 +145,7 @@ class BookBusActivity : AppCompatActivity() {
             allRowsCache = (0 until rows.length()).mapNotNull { rows.optJSONObject(it) }
             areaButton.isEnabled = allRowsCache.any { it.optString("location").isNotBlank() }
             areaButton.text = getString(R.string.area_change_label, getString(R.string.area_all_areas))
-            renderOperators(allRowsCache, results, selectedArea, searchQuery, cardBg, primaryText, secondaryText, borderColor)
+            renderOperators(allRowsCache, results, selectedArea, cardBg, primaryText, secondaryText, borderColor)
         }
     }
 
@@ -174,7 +153,6 @@ class BookBusActivity : AppCompatActivity() {
         allRows: List<JSONObject>,
         results: LinearLayout,
         selectedArea: String?,
-        searchQuery: String,
         cardBg: Int,
         primaryText: Int,
         secondaryText: Int,
@@ -188,12 +166,11 @@ class BookBusActivity : AppCompatActivity() {
                 if (arr != null) (0 until arr.length()).mapNotNull { arr.optString(it).takeIf(String::isNotBlank) }
                 else listOf(item.optString("bus_type")).filter(String::isNotBlank)
             } catch (_: Exception) { listOf(item.optString("bus_type")).filter(String::isNotBlank) }
-            val searchable = listOf(item.optString("service_name"), item.optString("operator_name"), item.optString("location"), item.optString("details")) .plus(types).plus(types.map(::localizedCategory)).joinToString(" ")
-            areaMatches && (searchQuery.isBlank() || searchable.contains(searchQuery, ignoreCase = true))
+            areaMatches
         }
         if (visibleRows.isEmpty()) {
             results.addView(TextView(this).apply {
-                text = if (searchQuery.isNotBlank()) getString(R.string.bb_search_no_results, searchQuery) else if (selectedArea == null) getString(R.string.bb_no_operators) else getString(R.string.bb_no_options_area, selectedArea)
+                text = if (selectedArea == null) getString(R.string.bb_no_operators) else getString(R.string.bb_no_options_area, selectedArea)
                 textSize = 15f
                 setTextColor(secondaryText)
                 setPadding(dp(4), dp(12), dp(4), dp(12))
