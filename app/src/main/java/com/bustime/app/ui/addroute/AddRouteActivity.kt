@@ -17,7 +17,6 @@ import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.models.Route
 import com.bustime.app.ui.common.StopListEditor
 import com.bustime.app.utils.LanguageHelper
-import com.bustime.app.utils.TimeFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -67,12 +66,8 @@ class AddRouteActivity : AppCompatActivity() {
             val places = withContext(Dispatchers.IO) { repo.getAllPlaces() }
             editor = StopListEditor(
                 this@AddRouteActivity, stopsBox, places, drafts,
-                minStops = 2,
-                validateTimes = { times ->
-                    val ok = TimeFlow.resolve(times.filter { !it.isNullOrBlank() }).badIndex < 0
-                    if (!ok) Toast.makeText(this@AddRouteActivity, R.string.ar_time_order, Toast.LENGTH_LONG).show()
-                    ok
-                }
+                minStops = 2
+            
             )
             editor?.render()
 
@@ -148,9 +143,6 @@ class AddRouteActivity : AppCompatActivity() {
                 .put("name", nm)
                 .put("time", timeOf(d) ?: JSONObject.NULL))
         }
-        val times = drafts.map { timeOf(it) }
-        if (times.none { it != null }) { Toast.makeText(this, R.string.ar_need_time, Toast.LENGTH_LONG).show(); return }
-        if (TimeFlow.resolve(times.filterNotNull()).badIndex >= 0) { Toast.makeText(this, R.string.ar_time_order, Toast.LENGTH_LONG).show(); return }
 
         val first = drafts.first()
         val last = drafts.last()
