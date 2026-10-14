@@ -1,5 +1,5 @@
 {
-  "dataVersion": 45,
+  "dataVersion": 46,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -384,185 +384,6 @@
   ],
   "routes": [
     {
-      "id": "r1",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "05:45"
-    },
-    {
-      "id": "r2",
-      "from": "place_amargarh",
-      "to": "place_user_dabwali",
-      "time": "07:40",
-      "stops": [
-        {
-          "place": "stand_sangriya"
-        }
-      ]
-    },
-    {
-      "id": "r3",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "19:00"
-    },
-    {
-      "id": "r4",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "18:45"
-    },
-    {
-      "id": "r5",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "18:20"
-    },
-    {
-      "id": "r6",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "17:00"
-    },
-    {
-      "id": "r7",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "16:50"
-    },
-    {
-      "id": "r8",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "16:45"
-    },
-    {
-      "id": "r9",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "16:45"
-    },
-    {
-      "id": "r10",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "16:30"
-    },
-    {
-      "id": "r11",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "16:10"
-    },
-    {
-      "id": "r12",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "15:40"
-    },
-    {
-      "id": "r13",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "15:00"
-    },
-    {
-      "id": "r14",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "14:35"
-    },
-    {
-      "id": "r15",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "14:00"
-    },
-    {
-      "id": "r16",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "12:40"
-    },
-    {
-      "id": "r17",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "11:15"
-    },
-    {
-      "id": "r18",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "07:45"
-    },
-    {
-      "id": "r19",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "08:15"
-    },
-    {
-      "id": "r20",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "08:45"
-    },
-    {
-      "id": "r21",
-      "from": "place_user_tibbi",
-      "to": "place_sadulshahar",
-      "time": "09:00",
-      "stops": [
-        {
-          "place": "place_amargarh",
-          "time": "09:00"
-        }
-      ]
-    },
-    {
-      "id": "r22",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "09:25"
-    },
-    {
-      "id": "r23",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "09:50"
-    },
-    {
-      "id": "r24",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "10:25"
-    },
-    {
-      "id": "r25",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "11:35"
-    },
-    {
-      "id": "r26",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "12:00"
-    },
-    {
-      "id": "r27",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "12:20"
-    },
-    {
-      "id": "r28",
-      "from": "place_amargarh",
-      "to": "place_sadulshahar",
-      "time": "11:15"
-    },
-    {
       "id": "r29",
       "from": "stand_sangriya",
       "to": "stand_sri_ganganagar",
@@ -691,6 +512,242 @@
         },
         {
           "place": "place_bolanwali"
+        }
+      ]
+    },
+    {
+      "id": "r31",
+      "from": "place_user_tibbi",
+      "to": "stand_sri_ganganagar",
+      "time": "09:00",
+      "stops": [
+        {
+          "place": "stand_sangriya"
+        },
+        {
+          "place": "place_bolanwali"
+        },
+        {
+          "place": "place_lambi_dhab"
+        },
+        {
+          "place": "place_chak_hira_singh_wala"
+        },
+        {
+          "place": "place_rasuwala"
+        },
+        {
+          "place": "place_kishanpura_uttradha"
+        },
+        {
+          "place": "place_amargarh",
+          "time": "09:00"
+        },
+        {
+          "place": "place_dhani_khichdhan"
+        },
+        {
+          "place": "place_kanchiya_chowk_sadulshahar"
+        },
+        {
+          "place": "place_sadulshahar"
+        },
+        {
+          "place": "place_takhat_hazara_babiran"
+        },
+        {
+          "place": "place_chak_shone_wala"
+        },
+        {
+          "place": "place_bhudharwali"
+        },
+        {
+          "place": "place_hakmabad"
+        },
+        {
+          "place": "place_banwala"
+        },
+        {
+          "place": "place_abhoria"
+        },
+        {
+          "place": "place_5_chak"
+        },
+        {
+          "place": "place_4_chak_4lnp"
+        },
+        {
+          "place": "place_kaluwala"
+        },
+        {
+          "place": "place_miraa_chowk_sri_ganganagar"
+        }
+      ]
+    },
+    {
+      "id": "r1",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "05:45"
+    },
+    {
+      "id": "r18",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "07:45"
+    },
+    {
+      "id": "r19",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "08:15"
+    },
+    {
+      "id": "r20",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "08:45"
+    },
+    {
+      "id": "r21",
+      "to": "place_sadulshahar",
+      "from": "place_user_tibbi",
+      "time": "09:00",
+      "stops": [
+        {
+          "time": "09:00",
+          "place": "place_amargarh"
+        }
+      ]
+    },
+    {
+      "id": "r22",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "09:25"
+    },
+    {
+      "id": "r23",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "09:50"
+    },
+    {
+      "id": "r24",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "10:25"
+    },
+    {
+      "id": "r17",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "11:15"
+    },
+    {
+      "id": "r25",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "11:35"
+    },
+    {
+      "id": "r26",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "12:00"
+    },
+    {
+      "id": "r27",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "12:20"
+    },
+    {
+      "id": "r16",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "12:40"
+    },
+    {
+      "id": "r15",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "14:00"
+    },
+    {
+      "id": "r14",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "14:35"
+    },
+    {
+      "id": "r13",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "15:00"
+    },
+    {
+      "id": "r12",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "15:40"
+    },
+    {
+      "id": "r11",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "16:10"
+    },
+    {
+      "id": "r10",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "16:30"
+    },
+    {
+      "id": "r8",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "16:45"
+    },
+    {
+      "id": "r7",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "16:50"
+    },
+    {
+      "id": "r6",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "17:00"
+    },
+    {
+      "id": "r5",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "18:20"
+    },
+    {
+      "id": "r4",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "18:45"
+    },
+    {
+      "id": "r3",
+      "to": "place_sadulshahar",
+      "from": "place_amargarh",
+      "time": "19:00"
+    },
+    {
+      "id": "r2",
+      "to": "place_user_dabwali",
+      "from": "place_amargarh",
+      "time": "07:40",
+      "stops": [
+        {
+          "place": "stand_sangriya"
         }
       ]
     }
