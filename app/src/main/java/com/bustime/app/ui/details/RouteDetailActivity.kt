@@ -76,7 +76,19 @@ class RouteDetailActivity : AppCompatActivity() {
             fun name(id: String) = names[id]?.displayName(lang) ?: id
 
             findViewById<TextView>(R.id.tvRouteTitle).text = "${name(route.fromId)} → ${name(route.toId)}"
-            findViewById<TextView>(R.id.tvRouteTime).text = getString(R.string.departs_at, TimeFormat.format(route.time))
+            val firstStopTime = stops.firstOrNull()?.time?.takeIf { it.isNotBlank() }
+            val lastStopTime = stops.lastOrNull()?.time?.takeIf { it.isNotBlank() }
+            findViewById<TextView>(R.id.tvRouteTime).apply {
+                // Show the departure banner only when BOTH endpoint stops have their own times.
+                // Never substitute route.time or a searched intermediate stop's time.
+                if (firstStopTime != null && lastStopTime != null) {
+                    text = getString(R.string.departs_at, TimeFormat.format(firstStopTime))
+                    visibility = View.VISIBLE
+                } else {
+                    text = ""
+                    visibility = View.GONE
+                }
+            }
 
             setOptional(R.id.tvRouteService, route.serviceName ?: route.routeName)
             setOptional(R.id.tvRouteInfo, route.info)
@@ -103,7 +115,7 @@ class RouteDetailActivity : AppCompatActivity() {
                 val row = inflater.inflate(R.layout.item_stop, container, false)
                 val tvStopTime = row.findViewById<TextView>(R.id.tvStopTime)
                 val tvStopName = row.findViewById<TextView>(R.id.tvStopName)
-                tvStopTime.text = TimeFormat.format(s.time)
+                tvStopTime.text = s.time?.takeIf { it.isNotBlank() }?.let { TimeFormat.format(it) }.orEmpty()
                 tvStopName.text = name(s.placeId)
 
                 // In route-search results, highlight the exact searched stops, even when intermediate.
