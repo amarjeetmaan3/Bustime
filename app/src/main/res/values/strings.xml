@@ -164,6 +164,8 @@
     <string name="bb_no_operators">No approved bus operators are listed yet.</string>
     <string name="community_title_correction">Route Correction</string>
     <string name="community_title_vehicle">Add Auto / Taxi</string>
+    <string name="community_taxi_title">Add Taxi</string>
+    <string name="community_auto_title">Add Auto</string>
     <string name="community_title_bus">Add Your Bus</string>
     <string name="community_title_taxi_correction">Taxi Correction</string>
     <string name="community_title_auto_correction">Auto Correction</string>
