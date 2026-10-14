@@ -1182,7 +1182,7 @@ function stopRow(place, time) {
 function routeFormHtml() {
   var r=editing.draft;
   return '<p class="muted">Type a name in any language — matching existing places appear below the box; tap one to fill English, हिंदी and ਪੰਜਾਬੀ together (places already in this route are not suggested). A brand-new name becomes a new Place when you save. Use <b>+</b> to insert a stop right below a row.</p>' +
-    '<div class="ed-meta"><div><label>Departure</label><input id="fr_time" type="time" value="'+esc(r.time||'')+'"></div><div><label>Arrival (optional)</label><input id="fr_arrive" type="time" value="'+esc(r.arrive||'')+'"></div><div><label>Service / company</label><input id="fr_service" value="'+esc(r.service||'')+'"></div><div><label>Contact number</label><input id="fr_contact" inputmode="tel" value="'+esc(r.contact||'')+'"></div></div>'+
+    '<p class="muted">At least one valid time is required anywhere on this route; From, To and middle-stop times may otherwise be blank.</p><div class="ed-meta"><div><label>Departure (optional)</label><input id="fr_time" type="time" value="'+esc(r.time||'')+'"></div><div><label>Arrival (optional)</label><input id="fr_arrive" type="time" value="'+esc(r.arrive||'')+'"></div><div><label>Service / company</label><input id="fr_service" value="'+esc(r.service||'')+'"></div><div><label>Contact number</label><input id="fr_contact" inputmode="tel" value="'+esc(r.contact||'')+'"></div></div>'+
     '<label>Additional info (optional)</label><input id="fr_info" value="'+esc(r.info||'')+'">'+
     '<label>Route · English / हिंदी / ਪੰਜਾਬੀ · time</label>'+
     '<div class="edlist">'+edEndRow('From',routePlaceFields('from',r.from),'stop-insert-first')+
@@ -2413,9 +2413,12 @@ document.addEventListener('click', async function (e) {
       var time=val('fr_time'),arrive=val('fr_arrive');
       if(!routeNameValue('from','en')&&!routeNameValue('from','hi')&&!routeNameValue('from','pa')){toast('Enter a name for From');return;}
       if(!routeNameValue('to','en')&&!routeNameValue('to','hi')&&!routeNameValue('to','pa')){toast('Enter a name for To');return;}
-      if(!TIME_RE.test(time)){toast('Enter the departure time');return;}
       var routeRows=Array.prototype.slice.call(document.querySelectorAll('#stops .stoprow'));
       if(routeRows.some(function(row){var key=row.getAttribute('data-route-stop');return !routeNameValue(key,'en')&&!routeNameValue(key,'hi')&&!routeNameValue(key,'pa');})){toast('Enter a name for every intermediate stop');return;}
+      // Rule: only one valid time is required anywhere on the route (From, To, or any middle stop).
+      var enteredStopTimes=routeRows.map(function(row){var el=row.querySelector('.st_time');return el&&TIME_RE.test(el.value||'')?el.value:'';});
+      if(!TIME_RE.test(time))time=enteredStopTimes.find(function(t){return !!t;})||(TIME_RE.test(arrive)?arrive:'');
+      if(!TIME_RE.test(time)){toast('Enter at least one valid time at From, To, or any stop');return;}
       var dupRoute=edDuplicateError('route');if(dupRoute){toast(dupRoute);return;}
       var from=ensureRoutePlace('from'),to=ensureRoutePlace('to');
       if(!from||!to){toast('Could not resolve From and To names');return;}
