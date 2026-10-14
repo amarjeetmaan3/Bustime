@@ -288,4 +288,15 @@
     <string name="area_change_label">Change Area: %1$s ▾</string>
     <string name="area_select_prompt">Select Area</string>
     <string name="area_all_areas">All Areas</string>
+    <string name="bb_loading">Loading bus services…</string>
+    <string name="bb_details_button">Details</string>
+    <string name="bb_detail_title">Bus service details</string>
+    <string name="bb_operator_label">Operator: %1$s</string>
+    <string name="bb_operator_label_short">Operator</string>
+    <string name="bb_sleeper_label">Sleeper berths</string>
+    <string name="bb_seater_label">Seater seats</string>
+    <string name="bb_extra_details_label">Additional information</string>
+    <string name="bb_contact_prompt">Review the service details before contacting the operator.</string>
+    <string name="bb_contact_reveal">Show contact details</string>
+    <string name="bb_contact_unavailable">Contact number is not available.</string>
 </resources>
