@@ -168,29 +168,52 @@ object StartIoAdsManager {
         }
     }
 
-    fun loadNativeAd(context: Context, resultCount: Int, callback: (NativeAdDetails?, StartIoAdConfig) -> Unit) {
+    /** Loads a separate native ad for each configured block of results (for example, after 4, 8, 12...). */
+    fun loadNativeAds(
+        context: Context,
+        resultCount: Int,
+        callback: (List<Pair<Int, NativeAdDetails>>, StartIoAdConfig) -> Unit
+    ) {
         refresh(context) { config ->
             if (!config.nativeEnabled || !config.resultsNativeEnabled ||
-                config.appId.isBlank() || resultCount <= config.busEvery) {
-                callback(null, config)
+                config.appId.isBlank() || config.busEvery <= 0 || resultCount < config.busEvery) {
+                callback(emptyList(), config)
                 return@refresh
             }
-            try {
-                val preferences = NativeAdPreferences().apply { setAutoBitmapDownload(true) }
-                val nativeAd = StartAppNativeAd(context.applicationContext)
-                nativeAd.setPreferences(preferences)
-                nativeAd.loadAd(object : AdEventListener {
-                    override fun onReceiveAd(ad: Ad) {
-                        val details = nativeAd.nativeAds?.firstOrNull()
-                        callback(details, config)
-                    }
 
-                    override fun onFailedToReceiveAd(ad: Ad?) {
-                        callback(null, config)
-                    }
-                })
-            } catch (_: Exception) {
-                callback(null, config)
+            val adCount = resultCount / config.busEvery
+            val loadedAds = mutableListOf<Pair<Int, NativeAdDetails>>()
+            var completed = 0
+            val lock = Any()
+
+            fun finishOne() {
+                val finished = synchronized(lock) {
+                    completed++
+                    completed == adCount
+                }
+                if (finished) {
+                    val result = synchronized(lock) { loadedAds.sortedBy { it.first }.toList() }
+                    main.post { callback(result, config) }
+                }
+            }
+
+            repeat(adCount) { index ->
+                try {
+                    val nativeAd = StartAppNativeAd(context.applicationContext)
+                    nativeAd.setPreferences(NativeAdPreferences().apply { setAutoBitmapDownload(true) })
+                    nativeAd.loadAd(object : AdEventListener {
+                        override fun onReceiveAd(ad: Ad) {
+                            nativeAd.nativeAds?.firstOrNull()?.let { details ->
+                                synchronized(lock) { loadedAds.add((index + 1) * config.busEvery to details) }
+                            }
+                            finishOne()
+                        }
+
+                        override fun onFailedToReceiveAd(ad: Ad?) = finishOne()
+                    })
+                } catch (_: Exception) {
+                    finishOne()
+                }
             }
         }
     }
