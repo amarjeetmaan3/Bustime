@@ -22,21 +22,10 @@
     <string name="back">Back</string>
 
     <!-- Taxi -->
-    <string name="taxi_select_seats">How many seats do you need?</string>
-    <string name="seater_format">%1$d Seater</string>
-    <string name="no_seaters">No taxi options available yet</string>
-    <string name="no_drivers">No drivers available</string>
 
     <!-- Auto -->
-    <string name="auto_all">All</string>
-    <string name="auto_ev">EV (Electric)</string>
-    <string name="auto_oil">Petrol / CNG (Oil)</string>
-    <string name="no_autos">No autos available</string>
 
     <!-- Driver card -->
-    <string name="show_number">Show Details</string>
-    <string name="show_details">Show Details</string>
-    <string name="number_notice">Please note: fares are fixed. Do not negotiate. The number will appear in a few seconds…</string>
     <string name="call">Call</string>
     <string name="whatsapp">WhatsApp</string>
     <string name="action_failed">Could not open this action</string>
@@ -63,10 +52,6 @@
     <string name="ar_no_routes">No routes available yet. Please try again later.</string>
     <string name="correction_route">Correction Route</string>
     <string name="book_bus">Book Bus</string>
-    <string name="add_auto">Add Auto</string>
-    <string name="correction_auto">Correction Auto</string>
-    <string name="add_taxi">Add Taxi</string>
-    <string name="correction_taxi">Correction Taxi</string>
     <string name="bus_type">Bus type</string>
     <string name="seat_type">Seat type</string>
     <string name="operator_location">Bus location</string>
@@ -108,8 +93,6 @@
     <string name="no_areas_yet">No areas available yet. Areas appear after drivers with an area are added.</string>
     <string name="ar_stop_name_required">Every stop needs a name</string>
     <string name="ar_min_stops">A route must keep at least two stops</string>
-    <string name="taxi_area_required">Select your area first to see drivers.</string>
-    <string name="taxi_no_area_drivers">No drivers found for this area and seat type.</string>
     <string name="bb_select_area_required">Select your area (required)</string>
     <string name="bb_choose_area">Choose an area</string>
     <string name="bb_no_areas_admin">No service areas are available yet. Admin must add an operating area to each operator.</string>
@@ -160,12 +143,7 @@
     <string name="ar_remove_stop">Remove stop</string>
     <string name="bb_no_operators">No approved bus operators are listed yet.</string>
     <string name="community_title_correction">Route Correction</string>
-    <string name="community_title_vehicle">Add Auto / Taxi</string>
-    <string name="community_taxi_title">Add Taxi</string>
-    <string name="community_auto_title">Add Auto</string>
     <string name="community_title_bus">Add Your Bus</string>
-    <string name="community_title_taxi_correction">Taxi Correction</string>
-    <string name="community_title_auto_correction">Auto Correction</string>
     <string name="community_title_feedback">Feedback</string>
     <string name="community_open_route_details">Open Route Correction from a specific route details page to keep the correct route selected.</string>
     <string name="community_complete_route_correction">Complete route correction</string>
@@ -181,19 +159,10 @@
     <string name="community_remove_stop_question">Remove stop?</string>
     <string name="community_remove_stop_warning">This removes it only from your proposed correction. The live route stays unchanged until Admin approval.</string>
     <string name="remove">Remove</string>
-    <string name="community_vehicle_type">Vehicle type</string>
-    <string name="community_auto">Auto</string>
-    <string name="community_taxi">Taxi</string>
-    <string name="community_driver_name">Driver name</string>
-    <string name="community_vehicle_name">Vehicle name</string>
-    <string name="community_vehicle_model">Vehicle model number</string>
-    <string name="community_vehicle_year">Year (4 digits)</string>
     <string name="community_seat_count">Number of seats</string>
-    <string name="community_vehicle_registration">Vehicle registration number</string>
     <string name="community_location_area">Location address / service area (enter once)</string>
     <string name="community_union_name">Union name (required; admin will review)</string>
     <string name="community_mobile_number">Mobile number</string>
-    <string name="community_auto_fuel_type">Auto fuel type</string>
     <string name="community_other_info">Other information (optional)</string>
     <string name="community_submit_listing">Submit listing for admin review</string>
     <string name="community_service_name">Service name</string>
@@ -205,8 +174,6 @@
     <string name="community_operator_mobile">Operator mobile number</string>
     <string name="community_whatsapp_optional">WhatsApp number (optional)</string>
     <string name="community_add_bus_submit">Submit bus for admin review</string>
-    <string name="community_correction_driver_name">Correct driver / contact name</string>
-    <string name="community_correction_vehicle">Correct vehicle name / model</string>
     <string name="community_correct_mobile">Correct mobile number</string>
     <string name="community_correct_seats">Correct number of seats</string>
     <string name="community_correct_fuel">Correct fuel type (EV or Oil)</string>
@@ -227,15 +194,11 @@
     <string name="community_enter_stop_name">Enter a name for stop %1$d</string>
     <string name="community_stop_invalid_time">Stop %1$d has an invalid time.</string>
     <string name="community_route_correction_sent">Complete route correction sent for admin review.</string>
-    <string name="community_vehicle_type_label">Vehicle type</string>
-    <string name="community_fill_vehicle_required">Complete all required fields, including seat count, vehicle number, service area and union name.</string>
     <string name="community_year_invalid">Enter the vehicle year as exactly four digits, e.g. 2022.</string>
     <string name="community_listing_sent">Listing sent for admin review.</string>
     <string name="community_bus_submitted">Bus submitted for admin verification.</string>
     <string name="community_correction_intro">Correct details for this %1$s listing. Your request will be reviewed by the admin.</string>
-    <string name="community_driver_vehicle">Driver: %1$s · Vehicle: %2$s</string>
     <string name="community_corrected_details_required">Enter corrected name, vehicle, valid phone and explain the correction.</string>
-    <string name="community_vehicle_correction_sent">Correction request sent for admin review.</string>
     <string name="community_please_feedback">Please describe your feedback.</string>
     <string name="community_thanks_feedback">Thank you. Feedback sent.</string>
     <string name="community_send_failed">Could not send all requests. Check internet and try again.
@@ -245,7 +208,6 @@
     <string name="community_feedback_submit_success">Thank you. Feedback sent.</string>
     <string name="home_all_areas">All areas</string>
     <string name="bus_from_to">From → To</string>
-    <string name="show_number_short">Show number</string>
     <string name="community_duplicate_stop">A stop is repeated in this route. Please choose a different stop or remove the duplicate before submitting.</string>
     <string name="community_route_label">Route: %1$s</string>
     <string name="bus_category_ordinary">Ordinary</string>
@@ -256,8 +218,6 @@
     <string name="bus_category_seater">Seater</string>
     <string name="bus_category_sleeper_seater">Sleeper + Seater</string>
     <string name="bus_category_custom">Custom</string>
-    <string name="auto_select_area_first">Select your area first to see drivers.</string>
-    <string name="auto_no_drivers_filter">No drivers found for this area and filter.</string>
     <string name="update_browser_not_found">Browser not found</string>
     <string name="update_download_started">Download started. See the notification.</string>
     <string name="update_download_start_failed">Could not start download</string>
