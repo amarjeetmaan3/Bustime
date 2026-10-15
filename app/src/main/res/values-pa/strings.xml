@@ -81,7 +81,6 @@
     <string name="ar_time_order">ਇਹ ਸਮਾਂ ਪਿਛਲੇ ਪੜਾਅ ਤੋਂ ਪਹਿਲਾਂ ਦਾ ਹੈ। ਅੱਧੀ ਰਾਤ ਤੋਂ ਬਾਅਦ ਦਾ ਸਮਾਂ ਤਾਂ ਹੀ ਠੀਕ ਹੈ ਜੇ ਪੂਰਾ ਸਫ਼ਰ 16 ਘੰਟਿਆਂ ਦੇ ਅੰਦਰ ਹੋਵੇ; ਕਿਰਪਾ ਕਰਕੇ ਸਮਾਂ ਜਾਂਚੋ।</string>
     <string name="ar_pick_route">ਕਿਰਪਾ ਕਰਕੇ ਇੱਕ ਰੂਟ ਚੁਣੋ</string>
     <string name="ar_need_time">ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਮਾਂ ਦਿਓ</string>
-    <string name="no_areas_yet">ਹਾਲੇ ਕੋਈ ਇਲਾਕਾ ਉਪਲਬਧ ਨਹੀਂ। ਇਲਾਕੇ ਵਾਲੇ ਡਰਾਈਵਰ ਜੁੜਨ ਤੇ ਇੱਥੇ ਦਿਖੇਗਾ।</string>
     <string name="ar_stop_name_required">ਹਰ ਪੜਾਅ ਦਾ ਨਾਮ ਭਰੋ</string>
     <string name="ar_min_stops">ਰੂਟ ਵਿੱਚ ਘੱਟੋ-ਘੱਟ ਦੋ ਪੜਾਅ ਹੋਣੇ ਚਾਹੀਦੇ ਹਨ</string>
     <string name="bb_select_area_required">ਆਪਣਾ ਇਲਾਕਾ ਚੁਣੋ (ਲਾਜ਼ਮੀ)</string>
@@ -161,7 +160,6 @@
     <string name="community_bus_category">ਬੱਸ ਦੀ ਸ਼੍ਰੇਣੀ</string>
     <string name="community_custom_bus_type">ਆਪਣੀ ਬੱਸ ਦੀ ਕਿਸਮ / ਵੈਰੀਐਂਟ ਦੱਸੋ (ਹਰ ਸ਼੍ਰੇਣੀ ਲਈ ਲਾਜ਼ਮੀ)</string>
     <string name="community_sleeper_berths">ਸਲੀਪਰ ਬਰਥਾਂ ਦੀ ਗਿਣਤੀ</string>
-    <string name="community_seater_seats">ਬੈਠਣ ਵਾਲੀਆਂ ਸੀਟਾਂ ਦੀ ਗਿਣਤੀ</string>
     <string name="community_operator_mobile">ਆਪਰੇਟਰ ਦਾ ਮੋਬਾਈਲ ਨੰਬਰ</string>
     <string name="community_whatsapp_optional">WhatsApp ਨੰਬਰ (ਵਿਕਲਪਿਕ)</string>
     <string name="community_add_bus_submit">ਬੱਸ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜੋ</string>
@@ -185,11 +183,9 @@
     <string name="community_enter_stop_name">ਪੜਾਅ %1$d ਦਾ ਨਾਮ ਭਰੋ</string>
     <string name="community_stop_invalid_time">ਪੜਾਅ %1$d ਦਾ ਸਮਾਂ ਸਹੀ ਨਹੀਂ ਹੈ।</string>
     <string name="community_route_correction_sent">ਪੂਰੇ ਰੂਟ ਦਾ ਸੁਧਾਰ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤਾ ਗਿਆ ਹੈ।</string>
-    <string name="community_year_invalid">ਵਾਹਨ ਦਾ ਸਾਲ ਠੀਕ ਚਾਰ ਅੰਕਾਂ ਵਿੱਚ ਭਰੋ, ਜਿਵੇਂ 2022।</string>
     <string name="community_listing_sent">ਲਿਸਟਿੰਗ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ।</string>
     <string name="community_bus_submitted">ਬੱਸ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ।</string>
     <string name="community_correction_intro">ਇਸ %1$s ਲਿਸਟਿੰਗ ਦੀ ਜਾਣਕਾਰੀ ਠੀਕ ਕਰੋ। ਤੁਹਾਡੀ ਬੇਨਤੀ ਐਡਮਿਨ ਜਾਂਚੇਗਾ।</string>
-    <string name="community_corrected_details_required">ਸਹੀ ਨਾਮ, ਵਾਹਨ, ਮੋਬਾਈਲ ਨੰਬਰ ਭਰੋ ਅਤੇ ਸੁਧਾਰ ਦਾ ਕਾਰਨ ਦੱਸੋ।</string>
     <string name="community_please_feedback">ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਸੁਝਾਅ / ਸ਼ਿਕਾਇਤ ਲਿਖੋ।</string>
     <string name="community_thanks_feedback">ਧੰਨਵਾਦ। ਤੁਹਾਡਾ ਸੁਝਾਅ / ਸ਼ਿਕਾਇਤ ਭੇਜ ਦਿੱਤਾ ਗਿਆ ਹੈ।</string>
     <string name="community_send_failed">ਸਾਰੀਆਂ ਬੇਨਤੀਆਂ ਨਹੀਂ ਭੇਜੀਆਂ ਜਾ ਸਕੀਆਂ। ਇੰਟਰਨੈੱਟ ਜਾਂਚ ਕੇ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।
