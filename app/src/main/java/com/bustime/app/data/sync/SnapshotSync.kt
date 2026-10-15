@@ -125,8 +125,6 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             when (type) {
                 "place" -> dao.deletePlace(id)
                 "route" -> dao.deleteRouteAndStops(id)
-                "driver" -> dao.deleteDriver(id)
-                "seater" -> id.toIntOrNull()?.let { dao.deleteSeater(it) } ?: return false
                 else -> return false
             }
             return true
@@ -139,26 +137,15 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             when (type) {
                 "place" -> {
                     val dto = gson.fromJson(payload, PlaceDto::class.java)
-                    val data = SnapshotImporter.build(SnapshotDto(0, listOf(dto), emptyList(), emptyList(), emptyList()))
+                    val data = SnapshotImporter.build(SnapshotDto(0, listOf(dto), emptyList()))
                     val item = data.places.firstOrNull { it.id == id } ?: return false
                     dao.upsertPlace(item)
                 }
                 "route" -> {
                     val dto = gson.fromJson(payload, RouteDto::class.java)
-                    val data = SnapshotImporter.build(SnapshotDto(0, existingPlaces, listOf(dto), emptyList(), emptyList()))
+                    val data = SnapshotImporter.build(SnapshotDto(0, existingPlaces, listOf(dto)))
                     val route = data.routes.firstOrNull { it.id == id } ?: return false
                     dao.upsertRouteWithStops(route, data.stops.filter { it.routeId == id })
-                }
-                "driver" -> {
-                    val dto = gson.fromJson(payload, DriverDto::class.java)
-                    val data = SnapshotImporter.build(SnapshotDto(0, existingPlaces, emptyList(), emptyList(), listOf(dto)))
-                    val driver = data.drivers.firstOrNull { it.id == id } ?: return false
-                    dao.upsertDriver(driver)
-                }
-                "seater" -> {
-                    val seats = payload.asJsonObject.get("seats")?.asInt ?: id.toIntOrNull() ?: return false
-                    if (seats <= 0) return false
-                    dao.upsertSeater(SeaterGroup(seats))
                 }
                 else -> return false
             }
@@ -258,7 +245,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             Log.w(TAG, "Refusing empty snapshot")
             return false
         }
-        dao.replaceAll(data.places, data.routes, data.stops, data.drivers, data.seaters)
+        dao.replaceAll(data.places, data.routes, data.stops)
         prefs.edit().putInt(KEY_VERSION, version).putString(KEY_ETAG, etag)
             .putString(KEY_HASH, contentHash).putLong(KEY_LAST_SYNC, System.currentTimeMillis()).apply()
         lastSyncFailed = false
