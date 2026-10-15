@@ -1,8 +1,5 @@
--- Run once in Supabase SQL Editor for the updated Book Bus + taxi/auto forms.
+-- Run once in Supabase SQL Editor for Book Bus operator fields.
 -- Safe to re-run: columns/tables/policies use IF NOT EXISTS / DROP POLICY IF EXISTS.
-
-ALTER TABLE public.vehicle_submissions ADD COLUMN IF NOT EXISTS fuel text;
-ALTER TABLE public.vehicle_submissions ADD COLUMN IF NOT EXISTS union_name text;
 
 ALTER TABLE public.bus_operators ADD COLUMN IF NOT EXISTS seat_type text;
 ALTER TABLE public.bus_operators ADD COLUMN IF NOT EXISTS sleeper_count integer;
