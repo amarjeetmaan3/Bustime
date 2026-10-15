@@ -1,5 +1,5 @@
 {
-  "dataVersion": 62,
+  "dataVersion": 63,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -430,6 +430,56 @@
         "en": "devipur",
         "hi": "देवीपुर",
         "pa": "ਦੇਵੀਪੁਰ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_aj",
+      "kind": "place",
+      "name": {
+        "en": "aj",
+        "hi": "आज",
+        "pa": "ਅਜੇ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_gs",
+      "kind": "place",
+      "name": {
+        "en": "gs",
+        "hi": "गस",
+        "pa": "ਗਸ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_ks",
+      "kind": "place",
+      "name": {
+        "en": "ks",
+        "hi": "कस",
+        "pa": "ਕਸ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_ns",
+      "kind": "place",
+      "name": {
+        "en": "ns",
+        "hi": "नस",
+        "pa": "ਨਸ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_ms",
+      "kind": "place",
+      "name": {
+        "en": "ms",
+        "hi": "मस",
+        "pa": "ਮਸ"
       },
       "aliases": []
     }
@@ -4000,6 +4050,25 @@
         {
           "place": "place_user_devipur",
           "time": "15:41"
+        }
+      ]
+    },
+    {
+      "id": "r86",
+      "from": "place_user_aj",
+      "to": "place_user_gs",
+      "time": "11:14",
+      "stops": [
+        {
+          "place": "place_user_ks"
+        },
+        {
+          "place": "place_user_ns",
+          "time": "12:15"
+        },
+        {
+          "place": "place_user_ms",
+          "time": "13:14"
         }
       ]
     }
