@@ -1558,12 +1558,17 @@ function contentLanguageFields(prefix, title, values, rows) {
 function viewContentSettings() {
   var s=contentSettings;
   return '<div class="content-settings">'+
-    '<div class="content-intro"><div class="content-mark">T</div><div><h2>Text & Terms Centre</h2><p class="muted">Manage the app’s legal notice, driver warning and scrolling message. Edit each language independently; blank translations use the app’s built-in fallback.</p></div></div>'+
+    '<div class="content-intro"><div class="content-mark">T</div><div><h2>Text & Terms Centre</h2><p class="muted">Manage the app popup message and scrolling message. Terms & Conditions are left unchanged. Edit each language independently; blank translations use the app’s built-in fallback.</p></div></div>'+
     '<section class="card content-panel"><div class="content-panel-head"><div><h2>Terms & Conditions</h2><p class="muted">Shown on first launch. Keep the disclaimer clear and easy to read.</p></div></div>'+
     '<div class="content-toggle"><label for="content_terms_enabled">Enable Terms text from this panel</label><input id="content_terms_enabled" type="checkbox" '+(s.terms_enabled?'checked':'')+'></div>'+
     contentLanguageFields('content_terms','Terms',s.terms,5)+
     '</section>'+
 
+    '<section class="card content-panel"><div class="content-panel-head"><div><h2>App Popup Message</h2><p class="muted">Shown in the app when the popup is enabled. This setting does not change Terms & Conditions.</p></div></div>'+
+    '<div class="content-toggle"><label for="content_popup_enabled">Enable app popup message</label><input id="content_popup_enabled" type="checkbox" '+(s.popup_enabled?'checked':'')+'></div>'+
+    contentLanguageFields('content_popup','Popup message',s.popup,4)+
+    '<label class="content-label" for="content_popup_seconds">Auto-dismiss duration · 5–60 seconds</label><input id="content_popup_seconds" type="number" min="5" max="60" value="'+Math.max(5,Math.min(60,parseInt(s.popup_seconds,10)||5))+'" style="max-width:180px">'+
+    '</section>'+
     '<section class="card content-panel"><div class="content-panel-head"><div><h2>Scrolling Warning Ticker</h2><p class="muted">Message shown in the Bus section. The app pairs the selected language with Hindi where applicable.</p></div></div>'+
     '<div class="content-toggle"><label for="content_ticker_enabled">Enable warning ticker</label><input id="content_ticker_enabled" type="checkbox" '+(s.ticker_enabled?'checked':'')+'></div>'+
     contentLanguageFields('content_ticker','Ticker message',s.ticker,3)+
@@ -3060,7 +3065,7 @@ document.addEventListener('click', async function (e) {
         ticker:{en:document.getElementById('content_ticker_en').value.trim(),hi:document.getElementById('content_ticker_hi').value.trim(),pa:document.getElementById('content_ticker_pa').value.trim()}
       };
       await sbFetch('/rest/v1/app_content_settings?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:1,settings:contentSettings})});
-      toast('Terms, popup and ticker text saved.'); render();
+      toast('App popup and ticker settings saved. Terms & Conditions were saved unchanged.'); render();
     }
 
     else if (act === 'ad-subtab') { adSubtab=b.getAttribute('data-sub')==='admob'?'admob':'my'; render(); }
