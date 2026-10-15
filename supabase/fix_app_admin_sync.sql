@@ -1,5 +1,3 @@
--- Bustime: ONE idempotent script (safe to run many times) in Supabase > SQL Editor.
--- Fixes: "Add Your Bus" / Taxi-Auto listing not reaching the admin, and the admin Community tab 404.
 
 -- 1) Bus listing requests table (Add Your Bus)
 create table if not exists public.bus_operator_submissions (
@@ -45,11 +43,6 @@ alter table public.bus_operators add column if not exists location text;
 alter table public.bus_operators add column if not exists from_text text;
 alter table public.bus_operators add column if not exists to_text text;
 alter table public.bus_operators add column if not exists details text;
-
--- 3) Auto / Taxi listing requests: area, union, fuel (the app sends area_name)
-alter table public.vehicle_submissions add column if not exists area_name text;
-alter table public.vehicle_submissions add column if not exists union_name text;
-alter table public.vehicle_submissions add column if not exists fuel text;
 
 -- 4) Tell the API to reload its table list (fixes 404 / PGRST204)
 notify pgrst, 'reload schema';
