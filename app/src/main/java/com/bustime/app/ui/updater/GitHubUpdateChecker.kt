@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
+import java.security.MessageDigest
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -37,13 +38,14 @@ import java.net.URL
  */
 class GitHubUpdateChecker(private val activity: AppCompatActivity) {
 
-    private data class LatestRelease(val version: String, val downloadUrl: String)
+    private data class LatestRelease(val version: String, val downloadUrl: String, val sha256: String)
 
     private val prefs = activity.getSharedPreferences("update_prefs", Context.MODE_PRIVATE)
     private var updateDialog: AlertDialog? = null
     private var installDialog: AlertDialog? = null
     private var receiverRegistered = false
     private var promptedThisSession = false
+    private var verifyingDownload = false
 
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -125,7 +127,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
 
     private fun startDownload(latest: LatestRelease) {
         // APK का सीधा लिंक न मिले तो पुराना तरीका: ब्राउज़र में रिलीज़ पेज
-        if (!latest.downloadUrl.endsWith(".apk")) {
+        if (!latest.downloadUrl.endsWith(".apk") || !latest.sha256.matches(Regex("^[a-fA-F0-9]{64}$"))) {
             try {
                 activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(latest.downloadUrl)))
             } catch (e: Exception) {
@@ -155,6 +157,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             prefs.edit()
                 .putLong(KEY_DL_ID, id)
                 .putString(KEY_DL_VERSION, latest.version)
+                .putString(KEY_DL_SHA256, latest.sha256.lowercase())
                 .apply()
             Toast.makeText(activity, activity.getString(R.string.update_download_started), Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
@@ -189,7 +192,21 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
         }
 
         when (status) {
-            DownloadManager.STATUS_SUCCESSFUL -> showInstallDialog(version)
+            DownloadManager.STATUS_SUCCESSFUL -> {
+                if (verifyingDownload) return
+                verifyingDownload = true
+                activity.lifecycleScope.launch {
+                    val valid = withContext(Dispatchers.IO) { verifyDownloadedApk(version) }
+                    verifyingDownload = false
+                    if (valid) {
+                        showInstallDialog(version)
+                    } else {
+                        apkFile(version)?.delete()
+                        clearPending()
+                        Toast.makeText(activity, "Update verification failed. The APK was removed.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
             DownloadManager.STATUS_FAILED -> {
                 clearPending()
                 Toast.makeText(activity, activity.getString(R.string.update_download_failed), Toast.LENGTH_LONG).show()
@@ -256,7 +273,29 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     }
 
     private fun clearPending() {
-        prefs.edit().remove(KEY_DL_ID).remove(KEY_DL_VERSION).apply()
+        prefs.edit().remove(KEY_DL_ID).remove(KEY_DL_VERSION).remove(KEY_DL_SHA256).apply()
+    }
+
+    /** Verify GitHub's published SHA-256 digest before allowing Android's installer to open the APK. */
+    private fun verifyDownloadedApk(version: String): Boolean {
+        val expected = prefs.getString(KEY_DL_SHA256, null)?.lowercase() ?: return false
+        if (!expected.matches(Regex("^[a-f0-9]{64}$"))) return false
+        val file = apkFile(version) ?: return false
+        if (!file.isFile || file.length() <= 0L) return false
+        return try {
+            val digest = MessageDigest.getInstance("SHA-256")
+            file.inputStream().buffered().use { input ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+            digest.digest().joinToString("") { "%02x".format(it) }.equals(expected, ignoreCase = true)
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun registerReceiverIfNeeded() {
@@ -283,13 +322,15 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     private fun loadCached(): LatestRelease? {
         val v = prefs.getString(KEY_LATEST_VERSION, null) ?: return null
         val u = prefs.getString(KEY_LATEST_URL, null) ?: return null
-        return LatestRelease(v, u)
+        val digest = prefs.getString(KEY_LATEST_SHA256, null) ?: ""
+        return LatestRelease(v, u, digest)
     }
 
     private fun saveCached(latest: LatestRelease) {
         prefs.edit()
             .putString(KEY_LATEST_VERSION, latest.version)
             .putString(KEY_LATEST_URL, latest.downloadUrl)
+            .putString(KEY_LATEST_SHA256, latest.sha256)
             .apply()
     }
 
@@ -308,18 +349,25 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             val tag = json.optString("tag_name")
             if (tag.isEmpty()) return null
 
-            var apkUrl = json.optString("html_url")
+            val releasePage = json.optString("html_url")
+            var apkUrl = releasePage
+            var sha256 = ""
             val assets = json.optJSONArray("assets")
             if (assets != null) {
                 for (i in 0 until assets.length()) {
                     val asset = assets.getJSONObject(i)
-                    if (asset.optString("name").endsWith(".apk")) {
-                        apkUrl = asset.optString("browser_download_url")
+                    if (asset.optString("name").endsWith(".apk", ignoreCase = true)) {
+                        val candidateDigest = asset.optString("digest").removePrefix("sha256:").lowercase()
+                        if (candidateDigest.matches(Regex("^[a-f0-9]{64}$"))) {
+                            apkUrl = asset.optString("browser_download_url")
+                            sha256 = candidateDigest
+                        }
                         break
                     }
                 }
             }
-            LatestRelease(tag.removePrefix("v"), apkUrl)
+            // Without a published digest, open the release page instead of installing an unverified APK.
+            LatestRelease(tag.removePrefix("v"), apkUrl, sha256)
         } catch (e: Exception) {
             null
         } finally {
@@ -348,7 +396,9 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     companion object {
         private const val KEY_LATEST_VERSION = "latest_version"
         private const val KEY_LATEST_URL = "latest_url"
+        private const val KEY_LATEST_SHA256 = "latest_sha256"
         private const val KEY_DL_ID = "download_id"
         private const val KEY_DL_VERSION = "download_version"
+        private const val KEY_DL_SHA256 = "download_sha256"
     }
 }
