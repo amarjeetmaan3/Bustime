@@ -97,7 +97,7 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Start.io network ads: Banner, Native and Interstitial formats.
-    implementation("com.startapp:inapp-sdk:5.+")
+    implementation("com.startapp:inapp-sdk:5.4.0")
 
     // Room Database Libraries
     val roomVersion = "2.6.1"

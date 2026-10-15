@@ -146,11 +146,6 @@ jobs:
             app/build/outputs/bundle/release/*.aab
           make_latest: true
 
-      - name: Publish GitHub Release (debug)
+      - name: Skip public release when the production signing key is unavailable
         if: env.HAS_RELEASE_KEY != 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Bustime v1.0.${{ github.run_number }}
-          files: app/build/outputs/apk/debug/*.apk
-          make_latest: true
+        run: echo "No GitHub Release was published. Debug APK is available only as a workflow artifact; production releases require RELEASE_KEYSTORE_BASE64 and the release passwords/alias secrets."
