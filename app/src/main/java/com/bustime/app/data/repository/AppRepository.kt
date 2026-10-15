@@ -62,8 +62,8 @@ class AppRepository private constructor(context: Context) {
     // ---------- टैक्सी / ऑटो ----------
     suspend fun getSeaterGroups(): List<Int> = query { dao.getSeaterGroups() }
 
-    /** Areas are taken only from Taxi/Auto driver records, not from bus stops. */
-    suspend fun getDriverAreas(): List<String> = query { dao.getDriverAreas() }
+    /** Return only the service areas belonging to the requested vehicle type. */
+    suspend fun getDriverAreas(type: String): List<String> = query { dao.getDriverAreas(type) }
 
     // areaId: null = no area selected; UI must show no drivers until an area is selected.
     suspend fun getTaxis(seats: Int, areaId: String? = null): List<Driver> = query { dao.getDrivers("taxi", seats, null, areaId) }
