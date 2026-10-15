@@ -33,6 +33,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                         prefs.edit().remove(KEY_VERSION).remove(KEY_ETAG).remove(KEY_HASH).remove(KEY_REVISION).apply()
                         importBundled()
                     }
+                    Unit
                 } catch (e: Exception) {
                     Log.w(TAG, "Bundled data failed: ${e.message}")
                 }
@@ -177,7 +178,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             if (conn.responseCode !in 200..299) {
                 Log.w(TAG, "Supabase sync HTTP ${conn.responseCode}")
                 null
-            } else conn.inputStream.bufferedReader().use { JsonParser.parseString(it.readText()) }
+            } else conn.inputStream.bufferedReader().use { JsonParser().parse(it.readText()) }
         } catch (e: Exception) {
             Log.w(TAG, "Supabase sync request failed: ${e.message}")
             null
