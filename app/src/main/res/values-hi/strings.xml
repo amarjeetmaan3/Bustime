@@ -1,9 +1,5 @@
 <resources>
     <string name="app_name">Bustime</string>
-
-    <string name="tab_bus">बस</string>
-    <string name="tab_taxi">टैक्सी</string>
-    <string name="tab_auto">ऑटो रिक्शा</string>
     <string name="language">भाषा</string>
     <string name="language_title">भाषा चुनें</string>
 
