@@ -20,8 +20,9 @@ data class BusItem(
 
 class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var items: List<BusItem> = emptyList()
-    private var nativeAd: NativeAdDetails? = null
-    private var nativePosition = -1
+    // Each pair contains the number of route results before the ad and that ad's own SDK details.
+    private var nativeAds: List<Pair<Int, NativeAdDetails>> = emptyList()
+    private var nativePositions: List<Int> = emptyList()
 
     class RouteVH(view: View) : RecyclerView.ViewHolder(view) {
         val tvTime: TextView = view.findViewById(R.id.tvBusTime)
@@ -30,20 +31,23 @@ class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<
         val btnCall: View = view.findViewById(R.id.btnBusCall)
     }
 
-    fun submit(list: List<BusItem>, ad: NativeAdDetails? = null, insertAfter: Int = 4) {
+    fun submit(list: List<BusItem>, ads: List<Pair<Int, NativeAdDetails>> = emptyList()) {
         items = list
-        nativeAd = ad?.takeIf { list.size > insertAfter && insertAfter > 0 }
-        nativePosition = if (nativeAd != null) insertAfter else -1
+        nativeAds = ads.sortedBy { it.first }
+        nativePositions = nativeAds.mapIndexed { index, slot -> slot.first + index }
         notifyDataSetChanged()
     }
 
-    override fun getItemViewType(position: Int): Int =
-        if (position == nativePosition) TYPE_NATIVE else TYPE_ROUTE
+    override fun getItemViewType(position: Int): Int {
+        val adIndex = nativePositions.indexOf(position)
+        return if (adIndex >= 0) TYPE_NATIVE_BASE + adIndex else TYPE_ROUTE
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return if (viewType == TYPE_NATIVE) {
+        return if (viewType >= TYPE_NATIVE_BASE) {
+            val adIndex = viewType - TYPE_NATIVE_BASE
             object : RecyclerView.ViewHolder(
-                StartIoAdsManager.buildNativeAdView(parent.context, requireNotNull(nativeAd))
+                StartIoAdsManager.buildNativeAdView(parent.context, nativeAds[adIndex].second)
             ) {}
         } else {
             RouteVH(LayoutInflater.from(parent.context).inflate(R.layout.item_bus, parent, false))
@@ -51,9 +55,9 @@ class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        if (getItemViewType(position) == TYPE_NATIVE) return
+        if (getItemViewType(position) >= TYPE_NATIVE_BASE) return
         val routeHolder = holder as RouteVH
-        val itemIndex = if (nativePosition >= 0 && position > nativePosition) position - 1 else position
+        val itemIndex = position - nativePositions.count { it < position }
         val item = items[itemIndex]
         routeHolder.tvTime.text = item.time
         routeHolder.tvTitle.text = item.title
@@ -71,10 +75,10 @@ class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<
         routeHolder.itemView.setOnClickListener { onClick(item) }
     }
 
-    override fun getItemCount(): Int = items.size + if (nativePosition >= 0) 1 else 0
+    override fun getItemCount(): Int = items.size + nativeAds.size
 
     companion object {
         private const val TYPE_ROUTE = 0
-        private const val TYPE_NATIVE = 1
+        private const val TYPE_NATIVE_BASE = 100
     }
 }
