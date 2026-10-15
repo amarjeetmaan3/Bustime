@@ -1431,7 +1431,7 @@ async function loadAdTargets(){
 }
 function adActionLabel(kind){return kind==='operator'?'Book Bus':kind==='route'?'Check Route':'Learn more';}
 function refreshAdTargets(){var select=document.getElementById('ad_target_id');if(select)select.innerHTML=adTargetOptions();refreshAdActionLabel();}
-function refreshAdActionLabel(){var select=document.getElementById('ad_target_id'),box=document.getElementById('ad_check_route_enabled'),category=(document.getElementById('ad_category')||{}).value||'';if(!box||!box.parentElement)return;var kind=select&&select.value?select.value.split(':')[0]:(category==='bus_route'?'route':category==='bus_operator'?'operator':);var label=adActionLabel(kind);box.parentElement.lastChild.textContent=' '+label+' button';}
+function refreshAdActionLabel(){var select=document.getElementById('ad_target_id'),box=document.getElementById('ad_check_route_enabled'),category=(document.getElementById('ad_category')||{}).value||'';if(!box||!box.parentElement)return;var kind=select&&select.value?select.value.split(':')[0]:(category==='bus_route'?'route':category==='bus_operator'?'operator':'');var label=adActionLabel(kind);box.parentElement.lastChild.textContent=' '+label+' button';}
 function adChecked(v){return v?' checked':'';}
 function viewAdvertisement(){
   var my=adSubtab==='my';
