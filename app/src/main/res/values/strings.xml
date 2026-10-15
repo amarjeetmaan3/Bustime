@@ -21,11 +21,6 @@
     <string name="route_stops">Stops</string>
     <string name="back">Back</string>
 
-    <!-- Taxi -->
-
-    <!-- Auto -->
-
-    <!-- Driver card -->
     <string name="call">Call</string>
     <string name="whatsapp">WhatsApp</string>
     <string name="action_failed">Could not open this action</string>
@@ -90,7 +85,6 @@
     <string name="ar_time_order">This time is earlier than the previous stop. After midnight is fine only if the trip stays within 16 hours; please check the times.</string>
     <string name="ar_pick_route">Please choose a route</string>
     <string name="ar_need_time">Please give at least one time</string>
-    <string name="no_areas_yet">No areas available yet. Areas appear after drivers with an area are added.</string>
     <string name="ar_stop_name_required">Every stop needs a name</string>
     <string name="ar_min_stops">A route must keep at least two stops</string>
     <string name="bb_select_area_required">Select your area (required)</string>
@@ -170,7 +164,6 @@
     <string name="community_bus_category">Bus category</string>
     <string name="community_custom_bus_type">Describe your specific bus type / variant (required for every category)</string>
     <string name="community_sleeper_berths">Number of sleeper berths</string>
-    <string name="community_seater_seats">Number of seater seats</string>
     <string name="community_operator_mobile">Operator mobile number</string>
     <string name="community_whatsapp_optional">WhatsApp number (optional)</string>
     <string name="community_add_bus_submit">Submit bus for admin review</string>
@@ -194,11 +187,9 @@
     <string name="community_enter_stop_name">Enter a name for stop %1$d</string>
     <string name="community_stop_invalid_time">Stop %1$d has an invalid time.</string>
     <string name="community_route_correction_sent">Complete route correction sent for admin review.</string>
-    <string name="community_year_invalid">Enter the vehicle year as exactly four digits, e.g. 2022.</string>
     <string name="community_listing_sent">Listing sent for admin review.</string>
     <string name="community_bus_submitted">Bus submitted for admin verification.</string>
     <string name="community_correction_intro">Correct details for this %1$s listing. Your request will be reviewed by the admin.</string>
-    <string name="community_corrected_details_required">Enter corrected name, vehicle, valid phone and explain the correction.</string>
     <string name="community_please_feedback">Please describe your feedback.</string>
     <string name="community_thanks_feedback">Thank you. Feedback sent.</string>
     <string name="community_send_failed">Could not send all requests. Check internet and try again.
