@@ -35,6 +35,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                     }
                     Unit
                 } catch (e: Exception) {
+                    lastSyncFailed = true
                     Log.w(TAG, "Bundled data failed: ${e.message}")
                 }
             }
@@ -42,8 +43,8 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
     }
 
     suspend fun sync(): Boolean {
-        ensureLocalData()
         lastSyncFailed = false
+        ensureLocalData()
         return withContext(Dispatchers.IO) {
             syncMutex.withLock {
                 try {
@@ -77,8 +78,12 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         // A fresh install or an older build must replace its baseline first, so
         // records deleted before this device's first delta cursor cannot survive.
         if (localRevision == 0L) {
-            val snapshotChanged = fetchRemoteSnapshot()
-            if (!lastSyncFailed) prefs.edit().putLong(KEY_REVISION, publishedRevision).apply()
+            // Never send the old snapshot ETag here. A 304 cannot establish that
+            // this device has the baseline needed to safely skip earlier deltas.
+            val snapshotChanged = fetchRemoteSnapshot(forceFull = true)
+            if (!lastSyncFailed) {
+                prefs.edit().putLong(KEY_REVISION, publishedRevision).apply()
+            }
             return snapshotChanged
         }
 
@@ -187,7 +192,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         }
     }
 
-    private suspend fun fetchRemoteSnapshot(): Boolean {
+    private suspend fun fetchRemoteSnapshot(forceFull: Boolean = false): Boolean {
         if (Constants.GITHUB_OWNER.startsWith("YOUR_")) return false
         var conn: HttpURLConnection? = null
         try {
@@ -196,7 +201,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                 readTimeout = 20000
                 setRequestProperty("Cache-Control", "no-cache")
                 setRequestProperty("Pragma", "no-cache")
-                prefs.getString(KEY_ETAG, null)?.let { setRequestProperty("If-None-Match", it) }
+                if (!forceFull) prefs.getString(KEY_ETAG, null)?.let { setRequestProperty("If-None-Match", it) }
             }
             return when (conn.responseCode) {
                 200 -> {
@@ -204,7 +209,12 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                     lastSyncFailed = false
                     result
                 }
-                304 -> { lastSyncFailed = false; false }
+                304 -> {
+                    // A forced baseline fetch must return the actual snapshot.
+                    lastSyncFailed = forceFull
+                    if (forceFull) Log.w(TAG, "Server returned 304 during required full snapshot")
+                    false
+                }
                 else -> { lastSyncFailed = true; Log.w(TAG, "Snapshot fetch HTTP ${conn.responseCode}"); false }
             }
         } finally {
@@ -213,18 +223,38 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
     }
 
     private suspend fun applySnapshot(text: String, etag: String?): Boolean {
-        val dto = gson.fromJson(text, SnapshotDto::class.java) ?: return false
-        val version = dto.dataVersion ?: return false
+        val dto = gson.fromJson(text, SnapshotDto::class.java)
+        if (dto == null) {
+            lastSyncFailed = true
+            Log.w(TAG, "Snapshot is empty or invalid")
+            return false
+        }
+        val version = dto.dataVersion
+        if (version == null) {
+            lastSyncFailed = true
+            Log.w(TAG, "Snapshot has no dataVersion")
+            return false
+        }
         val contentHash = MessageDigest.getInstance("SHA-256")
             .digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
         val localVersion = prefs.getInt(KEY_VERSION, 0)
         val localHash = prefs.getString(KEY_HASH, null)
-        if (version < localVersion || (version == localVersion && contentHash == localHash)) {
+        if (version < localVersion) {
+            lastSyncFailed = true
+            Log.w(TAG, "Refusing older snapshot version $version (local $localVersion)")
+            return false
+        }
+        if (version == localVersion && contentHash == localHash) {
             prefs.edit().putString(KEY_ETAG, etag ?: prefs.getString(KEY_ETAG, null)).apply()
+            lastSyncFailed = false
             return false
         }
         val data = SnapshotImporter.build(dto)
-        if (data.places.isEmpty()) return false
+        if (data.places.isEmpty()) {
+            lastSyncFailed = true
+            Log.w(TAG, "Refusing empty snapshot")
+            return false
+        }
         dao.replaceAll(data.places, data.routes, data.stops, data.drivers, data.seaters)
         prefs.edit().putInt(KEY_VERSION, version).putString(KEY_ETAG, etag)
             .putString(KEY_HASH, contentHash).putLong(KEY_LAST_SYNC, System.currentTimeMillis()).apply()
