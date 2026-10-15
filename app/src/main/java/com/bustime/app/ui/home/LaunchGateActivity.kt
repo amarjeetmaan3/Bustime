@@ -69,6 +69,20 @@ class LaunchGateActivity : AppCompatActivity() {
         base(when(selected) { "hi" -> "नियम और महत्वपूर्ण सूचना"; "pa" -> "ਨਿਯਮ ਅਤੇ ਮਹੱਤਵਪੂਰਨ ਜਾਣਕਾਰੀ"; else -> "Terms & Conditions" })
         val loading = TextView(this).apply { text = "Loading information…"; textSize = 15f; setPadding(0, dp(8), 0, dp(12)) }
         root.addView(loading)
+        val privacyLink = TextView(this).apply {
+            text = getString(com.bustime.app.R.string.privacy_policy_link_label)
+            textSize = 15f
+            gravity = Gravity.CENTER
+            setTextColor(android.graphics.Color.rgb(21, 101, 192))
+            paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+            setPadding(dp(8), dp(12), dp(8), dp(12))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                startActivity(Intent(this@LaunchGateActivity, com.bustime.app.ui.privacy.PrivacyPolicyActivity::class.java))
+            }
+        }
+        root.addView(privacyLink, LinearLayout.LayoutParams(-1, LinearLayout.LayoutParams.WRAP_CONTENT))
         val agree = CheckBox(this).apply {
             text = when(selected) {
                 "hi" -> "मैंने दोनों भाषाओं में सूचना पढ़ ली है और सहमत हूँ।"
