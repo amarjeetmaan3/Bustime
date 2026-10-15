@@ -6,11 +6,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.bustime.app.models.BusResult
-import com.bustime.app.models.Driver
 import com.bustime.app.models.Place
 import com.bustime.app.models.Route
 import com.bustime.app.models.RouteStop
-import com.bustime.app.models.SeaterGroup
 import com.bustime.app.models.StandResult
 
 @Dao
@@ -71,26 +69,6 @@ abstract class TransportDao {
     @Query("SELECT * FROM route_stops ORDER BY routeId, stopOrder")
     abstract suspend fun getAllStops(): List<RouteStop>
 
-    // ---------- टैक्सी / ऑटो ----------
-
-    @Query("SELECT seats FROM seater_groups ORDER BY seats")
-    abstract suspend fun getSeaterGroups(): List<Int>
-
-    /** Independent Taxi/Auto service areas; never sourced from bus places or route stops. */
-    @Query("SELECT DISTINCT areaId FROM drivers WHERE type = :type AND areaId IS NOT NULL AND TRIM(areaId) <> '' ORDER BY areaId COLLATE NOCASE")
-    abstract suspend fun getDriverAreas(type: String): List<String>
-
-    @Query(
-        "SELECT * FROM drivers WHERE type = :type " +
-        "AND (:seats IS NULL OR seats = :seats) " +
-        "AND (:fuel IS NULL OR fuel = :fuel) " +
-        "AND (:areaId IS NULL OR areaId = :areaId) " +
-        "ORDER BY name"
-    )
-    abstract suspend fun getDrivers(type: String, seats: Int?, fuel: String?, areaId: String?): List<Driver>
-
-    @Query("SELECT * FROM drivers WHERE id = :driverId LIMIT 1")
-    abstract suspend fun getDriver(driverId: String): Driver?
 
     // ---------- सिंक ----------
 
@@ -100,27 +78,20 @@ abstract class TransportDao {
     @Query("DELETE FROM places") abstract suspend fun clearPlaces()
     @Query("DELETE FROM routes") abstract suspend fun clearRoutes()
     @Query("DELETE FROM route_stops") abstract suspend fun clearStops()
-    @Query("DELETE FROM drivers") abstract suspend fun clearDrivers()
-    @Query("DELETE FROM seater_groups") abstract suspend fun clearSeaters()
 
     @Insert(onConflict = OnConflictStrategy.REPLACE) abstract suspend fun insertPlaces(items: List<Place>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) abstract suspend fun insertRoutes(items: List<Route>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) abstract suspend fun insertStops(items: List<RouteStop>)
-    @Insert(onConflict = OnConflictStrategy.REPLACE) abstract suspend fun insertDrivers(items: List<Driver>)
-    @Insert(onConflict = OnConflictStrategy.REPLACE) abstract suspend fun insertSeaters(items: List<SeaterGroup>)
 
-    // पूरा डेटा एक ही लेन-देन में बदलता है: या सब नया, या सब पुराना (आधा-अधूरा कभी नहीं)
+    // बस का snapshot एक ही लेन-देन में बदलता है; पुराने Bus data को आधा नहीं छोड़ता.
     @Transaction
     open suspend fun replaceAll(
         places: List<Place>,
         routes: List<Route>,
-        stops: List<RouteStop>,
-        drivers: List<Driver>,
-        seaters: List<SeaterGroup>
+        stops: List<RouteStop>
     ) {
-        clearPlaces(); clearRoutes(); clearStops(); clearDrivers(); clearSeaters()
+        clearPlaces(); clearRoutes(); clearStops()
         insertPlaces(places); insertRoutes(routes); insertStops(stops)
-        insertDrivers(drivers); insertSeaters(seaters)
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -150,17 +121,5 @@ abstract class TransportDao {
         deleteStopsForRoute(id)
         deleteRouteRow(id)
     }
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun upsertDriver(item: Driver)
-
-    @Query("DELETE FROM drivers WHERE id = :id")
-    abstract suspend fun deleteDriver(id: String)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun upsertSeater(item: SeaterGroup)
-
-    @Query("DELETE FROM seater_groups WHERE seats = :seats")
-    abstract suspend fun deleteSeater(seats: Int)
 
 }
