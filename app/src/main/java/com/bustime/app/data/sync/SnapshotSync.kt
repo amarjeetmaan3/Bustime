@@ -65,7 +65,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
 
     /** null means unavailable and triggers snapshot fallback; false means already current. */
     private suspend fun fetchIncremental(): Boolean? {
-        val state = getJson("${Constants.SUPABASE_URL}/rest/v1/data_sync_state?select=revision,snapshot_version&id=eq.1")
+        val state = getJson("${Constants.SUPABASE_URL}/functions/v1/bustime-data-sync?action=status")
             ?: return null
         if (!state.isJsonArray || state.asJsonArray.size() == 0) return null
         val stateRow = state.asJsonArray[0].asJsonObject
@@ -84,7 +84,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         val changes = ArrayList<JsonObject>()
         var offset = 0
         while (true) {
-            val page = getJson("${Constants.SUPABASE_URL}/rest/v1/data_change_log?select=revision,entity_type,entity_id,operation,payload&revision=gt.$localRevision&order=revision.asc,entity_type.asc,entity_id.asc&limit=1000&offset=$offset")
+            val page = getJson("${Constants.SUPABASE_URL}/functions/v1/bustime-data-sync?action=changes&since=$localRevision&offset=$offset")
                 ?: return null
             if (!page.isJsonArray) return null
             val array = page.asJsonArray
