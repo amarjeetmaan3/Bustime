@@ -267,6 +267,7 @@
     <string name="refresh_complete">Data updated successfully</string>
     <string name="refresh_latest">Data is already up to date</string>
     <string name="refresh_failed">Could not refresh. Check your internet and try again.</string>
+<string name="privacy_policy_link_label">Read our Privacy Policy</string>
     <string name="privacy_policy_title">Privacy Policy</string>
     <string name="privacy_policy_menu">Privacy Policy</string>
 </resources>
