@@ -14,7 +14,7 @@ object CommunitySupabase {
         !Constants.SUPABASE_URL.contains("YOUR-") && !Constants.SUPABASE_ANON_KEY.contains("YOUR-")
 
     fun insert(table: String, body: JSONObject): Boolean {
-        if (table !in setOf("correction_submissions", "taxi_submissions", "auto_submissions", "feedback_submissions", "bus_operator_submissions")) {
+        if (table !in setOf("correction_submissions", "feedback_submissions", "bus_operator_submissions")) {
             lastError = "Unsupported submission table: $table"
             return false
         }
