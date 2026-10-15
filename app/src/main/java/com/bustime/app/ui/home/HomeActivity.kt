@@ -15,9 +15,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.tabs.TabLayout
 import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
@@ -46,20 +44,8 @@ class HomeActivity : AppCompatActivity() {
         // अपडेटर चेक करना
         GitHubUpdateChecker(this).checkForLatestUpdate()
 
-        // डेटा तुरंत sync करो और ऐप foreground में रहने तक हर 10 सेकंड में दोबारा जाँचो।
-        // इंटरनेट लौटने पर अगली जाँच अपने-आप होगी; offline में पुराना डेटा सुरक्षित रहता है।
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                val repository = AppRepository.getInstance(this@HomeActivity)
-                while (true) {
-                    val changed = repository.syncData()
-                    if (changed && supportFragmentManager.findFragmentById(R.id.fragmentContainer) != null) {
-                        refreshCurrentTab()
-                    }
-                    kotlinx.coroutines.delay(10_000)
-                }
-            }
-        }
+        // ऐप खुलने / वापस foreground में आने पर quietly check for new data.
+        // कोई polling loop नहीं; पुराना local data offline में उपलब्ध रहता है.
 
         // ऊपर "भाषा" का बटन
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
@@ -99,6 +85,12 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        lifecycleScope.launch {
+            val changed = AppRepository.getInstance(this@HomeActivity).syncData()
+            if (changed && !isFinishing && supportFragmentManager.findFragmentById(R.id.fragmentContainer) != null) {
+                refreshCurrentTab()
+            }
+        }
         // Marquee can miss its first start while the window is still gaining focus.
         // Re-arm it after layout whenever the app returns to the foreground.
         findViewById<TextView>(R.id.warningTicker).post {
@@ -186,9 +178,14 @@ class HomeActivity : AppCompatActivity() {
         Toast.makeText(this, R.string.refresh_started, Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
             try {
-                AppRepository.getInstance(this@HomeActivity).syncData()
+                val changed = AppRepository.getInstance(this@HomeActivity).syncData()
                 refreshCurrentTab()
                 loadWarningTicker()
+                Toast.makeText(
+                    this@HomeActivity,
+                    if (changed) R.string.refresh_complete else R.string.refresh_latest,
+                    Toast.LENGTH_SHORT
+                ).show()
             } catch (e: Exception) {
                 Toast.makeText(this@HomeActivity, "Refresh failed: " + (e.message ?: "Please try again"), Toast.LENGTH_LONG).show()
             } finally {
