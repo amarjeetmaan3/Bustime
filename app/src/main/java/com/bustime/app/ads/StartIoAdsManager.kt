@@ -142,7 +142,7 @@ object StartIoAdsManager {
                 else -> false
             }
             if (!config.bannerEnabled || !enabledForPlacement || config.appId.isBlank() ||
-                !container.isAttachedToWindow || (context is Activity && (context.isFinishing || context.isDestroyed))) {
+                (context is Activity && (context.isFinishing || context.isDestroyed))) {
                 container.visibility = View.GONE
                 return@refresh
             }
