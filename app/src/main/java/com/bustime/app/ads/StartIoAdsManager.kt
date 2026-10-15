@@ -2,6 +2,7 @@ package com.bustime.app.ads
 
 import android.app.Activity
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
@@ -21,7 +22,6 @@ import com.startapp.sdk.adsbase.StartAppAd
 import com.startapp.sdk.adsbase.StartAppSDK
 import com.startapp.sdk.adsbase.adlisteners.AdDisplayListener
 import com.startapp.sdk.adsbase.adlisteners.AdEventListener
-import com.bustime.app.BuildConfig
 import com.bustime.app.utils.Constants
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -107,7 +107,8 @@ object StartIoAdsManager {
             initializingAppId = appId
         }
         try {
-            StartAppSDK.setTestAdsEnabled(BuildConfig.DEBUG)
+            val debugBuild = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+            StartAppSDK.setTestAdsEnabled(debugBuild)
             StartAppSDK.initParams(context, appId)
                 .setReturnAdsEnabled(false)
                 .setCallback {
@@ -217,13 +218,13 @@ object StartIoAdsManager {
                 val interstitial = StartAppAd(activity)
                 interstitial.loadAd(object : AdEventListener {
                     override fun onReceiveAd(ad: Ad) {
-                        interstitial.setAdDisplayListener(object : AdDisplayListener {
+                        val shown = interstitial.showAd(object : AdDisplayListener {
                             override fun adHidden(ad: Ad) = continueOnce()
                             override fun adDisplayed(ad: Ad) = Unit
                             override fun adClicked(ad: Ad) = Unit
                             override fun adNotDisplayed(ad: Ad) = continueOnce()
                         })
-                        if (!interstitial.showAd()) continueOnce()
+                        if (!shown) continueOnce()
                     }
 
                     override fun onFailedToReceiveAd(ad: Ad?) = continueOnce()
