@@ -15,16 +15,7 @@
             android:layout_height="48dp"
             android:minHeight="48dp"
             app:title="@string/app_name" />
-
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayout"
-            android:layout_width="match_parent"
-            android:layout_height="42dp"
-            app:tabPaddingTop="0dp"
-            app:tabPaddingBottom="0dp"
-            app:tabMode="fixed">
-            <com.google.android.material.tabs.TabItem android:text="@string/tab_bus" />
-        </com.google.android.material.tabs.TabLayout>
+ 
     </com.google.android.material.appbar.AppBarLayout>
 
     <TextView
