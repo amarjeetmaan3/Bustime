@@ -54,12 +54,6 @@ class CommunityRequestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mode = intent.getStringExtra("mode") ?: "feedback"
-        // Taxi and Auto listing/correction forms are retired; only bus-related community flows remain.
-        if (mode == "vehicle" || mode == "vehicle_correction") {
-            Toast.makeText(this, "Taxi and Auto features are no longer available.", Toast.LENGTH_LONG).show()
-            finish()
-            return
-        }
         val screenTitle = when (mode) { "correction" -> getString(com.bustime.app.R.string.community_title_correction); "bus_operator" -> getString(com.bustime.app.R.string.community_title_bus); else -> getString(com.bustime.app.R.string.community_title_feedback) }
         title = screenTitle
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
