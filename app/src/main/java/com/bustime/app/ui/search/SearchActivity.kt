@@ -117,9 +117,9 @@ class SearchActivity : AppCompatActivity() {
             tvEmpty.setText(emptyRes)
             tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             if (items.isNotEmpty()) {
-                StartIoAdsManager.loadNativeAd(this@SearchActivity, items.size) { nativeAd, config ->
-                    if (!isFinishing && !isDestroyed && nativeAd != null) {
-                        adapter.submit(items, nativeAd, config.busEvery)
+                StartIoAdsManager.loadNativeAds(this@SearchActivity, items.size) { nativeAds, _ ->
+                    if (!isFinishing && !isDestroyed && nativeAds.isNotEmpty()) {
+                        adapter.submit(items, nativeAds)
                     }
                 }
             }
