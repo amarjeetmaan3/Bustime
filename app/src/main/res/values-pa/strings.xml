@@ -260,4 +260,6 @@
     <string name="bb_bus_types">ਬੱਸ ਦੀਆਂ ਕਿਸਮਾਂ</string>
     <string name="bb_search_hint">ਕੰਪਨੀ, ਬੱਸ ਦੀ ਕਿਸਮ ਜਾਂ ਥਾਂ ਖੋਜੋ</string>
     <string name="bb_search_no_results">“%1$s” ਨਾਲ ਮੇਲ ਖਾਂਦੀ ਕੋਈ ਬੱਸ ਸੇਵਾ ਨਹੀਂ ਮਿਲੀ।</string>
+    <string name="privacy_policy_title">ਪਰਦੇਦਾਰੀ ਨੀਤੀ</string>
+    <string name="privacy_policy_menu">ਪਰਦੇਦਾਰੀ ਨੀਤੀ</string>
 </resources>
