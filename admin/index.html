@@ -1913,7 +1913,7 @@ function viewCommunity(mode) {
 function viewReview() {
   if (!sbToken) return viewSupabaseSignIn();
   var all = [];
-  [['corrections','Route corrections'],['vehicles','Taxi / Auto submissions'],['feedback','Feedback'],['busSubmissions','Add Bus']].forEach(function(pair){
+  [['corrections','Route corrections'],['feedback','Feedback'],['busSubmissions','Add Bus']].forEach(function(pair){
     (community[pair[0]]||[]).forEach(function(x){all.push(x);});
   });
   var pendingRoutes=(subs||[]).filter(function(x){return x.status==='pending';}).length;
@@ -1926,7 +1926,7 @@ function viewReview() {
     '<div class="bus-route-stat"><div class="iconbox">✓</div><div><strong>'+pendingCorrections+'</strong><span>Pending corrections</span><button class="btn sm" data-act="tab" data-t="corrections">Review corrections →</button></div></div>'+
     '<div class="bus-route-stat"><div class="iconbox">B</div><div><strong>'+pendingBus+'</strong><span>Pending Add Bus submissions</span><button class="btn sm" data-act="tab" data-t="addBus">Open Add Bus →</button></div></div>'+
     '<div class="bus-route-stat"><div class="iconbox">✉</div><div><strong>'+pendingFeedback+'</strong><span>Pending feedback</span><button class="btn sm" data-act="tab" data-t="corrections">Open review →</button></div></div>'+
-    '</div><div class="card"><h2>How requests are organized</h2><p class="muted">Bus route submissions, taxi and auto submissions, corrections, and Add Bus operator submissions now have separate navigation tabs. Review Center is an overview instead of a long mixed list.</p></div>';
+    '</div><div class="card"><h2>How requests are organized</h2><p class="muted">Bus route submissions, route corrections, feedback, and Add Bus operator submissions are reviewed here. Book Bus remains an information and contact feature, not a booking queue.</p></div>';
 }
 function communityTable(kind, record) {
   if(kind==='vehicles'){
