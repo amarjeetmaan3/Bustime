@@ -589,15 +589,14 @@ var publishOpen = false;
 var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
 
 var NAV = [
-  ['dashboard','Dashboard'], ['analytics','Analytics & Stats'], ['bus','Bus'], ['taxi','Taxi'],
-  ['auto','Auto'], ['review','Review Center'], ['content','App Text & Warnings'], ['advertisement','Advertisement'], ['settings','Settings']
+  ['dashboard','Dashboard'], ['analytics','Analytics & Stats'], ['bus','Bus'],
+  ['review','Review Center'], ['content','App Text & Warnings'], ['advertisement','Advertisement'], ['settings','Settings']
 ];
 var TITLES = {
-  dashboard:'Dashboard', analytics:'Analytics & Stats', bus:'Bus', taxi:'Taxi', auto:'Auto', places:'Bus · Places',
+  dashboard:'Dashboard', analytics:'Analytics & Stats', bus:'Bus', places:'Bus · Places',
   routes:'Bus · Routes', busRequests:'Bus · Route Requests', addBus:'Bus · Add Your Bus', busDirectory:'Bus · Operator Directory',
-  taxiReview:'Taxi · Submissions', autoReview:'Auto · Submissions', seats:'Taxi · Seat Options',
-  drivers:'Taxi · Directory', autoDrivers:'Auto · Directory', corrections:'Review Center · Corrections',
-  feedbackReview:'Review Center · Feedback', review:'Review Center', content:'App Text & Warnings', advertisement:'Advertisement', settings:'Settings'
+  corrections:'Review Center · Corrections', feedbackReview:'Review Center · Feedback',
+  review:'Review Center', content:'App Text & Warnings', advertisement:'Advertisement', settings:'Settings'
 };
 
 // ============ Helpers ============
@@ -903,7 +902,7 @@ async function correctionAlreadyApplied(x){
 async function mergeApprovedCommunitySubmissions(nextVersion){
   if(!cfg.sbUrl||!cfg.sbKey||!sbToken)throw new Error('Sign in to Supabase before publishing so approved requests survive refreshes.');
   var updates=[],changed=false;
-  var specs=[{kind:'vehicles',table:'taxi_submissions'},{kind:'vehicles',table:'auto_submissions'},{kind:'corrections',table:'correction_submissions'}];
+  var specs=[{kind:'corrections',table:'correction_submissions'}];
   for(var si=0;si<specs.length;si++){
     var spec=specs[si],rows=[],offset=0,pageSize=500;
     while(true){
@@ -1108,14 +1107,14 @@ function render() {
       (counts[n[0]] != null ? '<span class="count">' + counts[n[0]] + '</span>' : '') + '</button>';
   }).join('');
   refreshChrome();
-  var dataTabs = ['dashboard','bus','taxi','auto','places','routes','seats','drivers','autoDrivers'];
-  var views = { dashboard:viewDashboard, analytics:viewAnalytics, bus:viewBusHome, taxi:viewTaxiHome, auto:viewAutoHome,
-    places:viewPlaces, routes:viewRoutes, seats:viewSeats, drivers:viewDrivers, autoDrivers:viewDrivers,
-    busRequests:viewBusRequests, busDirectory:function(){return viewCommunity('busDirectory');}, taxiReview:function(){return viewCommunity('taxi');},
-    autoReview:function(){return viewCommunity('auto');}, addBus:function(){return viewCommunity('bus');},
+  var dataTabs = ['dashboard','bus','places','routes'];
+  var views = { dashboard:viewDashboard, analytics:viewAnalytics, bus:viewBusHome,
+    places:viewPlaces, routes:viewRoutes,
+    busRequests:viewBusRequests, busDirectory:function(){return viewCommunity('busDirectory');},
+    addBus:function(){return viewCommunity('bus');},
     corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, content:viewContentSettings, advertisement:viewAdvertisement, settings:viewSettings };
   if (dataTabs.indexOf(tab) >= 0 && !data) {
-    v.innerHTML = '<div class="card"><h2>' + (dataLoadError ? 'Could not load route data' : 'Loading route data…') + '</h2><p class="muted">' + esc(dataLoadError || 'Fetching the current routes, places and Taxi/Auto listings from GitHub.') + '</p>' + (dataLoadError ? '<button class="btn primary" data-act="data-retry">Retry loading</button> ' : '') + '<button class="btn" data-act="tab" data-t="settings">Open Settings</button></div>';
+    v.innerHTML = '<div class="card"><h2>' + (dataLoadError ? 'Could not load route data' : 'Loading route data…') + '</h2><p class="muted">' + esc(dataLoadError || 'Fetching the current bus routes and places from GitHub.') + '</p>' + (dataLoadError ? '<button class="btn primary" data-act="data-retry">Retry loading</button> ' : '') + '<button class="btn" data-act="tab" data-t="settings">Open Settings</button></div>';
   } else {
     v.innerHTML = (views[tab] || viewDashboard)();
   }
@@ -1134,12 +1133,6 @@ function refreshWorkspaceNav() {
   if (['bus','places','routes','busRequests','addBus','busDirectory'].indexOf(tab) >= 0) {
     items = [['places','Places & Bus Stands'],['routes','Bus Routes'],['busRequests','Route Requests'],['addBus','Add Bus Requests'],['busDirectory','Operator Directory']];
     active = ['places','routes','busRequests','addBus','busDirectory'].indexOf(tab) >= 0 ? tab : 'bus';
-  } else if (['taxi','taxiReview','seats','drivers'].indexOf(tab) >= 0) {
-    items = [['taxiReview','Taxi Submissions'],['seats','Seat Options'],['drivers','Taxi Directory']];
-    active = ['taxiReview','seats','drivers'].indexOf(tab) >= 0 ? tab : 'taxi';
-  } else if (['auto','autoReview','autoDrivers'].indexOf(tab) >= 0) {
-    items = [['autoReview','Auto Submissions'],['autoDrivers','Auto Directory']];
-    active = tab;
   } else if (tab==='review' || tab==='corrections' || tab==='feedbackReview') {
     items = [['review','Overview'],['corrections','Corrections'],['feedbackReview','Feedback']];
     active = tab;
@@ -1164,15 +1157,12 @@ function viewDashboard() {
   data.taxiSeaters = Array.isArray(data.taxiSeaters) ? data.taxiSeaters : [];
   data.drivers = Array.isArray(data.drivers) ? data.drivers : [];
   var stands = data.places.filter(function (p) { return p.kind === 'stand'; }).length;
-  var taxis = data.drivers.filter(function (d) { return d.type === 'taxi'; }).length;
-  var autos = data.drivers.length - taxis;
   var v = validate();
   return '<div class="stats">' +
-    stat(data.places.length, 'Places (' + stands + ' bus stands)') + stat(data.routes.length, 'Bus routes') +
-    stat(data.taxiSeaters.length, 'Taxi seat options') + stat(taxis, 'Taxis') + stat(autos, 'Autos') + '</div>' +
+    stat(data.places.length, 'Places (' + stands + ' bus stands)') + stat(data.routes.length, 'Bus routes') + '</div>' +
     '<div class="card"><h2>Data health</h2><p class="muted">Published data version: ' + baseVersion + '. ' +
     (dirty ? 'You have unpublished changes.' : 'Everything is published.') + '</p>' + reportHtml(v) + '</div>' +
-    '<div class="card"><h2>How it works</h2><p class="muted">Edit places, routes, taxi seats and drivers here, then press <b>Publish</b>. ' +
+    '<div class="card"><h2>How it works</h2><p class="muted">Edit bus stops and routes here, then press <b>Publish</b>. ' +
     'The app picks up the new data the next time it opens. No new APK is needed for data changes.</p></div>';
 }
 function stat(n, label) { return '<div class="stat"><b>' + n + '</b><span>' + esc(label) + '</span></div>'; }
@@ -1796,8 +1786,6 @@ function ensureSubmittedPlace(rawName) {
 async function loadCommunity() {
   var specs = [
     ['corrections','correction_submissions'],
-    ['taxiSubmissions','taxi_submissions'],
-    ['autoSubmissions','auto_submissions'],
     ['feedback','feedback_submissions'],
     ['busSubmissions','bus_operator_submissions'],
     ['operators','bus_operators'],
@@ -1807,15 +1795,13 @@ async function loadCommunity() {
   for (var i = 0; i < specs.length; i++) {
     try {
       community[specs[i][0]] = await sbFetch('/rest/v1/' + specs[i][1] + '?select=*&order=created_at.desc&limit=500');
-      if(specs[i][0]==='taxiSubmissions'||specs[i][0]==='autoSubmissions'){
-        community[specs[i][0]].forEach(function(row){row._table=specs[i][1];row.vehicle_type=specs[i][0]==='taxiSubmissions'?'taxi':'auto';});
-      }
     } catch (e) {
       community[specs[i][0]] = [];
       failed.push(specs[i][1] + ' (' + e.message + ')');
     }
   }
-  community.vehicles=(community.taxiSubmissions||[]).concat(community.autoSubmissions||[]).sort(function(a,b){return String(b.created_at||'').localeCompare(String(a.created_at||''));});
+  // Taxi and Auto listings are retired; the Review Center handles bus routes and feedback only.
+  community.vehicles=[];
   community._failed = failed;
   if (failed.length) toast('Some tables could not load: ' + failed.join('; ') + '. Run supabase/fix_app_admin_sync.sql in Supabase SQL Editor, then Refresh.');
 }
@@ -1848,14 +1834,13 @@ function viewCommunity(mode) {
     return '<div class="card"><p class="muted">Loading community requests…</p><button class="btn" data-act="community-refresh">Refresh</button></div>';
   }
   var all = [];
-  [['corrections','Route corrections'],['vehicles','Auto / Taxi listings'],['feedback','Feedback'],['busSubmissions','Add Your Bus']].forEach(function (pair) {
+  [['corrections','Route corrections'],['feedback','Feedback'],['busSubmissions','Add Your Bus']].forEach(function (pair) {
     (community[pair[0]] || []).forEach(function (x) { x._kind = pair[0]; x._label = pair[1]; all.push(x); });
   });
   var sections = [
     ['all','All requests'],
     ['corrections','Route corrections'],
-    ['vehicles','Taxi / Auto submissions'],
-    ['feedback','Feedback & vehicle corrections'],
+    ['feedback','Feedback'],
     ['busSubmissions','Bus operator listings']
   ];
   var counts = {};
