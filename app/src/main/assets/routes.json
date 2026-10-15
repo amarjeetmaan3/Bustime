@@ -1,5 +1,5 @@
 {
-  "dataVersion": 67,
+  "dataVersion": 68,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -4064,46 +4064,6 @@
         },
         {
           "place": "place_sadulshahar"
-        }
-      ]
-    },
-    {
-      "id": "r85",
-      "from": "place_user_sitapur",
-      "to": "place_user_raigarh",
-      "time": "13:00",
-      "arrive": "16:41",
-      "stops": [
-        {
-          "place": "place_user_rampur",
-          "time": "14:16"
-        },
-        {
-          "place": "place_user_tn",
-          "time": "14:40"
-        },
-        {
-          "place": "place_user_devipur",
-          "time": "15:41"
-        }
-      ]
-    },
-    {
-      "id": "r86",
-      "from": "place_user_aj",
-      "to": "place_user_gs",
-      "time": "11:14",
-      "stops": [
-        {
-          "place": "place_user_ks"
-        },
-        {
-          "place": "place_user_ns",
-          "time": "12:15"
-        },
-        {
-          "place": "place_user_ms",
-          "time": "13:14"
         }
       ]
     }
