@@ -45,7 +45,9 @@ jobs:
           # devices on an incomplete dataset until a full snapshot is downloaded.
           if not isinstance(current, dict):
               raise SystemExit("routes.json must contain a JSON object.")
-          if not isinstance(current.get("dataVersion"), int) or current["dataVersion"] < 1:
+          if (not isinstance(current.get("dataVersion"), int)
+                  or isinstance(current.get("dataVersion"), bool)
+                  or current["dataVersion"] < 1):
               raise SystemExit("routes.json must contain a positive integer dataVersion.")
           for collection in ("places", "routes", "drivers", "taxiSeaters"):
               if not isinstance(current.get(collection), list):
