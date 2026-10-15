@@ -1,5 +1,5 @@
 {
-  "dataVersion": 63,
+  "dataVersion": 64,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -482,6 +482,23 @@
         "pa": "ਮਸ"
       },
       "aliases": []
+    },
+    {
+      "id": "place_user_tn",
+      "kind": "place",
+      "name": {
+        "en": "tn",
+        "hi": "तन",
+        "pa": "ਤਨ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_user_aj_2",
+      "kind": "city",
+      "name": {
+        "en": "aj"
+      }
     }
   ],
   "routes": [
@@ -4045,7 +4062,11 @@
       "stops": [
         {
           "place": "place_user_rampur",
-          "time": "14:00"
+          "time": "14:16"
+        },
+        {
+          "place": "place_user_tn",
+          "time": "14:40"
         },
         {
           "place": "place_user_devipur",
@@ -4110,6 +4131,22 @@
       "union_name": "vskjsy",
       "seats": 5,
       "sourceSubmissionId": "9c8ce893-1d6c-47e6-b5b4-60ac183ba90c"
+    },
+    {
+      "id": "t3",
+      "type": "taxi",
+      "name": "aj",
+      "vehicle": "aj · 4525",
+      "year": "4525",
+      "vehicle_number": "ahdj",
+      "phone": "9685741236",
+      "area": "aj",
+      "areaId": "place_user_aj_2",
+      "sourceSubmissionId": "b3d81d0e-6c50-4cce-8e94-9975df0cd328",
+      "union_name": "aj",
+      "details": "",
+      "info": "Union: aj · Vehicle No: ahdj · ",
+      "seats": 5
     }
   ]
 }
