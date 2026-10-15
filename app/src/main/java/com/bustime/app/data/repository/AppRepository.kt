@@ -4,7 +4,6 @@ import android.content.Context
 import com.bustime.app.data.local.AppDatabase
 import com.bustime.app.data.sync.SnapshotSync
 import com.bustime.app.models.BusResult
-import com.bustime.app.models.Driver
 import com.bustime.app.models.Place
 import com.bustime.app.models.Route
 import com.bustime.app.models.RouteStop
@@ -60,19 +59,6 @@ class AppRepository private constructor(context: Context) {
 
     suspend fun getAllRouteStops(): List<RouteStop> = query { dao.getAllStops() }
 
-    // ---------- टैक्सी / ऑटो ----------
-    suspend fun getSeaterGroups(): List<Int> = query { dao.getSeaterGroups() }
-
-    /** Return only the service areas belonging to the requested vehicle type. */
-    suspend fun getDriverAreas(type: String): List<String> = query { dao.getDriverAreas(type) }
-
-    // areaId: null = no area selected; UI must show no drivers until an area is selected.
-    suspend fun getTaxis(seats: Int, areaId: String? = null): List<Driver> = query { dao.getDrivers("taxi", seats, null, areaId) }
-
-    // fuel: null = सारे, "ev" या "oil"
-    suspend fun getAutos(fuel: String? = null, areaId: String? = null): List<Driver> = query { dao.getDrivers("auto", null, fuel, areaId) }
-
-    suspend fun getDriver(driverId: String): Driver? = query { dao.getDriver(driverId) }
 
     companion object {
         @Volatile
