@@ -16,8 +16,10 @@ Create:
 
 Never put this key in Android code or commit it to the repository. The publishing workflow uses it only in the GitHub Actions runner. The Android app uses the existing publishable key and calls the Edge Function.
 
-## First publication
-The first successful workflow run seeds the change log from the current `routes.json` so older installations can establish a clean baseline. It runs automatically when the workflow file is first pushed to `main`. If it failed because the secret was missing, add the secret and rerun **Publish transport data deltas** from the Actions tab.
+## Initial baseline and future publication
+The current `routes.json` baseline has already been seeded into Supabase as revision 1 (109 initial entity records). Older installations perform one full snapshot refresh before saving this revision cursor; later syncs download only deltas.
+
+Every later change to `app/src/main/assets/routes.json` triggers **Publish transport data deltas**. The workflow requires the repository secret above. If a run fails because the secret is missing, add it and rerun the workflow from the Actions tab.
 
 ## Important behavior
 - Each publish creates one revision and records only changed entities.
