@@ -22,6 +22,8 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
     private val gson = Gson()
     private val localMutex = Mutex()
     private val syncMutex = Mutex()
+    @Volatile var lastSyncFailed: Boolean = false
+        private set
 
     suspend fun ensureLocalData() {
         withContext(Dispatchers.IO) {
@@ -40,6 +42,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
 
     suspend fun sync(): Boolean {
         ensureLocalData()
+        lastSyncFailed = false
         return withContext(Dispatchers.IO) {
             syncMutex.withLock {
                 try {
@@ -47,6 +50,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                     if (incremental != null) return@withLock incremental
                     fetchRemoteSnapshot()
                 } catch (e: Exception) {
+                    lastSyncFailed = true
                     Log.w(TAG, "Sync failed; existing local data kept: ${e.message}")
                     false
                 }
@@ -187,9 +191,13 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                 prefs.getString(KEY_ETAG, null)?.let { setRequestProperty("If-None-Match", it) }
             }
             return when (conn.responseCode) {
-                200 -> applySnapshot(conn.inputStream.bufferedReader().use { it.readText() }, conn.getHeaderField("ETag"))
-                304 -> false
-                else -> { Log.w(TAG, "Snapshot fetch HTTP ${conn.responseCode}"); false }
+                200 -> {
+                    val result = applySnapshot(conn.inputStream.bufferedReader().use { it.readText() }, conn.getHeaderField("ETag"))
+                    lastSyncFailed = false
+                    result
+                }
+                304 -> { lastSyncFailed = false; false }
+                else -> { lastSyncFailed = true; Log.w(TAG, "Snapshot fetch HTTP ${conn.responseCode}"); false }
             }
         } finally {
             conn?.disconnect()
