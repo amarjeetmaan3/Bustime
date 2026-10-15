@@ -178,14 +178,16 @@ class HomeActivity : AppCompatActivity() {
         Toast.makeText(this, R.string.refresh_started, Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
             try {
-                val changed = AppRepository.getInstance(this@HomeActivity).syncData()
+                val repository = AppRepository.getInstance(this@HomeActivity)
+                val changed = repository.syncData()
                 refreshCurrentTab()
                 loadWarningTicker()
-                Toast.makeText(
-                    this@HomeActivity,
-                    if (changed) R.string.refresh_complete else R.string.refresh_latest,
-                    Toast.LENGTH_SHORT
-                ).show()
+                val message = when {
+                    repository.didLastSyncFail() -> R.string.refresh_failed
+                    changed -> R.string.refresh_complete
+                    else -> R.string.refresh_latest
+                }
+                Toast.makeText(this@HomeActivity, message, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Toast.makeText(this@HomeActivity, "Refresh failed: " + (e.message ?: "Please try again"), Toast.LENGTH_LONG).show()
             } finally {
