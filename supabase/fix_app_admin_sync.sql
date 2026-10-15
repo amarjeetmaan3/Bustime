@@ -77,7 +77,7 @@ drop policy if exists "admin manage route corrections" on public.correction_subm
 create policy "admin manage route corrections" on public.correction_submissions
   for all to authenticated using (true) with check (true);
 
--- 6) Community feedback and Taxi/Auto correction requests
+-- 6) Community feedback submissions
 create table if not exists public.feedback_submissions (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
