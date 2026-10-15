@@ -23,6 +23,13 @@ import com.bustime.app.ui.updater.GitHubUpdateChecker
 import com.bustime.app.utils.LanguageHelper
 import com.bustime.app.utils.AnalyticsHelper
 import kotlinx.coroutines.launch
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.bustime.app.data.sync.DataSyncWorker
+import java.util.concurrent.TimeUnit
 
 class HomeActivity : AppCompatActivity() {
 
@@ -35,6 +42,7 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+        scheduleBackgroundDataSync()
         AnalyticsHelper.logAppOpened(this)
         com.bustime.app.ads.CustomPopupManager.showLocalSponsorshipAd(this)
 
@@ -156,6 +164,21 @@ class HomeActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt("TAB", currentTab)
+    }
+
+
+    private fun scheduleBackgroundDataSync() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+        val request = PeriodicWorkRequestBuilder<DataSyncWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(constraints)
+            .build()
+        WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
+            "bustime_periodic_data_sync",
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
     }
 
     private fun refreshData(toolbar: Toolbar) {
