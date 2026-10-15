@@ -38,7 +38,7 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
             AnalyticsHelper.logEvent(requireContext(), "auto_fuel_filter", "auto", org.json.JSONObject().put("fuel", fuel ?: "all"))
             viewLifecycleOwner.lifecycleScope.launch {
                 val ctx = context ?: return@launch
-                val selectedArea = AreaPicker.savedId(ctx)
+                val selectedArea = AreaPicker.savedId(ctx, "auto")
                 AnalyticsHelper.logEvent(ctx, "auto_list_view", "auto", org.json.JSONObject().put("fuel", fuel ?: "all").put("area_selected", selectedArea != null))
                 val list = if (selectedArea == null) emptyList() else repo.getAutos(fuel, selectedArea).shuffled()
                 adapter.submit(list)
@@ -60,12 +60,12 @@ class AutoRickshawFragment : Fragment(R.layout.fragment_auto_rickshaw) {
         fun refreshAreaLabel() {
             viewLifecycleOwner.lifecycleScope.launch {
                 val ctx = context ?: return@launch
-                btnArea.text = AreaPicker.label(ctx, repo)
+                btnArea.text = AreaPicker.label(ctx, repo, "auto")
             }
         }
         refreshAreaLabel()
         btnArea.setOnClickListener {
-            AreaPicker.show(requireContext(), viewLifecycleOwner, repo) {
+            AreaPicker.show(requireContext(), viewLifecycleOwner, repo, "auto") {
                 refreshAreaLabel()
                 load(currentFuel)
             }
