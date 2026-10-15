@@ -17,20 +17,6 @@
     <string name="departs_at">%1$s रवाना</string>
     <string name="route_stops">पड़ाव</string>
     <string name="back">वापस</string>
-
-    <string name="taxi_select_seats">आपको कितनी सीट की गाड़ी चाहिए?</string>
-    <string name="seater_format">%1$d सीटर</string>
-    <string name="no_seaters">अभी कोई टैक्सी विकल्प उपलब्ध नहीं है</string>
-    <string name="no_drivers">कोई ड्राइवर उपलब्ध नहीं है</string>
-
-    <string name="auto_all">सभी</string>
-    <string name="auto_ev">EV (इलेक्ट्रिक)</string>
-    <string name="auto_oil">पेट्रोल / CNG</string>
-    <string name="no_autos">कोई ऑटो उपलब्ध नहीं है</string>
-
-    <string name="show_number">पूरी जानकारी देखें</string>
-    <string name="show_details">पूरी जानकारी देखें</string>
-    <string name="number_notice">ध्यान दें: किराया तय है, मोलभाव न करें। नंबर कुछ सेकंड में दिखेगा…</string>
     <string name="call">कॉल</string>
     <string name="whatsapp">WhatsApp</string>
     <string name="action_failed">यह काम नहीं खुल सका</string>
@@ -57,10 +43,6 @@
     <string name="ar_no_routes">अभी कोई रूट उपलब्ध नहीं है। बाद में कोशिश करें।</string>
     <string name="correction_route">रूट में सुधार</string>
     <string name="book_bus">बस बुक करें</string>
-    <string name="add_auto">ऑटो जोड़ें</string>
-    <string name="correction_auto">ऑटो में सुधार</string>
-    <string name="add_taxi">टैक्सी जोड़ें</string>
-    <string name="correction_taxi">टैक्सी में सुधार</string>
     <string name="bus_type">बस का प्रकार</string>
     <string name="seat_type">सीटों का प्रकार</string>
     <string name="operator_location">बस की लोकेशन</string>
@@ -102,8 +84,6 @@
     <string name="no_areas_yet">अभी कोई इलाका उपलब्ध नहीं है। जिन ड्राइवरों में इलाका भरा है उनके जुड़ने पर यहाँ दिखेगा।</string>
     <string name="ar_stop_name_required">हर पड़ाव का नाम भरें</string>
     <string name="ar_min_stops">रूट में कम-से-कम दो पड़ाव होने चाहिए</string>
-    <string name="taxi_area_required">ड्राइवर देखने के लिए पहले अपना इलाका चुनें।</string>
-    <string name="taxi_no_area_drivers">इस इलाके और सीट क्षमता के लिए कोई ड्राइवर नहीं मिला।</string>
     <string name="bb_select_area_required">अपना इलाका चुनें (ज़रूरी)</string>
     <string name="bb_choose_area">इलाका चुनें</string>
     <string name="bb_no_areas_admin">अभी कोई सेवा क्षेत्र उपलब्ध नहीं है। एडमिन को हर ऑपरेटर का कार्यक्षेत्र जोड़ना होगा।</string>
@@ -154,10 +134,7 @@
     <string name="ar_remove_stop">पड़ाव हटाएँ</string>
     <string name="bb_no_operators">अभी तक कोई मंज़ूरशुदा बस ऑपरेटर सूची में नहीं है।</string>
     <string name="community_title_correction">रूट में सुधार</string>
-    <string name="community_title_vehicle">ऑटो / टैक्सी जोड़ें</string>
     <string name="community_title_bus">अपनी बस जोड़ें</string>
-    <string name="community_title_taxi_correction">टैक्सी में सुधार</string>
-    <string name="community_title_auto_correction">ऑटो में सुधार</string>
     <string name="community_title_feedback">सुझाव / शिकायत</string>
     <string name="community_open_route_details">सही रूट चुना रहे, इसके लिए रूट के विवरण वाले पेज से ही रूट सुधार खोलें।</string>
     <string name="community_complete_route_correction">पूरे रूट में सुधार</string>
@@ -173,19 +150,10 @@
     <string name="community_remove_stop_question">पड़ाव हटाएँ?</string>
     <string name="community_remove_stop_warning">यह पड़ाव सिर्फ आपके प्रस्तावित सुधार से हटेगा। एडमिन की मंज़ूरी तक मौजूदा रूट नहीं बदलेगा।</string>
     <string name="remove">हटाएँ</string>
-    <string name="community_vehicle_type">वाहन का प्रकार</string>
-    <string name="community_auto">ऑटो</string>
-    <string name="community_taxi">टैक्सी</string>
-    <string name="community_driver_name">ड्राइवर का नाम</string>
-    <string name="community_vehicle_name">वाहन का नाम</string>
-    <string name="community_vehicle_model">वाहन का मॉडल नंबर</string>
-    <string name="community_vehicle_year">वर्ष (4 अंक)</string>
     <string name="community_seat_count">सीटों की संख्या</string>
-    <string name="community_vehicle_registration">वाहन रजिस्ट्रेशन नंबर</string>
     <string name="community_location_area">लोकेशन / सेवा क्षेत्र का पता (एक बार भरें)</string>
     <string name="community_union_name">यूनियन का नाम (ज़रूरी; एडमिन जाँच करेगा)</string>
     <string name="community_mobile_number">मोबाइल नंबर</string>
-    <string name="community_auto_fuel_type">ऑटो का ईंधन प्रकार</string>
     <string name="community_other_info">अन्य जानकारी (वैकल्पिक)</string>
     <string name="community_submit_listing">लिस्टिंग एडमिन की जाँच के लिए भेजें</string>
     <string name="community_service_name">सेवा का नाम</string>
@@ -197,8 +165,6 @@
     <string name="community_operator_mobile">ऑपरेटर का मोबाइल नंबर</string>
     <string name="community_whatsapp_optional">WhatsApp नंबर (वैकल्पिक)</string>
     <string name="community_add_bus_submit">बस एडमिन की जाँच के लिए भेजें</string>
-    <string name="community_correction_driver_name">ड्राइवर / संपर्क का सही नाम</string>
-    <string name="community_correction_vehicle">वाहन का सही नाम / मॉडल</string>
     <string name="community_correct_mobile">सही मोबाइल नंबर</string>
     <string name="community_correct_seats">सीटों की सही संख्या</string>
     <string name="community_correct_fuel">ईंधन का सही प्रकार (EV या Oil)</string>
@@ -219,15 +185,11 @@
     <string name="community_enter_stop_name">पड़ाव %1$d का नाम भरें</string>
     <string name="community_stop_invalid_time">पड़ाव %1$d का समय सही नहीं है।</string>
     <string name="community_route_correction_sent">पूरे रूट का सुधार एडमिन की जाँच के लिए भेज दिया गया है।</string>
-    <string name="community_vehicle_type_label">वाहन का प्रकार</string>
-    <string name="community_fill_vehicle_required">सीटों की संख्या, वाहन नंबर, सेवा क्षेत्र और यूनियन के नाम सहित सभी ज़रूरी फ़ील्ड भरें।</string>
     <string name="community_year_invalid">वाहन का वर्ष ठीक चार अंकों में भरें, जैसे 2022।</string>
     <string name="community_listing_sent">लिस्टिंग एडमिन की जाँच के लिए भेज दी गई है।</string>
     <string name="community_bus_submitted">बस एडमिन की जाँच के लिए भेज दी गई है।</string>
     <string name="community_correction_intro">इस %1$s लिस्टिंग की जानकारी ठीक करें। आपका अनुरोध एडमिन जाँचेगा।</string>
-    <string name="community_driver_vehicle">ड्राइवर: %1$s · वाहन: %2$s</string>
     <string name="community_corrected_details_required">सही नाम, वाहन, मोबाइल नंबर भरें और सुधार का कारण बताएँ।</string>
-    <string name="community_vehicle_correction_sent">सुधार का अनुरोध एडमिन की जाँच के लिए भेज दिया गया है।</string>
     <string name="community_please_feedback">कृपया अपना सुझाव / शिकायत लिखें।</string>
     <string name="community_thanks_feedback">धन्यवाद। आपका सुझाव / शिकायत भेज दिया गया है।</string>
     <string name="community_send_failed">सभी अनुरोध नहीं भेजे जा सके। इंटरनेट जाँचकर फिर कोशिश करें।
@@ -237,7 +199,6 @@
     <string name="community_feedback_submit_success">धन्यवाद। आपका सुझाव / शिकायत भेज दिया गया है।</string>
     <string name="home_all_areas">सभी इलाके</string>
     <string name="bus_from_to">कहाँ से → कहाँ तक</string>
-    <string name="show_number_short">नंबर दिखाएँ</string>
     <string name="community_duplicate_stop">इस रूट में एक पड़ाव दो बार है। कृपया अलग पड़ाव चुनें या भेजने से पहले दोहराया गया पड़ाव हटाएँ।</string>
     <string name="community_route_label">रूट: %1$s</string>
     <string name="bus_category_ordinary">साधारण</string>
@@ -248,8 +209,6 @@
     <string name="bus_category_seater">सीटर</string>
     <string name="bus_category_sleeper_seater">स्लीपर + सीटर</string>
     <string name="bus_category_custom">अन्य प्रकार</string>
-    <string name="auto_select_area_first">ड्राइवर देखने के लिए पहले अपना इलाका चुनें।</string>
-    <string name="auto_no_drivers_filter">इस इलाके और फ़िल्टर के लिए कोई ड्राइवर नहीं मिला।</string>
     <string name="update_browser_not_found">ब्राउज़र नहीं मिला</string>
     <string name="update_download_started">डाउनलोड शुरू हो गया है। नोटिफ़िकेशन देखें।</string>
     <string name="update_download_start_failed">डाउनलोड शुरू नहीं हो सका</string>
