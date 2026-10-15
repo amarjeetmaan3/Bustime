@@ -1,0 +1,115 @@
+name: Publish transport data deltas
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/src/main/assets/routes.json"
+      - ".github/workflows/publish-data-sync.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bustime-data-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compare snapshot and publish incremental changes
+        env:
+          SUPABASE_URL: https://mdryxbvmqsphbfkvqtnf.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BEFORE_SHA: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess, urllib.request, urllib.error, hashlib, sys
+
+          base_url = os.environ["SUPABASE_URL"].rstrip("/")
+          key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+          if not key:
+              raise SystemExit("Missing GitHub Actions secret SUPABASE_SERVICE_ROLE_KEY. Add the Supabase service-role key in repository Actions secrets; never put it in app code.")
+
+          path = "app/src/main/assets/routes.json"
+          with open(path, encoding="utf-8") as f:
+              current = json.load(f)
+          before_sha = os.environ.get("BEFORE_SHA", "")
+          old = {}
+          if before_sha and set(before_sha) != {"0"}:
+              try:
+                  raw = subprocess.check_output(["git", "show", f"{before_sha}:{path}"], stderr=subprocess.DEVNULL)
+                  old = json.loads(raw.decode("utf-8"))
+              except Exception:
+                  old = {}
+
+          def request(method, endpoint, payload=None, prefer=None):
+              data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode()
+              headers = {"apikey": key, "Authorization": "Bearer " + key, "Accept": "application/json"}
+              if data is not None:
+                  headers["Content-Type"] = "application/json"
+              if prefer:
+                  headers["Prefer"] = prefer
+              req = urllib.request.Request(base_url + endpoint, data=data, headers=headers, method=method)
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as response:
+                      body = response.read()
+                      return json.loads(body) if body else None
+              except urllib.error.HTTPError as e:
+                  raise RuntimeError(f"Supabase HTTP {e.code}: {e.read().decode('utf-8', 'replace')}")
+
+          state = request("GET", "/rest/v1/data_sync_state?select=revision&id=eq.1")
+          if not state:
+              raise SystemExit("data_sync_state row id=1 is missing; apply the incremental_data_sync migration first.")
+          revision = int(state[0]["revision"])
+          # Revision zero means first publication: seed every current record so existing installs can catch up.
+          if revision == 0:
+              old = {}
+
+          changes = []
+          def compare(collection, entity_type, id_field="id", hidden_deletes=False):
+              old_items = {str(x.get(id_field)): x for x in old.get(collection, []) if x.get(id_field) is not None}
+              new_items = {str(x.get(id_field)): x for x in current.get(collection, []) if x.get(id_field) is not None}
+              for ident in sorted(set(old_items) | set(new_items)):
+                  before, after = old_items.get(ident), new_items.get(ident)
+                  if after is None or (hidden_deletes and after.get("hidden") is True):
+                      if before is not None and not (hidden_deletes and before.get("hidden") is True):
+                          changes.append({"entity_type": entity_type, "entity_id": ident, "operation": "delete", "payload": None})
+                  elif before != after:
+                      changes.append({"entity_type": entity_type, "entity_id": ident, "operation": "upsert", "payload": after})
+
+          compare("places", "place")
+          compare("routes", "route", hidden_deletes=True)
+          compare("drivers", "driver", hidden_deletes=True)
+
+          old_seaters = set(int(x) for x in old.get("taxiSeaters", []) if str(x).isdigit())
+          new_seaters = set(int(x) for x in current.get("taxiSeaters", []) if str(x).isdigit())
+          for seats in sorted(old_seaters | new_seaters):
+              if seats in new_seaters and seats not in old_seaters:
+                  changes.append({"entity_type": "seater", "entity_id": str(seats), "operation": "upsert", "payload": {"seats": seats}})
+              elif seats in old_seaters and seats not in new_seaters:
+                  changes.append({"entity_type": "seater", "entity_id": str(seats), "operation": "delete", "payload": None})
+
+          if not changes:
+              print("No data changes detected; revision unchanged.")
+              sys.exit(0)
+
+          next_revision = revision + 1
+          rows = [{"revision": next_revision, **item} for item in changes]
+          # PostgREST can limit request size; send batches to avoid oversized requests.
+          for start in range(0, len(rows), 250):
+              request("POST", "/rest/v1/data_change_log", rows[start:start+250], "resolution=merge-duplicates,return=minimal")
+
+          digest = hashlib.sha256(json.dumps(current, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+          request("PATCH", "/rest/v1/data_sync_state?id=eq.1",
+                  {"revision": next_revision, "snapshot_version": int(current.get("dataVersion", 0)),
+                   "snapshot_sha256": digest, "published_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()},
+                  "return=minimal")
+          print(f"Published revision {next_revision}: {len(changes)} incremental changes.")
+          PY
