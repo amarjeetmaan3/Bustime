@@ -69,7 +69,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
         refreshAreaLabel()
         btnArea.setOnClickListener {
-            AreaPicker.show(requireContext(), viewLifecycleOwner, repo) {
+            AreaPicker.show(requireContext(), viewLifecycleOwner, repo, "taxi") {
                 refreshAreaLabel()
                 currentSeats?.let { showDrivers(it) }
             }
@@ -129,7 +129,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     private fun showDrivers(seats: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
             val ctx = context ?: return@launch
-            val selectedArea = AreaPicker.savedId(ctx)
+            val selectedArea = AreaPicker.savedId(ctx, "taxi")
             AnalyticsHelper.logEvent(ctx, "taxi_list_view", "taxi", org.json.JSONObject().put("seats", seats).put("area_selected", selectedArea != null))
             val list = if (selectedArea == null) emptyList() else repo.getTaxis(seats, selectedArea).shuffled()
             currentSeats = seats
@@ -144,7 +144,7 @@ class TaxiFragment : Fragment(R.layout.fragment_taxi) {
     private fun refreshAreaLabel() {
         viewLifecycleOwner.lifecycleScope.launch {
             val ctx = context ?: return@launch
-            btnArea.text = AreaPicker.label(ctx, repo)
+            btnArea.text = AreaPicker.label(ctx, repo, "taxi")
             if (AreaPicker.savedId(ctx) == null) tvNoDrivers.text = getString(R.string.taxi_area_required)
             else tvNoDrivers.text = getString(R.string.taxi_no_area_drivers)
         }
