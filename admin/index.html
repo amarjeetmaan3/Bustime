@@ -1036,22 +1036,6 @@ function validate() {
     (r.stops || []).forEach(function (s) { if (!pids[s.place]) errors.push(tag + ': a stop refers to a missing place'); });
   });
 
-  var dids = {};
-  data.drivers.forEach(function (d) {
-    var tag = 'Driver ' + (d.name || d.id);
-    if (!d.id) errors.push('A driver has no id');
-    else if (dids[d.id]) errors.push('Duplicate driver id: ' + d.id);
-    dids[d.id] = true;
-    if (d.type !== 'taxi' && d.type !== 'auto') errors.push(tag + ': invalid type');
-    if (!String(d.name || '').trim()) errors.push(tag + ': name is required');
-    var digits = String(d.phone || '').replace(/\D/g, '').length;
-    if (digits < 10 || digits > 13) errors.push(tag + ': invalid mobile number');
-    if (d.type === 'taxi' && !(d.seats > 0)) errors.push(tag + ': taxi needs a seat count');
-  });
-  var hidden = data.drivers.filter(function (d) {
-    return d.type === 'taxi' && data.taxiSeaters.length && data.taxiSeaters.indexOf(d.seats) < 0;
-  }).length;
-  if (hidden) warnings.push(hidden + ' taxi driver(s) will not appear in the app (their seat count is not in the Taxi Seats list)');
   return { errors: errors, warnings: warnings };
 }
 function reportHtml(v) {
@@ -1098,7 +1082,7 @@ function render() {
     return;
   }
   document.body.classList.remove('admin-locked');
-  var counts = data ? { places:(data.places||[]).length, routes:(data.routes||[]).length, seats:(data.taxiSeaters||[]).length, drivers:(data.drivers||[]).filter(function(d){return d.type==='taxi';}).length, autoDrivers:(data.drivers||[]).filter(function(d){return d.type==='auto';}).length } : {};
+  var counts = data ? { places:(data.places||[]).length, routes:(data.routes||[]).length } : {};
   refreshWorkspaceNav();
   $('#nav').innerHTML = NAV.map(function (n) {
     return '<button data-act="tab" data-t="' + n[0] + '" class="' + (tab === n[0] ? 'on' : '') + '">' + n[1] +
