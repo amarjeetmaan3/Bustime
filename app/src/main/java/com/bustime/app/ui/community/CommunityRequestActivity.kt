@@ -181,6 +181,79 @@ class CommunityRequestActivity : AppCompatActivity() {
     }
 
 
+
+    private fun busCategoryLabel(value: String): String = when (value.trim().lowercase(Locale.ROOT)) {
+        "ordinary" -> getString(com.bustime.app.R.string.bus_category_ordinary)
+        "luxury" -> getString(com.bustime.app.R.string.bus_category_luxury)
+        "sleeper" -> getString(com.bustime.app.R.string.bus_category_sleeper)
+        "sleeper plus" -> getString(com.bustime.app.R.string.bus_category_sleeper_plus)
+        "seater plus" -> getString(com.bustime.app.R.string.bus_category_seater_plus)
+        "seater" -> getString(com.bustime.app.R.string.bus_category_seater)
+        "sleeper + seater" -> getString(com.bustime.app.R.string.bus_category_sleeper_seater)
+        "custom" -> getString(com.bustime.app.R.string.bus_category_custom)
+        else -> value
+    }
+
+    private fun busOperatorForm() {
+        heading(getString(com.bustime.app.R.string.community_title_bus))
+        text(getString(com.bustime.app.R.string.community_bus_form_intro), 14f)
+        field("service_name", getString(com.bustime.app.R.string.community_service_name))
+        field("location", getString(com.bustime.app.R.string.bb_location))
+        text(getString(com.bustime.app.R.string.bus_types_select_label), 15f, true)
+        val typeOptions = listOf(
+            "Ordinary" to getString(com.bustime.app.R.string.bus_type_ordinary),
+            "Seater" to getString(com.bustime.app.R.string.bus_type_seater),
+            "Sleeper" to getString(com.bustime.app.R.string.bus_type_sleeper),
+            "AC Bus" to getString(com.bustime.app.R.string.bus_type_ac),
+            "Non-AC Bus" to getString(com.bustime.app.R.string.bus_type_non_ac),
+            "Luxury Bus" to getString(com.bustime.app.R.string.bus_type_luxury),
+            "Volvo Bus" to getString(com.bustime.app.R.string.bus_type_volvo),
+            "Mini Bus" to getString(com.bustime.app.R.string.bus_type_mini),
+            "Other" to getString(com.bustime.app.R.string.bus_type_other)
+        )
+        val typeChecks = linkedMapOf<String, CheckBox>()
+        typeOptions.forEach { (type, label) ->
+            val check = CheckBox(this).apply { text = label; textSize = 15f }
+            typeChecks[type] = check
+            root.addView(check)
+        }
+        field("bus_other_type", getString(com.bustime.app.R.string.bus_type_other_hint)).apply { isSingleLine = true }
+        field("phone", getString(com.bustime.app.R.string.community_operator_mobile))
+        field("whatsapp", getString(com.bustime.app.R.string.community_whatsapp_optional))
+        field("details", getString(com.bustime.app.R.string.community_other_info)).apply {
+            minLines = 2; maxLines = 4
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        }
+        button(getString(com.bustime.app.R.string.community_add_bus_submit)) {
+            val service = value("service_name")
+            val location = value("location")
+            val phone = digits(value("phone"))
+            val selected = typeChecks.filterValues { it.isChecked }.keys.toMutableList()
+            val other = value("bus_other_type").trim()
+            if ("Other" in selected) {
+                if (other.isBlank()) { toast(getString(com.bustime.app.R.string.bus_type_required_error)); return@button }
+                selected.remove("Other")
+                selected.add(other)
+            }
+            if (service.isBlank() || location.isBlank() || phone.length !in 10..13 || selected.isEmpty()) {
+                toast(getString(com.bustime.app.R.string.community_fill_bus_required))
+                return@button
+            }
+            val types = org.json.JSONArray()
+            selected.forEach { types.put(it) }
+            val body = JSONObject()
+                .put("operator_name", service)
+                .put("service_name", service)
+                .put("bus_types", types)
+                .put("location", location)
+                .put("phone", phone)
+                .put("whatsapp", digits(value("whatsapp")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+            sendRequests(listOf(body), "bus_operator_submissions", getString(com.bustime.app.R.string.community_bus_submitted))
+        }
+    }
+
+
     private fun feedbackForm() {
         spinner(getString(com.bustime.app.R.string.community_feedback_category), listOf(getString(com.bustime.app.R.string.community_suggestion), getString(com.bustime.app.R.string.community_incorrect_info), getString(com.bustime.app.R.string.community_app_problem), getString(com.bustime.app.R.string.community_other)), "feedback_category")
         field("related_route", getString(com.bustime.app.R.string.community_related_route))
