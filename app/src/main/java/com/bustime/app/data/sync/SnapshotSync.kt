@@ -204,11 +204,10 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                 if (!forceFull) prefs.getString(KEY_ETAG, null)?.let { setRequestProperty("If-None-Match", it) }
             }
             return when (conn.responseCode) {
-                200 -> {
-                    val result = applySnapshot(conn.inputStream.bufferedReader().use { it.readText() }, conn.getHeaderField("ETag"))
-                    lastSyncFailed = false
-                    result
-                }
+                200 -> applySnapshot(
+                    conn.inputStream.bufferedReader().use { it.readText() },
+                    conn.getHeaderField("ETag")
+                )
                 304 -> {
                     // A forced baseline fetch must return the actual snapshot.
                     lastSyncFailed = forceFull
@@ -258,6 +257,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         dao.replaceAll(data.places, data.routes, data.stops, data.drivers, data.seaters)
         prefs.edit().putInt(KEY_VERSION, version).putString(KEY_ETAG, etag)
             .putString(KEY_HASH, contentHash).putLong(KEY_LAST_SYNC, System.currentTimeMillis()).apply()
+        lastSyncFailed = false
         return true
     }
 
