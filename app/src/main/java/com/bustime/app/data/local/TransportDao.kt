@@ -77,8 +77,8 @@ abstract class TransportDao {
     abstract suspend fun getSeaterGroups(): List<Int>
 
     /** Independent Taxi/Auto service areas; never sourced from bus places or route stops. */
-    @Query("SELECT DISTINCT areaId FROM drivers WHERE areaId IS NOT NULL AND TRIM(areaId) <> '' ORDER BY areaId COLLATE NOCASE")
-    abstract suspend fun getDriverAreas(): List<String>
+    @Query("SELECT DISTINCT areaId FROM drivers WHERE type = :type AND areaId IS NOT NULL AND TRIM(areaId) <> '' ORDER BY areaId COLLATE NOCASE")
+    abstract suspend fun getDriverAreas(type: String): List<String>
 
     @Query(
         "SELECT * FROM drivers WHERE type = :type " +
