@@ -73,6 +73,13 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         val localRevision = prefs.getLong(KEY_REVISION, 0L)
         if (publishedRevision == 0L) return null
         if (publishedRevision <= localRevision) return false
+        // A fresh install or an older build must replace its baseline first, so
+        // records deleted before this device's first delta cursor cannot survive.
+        if (localRevision == 0L) {
+            val snapshotChanged = fetchRemoteSnapshot()
+            if (!lastSyncFailed) prefs.edit().putLong(KEY_REVISION, publishedRevision).apply()
+            return snapshotChanged
+        }
 
         val changes = ArrayList<JsonObject>()
         var offset = 0
