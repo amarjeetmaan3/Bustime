@@ -122,4 +122,45 @@ abstract class TransportDao {
         insertPlaces(places); insertRoutes(routes); insertStops(stops)
         insertDrivers(drivers); insertSeaters(seaters)
     }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsertPlace(item: Place)
+
+    @Query("DELETE FROM places WHERE id = :id")
+    abstract suspend fun deletePlace(id: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsertRoute(item: Route)
+
+    @Query("DELETE FROM route_stops WHERE routeId = :routeId")
+    abstract suspend fun deleteStopsForRoute(routeId: String)
+
+    @Query("DELETE FROM routes WHERE id = :id")
+    abstract suspend fun deleteRouteRow(id: String)
+
+    @Transaction
+    open suspend fun upsertRouteWithStops(route: Route, stops: List<RouteStop>) {
+        upsertRoute(route)
+        deleteStopsForRoute(route.id)
+        if (stops.isNotEmpty()) insertStops(stops)
+    }
+
+    @Transaction
+    open suspend fun deleteRouteAndStops(id: String) {
+        deleteStopsForRoute(id)
+        deleteRouteRow(id)
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsertDriver(item: Driver)
+
+    @Query("DELETE FROM drivers WHERE id = :id")
+    abstract suspend fun deleteDriver(id: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsertSeater(item: SeaterGroup)
+
+    @Query("DELETE FROM seater_groups WHERE seats = :seats")
+    abstract suspend fun deleteSeater(seats: Int)
+
 }
