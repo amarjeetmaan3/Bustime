@@ -125,9 +125,8 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             when (type) {
                 "place" -> dao.deletePlace(id)
                 "route" -> dao.deleteRouteAndStops(id)
-                // Ignore historical Taxi/Auto deltas so they cannot block Bus sync.
-                "driver", "seater" -> return true
-                else -> return false
+                // A retired or unsupported entity must not block valid Bus sync events.
+                else -> return true
             }
             return true
         }
@@ -149,9 +148,8 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                     val route = data.routes.firstOrNull { it.id == id } ?: return false
                     dao.upsertRouteWithStops(route, data.stops.filter { it.routeId == id })
                 }
-                // These entity types are retired; safely acknowledge old queued events.
-                "driver", "seater" -> Unit
-                else -> return false
+                // Ignore unsupported entity payloads without blocking the revision cursor.
+                else -> Unit
             }
             true
         } catch (e: Exception) {
