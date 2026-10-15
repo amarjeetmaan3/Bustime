@@ -6,51 +6,75 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
+import com.bustime.app.ads.StartIoAdsManager
 import com.bustime.app.utils.ContactActions
+import com.startapp.sdk.ads.nativead.NativeAdDetails
 
 data class BusItem(
     val routeId: String,
-    val time: String,        // दिखाने वाला समय, जैसे "6:30 AM"
-    val title: String,       // ctx.getString(R.string.bus_from_to)
-    val extra: String?,      // पहुँचने का समय, सर्विस का नाम
+    val time: String,
+    val title: String,
+    val extra: String?,
     val contact: String?
 )
 
-class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<BusAdapter.VH>() {
-
+class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var items: List<BusItem> = emptyList()
+    private var nativeAd: NativeAdDetails? = null
+    private var nativePosition = -1
 
-    class VH(view: View) : RecyclerView.ViewHolder(view) {
+    class RouteVH(view: View) : RecyclerView.ViewHolder(view) {
         val tvTime: TextView = view.findViewById(R.id.tvBusTime)
         val tvTitle: TextView = view.findViewById(R.id.tvBusTitle)
         val tvExtra: TextView = view.findViewById(R.id.tvBusExtra)
         val btnCall: View = view.findViewById(R.id.btnBusCall)
     }
 
-    fun submit(list: List<BusItem>) {
+    fun submit(list: List<BusItem>, ad: NativeAdDetails? = null, insertAfter: Int = 4) {
         items = list
+        nativeAd = ad?.takeIf { list.size > insertAfter && insertAfter > 0 }
+        nativePosition = if (nativeAd != null) insertAfter else -1
         notifyDataSetChanged()
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_bus, parent, false))
+    override fun getItemViewType(position: Int): Int =
+        if (position == nativePosition) TYPE_NATIVE else TYPE_ROUTE
 
-    override fun onBindViewHolder(holder: VH, position: Int) {
-        val item = items[position]
-        holder.tvTime.text = item.time
-        holder.tvTitle.text = item.title
-        holder.tvExtra.text = item.extra.orEmpty()
-        holder.tvExtra.visibility = if (item.extra.isNullOrEmpty()) View.GONE else View.VISIBLE
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return if (viewType == TYPE_NATIVE) {
+            object : RecyclerView.ViewHolder(
+                StartIoAdsManager.buildNativeAdView(parent.context, requireNotNull(nativeAd))
+            ) {}
+        } else {
+            RouteVH(LayoutInflater.from(parent.context).inflate(R.layout.item_bus, parent, false))
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (getItemViewType(position) == TYPE_NATIVE) return
+        val routeHolder = holder as RouteVH
+        val itemIndex = if (nativePosition >= 0 && position > nativePosition) position - 1 else position
+        val item = items[itemIndex]
+        routeHolder.tvTime.text = item.time
+        routeHolder.tvTitle.text = item.title
+        routeHolder.tvExtra.text = item.extra.orEmpty()
+        routeHolder.tvExtra.visibility = if (item.extra.isNullOrEmpty()) View.GONE else View.VISIBLE
 
         val contact = item.contact
         if (contact.isNullOrEmpty()) {
-            holder.btnCall.visibility = View.GONE
+            routeHolder.btnCall.visibility = View.GONE
+            routeHolder.btnCall.setOnClickListener(null)
         } else {
-            holder.btnCall.visibility = View.VISIBLE
-            holder.btnCall.setOnClickListener { ContactActions.dial(it.context, contact) }
+            routeHolder.btnCall.visibility = View.VISIBLE
+            routeHolder.btnCall.setOnClickListener { ContactActions.dial(it.context, contact) }
         }
-        holder.itemView.setOnClickListener { onClick(item) }
+        routeHolder.itemView.setOnClickListener { onClick(item) }
     }
 
-    override fun getItemCount(): Int = items.size
+    override fun getItemCount(): Int = items.size + if (nativePosition >= 0) 1 else 0
+
+    companion object {
+        private const val TYPE_ROUTE = 0
+        private const val TYPE_NATIVE = 1
+    }
 }
