@@ -17,6 +17,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bustime.app.R
+import com.bustime.app.ads.StartIoAdsManager
 import com.bustime.app.ui.community.CommunitySupabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -127,7 +128,10 @@ class BookBusActivity : AppCompatActivity() {
             }
         }
         root.addView(addBus, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+        val startIoBannerSlot = android.widget.FrameLayout(this).apply { visibility = View.GONE }
+        root.addView(startIoBannerSlot, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
         setContentView(root)
+        StartIoAdsManager.attachBanner(this, startIoBannerSlot, "book_bus")
 
         lifecycleScope.launch {
             val raw = withContext(Dispatchers.IO) { CommunitySupabase.getPublicOperators() }
