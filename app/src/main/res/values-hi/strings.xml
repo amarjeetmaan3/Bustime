@@ -260,4 +260,6 @@
     <string name="bb_bus_types">बस के प्रकार</string>
     <string name="bb_search_hint">कंपनी, बस का प्रकार या स्थान खोजें</string>
     <string name="bb_search_no_results">“%1$s” से मेल खाने वाली कोई बस सेवा नहीं मिली।</string>
+    <string name="privacy_policy_title">प्राइवेसी पॉलिसी</string>
+    <string name="privacy_policy_menu">प्राइवेसी पॉलिसी</string>
 </resources>
