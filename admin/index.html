@@ -1450,7 +1450,7 @@ function viewAdvertisement(){
     '<div class="ad-field"><label>Custom link button label</label><input id="ad_link_label" value="'+adEscape(c.link_label||'Learn more')+'" placeholder="Learn more"></div></div>'+
     '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-my">Save campaign</button></div></section>';
   }else{
-    var places=[['bus_search_top','Bus tab · below search'],['bus_results','Bus results · every N results'],['taxi_results','Taxi results · every N results'],['taxi_filter_bottom','Below taxi seat filters'],['auto_results','Auto / EV results']];
+    var places=[['bus_search_top','Bus tab · below search'],['bus_results','Bus results · every N results']];
     html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>AdMob inventory</h2><p class="muted">Configure banner and native placements. Interstitial and fullscreen ads are not included.</p></div></div>'+
     '<div class="ad-grid"><div><label class="ad-check"><input id="ad_banner_enabled" type="checkbox"'+adChecked(c.banner_enabled)+'> Banner ads enabled</label><div class="ad-field" style="margin-top:8px"><label>Banner Ad Unit ID</label><input id="ad_banner_unit_id" value="'+adEscape(c.banner_unit_id)+'" placeholder="ca-app-pub-…/…"></div></div>'+
     '<div><label class="ad-check"><input id="ad_native_enabled" type="checkbox"'+adChecked(c.native_enabled)+'> Native ads enabled</label><div class="ad-field" style="margin-top:8px"><label>Native Ad Unit ID</label><input id="ad_native_unit_id" value="'+adEscape(c.native_unit_id)+'" placeholder="ca-app-pub-…/…"></div></div></div>'+
@@ -1563,12 +1563,8 @@ function viewContentSettings() {
     '<div class="content-toggle"><label for="content_terms_enabled">Enable Terms text from this panel</label><input id="content_terms_enabled" type="checkbox" '+(s.terms_enabled?'checked':'')+'></div>'+
     contentLanguageFields('content_terms','Terms',s.terms,5)+
     '</section>'+
-    '<section class="card content-panel"><div class="content-panel-head"><div><h2>Driver Details Warning</h2><p class="muted">Shown when a user opens Taxi/Auto driver details. The popup closes automatically after the selected duration.</p></div></div>'+
-    '<div class="content-toggle"><label for="content_popup_enabled">Enable driver warning popup</label><input id="content_popup_enabled" type="checkbox" '+(s.popup_enabled?'checked':'')+'></div>'+
-    contentLanguageFields('content_popup','Warning message',s.popup,4)+
-    '<label class="content-label" for="content_popup_seconds">Auto-dismiss duration · 5–60 seconds</label><input id="content_popup_seconds" type="number" min="5" max="60" value="'+Math.max(5,Math.min(60,parseInt(s.popup_seconds,10)||5))+'" style="max-width:180px">'+
-    '</section>'+
-    '<section class="card content-panel"><div class="content-panel-head"><div><h2>Scrolling Warning Ticker</h2><p class="muted">Message scrolling below Bus, Taxi and Auto tabs. The app pairs the selected language with Hindi where applicable.</p></div></div>'+
+
+    '<section class="card content-panel"><div class="content-panel-head"><div><h2>Scrolling Warning Ticker</h2><p class="muted">Message shown in the Bus section. The app pairs the selected language with Hindi where applicable.</p></div></div>'+
     '<div class="content-toggle"><label for="content_ticker_enabled">Enable warning ticker</label><input id="content_ticker_enabled" type="checkbox" '+(s.ticker_enabled?'checked':'')+'></div>'+
     contentLanguageFields('content_ticker','Ticker message',s.ticker,3)+
     '<div class="content-savebar"><button class="btn primary" data-act="content-save">Save text settings</button></div></section></div>';
