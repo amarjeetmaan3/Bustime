@@ -109,6 +109,9 @@ object StartIoAdsManager {
         try {
             val debugBuild = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
             StartAppSDK.setTestAdsEnabled(debugBuild)
+            // Safe default: do not signal personalized-ad consent without an explicit user choice.
+            // Start.io's built-in disclosure remains enabled by the SDK.
+            StartAppSDK.setUserConsent(context, "pas", System.currentTimeMillis(), false)
             StartAppSDK.initParams(context, appId)
                 .setReturnAdsEnabled(false)
                 .setCallback {
