@@ -18,7 +18,7 @@ val hasReleaseKey = releaseStorePath != null && releaseStorePassword != null &&
 
 android {
     namespace = "com.bustime.app"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.bustime.app"
