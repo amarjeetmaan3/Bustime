@@ -74,6 +74,9 @@ class HomeActivity : AppCompatActivity() {
                 R.id.action_feedback -> {
                     startActivity(android.content.Intent(this, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "feedback")); true
                 }
+                R.id.action_privacy_policy -> {
+                    startActivity(android.content.Intent(this, com.bustime.app.ui.privacy.PrivacyPolicyActivity::class.java)); true
+                }
                 else -> false
             }
         }
