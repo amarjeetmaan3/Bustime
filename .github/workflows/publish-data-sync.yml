@@ -86,10 +86,30 @@ jobs:
 
           compare("places", "place")
           compare("routes", "route", hidden_deletes=True)
+          # If a route references a place removed from the new snapshot, delete that
+          # route too; otherwise its stop rows would become orphaned locally.
+          current_place_ids = {str(p.get("id")) for p in current.get("places", []) if p.get("id") is not None}
+          old_routes = {str(r.get("id")): r for r in old.get("routes", []) if r.get("id") is not None}
+          new_routes = {str(r.get("id")): r for r in current.get("routes", []) if r.get("id") is not None}
+          for ident, route in new_routes.items():
+              stop_ids = [str(s.get("place")) for s in route.get("stops", []) if s.get("place") is not None]
+              references = [route.get("from"), route.get("to")] + stop_ids
+              if any(str(place_id) not in current_place_ids for place_id in references if place_id is not None):
+                  if ident not in {c["entity_id"] for c in changes if c["entity_type"] == "route"}:
+                      if ident in old_routes:
+                          changes.append({"entity_type": "route", "entity_id": ident, "operation": "delete", "payload": None})
           compare("drivers", "driver", hidden_deletes=True)
 
-          old_seaters = set(int(x) for x in old.get("taxiSeaters", []) if str(x).isdigit())
-          new_seaters = set(int(x) for x in current.get("taxiSeaters", []) if str(x).isdigit())
+          def seaters(snapshot):
+              listed = [int(x) for x in snapshot.get("taxiSeaters", []) if str(x).isdigit()]
+              if listed:
+                  return set(listed)
+              return {int(d["seats"]) for d in snapshot.get("drivers", [])
+                      if d.get("type") == "taxi" and d.get("hidden") is not True
+                      and str(d.get("seats", "")).isdigit() and int(d["seats"]) > 0}
+
+          old_seaters = seaters(old)
+          new_seaters = seaters(current)
           for seats in sorted(old_seaters | new_seaters):
               if seats in new_seaters and seats not in old_seaters:
                   changes.append({"entity_type": "seater", "entity_id": str(seats), "operation": "upsert", "payload": {"seats": seats}})
