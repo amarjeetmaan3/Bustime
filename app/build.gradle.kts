@@ -1,4 +1,3 @@
-import java.util.Base64 as JBase64
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -34,20 +33,20 @@ android {
         }
     }
 
-    // Development/testing key restored so every CI Debug APK keeps the same certificate.
-    // The base64 file is decoded locally on demand; generated JKS is ignored by Git.
-    val testingKeyFile = file("bustime.jks")
-    val testingKeyBase64File = file("bustime-testing-keystore.base64")
-    if (!testingKeyFile.exists() && testingKeyBase64File.exists()) {
-        testingKeyFile.writeBytes(JBase64.getMimeDecoder().decode(testingKeyBase64File.readText()))
-    }
+    // Testing keystore is supplied by CI from the TESTING_KEYSTORE_BASE64 secret.
+    // For local builds, an untracked app/bustime.jks may be used if present.
+    val testingKeyPath: String? = System.getenv("TESTING_KEYSTORE_PATH")
+    val testingKeyFile = testingKeyPath?.let { file(it) } ?: file("bustime.jks")
+    val hasTestingKey = testingKeyFile.exists()
 
     signingConfigs {
-        create("debugKey") {
-            storeFile = testingKeyFile
-            storePassword = "bustime123"
-            keyAlias = "bustime"
-            keyPassword = "bustime123"
+        if (hasTestingKey) {
+            create("debugKey") {
+                storeFile = testingKeyFile
+                storePassword = "bustime123"
+                keyAlias = "bustime"
+                keyPassword = "bustime123"
+            }
         }
         if (hasReleaseKey) {
             create("releaseKey") {
@@ -61,7 +60,11 @@ android {
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("debugKey")
+            // CI uses the saved testing key to preserve update compatibility.
+            // Without a local testing key, use Android's default debug signing.
+            if (hasTestingKey) {
+                signingConfig = signingConfigs.getByName("debugKey")
+            }
         }
         release {
             isMinifyEnabled = true
