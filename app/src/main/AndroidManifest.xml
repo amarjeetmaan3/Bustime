@@ -53,7 +53,6 @@
             android:exported="false"
             android:windowSoftInputMode="stateVisible|adjustResize" />
         <activity android:name=".ui.details.RouteDetailActivity" android:exported="false" />
-        <activity android:name=".ui.details.DriverDetailActivity" android:exported="false" />
 
         <activity android:name=".ui.community.CommunityRequestActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ui.bookbus.BookBusActivity" android:exported="false" />
