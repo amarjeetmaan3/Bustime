@@ -17,9 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import android.util.TypedValue
 import com.bustime.app.ui.details.RouteDetailActivity
-import com.bustime.app.ui.details.DriverDetailActivity
 import com.bustime.app.ui.bookbus.BookBusActivity
-import com.bustime.app.data.repository.AppRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -95,13 +93,6 @@ object CustomPopupManager {
             ?: fetchRows(base + "bus_operator_submissions?select=*&id=eq.$encodedId&status=eq.approved&limit=1")
     }
 
-    private fun fetchVehicle(id: String): JSONObject? {
-        val encodedId = java.net.URLEncoder.encode(id, "UTF-8")
-        val base = Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/"
-        return fetchRows(base + "taxi_submissions?select=*&id=eq.$encodedId&status=eq.approved&limit=1")
-            ?: fetchRows(base + "auto_submissions?select=*&id=eq.$encodedId&status=eq.approved&limit=1")
-    }
-
     private fun showDialog(activity: Activity, config: JSONObject, bitmap: android.graphics.Bitmap) {
         val dp = activity.resources.displayMetrics.density
         fun px(v: Int) = (v * dp).toInt()
@@ -150,8 +141,6 @@ object CustomPopupManager {
         val targetId = config.optString("target_id").ifBlank { config.optString("route_id") }
         val defaultLabel = when (targetKind) {
             "operator" -> "Book Bus"
-            "taxi" -> "Book Taxi"
-            "auto" -> "Book Auto"
             "route" -> "Check Route"
             else -> "Learn more"
         }
@@ -183,33 +172,6 @@ object CustomPopupManager {
                             putExtra("details", operator.optString("details"))
                             putExtra("phone", operator.optString("phone"))
                             putExtra("whatsapp", operator.optString("whatsapp"))
-                        })
-                        dialog.dismiss()
-                    }
-                }
-                "taxi", "auto" -> GlobalScope.launch {
-                    val result = withContext(Dispatchers.IO) {
-                        val driver = AppRepository.getInstance(activity).getDriver(targetId)
-                        Pair(driver, if (driver == null) fetchVehicle(targetId) else null)
-                    }
-                    main.post {
-                        if (activity.isFinishing || activity.isDestroyed) return@post
-                        val driver = result.first
-                        val submitted = result.second
-                        if (driver == null && submitted == null) {
-                            Toast.makeText(activity, "Vehicle listing not found. Publish the latest Taxi/Auto data and try again.", Toast.LENGTH_LONG).show()
-                            return@post
-                        }
-                        activity.startActivity(Intent(activity, DriverDetailActivity::class.java).apply {
-                            putExtra("driver_id", driver?.id ?: submitted?.optString("id").orEmpty())
-                            putExtra("driver_type", driver?.type ?: submitted?.optString("vehicle_type").orEmpty().ifBlank { targetKind })
-                            putExtra("driver_name", driver?.name ?: submitted?.optString("person_name").orEmpty().ifBlank { submitted?.optString("name").orEmpty() })
-                            putExtra("driver_vehicle", driver?.vehicle.orEmpty().ifBlank { submitted?.optString("vehicle_name").orEmpty() })
-                            putExtra("driver_phone", driver?.phone ?: submitted?.optString("phone").orEmpty())
-                            putExtra("driver_seats", driver?.seats ?: submitted?.optString("seats")?.toIntOrNull() ?: submitted?.optString("seat_type")?.toIntOrNull() ?: -1)
-                            putExtra("driver_fuel", driver?.fuel.orEmpty().ifBlank { submitted?.optString("fuel").orEmpty().ifBlank { submitted?.optString("fuel_type").orEmpty() } })
-                            putExtra("driver_info", driver?.info.orEmpty().ifBlank { submitted?.optString("info").orEmpty().ifBlank { submitted?.optString("details").orEmpty() } })
-                            putExtra("driver_area", driver?.areaId.orEmpty().ifBlank { submitted?.optString("area_id").orEmpty().ifBlank { submitted?.optString("area_name").orEmpty() } })
                         })
                         dialog.dismiss()
                     }
