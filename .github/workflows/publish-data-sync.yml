@@ -92,19 +92,39 @@ jobs:
               except urllib.error.HTTPError as e:
                   raise RuntimeError(f"Supabase HTTP {e.code}: {e.read().decode('utf-8', 'replace')}")
 
-          state = request("GET", "/rest/v1/data_sync_state?select=revision&id=eq.1")
+          state = request("GET", "/rest/v1/data_sync_state?select=revision,snapshot_version&id=eq.1")
           if not state:
               raise SystemExit("data_sync_state row id=1 is missing; apply the incremental_data_sync migration first.")
           revision = int(state[0]["revision"])
-          # Without the previous snapshot we cannot calculate tombstones safely.
-          # Refuse to publish rather than silently leaving deleted records on devices.
-          if (os.environ.get("EVENT_NAME") != "workflow_dispatch"
-                  and revision > 0 and old_load_error is not None):
+          published_version = int(state[0].get("snapshot_version") or 0)
+          # If GitHub's current snapshot is ahead of Supabase, recover from the last
+          # snapshot that Supabase says it has published. This handles skipped CI
+          # commits and manual dispatches without losing delete tombstones.
+          if revision > 0 and published_version != int(current["dataVersion"]):
+              history = subprocess.check_output(
+                  ["git", "log", "--format=%H", "--", path], text=True
+              ).splitlines()
+              recovered = None
+              for commit in history:
+                  try:
+                      raw = subprocess.check_output(
+                          ["git", "show", f"{commit}:{path}"], stderr=subprocess.DEVNULL
+                      )
+                      candidate = json.loads(raw.decode("utf-8"))
+                      if isinstance(candidate, dict) and int(candidate.get("dataVersion", 0)) == published_version:
+                          recovered = candidate
+                          print(f"Recovered published baseline version {published_version} from {commit}.")
+                          break
+                  except Exception:
+                      continue
+              if recovered is None:
+                  raise SystemExit(
+                      f"Cannot find routes.json dataVersion {published_version} in Git history; "
+                      "refusing to publish incomplete deltas."
+                  )
+              old = recovered
+          elif revision > 0 and old_load_error is not None:
               raise SystemExit("Cannot read the previous routes.json from the push's before-SHA; refusing to publish incomplete deltas. " + old_load_error)
-          # Manual dispatch is only a seed/recovery action; avoid replaying every row
-          # when a revision has already been published.
-          if os.environ.get("EVENT_NAME") == "workflow_dispatch" and revision > 0:
-              old = current
           # Revision zero means first publication: seed every current record so existing installs can catch up.
           if revision == 0:
               old = {}
