@@ -68,6 +68,10 @@ jobs:
           if not state:
               raise SystemExit("data_sync_state row id=1 is missing; apply the incremental_data_sync migration first.")
           revision = int(state[0]["revision"])
+          # Manual dispatch is only a seed/recovery action; avoid replaying every row
+          # when a revision has already been published.
+          if os.environ.get("EVENT_NAME") == "workflow_dispatch" and revision > 0:
+              old = current
           # Revision zero means first publication: seed every current record so existing installs can catch up.
           if revision == 0:
               old = {}
