@@ -430,7 +430,7 @@ async function restoreAdminSession() {
   } catch (_) { saveAdminSession({}); return false; }
 }
 var reviewStatus = 'pending';
-var community = { corrections:null, vehicles:null, feedback:null, busSubmissions:null, operators:null };
+var community = { corrections:null, feedback:null, busSubmissions:null, operators:null };
 var communityStatus = 'pending';
 var communitySection = 'all';
 var editing = null;
@@ -516,34 +516,7 @@ function communityEditorHtml() {
  }
 
 
- if(kind==='vehicles'){
-  var vr=communityReviewEditor.record,vd=Object.assign({},vr,vr.reviewed_data&&typeof vr.reviewed_data==='object'?vr.reviewed_data:{}),vt=vr._table==='taxi_submissions'||vr.vehicle_type==='taxi'?'taxi':'auto';
-  // Location is vehicle-specific; do not fall back to a legacy area field.
-  vd.location=String((vr.reviewed_data&&Object.prototype.hasOwnProperty.call(vr.reviewed_data,'location'))?vr.reviewed_data.location:(vr.location||'')||'').normalize('NFKC').trim().replace(/\s+/g,' ');
-  function vfield(key,label,type){var value=vd[key]==null?'':String(vd[key]);return '<label>'+label+'</label><input data-cr-field="'+key+'" '+(type==='number'?'type="number" min="1"':type==='tel'?'inputmode="tel"':'')+' value="'+esc(value)+'">';}
-  var vh='<p class="muted">Review '+(vt==='taxi'?'Taxi':'Auto')+' listing. These fields match the app form; Other information is optional.</p>';
-  vh+=vfield('person_name','Driver name','text')+vfield('vehicle_name','Vehicle name','text')+vfield('year','Year (4 digits)','text')+vfield('seats','Number of seats','number')+vfield('vehicle_number','Vehicle registration number','text')+vfield('location','Location address / service area','text')+vfield('union_name','Union name','text')+vfield('phone','Mobile number','tel');
-  if(vt==='auto'){var fuel=String(vd.fuel_type||'ev').toLowerCase();vh+='<label>Fuel type</label><select data-cr-field="fuel_type"><option value="ev"'+(fuel==='ev'?' selected':'')+'>EV</option><option value="oil"'+(fuel==='oil'?' selected':'')+'>Oil</option><option value="cng"'+(fuel==='cng'?' selected':'')+'>CNG</option><option value="other"'+(fuel==='other'?' selected':'')+'>Other</option></select>';}
-  vh+='<label>Other information (optional)</label><textarea data-cr-field="details" rows="3">'+esc(vd.details||'')+'</textarea>';
-  vh+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(vr.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(vr.id)+'">Approve reviewed listing</button></div>';
-  return vh;
- }
-
- var rec=communityReviewEditor.record,kind=communityReviewEditor.kind,draft=rec.reviewed_data&&typeof rec.reviewed_data==='object'?rec.reviewed_data:rec;
- var skip={id:1,status:1,created_at:1,updated_at:1,reviewed_data:1,reviewed_at:1,approved_at:1};
- var labels={vehicle_type:'Listing type',person_name:'Contact person / driver name',vehicle_name:'Vehicle name',year:'Year',vehicle_model_number:'Legacy model number',vehicle_number:'Registration number',seats:'Seats',area_name:'Service area',location:'Location',union_name:'Union',fuel_type:'Fuel type',phone:'Phone',whatsapp:'WhatsApp',details:'Details',operator_name:'Operator name',service_name:'Service name',bus_type:'Bus type',custom_category:'Custom category',seat_type:'Seat type',sleeper_count:'Sleeper berths',seater_count:'Seater seats',from_text:'From',to_text:'To',request_type:'Request type',route_id:'Route ID',before_stop_id:'Before stop ID',after_stop_id:'After stop ID',missing_place_name:'Missing stop',missing_time:'Missing stop time',stop_id:'Stop ID',corrected_time:'Corrected time',change_summary:'Change summary',proposed_stops:'Proposed stops',category:'Category',related_route:'Related route',message:'Message',contact:'Contact',notes:'Notes'};
- var html='<p class="muted">Taxi/Auto listing review: fields match Add Taxi / Add Auto. Other information is optional. Saving a draft does not approve the listing.</p>';
- Object.keys(rec).forEach(function(k){if(skip[k]||typeof rec[k]==='function')return;var value=Object.prototype.hasOwnProperty.call(draft,k)?draft[k]:rec[k],label=labels[k]||k.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});if(k==='original_stops'){html+='<label>'+esc(label)+' · original/read-only</label><pre style="white-space:pre-wrap">'+esc(JSON.stringify(value,null,2))+'</pre>';return;}if(value!==null&&typeof value==='object'){html+='<label>'+esc(label)+' · JSON</label><textarea data-cr-field="'+esc(k)+'" rows="5" style="width:100%;font-family:monospace">'+esc(JSON.stringify(value,null,2))+'</textarea>';}else{var type=/(time)$/.test(k)?'time':(/count$|^seats$/.test(k)?'number':'text');html+='<label>'+esc(label)+'</label><input data-cr-field="'+esc(k)+'" type="'+type+'" value="'+esc(value==null?'':String(value))+'">';}});
- html+='<div class="dlg-foot" style="justify-content:flex-start;gap:8px"><button class="btn" data-act="close">Cancel</button><button class="btn" data-act="community-save-draft" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Save reviewed draft</button><button class="btn primary" data-act="community-approve-reviewed" data-kind="'+esc(kind)+'" data-id="'+esc(rec.id)+'">Approve reviewed data</button></div>';return html;
 }
-function communityEditorValues(){var out={};document.querySelectorAll('#dlgBody [data-cr-field]').forEach(function(el){var k=el.getAttribute('data-cr-field');if(el.tagName==='TEXTAREA'){if(k==='notes'){out[k]=el.value.trim()||null;}else{try{out[k]=JSON.parse(el.value);}catch(e){throw new Error('Invalid JSON in '+k+'. Fix it before saving.');}}}else if(el.type==='number'){out[k]=el.value.trim()===''?null:Number(el.value);if(el.value.trim()!==''&&!Number.isFinite(out[k]))throw new Error('Invalid number in '+k+'.');}else out[k]=el.value.trim()===''?null:el.value.trim();});
- if(communityReviewEditor&&communityReviewEditor.kind==='corrections'&&communityReviewEditor.record.request_type==='route_edit'){
-  out.proposed_stops=Array.prototype.map.call(document.querySelectorAll('#crProposedStops [data-cr-proposed]'),function(row){
-   var place=row.querySelector('[data-cr-place]'),name=row.querySelector('[data-cr-name]'),time=row.querySelector('[data-cr-time]');
-   return {place_id:place&&place.value||null,name:name&&name.value.trim()||'',time:time&&time.value||null,language:'en'};
-  });
- }
- return out;}
 function showCommunityEditor(kind,record){communityReviewEditor={kind:kind,record:JSON.parse(JSON.stringify(record))};editing=null;routeReviewEditor=null;publishOpen=false;render();}
 
 function communityEditorValues(){
@@ -559,7 +532,6 @@ function communityEditorValues(){
    if(el.value.trim()!==''&&!Number.isFinite(out[k]))throw new Error('Invalid number in '+k+'.');
   }else out[k]=el.value.trim()===''?null:el.value.trim();
  });
- if(communityReviewEditor&&communityReviewEditor.kind==='vehicles'){out.area_name=out.location||null;}
  if(communityReviewEditor&&communityReviewEditor.kind==='busSubmissions'){
    var selectedBusTypes=Array.prototype.map.call(document.querySelectorAll('#dlgBody [data-bus-type]:checked'),function(el){return el.getAttribute('data-bus-type');});
    var customBusType=String((document.querySelector('#dlgBody [data-bus-other]')||{}).value||'').trim();
@@ -586,7 +558,7 @@ function communityEditorValues(){
 function showCommunityEditor(kind,record){communityReviewEditor={kind:kind,record:JSON.parse(JSON.stringify(record))};editing=null;routeReviewEditor=null;publishOpen=false;render();}
 
 var publishOpen = false;
-var filters = { places:'', placeKind:'', routes:'', drivers:'', driverType:'' };
+var filters = { places:'', placeKind:'', routes:'' };
 
 var NAV = [
   ['dashboard','Dashboard'], ['analytics','Analytics & Stats'], ['bus','Bus'],
@@ -912,47 +884,12 @@ async function mergeApprovedCommunitySubmissions(nextVersion){
       offset+=pageSize;
     }
     for(var ri=0;ri<rows.length;ri++){
-      var sub=rows[ri],rd=sub.reviewed_data&&typeof sub.reviewed_data==='object'?sub.reviewed_data:{}; if(spec.table==='taxi_submissions')sub.vehicle_type='taxi';else if(spec.table==='auto_submissions')sub.vehicle_type='auto';
+      var sub=rows[ri],rd=sub.reviewed_data&&typeof sub.reviewed_data==='object'?sub.reviewed_data:{};
       // Only approvals made by this durable-queue version should be auto-published.
       // Legacy approved test records are deliberately left alone.
       if(rd._bustime_published_version||rd._bustime_publish_pending!==true)continue;
       var reviewed=Object.assign({},sub,rd);
-      if(spec.kind==='vehicles'){
-        if(!reviewed.person_name||!reviewed.vehicle_name||!reviewed.phone)throw new Error('Approved vehicle request '+sub.id+' is missing owner/vehicle/phone; review it before publishing.');
-        var sourceId=String(sub.id);
-        var existing=data.drivers.find(function(d){return String(d.sourceSubmissionId||'')===sourceId;});
-        if(!existing){
-          var phoneDigits=String(reviewed.phone||'').replace(/\D/g,'');
-          existing=data.drivers.find(function(d){
-            return d.type===reviewed.vehicle_type&&String(d.phone||'').replace(/\D/g,'')===phoneDigits&&String(d.name||'').trim().toLowerCase()===String(reviewed.person_name||'').trim().toLowerCase()&&String(d.vehicle||'').indexOf(String(reviewed.vehicle_name||''))===0;
-          });
-        }
-        if(!existing){
-          existing={id:nextNum(reviewed.vehicle_type==='taxi'?'t':'a',data.drivers),type:reviewed.vehicle_type,name:reviewed.person_name,vehicle:reviewed.vehicle_name+((reviewed.year||reviewed.vehicle_model_number)?' · '+(reviewed.year||reviewed.vehicle_model_number):''),year:String(reviewed.year||reviewed.vehicle_model_number||''),vehicle_number:reviewed.vehicle_number||'',phone:reviewed.phone,area:String(reviewed.location||reviewed.area_name||'').normalize('NFKC').trim().replace(/\s+/g,' '),areaId:resolveVehicleAreaId(reviewed.location||reviewed.area_name),union_name:reviewed.union_name||'',details:reviewed.details||'',info:(reviewed.union_name?'Union: '+reviewed.union_name+' · ':'')+(reviewed.vehicle_number?'Vehicle No: '+reviewed.vehicle_number+' · ':'')+(reviewed.details||''),sourceSubmissionId:sourceId};
-          if(reviewed.vehicle_type==='auto')existing.fuel=(reviewed.fuel_type||reviewed.fuel||'oil').toLowerCase();
-          if(reviewed.union_name)existing.union_name=reviewed.union_name;
-          if(reviewed.seats)existing.seats=reviewed.seats;
-          data.drivers.push(existing);changed=true;
-        }else {
-          if(!existing.sourceSubmissionId){existing.sourceSubmissionId=sourceId;changed=true;}
-          existing.type=reviewed.vehicle_type;
-          existing.name=reviewed.person_name;
-          existing.vehicle=reviewed.vehicle_name+((reviewed.year||reviewed.vehicle_model_number)?' · '+(reviewed.year||reviewed.vehicle_model_number):'');
-          existing.year=String(reviewed.year||reviewed.vehicle_model_number||'');
-          existing.vehicle_number=reviewed.vehicle_number||'';
-          existing.phone=reviewed.phone;
-          existing.area=String(reviewed.location==null?'':reviewed.location).normalize('NFKC').trim().replace(/\s+/g,' ');
-          existing.areaId=existing.area?resolveVehicleAreaId(existing.area):null;
-          existing.union_name=reviewed.union_name||'';
-          existing.details=reviewed.details||'';
-          existing.seats=Number(reviewed.seats)||existing.seats;
-          existing.info=(reviewed.union_name?'Union: '+reviewed.union_name+' · ':'')+(reviewed.vehicle_number?'Vehicle No: '+reviewed.vehicle_number+' · ':'')+(reviewed.details||'');
-          if(reviewed.vehicle_type==='auto')existing.fuel=(reviewed.fuel_type||reviewed.fuel||'oil').toLowerCase();
-          changed=true;
-        }
-      }else{
-        if(!await correctionAlreadyApplied(reviewed)){applyApprovedCorrection(reviewed);changed=true;}
-      }
+      if(!await correctionAlreadyApplied(reviewed)){applyApprovedCorrection(reviewed);changed=true;}
       var durable=Object.assign({},rd);
       if(!Object.keys(durable).length)durable=Object.assign({},sub);
       durable._bustime_published_version=nextVersion;
@@ -1125,13 +1062,6 @@ function refreshWorkspaceNav() {
 function viewBusHome() {
   return viewPlaces();
 }
-function viewTaxiHome() {
-  return viewCommunity('taxi');
-}
-function viewAutoHome() {
-  return viewCommunity('auto');
-}
-
 function viewDashboard() {
   data = data || {};
   data.places = Array.isArray(data.places) ? data.places : [];
@@ -1344,57 +1274,6 @@ function routeFormHtml() {
     '<button class="btn sm" data-act="add-stop">+ Add stop at end</button>'+foot('save-route');
 }
 
-function viewSeats() {
-  var counts = {};
-  data.drivers.forEach(function (d) { if (d.type === 'taxi') counts[d.seats] = (counts[d.seats] || 0) + 1; });
-  return '<div class="card"><h2>Taxi seat options</h2>' +
-    '<p class="muted">These are the options users see first in the Taxi section. Remove a seat count that has no vehicles. ' +
-    'If this list is empty, options are built from the drivers\' seat counts.</p>' +
-    '<div class="chips">' + (data.taxiSeaters.map(function (n) {
-      return '<div class="chip"><div><b>' + n + '</b> seater<div class="muted">' + (counts[n] || 0) + ' vehicle(s)</div></div>' +
-        '<button class="btn sm danger" data-act="rm-seater" data-n="' + n + '">&times;</button></div>';
-    }).join('') || '<span class="muted">No options defined</span>') + '</div>' +
-    '<div class="toolbar"><input type="number" min="1" id="newSeater" placeholder="e.g. 6" style="max-width:160px">' +
-    '<button class="btn primary" data-act="add-seater">+ Add seat option</button></div></div>';
-}
-
-function viewDrivers() {
-  var q = filters.drivers.toLowerCase(), t = (tab === 'autoDrivers' ? 'auto' : tab === 'drivers' ? 'taxi' : filters.driverType);
-  var rows = data.drivers.map(function (d, i) { return { d: d, i: i }; }).filter(function (x) {
-    if (t && x.d.type !== t) return false;
-    return !q || (String(x.d.name) + ' ' + x.d.phone + ' ' + (x.d.vehicle || '')).toLowerCase().indexOf(q) >= 0;
-  });
-  return '<div class="toolbar"><input class="grow" id="f_drivers" data-filter="drivers" placeholder="Search by name, number or vehicle" value="' + esc(filters.drivers) + '">' +
-    '<span class="badge gray">' + (t === 'auto' ? 'Auto directory' : 'Taxi directory') + '</span>' +
-    '<button class="btn primary" data-act="new-driver">+ Add driver</button></div>' +
-    '<div class="tablewrap"><table><thead><tr><th>Name</th><th>Type</th><th>Vehicle</th><th>Details</th><th>Mobile</th><th></th></tr></thead><tbody>' +
-    (rows.map(function (x) {
-      var d = x.d;
-      return '<tr><td><b>' + esc(d.name) + '</b></td><td><span class="badge ' + (d.type === 'taxi' ? '' : 'green') + '">' + (d.type === 'taxi' ? 'Taxi' : 'Auto') + '</span></td>' +
-        '<td>' + esc((d.vehicle || '-') + (d.year ? ' · ' + d.year : '')) + '</td><td>' + (d.type === 'taxi' ? (d.seats || '?') + ' seater' : (d.seats ? d.seats + ' seats · ' : '') + (d.fuel ? d.fuel.toUpperCase() : 'Auto')) + '</td>' +
-        '<td>' + esc(d.phone) + '</td><td class="actions">' +
-        '<button class="btn sm" data-act="edit-driver" data-i="' + x.i + '">Edit</button>' +
-        '<button class="btn sm" data-act="toggle-driver-hidden" data-i="' + x.i + '">' + (d.hidden ? 'Show' : 'Hide') + '</button>' +
-        '<button class="btn sm danger" data-act="del-driver" data-i="' + x.i + '">Delete</button></td></tr>';
-    }).join('') || '<tr><td colspan="6" class="empty">No drivers found</td></tr>') + '</tbody></table></div>';
-}
-function driverFormHtml() {
-  var d = editing.draft, isTaxi = d.type !== 'auto';
-  return '<h3>'+(isTaxi?'Taxi listing':'Auto listing')+'</h3>' +
-    '<input type="hidden" id="fd_type" value="'+(isTaxi?'taxi':'auto')+'">' +
-    '<label>Driver name (required)</label><input id="fd_name" value="' + esc(d.name) + '">' +
-    '<label>Vehicle name (required)</label><input id="fd_vehicle" value="' + esc(String(d.vehicle||'').replace(d.year?' · '+d.year:'' ,'')) + '">' +
-    '<label>Year (4 digits, required)</label><input id="fd_year" inputmode="numeric" maxlength="4" value="' + esc(d.year) + '">' +
-    '<label>Number of seats (required)</label><input id="fd_seats" type="number" min="1" value="' + esc(d.seats) + '">' +
-    '<label>Vehicle registration number (required)</label><input id="fd_vehicle_number" value="' + esc(d.vehicle_number) + '">' +
-    '<label>Location address / service area (required)</label><input id="fd_area" value="' + esc(d.area) + '">' +
-    '<label>Union name (required)</label><input id="fd_union" value="' + esc(d.union_name) + '">' +
-    '<label>Mobile number (required)</label><input id="fd_phone" inputmode="tel" value="' + esc(d.phone) + '">' +
-    (isTaxi ? '' : '<label>Fuel type (required)</label><select id="fd_fuel"><option value="ev"'+(String(d.fuel||'ev').toLowerCase()==='ev'?' selected':'')+'>EV</option><option value="oil"'+(String(d.fuel||'').toLowerCase()==='oil'?' selected':'')+'>Oil</option><option value="cng"'+(String(d.fuel||'').toLowerCase()==='cng'?' selected':'')+'>CNG</option><option value="other"'+(String(d.fuel||'').toLowerCase()==='other'?' selected':'')+'>Other</option></select>') +
-    '<label>Other information (optional)</label><input id="fd_info" value="' + esc(d.details != null ? d.details : String(d.info||'').replace(/^Union: .*? · /,'').replace(/^Vehicle No: .*? · /,'').replace(/^Union: .*? · Vehicle No: .*? · /,'')) + '">' + foot('save-driver');
-}
-
-
 var adSubtab = 'my';
 var adConfig = {
   my:{enabled:false,category:'general',poster_url:'',start_date:'',end_date:'',close_delay:3,
@@ -1403,11 +1282,11 @@ var adConfig = {
     bus_every:4}
 };
 function adEscape(v){return esc(v==null?'':String(v));}
-var adTargetCache={routes:[],operators:[],taxi:[],auto:[]};
+var adTargetCache={routes:[],operators:[]};
 function adTargetLabel(x,kind){
   if(kind==='route'){var a=x.fromName||x.from_name||x.from||x.fromId||x.from_id||x.origin||'',z=x.toName||x.to_name||x.to||x.toId||x.to_id||x.destination||'',t=x.time||x.departureTime||x.departure_time||'';return String(a||'Route')+' → '+String(z||'Destination')+(t?' · '+t:'');}
   if(kind==='operator')return String(x.service_name||x.operator_name||x.name||'Bus service')+(Array.isArray(x.bus_types)&&x.bus_types.length?' · '+x.bus_types.join(', '):'')+(x.location?' · '+x.location:'');
-  return String(x.vehicle_name||x.person_name||x.name||x.driver_name||'Vehicle listing')+(x.location?' · '+x.location:'')+(x.seats?' · '+x.seats+' seats':'');
+  return String(x.service_name||x.operator_name||x.name||'Bus service')+(x.location?' · '+x.location:'');
 }
 function adTargetOptions(){
   var cat=(document.getElementById('ad_category')||{}).value||adConfig.my.category||'general';
@@ -1416,7 +1295,7 @@ function adTargetOptions(){
   else if(cat==='bus_operator')groups.push(['Bus / operator booking listings',adTargetCache.operators,'operator']);
   var out='<option value="">Choose a listed target</option>';
   groups.forEach(function(g){out+='<optgroup label="'+g[0]+'">'+g[1].map(function(x){
-    var id=String(x.id||x.routeId||x.route_id||x.operator_id||x.vehicle_id||''),kind=g[2],value=kind+':'+id;
+    var id=String(x.id||x.routeId||x.route_id||x.operator_id||''),kind=g[2],value=kind+':'+id;
     return '<option value="'+adEscape(value)+'" '+(savedKind===kind&&savedId===id?'selected':'')+'>'+adEscape(adTargetLabel(x,kind))+'</option>';
   }).join('')+'</optgroup>';});
   if(groups.every(function(g){return !g[1].length;}))out+='<option disabled value="">No listings found for this category</option>';
@@ -1425,9 +1304,6 @@ function adTargetOptions(){
 async function loadAdTargets(){
   adTargetCache.routes=((data&&data.routes)||[]).slice();
   try{adTargetCache.operators=await sbFetch('/rest/v1/bus_operators?select=*&active=eq.true&order=operator_name.asc&limit=500');}catch(e){adTargetCache.operators=[];}
-  // Only offer published app listings as CTA targets. Submission-review rows may be
-  // private and cannot be opened by the public Android app until published.
-  var drivers=(data&&data.drivers)||[];
 }
 function adActionLabel(kind){return kind==='operator'?'Book Bus':kind==='route'?'Check Route':'Learn more';}
 function refreshAdTargets(){var select=document.getElementById('ad_target_id');if(select)select.innerHTML=adTargetOptions();refreshAdActionLabel();}
@@ -1526,7 +1402,7 @@ function viewSettings() {
     '<label>GitHub token (kept only in this browser)</label><input id="c_token" type="password" value="' + esc(cfg.token) + '">' +
     '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="save-cfg">Save and load data</button></div>' +
     (data ? '<div class="alert ok">Loaded: data version ' + baseVersion + ', ' + data.places.length + ' places, ' + data.routes.length +
-            ' routes, ' + data.drivers.length + ' drivers.</div>' : '') + '</div>' +
+            ' routes.</div>' : '') + '</div>' +
     '<div class="card"><h2>Creating a token (one time)</h2><p class="muted">' +
     'GitHub &rarr; profile picture &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens &rarr; Generate new token.<br>' +
     '&bull; Repository access: only the <b>Bustime</b> repository<br>&bull; Repository permissions: <b>Contents &rarr; Read and write</b><br>' +
@@ -1534,7 +1410,7 @@ function viewSettings() {
 }
 
 
-// ============ Editable app text: Terms, driver popup, ticker ============
+// ============ Editable app text: Terms, app popup, ticker ============
 async function loadContentSettings() {
   var rows = await sbFetch('/rest/v1/app_content_settings?id=eq.1&select=settings');
   if (rows && rows[0] && rows[0].settings) {
@@ -1770,8 +1646,6 @@ async function loadCommunity() {
       failed.push(specs[i][1] + ' (' + e.message + ')');
     }
   }
-  // Taxi and Auto listings are retired; the Review Center handles bus routes and feedback only.
-  community.vehicles=[];
   community._failed = failed;
   if (failed.length) toast('Some tables could not load: ' + failed.join('; ') + '. Run supabase/fix_app_admin_sync.sql in Supabase SQL Editor, then Refresh.');
 }
@@ -1800,7 +1674,7 @@ function viewBusRequests() {
 }
 function viewCommunity(mode) {
   if (!sbToken) return viewSupabaseSignIn();
-  if (!community.corrections || !community.vehicles || !community.feedback || !community.busSubmissions || !community.operators) {
+  if (!community.corrections || !community.feedback || !community.busSubmissions || !community.operators) {
     return '<div class="card"><p class="muted">Loading community requests…</p><button class="btn" data-act="community-refresh">Refresh</button></div>';
   }
   var all = [];
@@ -1818,14 +1692,12 @@ function viewCommunity(mode) {
   all.forEach(function(x){ if(counts[x._kind] && counts[x._kind][x.status] !== undefined) counts[x._kind][x.status]++; });
   function matchesMode(x) {
     var textValue = (x.category||'') + ' ' + (x.message||'');
-    if (mode === 'taxi') return (x._kind === 'vehicles' && x.vehicle_type === 'taxi') || (x._kind === 'feedback' && /taxi/i.test(textValue));
-    if (mode === 'auto') return (x._kind === 'vehicles' && x.vehicle_type === 'auto') || (x._kind === 'feedback' && /auto|rickshaw/i.test(textValue));
     if (mode === 'bus' || mode === 'busDirectory') return mode === 'bus' ? x._kind === 'busSubmissions' : false;
     if (mode === 'corrections') return x._kind === 'corrections';
-    if (mode === 'feedback') return x._kind === 'feedback' && !/correct/i.test(textValue) && !/taxi|auto|rickshaw/i.test(textValue);
+    if (mode === 'feedback') return x._kind === 'feedback' && !/correct/i.test(textValue);
     return communitySection === 'all' || x._kind === communitySection;
   }
-  var html = '<div class="toolbar"><span class="grow muted">' + esc(mode === 'taxi' ? 'Taxi listings and taxi-related corrections.' : mode === 'auto' ? 'Auto listings and auto-related corrections.' : mode === 'bus' ? 'Review Add Your Bus submissions. Manual operator management is in Operator Directory.' : mode === 'busDirectory' ? 'Manage published bus operators separately from submitted requests.' : mode === 'corrections' ? 'Route correction requests only.' : mode === 'feedback' ? 'General feedback not classified as a vehicle or route correction.' : 'Requests grouped by category.') + '</span><button class="btn" data-act="community-refresh">Refresh</button>' + (sbToken ? '<button class="btn" data-act="sb-logout">Sign out</button>' : '') + '</div>';
+  var html = '<div class="toolbar"><span class="grow muted">' + esc(mode === 'bus' ? 'Review Add Your Bus submissions. Manual operator management is in Operator Directory.' : mode === 'busDirectory' ? 'Manage published bus operators separately from submitted requests.' : mode === 'corrections' ? 'Route correction requests only.' : mode === 'feedback' ? 'General feedback and suggestions.' : 'Requests grouped by category.') + '</span><button class="btn" data-act="community-refresh">Refresh</button>' + (sbToken ? '<button class="btn" data-act="sb-logout">Sign out</button>' : '') + '</div>';
   if (!mode) html += '<div class="chips">' + sections.map(function(p){return '<button class="btn '+(communitySection===p[0]?'primary':'')+'" data-act="community-section" data-section="'+p[0]+'">'+p[1]+' ('+((community[p[0]]||[]).length)+')</button>';}).join('') + '</div>';
   if (community._failed && community._failed.length) html = '<div class="card" style="border-color:#c0392b"><b>Some tables failed to load:</b><br>' + community._failed.map(esc).join('<br>') + '<br><span class="muted">Tables failed to load: ' + community._failed.map(esc).join(', ') + '. Check the error and refresh.</span></div>' + html;
   if (mode !== 'busDirectory') {
@@ -1854,9 +1726,7 @@ function viewCommunity(mode) {
           (x.request_type==='missing_stop' ? '<p><b>Between:</b> '+esc(x.before_stop_id)+' → '+esc(x.after_stop_id)+' · <b>Missing:</b> '+esc(x.missing_place_name)+' · <b>Time:</b> '+esc(x.missing_time||'-')+'</p>' : '<p><b>Stop:</b> '+esc(x.stop_id)+' · <b>Correct time:</b> '+esc(x.corrected_time)+'</p>');
       }
       details += '<p><b>Mobile:</b> '+esc(x.phone||'-')+'</p><p class="muted">'+esc(x.notes||'')+'</p>';
-    } else if (x._kind === 'vehicles') {
-      details = '<p><b>'+esc(x.vehicle_type)+'</b> · '+esc(x.person_name)+' · '+esc(x.vehicle_name)+' · Year '+esc(x.year||x.vehicle_model_number||'-')+' · Registration No. '+esc(x.vehicle_number||'-')+' · Seats '+esc(x.seats||'-')+'</p><p><b>Service area:</b> '+esc(x.area_name||x.location||'-')+' · <b>Union:</b> '+esc(x.union_name||'-')+' · <b>Fuel:</b> '+esc(x.fuel_type||'-')+'</p><p>'+esc(x.phone)+'</p><p>'+esc(x.details||'')+'</p>';
-    } else if (x._kind === 'busSubmissions') {
+    } else if (x._kind === 'busSubmissions') {    } else if (x._kind === 'busSubmissions') {
       details = '<p><b>Bus service / company:</b> '+esc(x.service_name||x.operator_name||'-')+'</p><p><b>Bus types:</b> '+esc(Array.isArray(x.bus_types)?x.bus_types.join(' · '):'-')+'</p><p><b>Operating location:</b> '+esc(x.location||'-')+'</p><p><b>Booking phone:</b> '+esc(x.phone)+' · <b>WhatsApp:</b> '+esc(x.whatsapp||'-')+'</p><p>'+esc(x.details||'')+'</p>';
     } else {
       details = '<p><b>'+esc(x.category)+'</b> · Route '+esc(x.related_route||'-')+'</p><p>'+esc(x.message)+'</p><p class="muted">Contact: '+esc(x.contact||'-')+'</p>';
@@ -1865,8 +1735,8 @@ function viewCommunity(mode) {
       '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete</button>';
     var correctionRoute=x._kind==='corrections'?(data.routes||[]).find(function(r){return String(r.id)===String(x.route_id);}):null;
     var correctionRouteName=correctionRoute?(pname(placeById(correctionRoute.from))+' → '+pname(placeById(correctionRoute.to))):'';
-    var cardTitle=x._kind==='corrections'?(correctionRouteName||('Route '+String(x.route_id||'correction')))+' · '+String(x.request_type||'correction'):(x._label+' · '+(x.request_type||x.vehicle_type||x.category||'Request'));
-    var summary=x._kind==='corrections'?(x.request_type==='route_edit'?'Full route edit':x.request_type==='missing_stop'?'Missing stop: '+String(x.missing_place_name||'name pending'):x.request_type==='correct_time'?'Timing correction: '+String(x.corrected_time||'time pending'):String(x.notes||'')):(x._kind==='vehicles'?[x.person_name,x.vehicle_name,x.area_name||x.location].filter(Boolean).join(' · '):x._kind==='busSubmissions'?[x.service_name||x.operator_name,Array.isArray(x.bus_types)?x.bus_types.join(', '):'',x.location].filter(Boolean).join(' · '):String(x.category||'')+' '+String(x.message||'')).trim();
+    var cardTitle=x._kind==='corrections'?(correctionRouteName||('Route '+String(x.route_id||'correction')))+' · '+String(x.request_type||'correction'):(x._label+' · '+(x.request_type||x.category||'Request'));
+    var summary=x._kind==='corrections'?(x.request_type==='route_edit'?'Full route edit':x.request_type==='missing_stop'?'Missing stop: '+String(x.missing_place_name||'name pending'):x.request_type==='correct_time'?'Timing correction: '+String(x.corrected_time||'time pending'):String(x.notes||'')):(x._kind==='busSubmissions'?[x.service_name||x.operator_name,Array.isArray(x.bus_types)?x.bus_types.join(', '):'',x.location].filter(Boolean).join(' · '):String(x.category||'')+' '+String(x.message||'')).trim();
     var cardMeta=(x.created_at?new Date(x.created_at).toLocaleString()+' · ':'')+'ID '+x.id;
     var detailKey=String(x._kind)+'-'+String(x.id);
     html += '<div class="card request-card" data-request-card="'+esc(detailKey)+'" style="padding:7px 12px;margin-bottom:5px"><div class="request-row"><div class="request-title" title="'+esc(cardTitle)+'">'+esc(cardTitle)+'</div><div class="request-summary" title="'+esc(summary||'')+'">'+esc(summary||'No summary')+'</div><div class="request-summary">'+esc(cardMeta)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap"><button class="btn sm" data-act="community-toggle-details" data-detail="'+esc(detailKey)+'">Details ▾</button>'+actions+'</div></div><div class="request-details">'+details+'</div></div>';
@@ -1906,32 +1776,10 @@ function viewReview() {
     '</div><div class="card"><h2>How requests are organized</h2><p class="muted">Bus route submissions, route corrections, feedback, and Add Bus operator submissions are reviewed here. Book Bus remains an information and contact feature, not a booking queue.</p></div>';
 }
 function communityTable(kind, record) {
-  if(kind==='vehicles'){
-    var table=record&&(record._table||(record.vehicle_type==='taxi'?'taxi_submissions':record.vehicle_type==='auto'?'auto_submissions':''));
-    if(table==='taxi_submissions'||table==='auto_submissions')return table;
-    throw new Error('Vehicle request type is missing; refresh Taxi/Auto requests before changing it.');
-  }
   if(kind==='corrections')return 'correction_submissions';
   if(kind==='busSubmissions')return 'bus_operator_submissions';
   if(kind==='feedback')return 'feedback_submissions';
   throw new Error('Unsupported community request type: '+kind);
-}
-function normalizeCity(value){return String(value||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase();}
-function resolveVehicleAreaId(value){
-  var label=String(value||'').normalize('NFKC').trim().replace(/\s+/g,' ');
-  if(!label)return null;
-  var key=normalizeCity(label);
-  var match=data.places.find(function(p){
-    if(p.kind!=='city'&&p.kind!=='stand')return false;
-    var names=p.name&&typeof p.name==='object'?Object.keys(p.name).map(function(k){return p.name[k];}):[p.name];
-    names=names.concat(Array.isArray(p.aliases)?p.aliases:[]);
-    return names.some(function(n){return normalizeCity(n)===key;});
-  });
-  if(match)return match.id;
-  var id=makeId('place_user_',label,function(candidate){return !!placeById(candidate);});
-  data.places.push({id:id,kind:'city',name:{en:label}});
-  setDirty(true);
-  return id;
 }
 function applyApprovedCorrection(x) {
   var r = data.routes.find(function(z){ return z.id === x.route_id; });
@@ -2140,7 +1988,7 @@ function renderModal() {
   var ov = $('#overlay');
   edSuggestHide();
   if (communityReviewEditor) {
-    $('#dlgTitle').textContent = 'Edit request · ' + (communityReviewEditor.record.vehicle_type || communityReviewEditor.record.request_type || communityReviewEditor.record.category || communityReviewEditor.kind);
+    $('#dlgTitle').textContent = 'Edit request · ' + (communityReviewEditor.record.request_type || communityReviewEditor.record.category || communityReviewEditor.kind);
     $('#dlgBody').innerHTML = communityEditorHtml(); ov.classList.add('show'); autoTranslateReviewGroups(); edMarkAll();
   } else if (routeReviewEditor) {
     var reviewSub = subs && subs[routeReviewEditor.index];
@@ -2158,9 +2006,9 @@ function renderModal() {
       '<button class="btn primary" data-act="publish"' + (v.errors.length ? ' disabled' : '') + '>Publish to GitHub</button></div>';
     ov.classList.add('show');
   } else if (editing) {
-    var titles = { place: 'place', route: 'route', driver: 'driver' };
+    var titles = { place: 'place', route: 'route' };
     $('#dlgTitle').textContent = editing.sourceCopy ? 'New Route · copied stops' : (editing.index < 0 ? 'Add ' : 'Edit ') + titles[editing.type];
-    $('#dlgBody').innerHTML = { place: placeFormHtml, route: routeFormHtml, driver: driverFormHtml }[editing.type]();
+    $('#dlgBody').innerHTML = { place: placeFormHtml, route: routeFormHtml }[editing.type]();
     ov.classList.add('show');
     if(editing.type==='route')initRouteAutoTranslation();
   } else {
@@ -2389,12 +2237,6 @@ document.addEventListener('change',function(e){
 document.addEventListener('change', function (e) {
   if (e.target.id === 'analyticsPeriod') { var custom = e.target.value === 'custom'; document.getElementById('analyticsFrom').style.display = custom ? 'block' : 'none'; document.getElementById('analyticsTo').style.display = custom ? 'block' : 'none'; if (!custom) loadAnalytics(); }
   if (e.target.id === 'analyticsFrom' || e.target.id === 'analyticsTo') { if (document.getElementById('analyticsPeriod') && document.getElementById('analyticsPeriod').value === 'custom' && document.getElementById('analyticsFrom').value && document.getElementById('analyticsTo').value) loadAnalytics(); }
-  if (e.target.id === 'fd_type') {
-    var taxi = e.target.value === 'taxi';
-    $('#seatRow').style.display = taxi ? 'block' : 'none';
-    $('#fuelRow').style.display = taxi ? 'none' : 'block';
-  }
-  if (e.target.id === 'f_dtype') { filters.driverType = e.target.value; render(); }
   if (e.target.id === 'f_pkind') { filters.placeKind = e.target.value; render(); }
 });
 // Automatic place translation. Translated fields stay editable; typing in one marks it manual.
@@ -2515,7 +2357,7 @@ document.addEventListener('click', async function (e) {
       if (tab === 'analytics' && sbToken) { loadAnalytics(); }
    if (tab === 'advertisement') { loadAdConfig().then(function(){render();}).catch(function(err){toast('Advertisement settings: '+err.message);}); }
       if (tab === 'content') { loadContentSettings().then(function(){render();}).catch(function(err){toast('App text settings: '+err.message);}); }
-      if (['review','busRequests','taxiReview','autoReview','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
+      if (['review','busRequests','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
     else if (act === 'close') { editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
@@ -2676,67 +2518,6 @@ document.addEventListener('click', async function (e) {
       editing=null;setDirty(true);toast('Route saved');render();
     }
 
-    // ---- taxi seats ----
-    else if (act === 'add-seater') {
-      var n = parseInt(val('newSeater'), 10);
-      if (!(n > 0)) { toast('Enter a valid number'); return; }
-      if (data.taxiSeaters.indexOf(n) >= 0) { toast('That seat option already exists'); return; }
-      data.taxiSeaters.push(n); data.taxiSeaters.sort(function (a, c) { return a - c; });
-      setDirty(true); render();
-    }
-    else if (act === 'rm-seater') {
-      var rn = parseInt(b.getAttribute('data-n'), 10);
-      var cnt = data.drivers.filter(function (d) { return d.type === 'taxi' && d.seats === rn; }).length;
-      if (confirm('Remove the ' + rn + ' seater option?' + (cnt ? '\n' + cnt + ' driver(s) will no longer appear in the app.' : ''))) {
-        data.taxiSeaters = data.taxiSeaters.filter(function (x) { return x !== rn; });
-        setDirty(true); render();
-      }
-    }
-
-    // ---- drivers ----
-    else if (act === 'new-driver') { editing = { type: 'driver', index: -1, draft: { type: tab === 'autoDrivers' ? 'auto' : 'taxi' } }; render(); }
-    else if (act === 'edit-driver') { editing = { type: 'driver', index: i, draft: JSON.parse(JSON.stringify(data.drivers[i])) }; render(); }
-    else if (act === 'toggle-driver-hidden') { data.drivers[i].hidden = !data.drivers[i].hidden; setDirty(true); render(); toast(data.drivers[i].hidden ? 'Listing hidden from app; publish to apply.' : 'Listing shown in app; publish to apply.'); }
-    else if (act === 'del-driver') {
-      if (confirm('Delete "' + data.drivers[i].name + '"?')) { data.drivers.splice(i, 1); setDirty(true); render(); }
-    }
-    else if (act === 'save-driver') {
-      var type = val('fd_type'), dn = val('fd_name'), ph = val('fd_phone');
-      var vehicleName = val('fd_vehicle'), year = val('fd_year'), registration = val('fd_vehicle_number');
-      var area = val('fd_area'), unionName = val('fd_union').trim(), extraInfo = val('fd_info').trim();
-      var digits = ph.replace(/\D/g, '').length, seats = parseInt(val('fd_seats'), 10);
-      if (!dn || !vehicleName || !registration || !area || !unionName) { toast('Complete all required vehicle fields.'); return; }
-      if (!/^[0-9]{4}$/.test(year)) { toast('Enter a valid four-digit vehicle year.'); return; }
-      if (!(seats > 0)) { toast('Enter the seat count. Taxi uses it for filtering; Auto displays it as information only.'); return; }
-      if (digits < 10 || digits > 13) { toast('Enter a valid mobile number'); return; }
-      if(editing.index < 0){
-        if(!sbToken){toast('Sign in to Supabase before adding a Taxi/Auto listing.');return;}
-        if(!/^[0-9]{4}$/.test(year)){toast('Enter a valid four-digit vehicle year.');return;}
-        var fuelValue=String(val('fd_fuel')||'ev').toLowerCase();
-        var cleanArea=String(area).normalize('NFKC').trim().replace(/\s+/g,' '); var submission={person_name:dn,vehicle_name:vehicleName,year:year,seats:seats,vehicle_number:registration,location:cleanArea,area_name:cleanArea,union_name:unionName,phone:ph,details:extraInfo||null,status:'pending'};
-        if(type==='auto')submission.fuel_type=fuelValue;
-        try{
-          await sbFetch('/rest/v1/'+(type==='taxi'?'taxi_submissions':'auto_submissions'),{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(submission)});
-          editing=null;await loadCommunity();toast((type==='taxi'?'Taxi':'Auto')+' listing sent for admin review.');render();return;
-        }catch(submitError){toast('Could not submit listing: '+submitError.message);return;}
-      }
-      var d = editing.index < 0 ? { id: nextNum(type === 'taxi' ? 't' : 'a', data.drivers) } : data.drivers[editing.index];
-      d.type = type; d.name = dn; d.phone = ph; d.vehicle = vehicleName + (year ? ' · '+year : ''); d.year = year;
-      d.vehicle_number = registration; d.seats = seats; d.area = String(area).normalize('NFKC').trim().replace(/\s+/g,' '); d.areaId = resolveVehicleAreaId(area);
-      if (type === 'taxi') { delete d.fuel; }
-      else { if (val('fd_fuel')) d.fuel = val('fd_fuel'); else delete d.fuel; }
-      d.union_name = unionName; d.details = extraInfo;
-      d.info = (unionName ? 'Union: '+unionName+' · ' : '') + (registration ? 'Vehicle No: '+registration+' · ' : '') + (extraInfo || '');
-      if (editing.index < 0) data.drivers.push(d);
-      else if(d.sourceSubmissionId && sbToken){
-        var cleanArea=String(area).normalize('NFKC').trim().replace(/\s+/g,' '); var sqlListing={person_name:dn,vehicle_name:vehicleName,year:year,seats:seats,vehicle_number:registration,location:cleanArea,area_name:cleanArea,union_name:unionName,phone:ph,details:extraInfo||null,status:'approved'};
-        if(type==='auto')sqlListing.fuel_type=String(val('fd_fuel')||'ev').toLowerCase();
-        await sbFetch('/rest/v1/'+(type==='taxi'?'taxi_submissions':'auto_submissions')+'?id=eq.'+encodeURIComponent(d.sourceSubmissionId),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(sqlListing)});
-      }
-      editing = null; setDirty(true); toast('Taxi / Auto listing saved'); render();
-    }
-
-
     // ---- user submissions (Supabase) ----
     else if (act === 'sb-login') {
       cfg.sbUrl = val('sb_url'); cfg.sbKey = val('sb_key'); cfg.sbEmail = val('sb_email'); saveCfg();
@@ -2779,7 +2560,7 @@ document.addEventListener('click', async function (e) {
       sbRefreshToken = null;
       try { localStorage.removeItem(ADMIN_SESSION_KEY); } catch (_) {}
       subs = null; subsError = '';
-      community = {corrections:null,vehicles:null,busSubmissions:null,feedback:null,operators:null,categories:null};
+      community = {corrections:null,busSubmissions:null,feedback:null,operators:null,categories:null};
       data = null; sha = null; dataLoadError = '';
       tab = 'dashboard';
       render();
@@ -2958,18 +2739,12 @@ document.addEventListener('click', async function (e) {
       if(!confirm('Approve the reviewed data into the main app data? This does not publish the GitHub snapshot.'))return;
       if(rk==='corrections'&&merged.request_type==='route_edit'&&!warnNearSubmittedPlaces((merged.proposed_stops||[]).map(function(st){return st.name;})))return;
       if(rk==='corrections')applyApprovedCorrection(merged);
-      if(rk==='vehicles'){
-        var vehiclePhoneDigits=String(merged.phone||'').replace(/\\D/g,'');
-        if(!merged.person_name||!merged.vehicle_name||!merged.year||! /^[0-9]{4}$/.test(String(merged.year))||!(Number(merged.seats)>0)||!merged.vehicle_number||!merged.location||!merged.union_name||vehiclePhoneDigits.length<10||vehiclePhoneDigits.length>13||(merged.vehicle_type==='auto'&&!merged.fuel_type)){toast('Complete all required Taxi/Auto fields. Other information is optional.');return;}
-        var cleanArea=String(merged.location==null?'':merged.location).normalize('NFKC').trim().replace(/\s+/g,' '); var vd={id:nextNum(merged.vehicle_type==='taxi'?'t':'a',data.drivers),type:merged.vehicle_type,name:merged.person_name,vehicle:merged.vehicle_name+((merged.year||merged.vehicle_model_number)?' · '+(merged.year||merged.vehicle_model_number):''),year:String(merged.year||merged.vehicle_model_number||''),vehicle_number:merged.vehicle_number||'',phone:merged.phone,area:cleanArea,areaId:cleanArea?resolveVehicleAreaId(cleanArea):null,sourceSubmissionId:String(orig.id),union_name:merged.union_name||'',details:merged.details||'',info:(merged.union_name?'Union: '+merged.union_name+' · ':'')+(merged.vehicle_number?'Vehicle No: '+merged.vehicle_number+' · ':'')+(merged.details||'')};
-        if(merged.vehicle_type==='auto')vd.fuel=(merged.fuel_type||merged.fuel||'oil').toLowerCase();if(merged.union_name)vd.union_name=merged.union_name;if(merged.seats)vd.seats=merged.seats;data.drivers.push(vd);setDirty(true);
-      }
       if(rk==='busSubmissions'){
         if(!(merged.service_name||merged.operator_name)||!merged.location||!Array.isArray(merged.bus_types)||!merged.bus_types.length||!merged.phone){toast('Service name, bus types, operating location and phone are required.');return;}
         await sbFetch('/rest/v1/bus_operators',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({operator_name:merged.service_name||merged.operator_name,service_name:merged.service_name||merged.operator_name,bus_types:Array.isArray(merged.bus_types)?merged.bus_types:[],location:merged.location||null,phone:merged.phone,whatsapp:merged.whatsapp||null,details:merged.details||null,active:true})});
       }
       var durableReviewed=Object.assign({},merged);
-      if(rk==='vehicles'||rk==='corrections')durableReviewed._bustime_publish_pending=true;
+      if(rk==='corrections')durableReviewed._bustime_publish_pending=true;
       await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:durableReviewed,reviewed_at:stamp,approved_at:stamp,status:'approved'})});
       orig.reviewed_data=durableReviewed;orig.reviewed_at=stamp;orig.approved_at=stamp;orig.status='approved';communityReviewEditor=null;
       toast('Approved reviewed data; original submission retained. Publish separately to make snapshot changes live.');render();return;
@@ -2983,13 +2758,6 @@ document.addEventListener('click', async function (e) {
       if (!record || record.status !== 'pending') { toast('This request is no longer pending. Refresh the list.'); return; }
       if (act === 'community-approve') {
         if (kind === 'corrections') applyApprovedCorrection(record);
-        if (kind === 'vehicles') {
-          var driver = { id:nextNum(record.vehicle_type==='taxi'?'t':'a', data.drivers), type:record.vehicle_type, name:record.person_name, vehicle:record.vehicle_name + (record.vehicle_model_number ? ' · '+record.vehicle_model_number : ''), year:record.year || '', vehicle_number:record.vehicle_number || '', phone:record.phone, area:record.area_name || record.location || '', areaId:record.area_name || record.location || null, info:(record.union_name ? 'Union: '+record.union_name+' · ' : '') + (record.vehicle_number ? 'Vehicle No: '+record.vehicle_number+' · ' : '') + (record.details || ''), sourceSubmissionId:String(record.id) };
-          if (record.vehicle_type==='auto') driver.fuel=(record.fuel_type||record.fuel||'oil').toLowerCase();
-          if (record.union_name) driver.union_name=record.union_name;
-          if (record.seats) driver.seats = record.seats;
-          data.drivers.push(driver); setDirty(true);
-        }
         if (kind === 'busSubmissions') {
           if (!(record.service_name||record.operator_name) || !record.location || !Array.isArray(record.bus_types) || !record.bus_types.length || !record.phone) { toast('Service name, bus types, operating location and phone are required.'); return; }
           await sbFetch('/rest/v1/bus_operators', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify({operator_name:record.service_name||record.operator_name,service_name:record.service_name||record.operator_name,bus_types:record.bus_types,location:record.location,phone:record.phone,whatsapp:record.whatsapp||null,details:record.details||null,active:true}) });
@@ -2999,10 +2767,10 @@ document.addEventListener('click', async function (e) {
       var approvalPatch={status:act==='community-approve'?'approved':'rejected'};
       if(act==='community-approve'){
         approvalPatch.approved_at=approvalStamp;
-        if(kind==='vehicles'||kind==='corrections')approvalPatch.reviewed_data=Object.assign({},record,record.reviewed_data&&typeof record.reviewed_data==='object'?record.reviewed_data:{},{_bustime_publish_pending:true});
+        if(kind==='corrections')approvalPatch.reviewed_data=Object.assign({},record,record.reviewed_data&&typeof record.reviewed_data==='object'?record.reviewed_data:{},{_bustime_publish_pending:true});
       }
       await sbFetch('/rest/v1/'+table+'?id=eq.'+encodeURIComponent(cid), { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify(approvalPatch) });
-      record.status = act==='community-approve'?'approved':'rejected'; toast(act==='community-approve'?(kind==='vehicles'?'Approved in Admin data. Press Publish at the top to make this Taxi/Auto listing visible in the app.':kind==='busSubmissions'?'Bus operator approved and published to the operator directory.':'Approved. If route data changed, press Publish to make it live.'):'Moved to Rejected.'); render();
+      record.status = act==='community-approve'?'approved':'rejected'; toast(act==='community-approve'?(kind==='busSubmissions'?'Bus operator approved and published to the operator directory.':'Approved. If route data changed, press Publish to make it live.'):'Moved to Rejected.'); render();
     }
     else if (act === 'community-delete') {
       var dk=b.getAttribute('data-kind'), did=b.getAttribute('data-id');
