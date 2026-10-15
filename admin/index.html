@@ -912,7 +912,7 @@ async function publish() {
   out.dataVersion = baseVersion + 1;
   out.places = data.places; out.routes = data.routes;
   var body = {
-    message: 'Data update v' + out.dataVersion + ' [skip ci]',
+    message: 'Data update v' + out.dataVersion + ' — publish transport data sync',
     content: b64encode(JSON.stringify(out, null, 2) + '\n'),
     sha: sha, branch: cfg.branch
   };
