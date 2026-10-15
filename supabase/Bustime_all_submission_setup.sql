@@ -91,20 +91,6 @@ alter table public.correction_submissions add column if not exists proposed_stop
 alter table public.correction_submissions add column if not exists change_summary text;
 create index if not exists correction_submissions_status_idx on public.correction_submissions(status, created_at desc);
 
-create table if not exists public.vehicle_submissions (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamptz not null default now(),
-  vehicle_type text not null check (vehicle_type in ('auto','taxi')),
-  person_name text not null,
-  vehicle_name text not null,
-  seats integer check (seats is null or seats between 1 and 100),
-  location text not null,
-  phone text not null check (phone ~ '^[0-9]{10,13}$'),
-  details text,
-  status text not null default 'pending' check (status in ('pending','approved','rejected'))
-);
-create index if not exists vehicle_submissions_status_idx on public.vehicle_submissions(status, created_at desc);
-
 create table if not exists public.feedback_submissions (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
@@ -131,13 +117,12 @@ create table if not exists public.bus_operators (
 create index if not exists bus_operators_active_idx on public.bus_operators(active, operator_name);
 
 alter table public.correction_submissions enable row level security;
-alter table public.vehicle_submissions enable row level security;
 alter table public.feedback_submissions enable row level security;
 alter table public.bus_operators enable row level security;
 
-revoke all on public.correction_submissions, public.vehicle_submissions, public.feedback_submissions, public.bus_operators from anon, authenticated;
-grant insert on public.correction_submissions, public.vehicle_submissions, public.feedback_submissions to anon;
-grant select, update, delete on public.correction_submissions, public.vehicle_submissions, public.feedback_submissions to authenticated;
+
+
+
 grant select on public.bus_operators to anon, authenticated;
 grant insert, update, delete on public.bus_operators to authenticated;
 
@@ -146,13 +131,6 @@ create policy "public submit correction" on public.correction_submissions for in
 drop policy if exists "admin manage corrections" on public.correction_submissions;
 drop policy if exists "single owner manages route corrections" on public.correction_submissions;
 create policy "single owner manages route corrections" on public.correction_submissions for all to authenticated
-using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with check ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
-
-drop policy if exists "public submit vehicle" on public.vehicle_submissions;
-create policy "public submit vehicle" on public.vehicle_submissions for insert to anon with check (status = 'pending');
-drop policy if exists "admin manage vehicles" on public.vehicle_submissions;
-drop policy if exists "single owner manages vehicle submissions" on public.vehicle_submissions;
-create policy "single owner manages vehicle submissions" on public.vehicle_submissions for all to authenticated
 using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with check ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
 
 drop policy if exists "public submit feedback" on public.feedback_submissions;
@@ -208,7 +186,7 @@ for each row execute function public.validate_route_submission_timing();
 -- Ensure API roles have the expected table privileges after migrations.
 grant usage on schema public to anon, authenticated;
 grant insert on public.route_submissions to anon;
-grant insert on public.correction_submissions, public.vehicle_submissions, public.feedback_submissions to anon;
+grant insert on public.correction_submissions, public.feedback_submissions to anon;
 grant select on public.bus_operators to anon, authenticated;
 
 
@@ -234,9 +212,6 @@ drop policy if exists "admin manage bus listings" on public.bus_operator_submiss
 drop policy if exists "single owner manages bus operator submissions" on public.bus_operator_submissions;
 create policy "single owner manages bus operator submissions" on public.bus_operator_submissions for all to authenticated
 using ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid) with check ((select auth.uid()) = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9'::uuid);
-
-alter table public.vehicle_submissions add column if not exists fuel text;
-alter table public.vehicle_submissions add column if not exists union_name text;
 
 -- Book Bus service directory fields (no seat reservation inventory).
 alter table public.bus_operators
