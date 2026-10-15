@@ -34,6 +34,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.bustime.app.data.sync.DataSyncWorker
+import com.bustime.app.utils.Constants
 import java.util.concurrent.TimeUnit
 
 class HomeActivity : AppCompatActivity() {
@@ -41,6 +42,8 @@ class HomeActivity : AppCompatActivity() {
     private var syncReceiverRegistered = false
     private val syncReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE).edit()
+                .putBoolean(DataSyncWorker.KEY_PENDING_UI_REFRESH, false).apply()
             if (supportFragmentManager.findFragmentById(R.id.fragmentContainer) != null) {
                 refreshCurrentTab()
             }
@@ -130,7 +133,11 @@ class HomeActivity : AppCompatActivity() {
         super.onResume()
         lifecycleScope.launch {
             val changed = AppRepository.getInstance(this@HomeActivity).syncData()
-            if (changed && !isFinishing && supportFragmentManager.findFragmentById(R.id.fragmentContainer) != null) {
+            val prefs = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+            val pendingUiRefresh = prefs.getBoolean(DataSyncWorker.KEY_PENDING_UI_REFRESH, false)
+            if ((changed || pendingUiRefresh) && !isFinishing &&
+                supportFragmentManager.findFragmentById(R.id.fragmentContainer) != null) {
+                prefs.edit().putBoolean(DataSyncWorker.KEY_PENDING_UI_REFRESH, false).apply()
                 refreshCurrentTab()
             }
         }
