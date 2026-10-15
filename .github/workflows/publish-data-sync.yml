@@ -95,9 +95,10 @@ jobs:
               stop_ids = [str(s.get("place")) for s in route.get("stops", []) if s.get("place") is not None]
               references = [route.get("from"), route.get("to")] + stop_ids
               if any(str(place_id) not in current_place_ids for place_id in references if place_id is not None):
-                  if ident not in {c["entity_id"] for c in changes if c["entity_type"] == "route"}:
-                      if ident in old_routes:
-                          changes.append({"entity_type": "route", "entity_id": ident, "operation": "delete", "payload": None})
+                  changes[:] = [item for item in changes
+                                if not (item["entity_type"] == "route" and item["entity_id"] == ident)]
+                  if ident in old_routes:
+                      changes.append({"entity_type": "route", "entity_id": ident, "operation": "delete", "payload": None})
           compare("drivers", "driver", hidden_deletes=True)
 
           def seaters(snapshot):
