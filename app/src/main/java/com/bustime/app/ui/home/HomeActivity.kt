@@ -1,6 +1,10 @@
 package com.bustime.app.ui.home
 
 import android.os.Bundle
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.view.MotionEvent
 import android.view.View
 import android.view.Gravity
@@ -23,6 +27,7 @@ import com.bustime.app.ui.updater.GitHubUpdateChecker
 import com.bustime.app.utils.LanguageHelper
 import com.bustime.app.utils.AnalyticsHelper
 import kotlinx.coroutines.launch
+import androidx.core.content.ContextCompat
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -32,6 +37,15 @@ import com.bustime.app.data.sync.DataSyncWorker
 import java.util.concurrent.TimeUnit
 
 class HomeActivity : AppCompatActivity() {
+
+    private var syncReceiverRegistered = false
+    private val syncReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (supportFragmentManager.findFragmentById(R.id.fragmentContainer) != null) {
+                refreshCurrentTab()
+            }
+        }
+    }
 
     private var currentTab = 0
     private var swipeStartX = 0f
@@ -89,6 +103,27 @@ class HomeActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (!syncReceiverRegistered) {
+            ContextCompat.registerReceiver(
+                this,
+                syncReceiver,
+                IntentFilter(DataSyncWorker.ACTION_DATA_SYNCED),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            syncReceiverRegistered = true
+        }
+    }
+
+    override fun onStop() {
+        if (syncReceiverRegistered) {
+            unregisterReceiver(syncReceiver)
+            syncReceiverRegistered = false
+        }
+        super.onStop()
     }
 
     override fun onResume() {
