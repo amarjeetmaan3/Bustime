@@ -40,9 +40,6 @@ drop trigger if exists trg_route_submission_timing on public.route_submissions;
 create trigger trg_route_submission_timing before insert or update on public.route_submissions
 for each row execute function public.validate_route_submission_timing();
 
--- Store EV/Oil choice for auto listings; harmless when the table is not yet created.
-alter table if exists public.vehicle_submissions add column if not exists fuel_type text;
-alter table if exists public.vehicle_submissions add column if not exists seat_type text;
 alter table if exists public.bus_operators add column if not exists seat_type text;
 alter table if exists public.bus_operators add column if not exists location text;
 alter table if exists public.bus_operators add column if not exists whatsapp text;
