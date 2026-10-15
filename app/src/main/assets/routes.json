@@ -1,5 +1,5 @@
 {
-  "dataVersion": 69,
+  "dataVersion": 70,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -434,42 +434,12 @@
       "aliases": []
     },
     {
-      "id": "place_user_gs",
-      "kind": "place",
-      "name": {
-        "en": "gs",
-        "hi": "गस",
-        "pa": "ਗਸ"
-      },
-      "aliases": []
-    },
-    {
-      "id": "place_user_ks",
-      "kind": "place",
-      "name": {
-        "en": "ks",
-        "hi": "कस",
-        "pa": "ਕਸ"
-      },
-      "aliases": []
-    },
-    {
       "id": "place_user_ns",
       "kind": "place",
       "name": {
         "en": "ns",
         "hi": "नस",
         "pa": "ਨਸ"
-      },
-      "aliases": []
-    },
-    {
-      "id": "place_user_ms",
-      "kind": "place",
-      "name": {
-        "en": "ms",
-        "hi": "मस",
-        "pa": "ਮਸ"
       },
       "aliases": []
     },
@@ -482,20 +452,6 @@
         "pa": "ਤਨ"
       },
       "aliases": []
-    },
-    {
-      "id": "place_user_gdvbh",
-      "kind": "city",
-      "name": {
-        "en": "gdvbh"
-      }
-    },
-    {
-      "id": "place_user_sadu",
-      "kind": "city",
-      "name": {
-        "en": "sadu"
-      }
     }
   ],
   "routes": [
