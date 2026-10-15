@@ -11,7 +11,6 @@ alter table public.route_submissions add column if not exists from_text text;
 alter table public.route_submissions add column if not exists to_text text;
 alter table public.route_submissions add column if not exists route_text text;
 alter table public.route_submissions add column if not exists submission_type text not null default 'route';
-alter table public.route_submissions add column if not exists vehicle_type text;
 
 -- New routes may use typed place names instead of an existing place ID.
 alter table public.route_submissions alter column from_id drop not null;
