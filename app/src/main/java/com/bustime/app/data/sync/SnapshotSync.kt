@@ -193,7 +193,11 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
     }
 
     private suspend fun fetchRemoteSnapshot(forceFull: Boolean = false): Boolean {
-        if (Constants.GITHUB_OWNER.startsWith("YOUR_")) return false
+        if (Constants.GITHUB_OWNER.startsWith("YOUR_")) {
+            lastSyncFailed = true
+            Log.w(TAG, "GitHub snapshot source is not configured")
+            return false
+        }
         var conn: HttpURLConnection? = null
         try {
             conn = (URL(dataUrl()).openConnection() as HttpURLConnection).apply {
