@@ -5,9 +5,7 @@ package com.bustime.app.models
 data class SnapshotDto(
     val dataVersion: Int?,
     val places: List<PlaceDto>?,
-    val routes: List<RouteDto>?,
-    val taxiSeaters: List<Int>?,
-    val drivers: List<DriverDto>?
+    val routes: List<RouteDto>?
 )
 
 data class PlaceDto(
@@ -38,19 +36,4 @@ data class RouteDto(
 data class StopDto(
     val place: String?,
     val time: String?
-)
-
-data class DriverDto(
-    val id: String?,
-    val type: String?,
-    val name: String?,
-    val phone: String?,
-    val vehicle: String?,
-    val year: String?,
-    val seats: Int?,
-    val fuel: String?,
-    val info: String?,
-    val area: String?,
-    val unionName: String?,
-    val hidden: Boolean?
 )
