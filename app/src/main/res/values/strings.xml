@@ -316,4 +316,7 @@
     <string name="bb_bus_types">Bus types</string>
     <string name="bb_search_hint">Search company, bus type or location</string>
     <string name="bb_search_no_results">No bus services match “%1$s”.</string>
+    <string name="refresh_complete">Data updated successfully</string>
+    <string name="refresh_latest">Data is already up to date</string>
+    <string name="refresh_failed">Could not refresh. Check your internet and try again.</string>
 </resources>
