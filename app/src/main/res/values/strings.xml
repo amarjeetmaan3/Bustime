@@ -2,9 +2,6 @@
     <string name="app_name">Bustime</string>
 
     <!-- Tabs / Language -->
-    <string name="tab_bus">Bus</string>
-    <string name="tab_taxi">Taxi</string>
-    <string name="tab_auto">Auto Rickshaw</string>
     <string name="language">Language</string>
     <string name="language_title">Choose language</string>
 
