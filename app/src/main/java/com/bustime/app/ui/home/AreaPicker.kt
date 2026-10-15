@@ -19,20 +19,20 @@ import java.util.Locale
 /** Taxi/Auto area picker backed only by areas entered in driver records. */
 object AreaPicker {
     private const val PREFS = "bustime_prefs"
-    private const val KEY_AREA = "driver_area_name"
+    private fun areaKey(vehicleType: String) = "driver_area_name_${vehicleType.lowercase(Locale.ROOT)}"
 
-    fun savedId(ctx: Context): String? =
-        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_AREA, null)
+    fun savedId(ctx: Context, vehicleType: String): String? =
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(areaKey(vehicleType), null)
             ?.takeIf { it.isNotBlank() }
 
-    private fun save(ctx: Context, area: String?) {
+    private fun save(ctx: Context, vehicleType: String, area: String?) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply {
-            if (area == null) remove(KEY_AREA) else putString(KEY_AREA, area)
+            if (area == null) remove(areaKey(vehicleType)) else putString(areaKey(vehicleType), area)
         }.apply()
     }
 
-    suspend fun label(ctx: Context, repo: AppRepository): String {
-        val areaId = savedId(ctx) ?: return ctx.getString(R.string.select_area)
+    suspend fun label(ctx: Context, repo: AppRepository, vehicleType: String): String {
+        val areaId = savedId(ctx, vehicleType) ?: return ctx.getString(R.string.select_area)
         val place = repo.getPlacesById(listOf(areaId))[areaId]
         val name = place?.displayName(com.bustime.app.utils.LanguageHelper.current())
             ?.takeIf { it.isNotBlank() }
@@ -41,7 +41,7 @@ object AreaPicker {
     }
 
     /** No context.getString(R.string.home_all_areas) option: the user must choose a driver service area. */
-    fun show(ctx: Context, owner: LifecycleOwner, repo: AppRepository, onChosen: () -> Unit) {
+    fun show(ctx: Context, owner: LifecycleOwner, repo: AppRepository, vehicleType: String, onChosen: () -> Unit) {
         val view = LayoutInflater.from(ctx).inflate(R.layout.dialog_area_picker, null)
         val etSearch = view.findViewById<EditText>(R.id.etAreaSearch)
         val list = view.findViewById<ListView>(R.id.listAreas)
@@ -66,7 +66,7 @@ object AreaPicker {
         }
         var job: Job? = null
         job = owner.lifecycleScope.launch {
-            val areaIds = repo.getDriverAreas().distinctBy { it.trim().lowercase(Locale.ROOT) }
+            val areaIds = repo.getDriverAreas(vehicleType).distinctBy { it.trim().lowercase(Locale.ROOT) }
             val places = repo.getPlacesById(areaIds)
             allAreas = areaIds.map { id ->
                 val display = places[id]?.displayName(com.bustime.app.utils.LanguageHelper.current())
@@ -83,7 +83,7 @@ object AreaPicker {
             override fun afterTextChanged(s: Editable?) { filter(s?.toString().orEmpty()) }
         })
         list.setOnItemClickListener { _, _, position, _ ->
-            save(ctx, shown.getOrNull(position)?.first)
+            save(ctx, vehicleType, shown.getOrNull(position)?.first)
             dialog.dismiss()
             onChosen()
         }
