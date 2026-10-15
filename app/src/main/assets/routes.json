@@ -1,5 +1,5 @@
 {
-  "dataVersion": 64,
+  "dataVersion": 65,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -498,6 +498,20 @@
       "kind": "city",
       "name": {
         "en": "aj"
+      }
+    },
+    {
+      "id": "place_user_gdvbh",
+      "kind": "city",
+      "name": {
+        "en": "gdvbh"
+      }
+    },
+    {
+      "id": "place_user_sadu",
+      "kind": "city",
+      "name": {
+        "en": "sadu"
       }
     }
   ],
@@ -4146,6 +4160,40 @@
       "union_name": "aj",
       "details": "",
       "info": "Union: aj · Vehicle No: ahdj · ",
+      "seats": 5
+    },
+    {
+      "id": "a1",
+      "type": "auto",
+      "name": "dh",
+      "vehicle": "dhh · 2565",
+      "year": "2565",
+      "vehicle_number": "zgch",
+      "phone": "9685741235",
+      "area": "gdvbh",
+      "areaId": "place_user_gdvbh",
+      "sourceSubmissionId": "dc7c8c5f-dd40-4231-91e1-6223ec66888a",
+      "union_name": "xhhhh",
+      "details": "",
+      "info": "Union: xhhhh · Vehicle No: zgch · ",
+      "fuel": "ev",
+      "seats": 5
+    },
+    {
+      "id": "a2",
+      "type": "auto",
+      "name": "shf",
+      "vehicle": "djgh · 2585",
+      "year": "2585",
+      "vehicle_number": "sjdjf",
+      "phone": "9685741258",
+      "area": "sadu",
+      "areaId": "place_user_sadu",
+      "sourceSubmissionId": "0e98048d-3f41-4131-b4f0-9ec023335d31",
+      "union_name": "jhdjfh",
+      "details": "hfjkh",
+      "info": "Union: jhdjfh · Vehicle No: sjdjf · hfjkh",
+      "fuel": "oil",
       "seats": 5
     }
   ]
