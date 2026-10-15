@@ -1,5 +1,5 @@
 {
-  "dataVersion": 66,
+  "dataVersion": 67,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -4107,7 +4107,5 @@
         }
       ]
     }
-  ],
-  "taxiSeaters": [],
-  "drivers": []
+  ]
 }
