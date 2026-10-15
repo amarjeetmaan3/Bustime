@@ -16,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Bustime">
 
-        <!-- AdMob: SDK जोड़ते समय यहाँ असली App ID की meta-data डालेंगे (टेस्ट ID के साथ Store पर मत डालना) -->
+        <!-- Start.io App ID is loaded from the remotely controlled ad_settings config. -->
 
         <provider
             android:name="androidx.core.content.FileProvider"
