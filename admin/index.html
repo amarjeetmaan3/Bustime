@@ -1176,16 +1176,13 @@ function viewAnalytics() {
     '<input type="date" id="analyticsTo" aria-label="End date" style="max-width:180px;display:none"></div>' +
     '<div class="stats" id="analyticsCards">' +
     analyticsStat('—','App users','Waiting for analytics data') + analyticsStat('—','Bus searches','Waiting for analytics data') +
-    analyticsStat('—','Taxi activity','Waiting for analytics data') + analyticsStat('—','Auto activity','Waiting for analytics data') +
     analyticsStat('—','Contact actions','Waiting for analytics data') + analyticsStat('—','Ad earnings','AdMob reporting not connected') + '</div>' +
     '<div class="row2"><div class="card"><h2>Activity over time</h2><p class="muted">Daily app events</p><div class="analytics-empty"><div class="analytics-bars">' +
     '<i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>Tracking not configured</b><p class="muted">Bars will show real daily totals after the app sends analytics events.</p></div></div>' +
-    '<div class="card"><h2>Usage by section</h2><p class="muted">Bus, Taxi and Auto comparisons</p><div class="analytics-empty"><div class="analytics-bars horizontal">' +
+    '<div class="card"><h2>Usage by section</h2><p class="muted">Bus activity</p><div class="analytics-empty"><div class="analytics-bars horizontal">' +
     '<i></i><i></i><i></i></div><b>Waiting for real data</b><p class="muted">No activity figures are fabricated or shown as zero.</p></div></div></div>' +
     '<div class="card"><h2>Planned reports</h2><div class="row2"><div><b>Bus</b><p class="muted">From–To searches, stand searches, popular routes, no-result searches and route detail views.</p></div>' +
-    '<div><b>Taxi</b><p class="muted">Area selections, seat filters, driver views and contact taps.</p></div>' +
-    '<div><b>Auto</b><p class="muted">Area selections, All/EV/Oil filters, driver views and contact taps.</p></div>' +
-    '<div><b>Submissions</b><p class="muted">Add Route, corrections and vehicle submissions by pending/approved/rejected status.</p></div>' +
+    '<div><b>Community</b><p class="muted">Add Route, route corrections, feedback, and Add Bus submissions by review status.</p></div>' +
     '<div><b>Coverage &amp; quality</b><p class="muted">Areas with low service coverage and frequently corrected information.</p></div>' +
     '<div><b>Ads performance</b><p class="muted">Impressions, clicks and estimated earnings when AdMob reporting is integrated.</p></div></div>' +
     '<div class="alert warn">Usage cards and charts load recorded app events. AdMob earnings require a separate official reporting integration.</div></div>';
@@ -1207,7 +1204,7 @@ async function loadAnalytics() {
   if (period && period.value !== 'custom') start.setHours(0,0,0,0);
   var daily = document.getElementById('analyticsDaily'), sections = document.getElementById('analyticsSections');
   if (!sbToken) {
-    cards.innerHTML = analyticsStat('—','App users','Admin sign-in required') + analyticsStat('—','Bus searches','Admin sign-in required') + analyticsStat('—','Taxi activity','Admin sign-in required') + analyticsStat('—','Auto activity','Admin sign-in required') + analyticsStat('—','Contact actions','Admin sign-in required') + analyticsStat('—','Ad earnings','AdMob reporting not connected');
+    cards.innerHTML = analyticsStat('—','App users','Admin sign-in required') + analyticsStat('—','Bus searches','Admin sign-in required') + analyticsStat('—','Contact actions','Admin sign-in required') + analyticsStat('—','Ad earnings','AdMob reporting not connected');
     if (daily) daily.innerHTML = '<b>Sign in to view analytics</b>';
     if (sections) sections.innerHTML = '<b>Sign in to view analytics</b>';
     return;
@@ -1219,13 +1216,9 @@ async function loadAnalytics() {
     events.forEach(function(e){ unique[e.session_id] = true; });
     function count(fn) { return events.filter(fn).length; }
     var bus = count(function(e){return e.section==='bus' && /search/.test(e.event_name);});
-    var taxi = count(function(e){return e.section==='taxi';});
-    var auto = count(function(e){return e.section==='auto';});
     var contacts = count(function(e){return /contact|call|whatsapp/.test(e.event_name);});
     cards.innerHTML = analyticsStat(Object.keys(unique).length,'App sessions','Unique random app sessions in selected period') +
       analyticsStat(bus,'Bus searches','From–To and stand searches') +
-      analyticsStat(taxi,'Taxi activity','Recorded Taxi events') +
-      analyticsStat(auto,'Auto activity','Recorded Auto events') +
       analyticsStat(contacts,'Contact actions','Recorded contact taps') +
       analyticsStat('—','Ad earnings','Connect official AdMob reporting');
     if (daily) {
@@ -1925,16 +1918,12 @@ function viewReview() {
   });
   var pendingRoutes=(subs||[]).filter(function(x){return x.status==='pending';}).length;
   var pendingCorrections=all.filter(function(x){return x.status==='pending' && (x._kind==='corrections' || x._kind==='feedback' && /correct/i.test((x.category||'')+' '+(x.message||'')));}).length;
-  var pendingTaxi=all.filter(function(x){return x.status==='pending' && (x._kind==='vehicles' && x.vehicle_type==='taxi' || x._kind==='feedback' && /taxi/i.test((x.category||'')+' '+(x.message||'')));}).length;
-  var pendingAuto=all.filter(function(x){return x.status==='pending' && (x._kind==='vehicles' && x.vehicle_type==='auto' || x._kind==='feedback' && /auto|rickshaw/i.test((x.category||'')+' '+(x.message||'')));}).length;
   var pendingBus=all.filter(function(x){return x.status==='pending' && x._kind==='busSubmissions';}).length;
   var pendingFeedback=all.filter(function(x){return x.status==='pending' && x._kind==='feedback';}).length;
   return '<div class="bus-page-head"><div><h2>Review Center</h2><p class="muted">A clear overview of incoming information. Open the relevant section to review each request type; nothing here is a booking queue.</p></div><button class="btn" data-act="community-refresh">Refresh all</button></div>'+
     '<div class="bus-route-stats">'+
     '<div class="bus-route-stat"><div class="iconbox">↗</div><div><strong>'+pendingRoutes+'</strong><span>Pending bus route requests</span><button class="btn sm" data-act="tab" data-t="busRequests">Open requests →</button></div></div>'+
     '<div class="bus-route-stat"><div class="iconbox">✓</div><div><strong>'+pendingCorrections+'</strong><span>Pending corrections</span><button class="btn sm" data-act="tab" data-t="corrections">Review corrections →</button></div></div>'+
-    '<div class="bus-route-stat"><div class="iconbox">T</div><div><strong>'+pendingTaxi+'</strong><span>Pending taxi items</span><button class="btn sm" data-act="tab" data-t="taxiReview">Open taxi →</button></div></div>'+
-    '<div class="bus-route-stat"><div class="iconbox">A</div><div><strong>'+pendingAuto+'</strong><span>Pending auto items</span><button class="btn sm" data-act="tab" data-t="autoReview">Open auto →</button></div></div>'+
     '<div class="bus-route-stat"><div class="iconbox">B</div><div><strong>'+pendingBus+'</strong><span>Pending Add Bus submissions</span><button class="btn sm" data-act="tab" data-t="addBus">Open Add Bus →</button></div></div>'+
     '<div class="bus-route-stat"><div class="iconbox">✉</div><div><strong>'+pendingFeedback+'</strong><span>Pending feedback</span><button class="btn sm" data-act="tab" data-t="corrections">Open review →</button></div></div>'+
     '</div><div class="card"><h2>How requests are organized</h2><p class="muted">Bus route submissions, taxi and auto submissions, corrections, and Add Bus operator submissions now have separate navigation tabs. Review Center is an overview instead of a long mixed list.</p></div>';
