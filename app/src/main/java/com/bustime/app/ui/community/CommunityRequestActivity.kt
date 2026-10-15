@@ -60,8 +60,7 @@ class CommunityRequestActivity : AppCompatActivity() {
             finish()
             return
         }
-        val requestedVehicleType = intent.getStringExtra("vehicle_type")
-        val screenTitle = when (mode) { "vehicle" -> if (requestedVehicleType == "taxi") getString(com.bustime.app.R.string.community_taxi_title) else getString(com.bustime.app.R.string.community_auto_title); "correction" -> getString(com.bustime.app.R.string.community_title_correction); "bus_operator" -> getString(com.bustime.app.R.string.community_title_bus); "vehicle_correction" -> if (intent.getStringExtra("vehicle_type") == "taxi") getString(com.bustime.app.R.string.community_title_taxi_correction) else getString(com.bustime.app.R.string.community_title_auto_correction); else -> getString(com.bustime.app.R.string.community_title_feedback) }
+        val screenTitle = when (mode) { "correction" -> getString(com.bustime.app.R.string.community_title_correction); "bus_operator" -> getString(com.bustime.app.R.string.community_title_bus); else -> getString(com.bustime.app.R.string.community_title_feedback) }
         title = screenTitle
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(12), dp(18), dp(24)) }
         val scroll = ScrollView(this).apply { addView(root) }
@@ -70,9 +69,7 @@ class CommunityRequestActivity : AppCompatActivity() {
         else text("$screenTitle\n${getString(com.bustime.app.R.string.community_review_notice)}", 18f)
         when (mode) {
             "correction" -> loadCorrectionForm()
-            "vehicle" -> vehicleForm()
             "bus_operator" -> busOperatorForm()
-            "vehicle_correction" -> vehicleCorrectionForm()
             else -> feedbackForm()
         }
     }
@@ -183,170 +180,6 @@ class CommunityRequestActivity : AppCompatActivity() {
         sendRequests(listOf(body), "correction_submissions", getString(com.bustime.app.R.string.community_route_correction_sent))
     }
 
-    private fun vehicleForm() {
-        val requestedType = intent.getStringExtra("vehicle_type")
-        val typeSpinner = spinner(getString(com.bustime.app.R.string.community_vehicle_type), listOf(getString(com.bustime.app.R.string.community_auto), getString(com.bustime.app.R.string.community_taxi)), "vehicle_type")
-        if (requestedType == "taxi") typeSpinner.setSelection(1)
-        if (requestedType == "auto" || requestedType == "taxi") typeSpinner.visibility = View.GONE
-        field("person_name", getString(com.bustime.app.R.string.community_driver_name))
-        field("vehicle_name", getString(com.bustime.app.R.string.community_vehicle_name))
-        field("year", getString(com.bustime.app.R.string.community_vehicle_year)).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
-        }
-        field("seats", getString(com.bustime.app.R.string.community_seat_count))
-        field("vehicle_number", getString(com.bustime.app.R.string.community_vehicle_registration))
-        field("location", getString(com.bustime.app.R.string.community_location_area))
-        field("union_name", getString(com.bustime.app.R.string.community_union_name))
-        field("phone", getString(com.bustime.app.R.string.community_mobile_number))
-        val fuelSpinner = spinner(getString(com.bustime.app.R.string.community_auto_fuel_type), listOf("EV", getString(com.bustime.app.R.string.fuel_oil), "CNG", getString(com.bustime.app.R.string.community_other)), "fuel_type")
-        if (requestedType != "auto") fuelSpinner.visibility = View.GONE
-        field("details", getString(com.bustime.app.R.string.community_other_info)).apply { minLines = 2; maxLines = 4; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE }
-        button(getString(com.bustime.app.R.string.community_submit_listing)) {
-            val type = if (requestedType == "auto" || (requestedType == null && spinners["vehicle_type"]?.selectedItemPosition == 0)) "auto" else "taxi"
-            val name = value("person_name"); val vehicle = value("vehicle_name"); val phone = digits(value("phone"))
-            val seats = value("seats").toIntOrNull()
-            val area = value("location")
-            if (name.isBlank() || vehicle.isBlank() || value("vehicle_number").isBlank() ||
-                area.isBlank() || value("union_name").isBlank() || phone.length !in 10..13 || seats == null || seats < 1) {
-                toast(getString(com.bustime.app.R.string.community_fill_vehicle_required)); return@button
-            }
-            val year = value("year")
-            if (!year.matches(Regex("^[0-9]{4}$"))) {
-                toast(getString(com.bustime.app.R.string.community_year_invalid)); return@button
-            }
-            val cleanArea = area.trim().replace(Regex("\\s+"), " ")
-            val body = JSONObject().put("person_name", name).put("vehicle_name", vehicle)
-                .put("year", year).put("vehicle_number", value("vehicle_number"))
-                .put("seats", seats).put("location", cleanArea).put("area_name", cleanArea)
-                .put("union_name", value("union_name")).put("phone", phone)
-                .put("status", "pending")
-                .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-            if (type == "auto") {
-                body.put("fuel_type", listOf("ev", "oil", "cng", "other").getOrNull(spinners["fuel_type"]?.selectedItemPosition ?: -1) ?: "other")
-            }
-            sendRequests(listOf(body), if (type == "taxi") "taxi_submissions" else "auto_submissions", getString(com.bustime.app.R.string.community_listing_sent))
-        }
-    }
-
-    private fun busCategoryLabel(value: String): String = when (value.trim().lowercase(Locale.ROOT)) {
-        "ordinary" -> getString(com.bustime.app.R.string.bus_category_ordinary)
-        "luxury" -> getString(com.bustime.app.R.string.bus_category_luxury)
-        "sleeper" -> getString(com.bustime.app.R.string.bus_category_sleeper)
-        "sleeper plus" -> getString(com.bustime.app.R.string.bus_category_sleeper_plus)
-        "seater plus" -> getString(com.bustime.app.R.string.bus_category_seater_plus)
-        "seater" -> getString(com.bustime.app.R.string.bus_category_seater)
-        "sleeper + seater" -> getString(com.bustime.app.R.string.bus_category_sleeper_seater)
-        "custom" -> getString(com.bustime.app.R.string.bus_category_custom)
-        else -> value
-    }
-
-    private fun busOperatorForm() {
-        heading(getString(com.bustime.app.R.string.community_title_bus))
-        text(getString(com.bustime.app.R.string.community_bus_form_intro), 14f)
-        field("service_name", getString(com.bustime.app.R.string.community_service_name))
-        field("location", getString(com.bustime.app.R.string.bb_location))
-        text(getString(com.bustime.app.R.string.bus_types_select_label), 15f, true)
-        val typeOptions = listOf(
-            "Ordinary" to getString(com.bustime.app.R.string.bus_type_ordinary),
-            "Seater" to getString(com.bustime.app.R.string.bus_type_seater),
-            "Sleeper" to getString(com.bustime.app.R.string.bus_type_sleeper),
-            "AC Bus" to getString(com.bustime.app.R.string.bus_type_ac),
-            "Non-AC Bus" to getString(com.bustime.app.R.string.bus_type_non_ac),
-            "Luxury Bus" to getString(com.bustime.app.R.string.bus_type_luxury),
-            "Volvo Bus" to getString(com.bustime.app.R.string.bus_type_volvo),
-            "Mini Bus" to getString(com.bustime.app.R.string.bus_type_mini),
-            "Other" to getString(com.bustime.app.R.string.bus_type_other)
-        )
-        val typeChecks = linkedMapOf<String, CheckBox>()
-        typeOptions.forEach { (type, label) ->
-            val check = CheckBox(this).apply { text = label; textSize = 15f }
-            typeChecks[type] = check
-            root.addView(check)
-        }
-        field("bus_other_type", getString(com.bustime.app.R.string.bus_type_other_hint)).apply { isSingleLine = true }
-        field("phone", getString(com.bustime.app.R.string.community_operator_mobile))
-        field("whatsapp", getString(com.bustime.app.R.string.community_whatsapp_optional))
-        field("details", getString(com.bustime.app.R.string.community_other_info)).apply {
-            minLines = 2; maxLines = 4
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
-        }
-        button(getString(com.bustime.app.R.string.community_add_bus_submit)) {
-            val service = value("service_name")
-            val location = value("location")
-            val phone = digits(value("phone"))
-            val selected = typeChecks.filterValues { it.isChecked }.keys.toMutableList()
-            val other = value("bus_other_type").trim()
-            if ("Other" in selected) {
-                if (other.isBlank()) { toast(getString(com.bustime.app.R.string.bus_type_required_error)); return@button }
-                selected.remove("Other")
-                selected.add(other)
-            }
-            if (service.isBlank() || location.isBlank() || phone.length !in 10..13 || selected.isEmpty()) {
-                toast(getString(com.bustime.app.R.string.community_fill_bus_required))
-                return@button
-            }
-            val types = org.json.JSONArray()
-            selected.forEach { types.put(it) }
-            val body = JSONObject()
-                .put("operator_name", service)
-                .put("service_name", service)
-                .put("bus_types", types)
-                .put("location", location)
-                .put("phone", phone)
-                .put("whatsapp", digits(value("whatsapp")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("details", value("details").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-            sendRequests(listOf(body), "bus_operator_submissions", getString(com.bustime.app.R.string.community_bus_submitted))
-        }
-    }
-
-    private fun vehicleCorrectionForm() {
-        val type = intent.getStringExtra("vehicle_type")?.takeIf { it == "taxi" || it == "auto" } ?: "auto"
-        val driverId = intent.getStringExtra("driver_id").orEmpty()
-        val driverName = intent.getStringExtra("driver_name").orEmpty()
-        val driverVehicle = intent.getStringExtra("driver_vehicle").orEmpty()
-        val driverPhone = intent.getStringExtra("driver_phone").orEmpty()
-        val driverSeats = intent.getIntExtra("driver_seats", -1)
-        val driverFuel = intent.getStringExtra("driver_fuel").orEmpty()
-        val driverInfo = intent.getStringExtra("driver_info").orEmpty()
-        text(getString(com.bustime.app.R.string.community_correction_intro, type.uppercase(Locale.ROOT)), 14f)
-        text(getString(com.bustime.app.R.string.community_driver_vehicle, driverName, driverVehicle), 16f, true)
-        field("correction_name", getString(com.bustime.app.R.string.community_correction_driver_name)).setText(driverName)
-        field("correction_vehicle", getString(com.bustime.app.R.string.community_correction_vehicle)).setText(driverVehicle)
-        field("correction_phone", getString(com.bustime.app.R.string.community_correct_mobile)).setText(driverPhone)
-        if (type == "taxi") field("correction_seats", getString(com.bustime.app.R.string.community_correct_seats)).setText(if (driverSeats > 0) driverSeats.toString() else "")
-        else field("correction_fuel", getString(com.bustime.app.R.string.community_correct_fuel)).setText(driverFuel)
-        field("correction_info", getString(com.bustime.app.R.string.community_correct_other)).setText(driverInfo)
-        field("correction_note", getString(com.bustime.app.R.string.community_explain_correction))
-        button(getString(com.bustime.app.R.string.community_send_correction)) {
-            val name = value("correction_name")
-            val vehicle = value("correction_vehicle")
-            val phone = digits(value("correction_phone"))
-            val detail = value("correction_note")
-            if (name.isBlank() || vehicle.isBlank() || phone.length !in 10..13 || detail.length < 4) {
-                toast(getString(com.bustime.app.R.string.community_corrected_details_required)); return@button
-            }
-            val details = buildString {
-                append("Vehicle correction request\nType: ").append(type)
-                append("\nDriver ID: ").append(driverId)
-                append("\nCurrent name: ").append(driverName)
-                append("\nProposed name: ").append(name)
-                append("\nCurrent vehicle: ").append(driverVehicle)
-                append("\nProposed vehicle: ").append(vehicle)
-                append("\nCurrent phone: ").append(driverPhone)
-                append("\nProposed phone: ").append(phone)
-                if (type == "taxi") append("\nProposed seats: ").append(value("correction_seats"))
-                else append("\nProposed fuel: ").append(value("correction_fuel"))
-                append("\nProposed other details: ").append(value("correction_info"))
-                append("\nRequested correction: ").append(detail)
-            }
-            val body = JSONObject().put("category", if (type == "taxi") "Taxi correction" else "Auto correction")
-                .put("related_route", driverId.ifBlank { driverName })
-                .put("message", details)
-                .put("contact", phone)
-            sendRequests(listOf(body), "feedback_submissions", getString(com.bustime.app.R.string.community_vehicle_correction_sent))
-        }
-    }
 
     private fun feedbackForm() {
         spinner(getString(com.bustime.app.R.string.community_feedback_category), listOf(getString(com.bustime.app.R.string.community_suggestion), getString(com.bustime.app.R.string.community_incorrect_info), getString(com.bustime.app.R.string.community_app_problem), getString(com.bustime.app.R.string.community_other)), "feedback_category")
