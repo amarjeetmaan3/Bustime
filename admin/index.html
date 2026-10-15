@@ -374,10 +374,23 @@ var CFG_KEY = 'bustime_admin_cfg';
 var DEFAULT_CFG = { owner:'amarjeetmaan3', repo:'Bustime', branch:'main', path:'app/src/main/assets/routes.json', token:'', sbUrl:'', sbKey:'', sbEmail:'' };
 var cfg = loadCfg();
 function loadCfg() {
-  try { return Object.assign({}, DEFAULT_CFG, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); }
-  catch (e) { return Object.assign({}, DEFAULT_CFG); }
+  try {
+    var stored = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
+    // Remove legacy persisted GitHub PATs; secrets are never restored from browser storage.
+    if (stored && Object.prototype.hasOwnProperty.call(stored, 'token')) {
+      delete stored.token;
+      localStorage.setItem(CFG_KEY, JSON.stringify(stored));
+    }
+    return Object.assign({}, DEFAULT_CFG, stored, {token:''});
+  } catch (e) { return Object.assign({}, DEFAULT_CFG); }
 }
-function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {} }
+function saveCfg() {
+  try {
+    var safeCfg = Object.assign({}, cfg);
+    delete safeCfg.token;
+    localStorage.setItem(CFG_KEY, JSON.stringify(safeCfg));
+  } catch (e) {}
+}
 
 // ============ State ============
 var data = null, sha = null, baseVersion = 0, dirty = false;
@@ -1404,14 +1417,14 @@ function viewSettings() {
     '<div><label>Repository</label><input id="c_repo" value="' + esc(cfg.repo) + '"></div></div>' +
     '<div class="row2"><div><label>Branch</label><input id="c_branch" value="' + esc(cfg.branch) + '"></div>' +
     '<div><label>Data file path</label><input id="c_path" value="' + esc(cfg.path) + '"></div></div>' +
-    '<label>GitHub token (kept only in this browser)</label><input id="c_token" type="password" value="' + esc(cfg.token) + '">' +
+    '<label>GitHub token (memory only; not saved)</label><input id="c_token" type="password" autocomplete="off" value="' + esc(cfg.token) + '">' +
     '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="save-cfg">Save and load data</button></div>' +
     (data ? '<div class="alert ok">Loaded: data version ' + baseVersion + ', ' + data.places.length + ' places, ' + data.routes.length +
             ' routes.</div>' : '') + '</div>' +
     '<div class="card"><h2>Creating a token (one time)</h2><p class="muted">' +
     'GitHub &rarr; profile picture &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens &rarr; Generate new token.<br>' +
     '&bull; Repository access: only the <b>Bustime</b> repository<br>&bull; Repository permissions: <b>Contents &rarr; Read and write</b><br>' +
-    'Paste the token above. Never share it and never commit it to the repository.</p></div>';
+    'Paste the token above. It stays in memory only and must be entered again after reloading this page. Never share it or commit it to the repository.</p></div>';
 }
 
 
