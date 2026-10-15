@@ -438,6 +438,7 @@ var routeReviewEditor = null;
 
 var communityReviewEditor = null;
 var operatorEditingId=null;
+var operatorFormOpen=false;
 function busOperatorFormHtml(bus,reviewMode){
  bus=bus||{};var name=String(bus.service_name||bus.operator_name||''),location=String(bus.location||''),phone=String(bus.phone||''),whatsapp=String(bus.whatsapp||''),details=String(bus.details||'');
  var types=Array.isArray(bus.bus_types)?bus.bus_types.map(String):[],known=['Ordinary','Seater','Sleeper','AC Bus','Non-AC Bus','Luxury Bus','Volvo Bus','Mini Bus','Other'];
@@ -1916,9 +1917,13 @@ function viewCommunity(mode) {
   });
   if (mode === 'busDirectory') {
     var editingOperator=operatorEditingId?community.operators.find(function(o){return String(o.id)===String(operatorEditingId);}):null;
-    html += '<div class="card"><h2>'+(editingOperator?'Edit Published Bus Operator':'Add Bus')+'</h2><p class="muted">Use the same fields and bus-type choices as the Add Bus form inside the app.</p>'+
-      busOperatorFormHtml(editingOperator||{},false)+
-      '<div class="dlg-foot" style="justify-content:flex-start;gap:8px">'+(editingOperator?'<button class="btn" data-act="operator-edit-cancel">Cancel edit</button><button class="btn primary" data-act="operator-update" data-id="'+esc(editingOperator.id)+'">Save changes</button>':'<button class="btn primary" data-act="operator-add">Add operator</button>')+'</div></div>';
+    html += '<div class="bus-page-head"><div><h2>Bus Directory</h2><p class="muted">Manage published bus operators. Add a listing only when you need to; the directory stays visible below.</p></div>'+
+      '<button class="btn primary" data-act="operator-form-toggle" aria-expanded="'+(operatorFormOpen?'true':'false')+'">'+(operatorFormOpen?'Close Add Bus form':'＋ Add Bus')+'</button></div>';
+    if (operatorFormOpen) {
+      html += '<div class="card"><h2>'+(editingOperator?'Edit Published Bus Operator':'Add Bus')+'</h2><p class="muted">Use the same fields and bus-type choices as the Add Bus form inside the app.</p>'+
+        busOperatorFormHtml(editingOperator||{},false)+
+        '<div class="dlg-foot" style="justify-content:flex-start;gap:8px">'+(editingOperator?'<button class="btn" data-act="operator-edit-cancel">Cancel edit</button><button class="btn primary" data-act="operator-update" data-id="'+esc(editingOperator.id)+'">Save changes</button>':'<button class="btn primary" data-act="operator-add">Add operator</button><button class="btn" data-act="operator-form-toggle">Cancel</button>')+'</div></div>';
+    }
     html += '<div class="card"><h2>Published operator listings <span class="badge gray">' + community.operators.length + '</span></h2><div class="tablewrap"><table><thead><tr><th>Service / company</th><th>Bus types</th><th>Operating location</th><th>Phone</th><th>Visibility</th><th>Actions</th></tr></thead><tbody>' +
       community.operators.map(function(o){return '<tr><td>'+esc(o.service_name||o.operator_name)+'</td><td>'+esc(Array.isArray(o.bus_types)?o.bus_types.join(' · '):(o.bus_type||''))+'</td><td>'+esc(o.location||'-')+'</td><td>'+esc(o.phone)+'</td><td>'+ (o.active?'<span class="badge green">Active</span>':'<span class="badge gray">Hidden</span>')+'</td><td class="actions"><button class="btn sm" data-act="operator-edit" data-id="'+esc(o.id)+'">Edit</button><button class="btn sm" data-act="operator-toggle" data-id="'+esc(o.id)+'" data-active="'+(!o.active)+'">'+(o.active?'Hide':'Publish')+'</button><button class="btn sm danger" data-act="operator-delete" data-id="'+esc(o.id)+'">Delete</button></td></tr>';}).join('') + '</tbody></table></div></div>';
   }
@@ -3078,10 +3083,11 @@ document.addEventListener('click', async function (e) {
       if(act==='operator-add')payload.active=true;
       var endpoint=act==='operator-update'?'/rest/v1/bus_operators?id=eq.'+encodeURIComponent(editingId):'/rest/v1/bus_operators';
       await sbFetch(endpoint,{method:act==='operator-update'?'PATCH':'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(payload)});
-      operatorEditingId=null;await loadCommunity();toast(act==='operator-update'?'Operator changes saved.':'Operator added and published.');render();
+      operatorEditingId=null;operatorFormOpen=false;await loadCommunity();toast(act==='operator-update'?'Operator changes saved.':'Operator added and published.');render();
     }
-    else if (act === 'operator-edit') { operatorEditingId=b.getAttribute('data-id'); render(); }
-    else if (act === 'operator-edit-cancel') { operatorEditingId=null; render(); }
+    else if (act === 'operator-form-toggle') { operatorFormOpen=!operatorFormOpen; if(!operatorFormOpen)operatorEditingId=null; render(); }
+    else if (act === 'operator-edit') { operatorEditingId=b.getAttribute('data-id'); operatorFormOpen=true; render(); }
+    else if (act === 'operator-edit-cancel') { operatorEditingId=null; operatorFormOpen=false; render(); }
     else if (act === 'operator-toggle') {
       var oid=b.getAttribute('data-id'), active=b.getAttribute('data-active')==='true';
       await sbFetch('/rest/v1/bus_operators?id=eq.'+encodeURIComponent(oid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({active:active})});
