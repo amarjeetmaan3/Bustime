@@ -13,7 +13,7 @@ import com.bustime.app.models.RouteStop
 
 @Database(
     entities = [Place::class, Route::class, RouteStop::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -31,6 +31,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // v5 may already be installed on devices where the old Taxi/Auto tables
+        // existed. Bump the DB version so those devices also drop only the retired
+        // tables, without clearing Bus routes, stops, or places.
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS drivers")
+                db.execSQL("DROP TABLE IF EXISTS seater_groups")
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -41,7 +51,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "bustime_offline_database"
                 )
-                    .addMigrations(MIGRATION_4_5)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                 INSTANCE = instance
                 instance
