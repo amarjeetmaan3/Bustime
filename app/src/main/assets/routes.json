@@ -1,5 +1,5 @@
 {
-  "dataVersion": 65,
+  "dataVersion": 66,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -4108,93 +4108,6 @@
       ]
     }
   ],
-  "taxiSeaters": [
-    4,
-    5,
-    6,
-    7,
-    8
-  ],
-  "drivers": [
-    {
-      "id": "t1",
-      "type": "taxi",
-      "name": "Gurdas",
-      "vehicle": "Swift · desire",
-      "year": "2508",
-      "vehicle_number": "Rj 31 ki 5666",
-      "phone": "9529403003",
-      "area": "Amargarh",
-      "areaId": "Amargarh",
-      "info": "Union: Maan · Vehicle No: Rj 31 ki 5666 · ",
-      "union_name": "Maan",
-      "seats": 4,
-      "sourceSubmissionId": "45d0277e-0132-4042-a2a7-97ece7e1654b"
-    },
-    {
-      "id": "t2",
-      "type": "taxi",
-      "name": "Amarjeet",
-      "vehicle": "alto",
-      "year": "2569",
-      "vehicle_number": "gamfsns",
-      "phone": "9685745869",
-      "area": "vajhsgs",
-      "areaId": "vajhsgs",
-      "info": "Union: vskjs · Vehicle No: gamfsns ·",
-      "union_name": "vskjsy",
-      "seats": 5,
-      "sourceSubmissionId": "9c8ce893-1d6c-47e6-b5b4-60ac183ba90c"
-    },
-    {
-      "id": "t3",
-      "type": "taxi",
-      "name": "aj",
-      "vehicle": "aj · 4525",
-      "year": "4525",
-      "vehicle_number": "ahdj",
-      "phone": "9685741236",
-      "area": "aj",
-      "areaId": "place_user_aj_2",
-      "sourceSubmissionId": "b3d81d0e-6c50-4cce-8e94-9975df0cd328",
-      "union_name": "aj",
-      "details": "",
-      "info": "Union: aj · Vehicle No: ahdj · ",
-      "seats": 5
-    },
-    {
-      "id": "a1",
-      "type": "auto",
-      "name": "dh",
-      "vehicle": "dhh · 2565",
-      "year": "2565",
-      "vehicle_number": "zgch",
-      "phone": "9685741235",
-      "area": "gdvbh",
-      "areaId": "place_user_gdvbh",
-      "sourceSubmissionId": "dc7c8c5f-dd40-4231-91e1-6223ec66888a",
-      "union_name": "xhhhh",
-      "details": "",
-      "info": "Union: xhhhh · Vehicle No: zgch · ",
-      "fuel": "ev",
-      "seats": 5
-    },
-    {
-      "id": "a2",
-      "type": "auto",
-      "name": "shf",
-      "vehicle": "djgh · 2585",
-      "year": "2585",
-      "vehicle_number": "sjdjf",
-      "phone": "9685741258",
-      "area": "sadu",
-      "areaId": "place_user_sadu",
-      "sourceSubmissionId": "0e98048d-3f41-4131-b4f0-9ec023335d31",
-      "union_name": "jhdjfh",
-      "details": "hfjkh",
-      "info": "Union: jhdjfh · Vehicle No: sjdjf · hfjkh",
-      "fuel": "oil",
-      "seats": 5
-    }
-  ]
+  "taxiSeaters": [],
+  "drivers": []
 }
