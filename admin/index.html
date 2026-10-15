@@ -710,8 +710,7 @@ function ghHeaders() {
   return h;
 }
 function normalize(d) {
-  var o = { dataVersion: d.dataVersion || 0, places: d.places || [], routes: d.routes || [],
-            taxiSeaters: d.taxiSeaters || [], drivers: d.drivers || [] };
+  var o = { dataVersion: d.dataVersion || 0, places: d.places || [], routes: d.routes || [] };
   if (d._note) o._note = d._note;
   return o;
 }
@@ -975,7 +974,6 @@ async function publish() {
   if (data._note) out._note = data._note;
   out.dataVersion = baseVersion + 1;
   out.places = data.places; out.routes = data.routes;
-  out.taxiSeaters = data.taxiSeaters; out.drivers = data.drivers;
   var body = {
     message: 'Data update v' + out.dataVersion + ' [skip ci]',
     content: b64encode(JSON.stringify(out, null, 2) + '\n'),
@@ -1154,8 +1152,6 @@ function viewDashboard() {
   data = data || {};
   data.places = Array.isArray(data.places) ? data.places : [];
   data.routes = Array.isArray(data.routes) ? data.routes : [];
-  data.taxiSeaters = Array.isArray(data.taxiSeaters) ? data.taxiSeaters : [];
-  data.drivers = Array.isArray(data.drivers) ? data.drivers : [];
   var stands = data.places.filter(function (p) { return p.kind === 'stand'; }).length;
   var v = validate();
   return '<div class="stats">' +
