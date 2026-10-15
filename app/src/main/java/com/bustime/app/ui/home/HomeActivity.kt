@@ -19,7 +19,6 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.tabs.TabLayout
 import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.ui.updater.GitHubUpdateChecker
@@ -49,8 +48,6 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    private var currentTab = 0
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
@@ -58,8 +55,6 @@ class HomeActivity : AppCompatActivity() {
         AnalyticsHelper.logAppOpened(this)
         com.bustime.app.ads.CustomPopupManager.showLocalSponsorshipAd(this)
 
-        // भाषा बदलने पर स्क्रीन दोबारा बनती है: जो टैब खुला था वही खुला रहे
-        currentTab = 0
 
         // अपडेटर चेक करना
         GitHubUpdateChecker(this).checkForLatestUpdate()
@@ -83,22 +78,9 @@ class HomeActivity : AppCompatActivity() {
             }
         }
 
-        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
-        tabLayout.getTabAt(currentTab)?.select()
         if (savedInstanceState == null) {
             replaceFragment(BusFragment())
         }
-
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                currentTab = tab?.position ?: 0
-                // Bustime is now focused exclusively on bus routes and Book Bus.
-                // Keep one tab so old saved tab indices cannot open removed vehicle screens.
-                replaceFragment(BusFragment())
-            }
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
-        })
     }
 
     override fun onStart() {
@@ -145,10 +127,6 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt("TAB", currentTab)
-    }
 
 
     private fun scheduleBackgroundDataSync() {
@@ -206,11 +184,7 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun refreshCurrentTab() {
-        when (currentTab) {
-            1 -> replaceFragment(TaxiFragment())
-            2 -> replaceFragment(AutoRickshawFragment())
-            else -> replaceFragment(BusFragment())
-        }
+        replaceFragment(BusFragment())
     }
 
     private fun updateLanguageIndicator(toolbar: Toolbar) {
