@@ -1,10 +1,11 @@
-# Bustime - Local Transport Hub
+# Bustime - Bus Time
 
-An offline-first, hybrid Android application for managing and searching local transport (Buses, Taxis, Auto-rickshaws).
+An offline-first Android app for searching local bus routes, stop timings, and bus operator contact information.
 
 ## Key Features
-- **Delta Sync:** Offline local caching with background refresh for zero server load.
-- **Network Locked:** Requires active internet to function, ensuring AdMob revenue via Samsung Store.
-- **Fairness Algorithm:** Auto-rotational listing for fair driver exposure.
-- **Smart Contact:** AI Voice disclaimer before revealing driver contacts.
-- **In-App Auto Update:** Automatically fetches the latest APK from GitHub releases.
+- **Bus Route Search:** Search from one place to another and find buses passing through a stand.
+- **Route Details and Corrections:** View ordered stops and submit bus-route corrections.
+- **Book Bus:** Find contact information for bus operators for group or special-bus travel. Bustime provides information and contact details; it does not take bookings.
+- **Incremental Sync:** Cache bus places and routes locally and apply published data changes.
+- **Languages:** English, Hindi, and Punjabi.
+- **In-App Updates:** Fetch app updates from GitHub releases.
