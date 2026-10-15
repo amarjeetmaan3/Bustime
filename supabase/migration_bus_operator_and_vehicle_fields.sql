@@ -1,5 +1,4 @@
--- Run once in Supabase SQL Editor for Book Bus operator fields.
--- Safe to re-run: columns/tables/policies use IF NOT EXISTS / DROP POLICY IF EXISTS.
+-- Book Bus operator fields only. Safe to re-run.
 
 ALTER TABLE public.bus_operators ADD COLUMN IF NOT EXISTS seat_type text;
 ALTER TABLE public.bus_operators ADD COLUMN IF NOT EXISTS sleeper_count integer;
