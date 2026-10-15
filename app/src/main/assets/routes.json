@@ -1,5 +1,5 @@
 {
-  "dataVersion": 72,
+  "dataVersion": 73,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -432,6 +432,15 @@
         "pa": "ਦੇਵੀਪੁਰ"
       },
       "aliases": []
+    },
+    {
+      "id": "place_ram",
+      "kind": "place",
+      "name": {
+        "en": "Ram",
+        "hi": "राम",
+        "pa": "ਰਾਮ"
+      }
     }
   ],
   "routes": [
