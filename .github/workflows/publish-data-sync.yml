@@ -40,14 +40,42 @@ jobs:
           path = "app/src/main/assets/routes.json"
           with open(path, encoding="utf-8") as f:
               current = json.load(f)
+
+          # Fail early on malformed snapshots; publishing partial deltas can strand
+          # devices on an incomplete dataset until a full snapshot is downloaded.
+          if not isinstance(current, dict):
+              raise SystemExit("routes.json must contain a JSON object.")
+          if not isinstance(current.get("dataVersion"), int) or current["dataVersion"] < 1:
+              raise SystemExit("routes.json must contain a positive integer dataVersion.")
+          for collection in ("places", "routes", "drivers", "taxiSeaters"):
+              if not isinstance(current.get(collection), list):
+                  raise SystemExit(f"routes.json field {collection!r} must be a list.")
+          for collection in ("places", "routes", "drivers"):
+              seen = set()
+              for index, item in enumerate(current[collection]):
+                  if not isinstance(item, dict) or item.get("id") is None or not str(item.get("id")).strip():
+                      raise SystemExit(f"{collection}[{index}] must be an object with a non-empty id.")
+                  ident = str(item["id"])
+                  if ident in seen:
+                      raise SystemExit(f"Duplicate id {ident!r} in {collection}.")
+                  seen.add(ident)
+          if any(not isinstance(x, int) or isinstance(x, bool) or x <= 0 for x in current["taxiSeaters"]):
+              raise SystemExit("taxiSeaters must contain only positive integers.")
+          for index, route in enumerate(current["routes"]):
+              if "stops" in route and not isinstance(route["stops"], list):
+                  raise SystemExit(f"routes[{index}].stops must be a list when supplied.")
+
           before_sha = os.environ.get("BEFORE_SHA", "")
           old = {}
+          old_load_error = None
           if before_sha and set(before_sha) != {"0"}:
               try:
                   raw = subprocess.check_output(["git", "show", f"{before_sha}:{path}"], stderr=subprocess.DEVNULL)
                   old = json.loads(raw.decode("utf-8"))
-              except Exception:
-                  old = {}
+                  if not isinstance(old, dict):
+                      raise ValueError("previous routes.json was not a JSON object")
+              except Exception as e:
+                  old_load_error = str(e)
 
           def request(method, endpoint, payload=None, prefer=None):
               data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode()
@@ -68,6 +96,11 @@ jobs:
           if not state:
               raise SystemExit("data_sync_state row id=1 is missing; apply the incremental_data_sync migration first.")
           revision = int(state[0]["revision"])
+          # Without the previous snapshot we cannot calculate tombstones safely.
+          # Refuse to publish rather than silently leaving deleted records on devices.
+          if (os.environ.get("EVENT_NAME") != "workflow_dispatch"
+                  and revision > 0 and old_load_error is not None):
+              raise SystemExit("Cannot read the previous routes.json from the push's before-SHA; refusing to publish incomplete deltas. " + old_load_error)
           # Manual dispatch is only a seed/recovery action; avoid replaying every row
           # when a revision has already been published.
           if os.environ.get("EVENT_NAME") == "workflow_dispatch" and revision > 0:
