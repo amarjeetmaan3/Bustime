@@ -81,7 +81,6 @@
     <string name="ar_time_order">यह समय पिछले पड़ाव से पहले का है। आधी रात के बाद का समय तभी ठीक है जब पूरा सफ़र 16 घंटे के अंदर हो; कृपया समय जाँचें।</string>
     <string name="ar_pick_route">कृपया एक रूट चुनें</string>
     <string name="ar_need_time">कम से कम एक समय दें</string>
-    <string name="no_areas_yet">अभी कोई इलाका उपलब्ध नहीं है। जिन ड्राइवरों में इलाका भरा है उनके जुड़ने पर यहाँ दिखेगा।</string>
     <string name="ar_stop_name_required">हर पड़ाव का नाम भरें</string>
     <string name="ar_min_stops">रूट में कम-से-कम दो पड़ाव होने चाहिए</string>
     <string name="bb_select_area_required">अपना इलाका चुनें (ज़रूरी)</string>
@@ -161,7 +160,6 @@
     <string name="community_bus_category">बस की श्रेणी</string>
     <string name="community_custom_bus_type">अपनी बस का प्रकार / वैरिएंट बताएँ (हर श्रेणी के लिए ज़रूरी)</string>
     <string name="community_sleeper_berths">स्लीपर बर्थ की संख्या</string>
-    <string name="community_seater_seats">बैठने वाली सीटों की संख्या</string>
     <string name="community_operator_mobile">ऑपरेटर का मोबाइल नंबर</string>
     <string name="community_whatsapp_optional">WhatsApp नंबर (वैकल्पिक)</string>
     <string name="community_add_bus_submit">बस एडमिन की जाँच के लिए भेजें</string>
@@ -185,11 +183,9 @@
     <string name="community_enter_stop_name">पड़ाव %1$d का नाम भरें</string>
     <string name="community_stop_invalid_time">पड़ाव %1$d का समय सही नहीं है।</string>
     <string name="community_route_correction_sent">पूरे रूट का सुधार एडमिन की जाँच के लिए भेज दिया गया है।</string>
-    <string name="community_year_invalid">वाहन का वर्ष ठीक चार अंकों में भरें, जैसे 2022।</string>
     <string name="community_listing_sent">लिस्टिंग एडमिन की जाँच के लिए भेज दी गई है।</string>
     <string name="community_bus_submitted">बस एडमिन की जाँच के लिए भेज दी गई है।</string>
     <string name="community_correction_intro">इस %1$s लिस्टिंग की जानकारी ठीक करें। आपका अनुरोध एडमिन जाँचेगा।</string>
-    <string name="community_corrected_details_required">सही नाम, वाहन, मोबाइल नंबर भरें और सुधार का कारण बताएँ।</string>
     <string name="community_please_feedback">कृपया अपना सुझाव / शिकायत लिखें।</string>
     <string name="community_thanks_feedback">धन्यवाद। आपका सुझाव / शिकायत भेज दिया गया है।</string>
     <string name="community_send_failed">सभी अनुरोध नहीं भेजे जा सके। इंटरनेट जाँचकर फिर कोशिश करें।
