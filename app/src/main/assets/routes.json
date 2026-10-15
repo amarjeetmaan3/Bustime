@@ -1,5 +1,5 @@
 {
-  "dataVersion": 70,
+  "dataVersion": 71,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -430,26 +430,6 @@
         "en": "devipur",
         "hi": "देवीपुर",
         "pa": "ਦੇਵੀਪੁਰ"
-      },
-      "aliases": []
-    },
-    {
-      "id": "place_user_ns",
-      "kind": "place",
-      "name": {
-        "en": "ns",
-        "hi": "नस",
-        "pa": "ਨਸ"
-      },
-      "aliases": []
-    },
-    {
-      "id": "place_user_tn",
-      "kind": "place",
-      "name": {
-        "en": "tn",
-        "hi": "तन",
-        "pa": "ਤਨ"
       },
       "aliases": []
     }
