@@ -1086,7 +1086,7 @@ function viewAnalytics() {
     '<input type="date" id="analyticsTo" aria-label="End date" style="max-width:180px;display:none"></div>' +
     '<div class="stats" id="analyticsCards">' +
     analyticsStat('—','App users','Waiting for analytics data') + analyticsStat('—','Bus searches','Waiting for analytics data') +
-    analyticsStat('—','Contact actions','Waiting for analytics data') + analyticsStat('—','Ad earnings','AdMob reporting not connected') + '</div>' +
+    analyticsStat('—','Contact actions','Waiting for analytics data') + analyticsStat('—','Ad earnings','Start.io reporting not connected') + '</div>' +
     '<div class="row2"><div class="card"><h2>Activity over time</h2><p class="muted">Daily app events</p><div class="analytics-empty"><div class="analytics-bars">' +
     '<i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>Tracking not configured</b><p class="muted">Bars will show real daily totals after the app sends analytics events.</p></div></div>' +
     '<div class="card"><h2>Usage by section</h2><p class="muted">Bus activity</p><div class="analytics-empty"><div class="analytics-bars horizontal">' +
@@ -1094,8 +1094,8 @@ function viewAnalytics() {
     '<div class="card"><h2>Planned reports</h2><div class="row2"><div><b>Bus</b><p class="muted">From–To searches, stand searches, popular routes, no-result searches and route detail views.</p></div>' +
     '<div><b>Community</b><p class="muted">Add Route, route corrections, feedback, and Add Bus submissions by review status.</p></div>' +
     '<div><b>Coverage &amp; quality</b><p class="muted">Areas with low service coverage and frequently corrected information.</p></div>' +
-    '<div><b>Ads performance</b><p class="muted">Impressions, clicks and estimated earnings when AdMob reporting is integrated.</p></div></div>' +
-    '<div class="alert warn">Usage cards and charts load recorded app events. AdMob earnings require a separate official reporting integration.</div></div>';
+    '<div><b>Ads performance</b><p class="muted">Impressions, clicks and estimated earnings when Start.io reporting is integrated.</p></div></div>' +
+    '<div class="alert warn">Usage cards and charts load recorded app events. Start.io earnings require a separate official reporting integration.</div></div>';
 }
 async function loadAnalytics() {
   var cards = document.getElementById('analyticsCards');
@@ -1114,7 +1114,7 @@ async function loadAnalytics() {
   if (period && period.value !== 'custom') start.setHours(0,0,0,0);
   var daily = document.getElementById('analyticsDaily'), sections = document.getElementById('analyticsSections');
   if (!sbToken) {
-    cards.innerHTML = analyticsStat('—','App users','Admin sign-in required') + analyticsStat('—','Bus searches','Admin sign-in required') + analyticsStat('—','Contact actions','Admin sign-in required') + analyticsStat('—','Ad earnings','AdMob reporting not connected');
+    cards.innerHTML = analyticsStat('—','App users','Admin sign-in required') + analyticsStat('—','Bus searches','Admin sign-in required') + analyticsStat('—','Contact actions','Admin sign-in required') + analyticsStat('—','Ad earnings','Start.io reporting not connected');
     if (daily) daily.innerHTML = '<b>Sign in to view analytics</b>';
     if (sections) sections.innerHTML = '<b>Sign in to view analytics</b>';
     return;
@@ -1130,7 +1130,7 @@ async function loadAnalytics() {
     cards.innerHTML = analyticsStat(Object.keys(unique).length,'App sessions','Unique random app sessions in selected period') +
       analyticsStat(bus,'Bus searches','From–To and stand searches') +
       analyticsStat(contacts,'Contact actions','Recorded contact taps') +
-      analyticsStat('—','Ad earnings','Connect official AdMob reporting');
+      analyticsStat('—','Ad earnings','Connect official Start.io reporting');
     if (daily) {
       var buckets = {}, cursor = new Date(start); cursor.setHours(0,0,0,0);
       while (cursor <= now) { var key = cursor.getFullYear()+'-'+String(cursor.getMonth()+1).padStart(2,'0')+'-'+String(cursor.getDate()).padStart(2,'0'); buckets[key]=0; cursor.setDate(cursor.getDate()+1); }
@@ -1278,8 +1278,8 @@ var adSubtab = 'my';
 var adConfig = {
   my:{enabled:false,category:'general',poster_url:'',start_date:'',end_date:'',close_delay:3,
     route_id:'',target_kind:'route',target_id:'',call_enabled:false,phone:'',link_enabled:false,url:'',link_label:'Learn more',check_route_enabled:false,cta_label:'Check Route'},
-  admob:{banner_enabled:false,native_enabled:false,banner_unit_id:'',native_unit_id:'',placements:['bus_search_top'],
-    bus_every:4}
+  startio:{app_id:'',banner_enabled:false,main_banner_enabled:false,book_bus_banner_enabled:false,
+    native_enabled:false,results_native_enabled:false,fullscreen_enabled:false,bus_every:4,fullscreen_every:5}
 };
 function adEscape(v){return esc(v==null?'':String(v));}
 var adTargetCache={routes:[],operators:[]};
@@ -1311,8 +1311,8 @@ function refreshAdActionLabel(){var select=document.getElementById('ad_target_id
 function adChecked(v){return v?' checked':'';}
 function viewAdvertisement(){
   var my=adSubtab==='my';
-  var c=my?adConfig.my:adConfig.admob;
-  var html='<div class="ad-workspace"><div class="ad-tabs"><button class="btn '+(my?'primary':'')+'" data-act="ad-subtab" data-sub="my">My Advertisement</button><button class="btn '+(!my?'primary':'')+'" data-act="ad-subtab" data-sub="admob">AdMob Ads</button></div>';
+  var c=my?adConfig.my:adConfig.startio;
+  var html='<div class="ad-workspace"><div class="ad-tabs"><button class="btn '+(my?'primary':'')+'" data-act="ad-subtab" data-sub="my">My Advertisement</button><button class="btn '+(!my?'primary':'')+'" data-act="ad-subtab" data-sub="startio">Start.io Ads</button></div>';
   if(my){
     html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Campaign setup</h2><p class="muted">A framed, dismissible poster shown at app launch — not a fullscreen ad.</p></div><label class="ad-check"><input id="ad_my_enabled" type="checkbox"'+adChecked(c.enabled)+'> Campaign enabled</label></div>'+
     '<div class="ad-grid"><div class="ad-field"><label>Campaign category</label><select id="ad_category" onchange="refreshAdTargets()"><option value="general" '+(c.category==='general'?'selected':'')+'>General promotion</option><option value="bus_route" '+((c.category==='bus_route'||(c.category==='bus_operator'&&c.target_kind==='route'))?'selected':'')+'>Bus Route</option><option value="bus_operator" '+((c.category==='bus_operator'&&c.target_kind!=='route')?'selected':'')+'>Bus Operator / Book Bus</option></select></div><div class="ad-field"><label>Close button delay</label><select id="ad_close_delay"><option value="2" '+(Number(c.close_delay)===2?'selected':'')+'>2 seconds</option><option value="3" '+(Number(c.close_delay||3)===3?'selected':'')+'>3 seconds (recommended)</option><option value="4" '+(Number(c.close_delay)===4?'selected':'')+'>4 seconds</option></select></div></div>'+
@@ -1326,14 +1326,19 @@ function viewAdvertisement(){
     '<div class="ad-field"><label>Custom link button label</label><input id="ad_link_label" value="'+adEscape(c.link_label||'Learn more')+'" placeholder="Learn more"></div></div>'+
     '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-my">Save campaign</button></div></section>';
   }else{
-    var places=[['bus_search_top','Bus tab · below search'],['bus_results','Bus results · every N results']];
-    html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>AdMob inventory</h2><p class="muted">Configure banner and native placements. Interstitial and fullscreen ads are not included.</p></div></div>'+
-    '<div class="ad-grid"><div><label class="ad-check"><input id="ad_banner_enabled" type="checkbox"'+adChecked(c.banner_enabled)+'> Banner ads enabled</label><div class="ad-field" style="margin-top:8px"><label>Banner Ad Unit ID</label><input id="ad_banner_unit_id" value="'+adEscape(c.banner_unit_id)+'" placeholder="ca-app-pub-…/…"></div></div>'+
-    '<div><label class="ad-check"><input id="ad_native_enabled" type="checkbox"'+adChecked(c.native_enabled)+'> Native ads enabled</label><div class="ad-field" style="margin-top:8px"><label>Native Ad Unit ID</label><input id="ad_native_unit_id" value="'+adEscape(c.native_unit_id)+'" placeholder="ca-app-pub-…/…"></div></div></div>'+
-    '<div class="ad-subhead">Placement rules</div><div class="ad-placements">'+places.map(function(p){return '<label class="ad-check"><input type="checkbox" name="ad_placement" value="'+p[0]+'"'+((c.placements||[]).indexOf(p[0])>=0?' checked':'')+'> '+p[1]+'</label>';}).join('')+'</div>'+
-    '<div class="ad-grid" style="margin-top:12px"><div class="ad-field"><label>Bus results interval (N)</label><input id="ad_bus_every" type="number" min="1" max="20" value="'+adEscape(c.bus_every||4)+'"></div></div>'+
-    '<p class="muted ad-help" style="margin-top:12px">Native ads must use Google’s native ad assets and display a clear “Ad” or “Sponsored” label. These settings do not by themselves add ad rendering to the Android app.</p>'+
-    '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-admob">Save AdMob settings</button></div></section>';
+    html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Start.io ad controls</h2><p class="muted">Use the App ID from your Start.io publisher portal. Start.io uses one App ID for these formats; Google Ad Unit IDs are not used.</p></div></div>'+
+    '<div class="ad-field"><label>Start.io App ID</label><input id="ad_startio_app_id" value="'+adEscape(c.app_id)+'" placeholder="App ID from portal.start.io"></div>'+
+    '<div class="ad-subhead">Banner ads</div><div class="ad-grid">'+
+    '<div><label class="ad-check"><input id="ad_banner_enabled" type="checkbox"'+adChecked(c.banner_enabled)+'> Enable Banner format</label><p class="muted ad-help">Master switch for all banner placements.</p></div>'+
+    '<div><label class="ad-check"><input id="ad_main_banner_enabled" type="checkbox"'+adChecked(c.main_banner_enabled)+'> Main screen bottom banner</label><label class="ad-check"><input id="ad_book_bus_banner_enabled" type="checkbox"'+adChecked(c.book_bus_banner_enabled)+'> Book Bus screen banner</label></div></div>'+
+    '<div class="ad-subhead">Native ads</div><div class="ad-grid">'+
+    '<div><label class="ad-check"><input id="ad_native_enabled" type="checkbox"'+adChecked(c.native_enabled)+'> Enable Native format</label><p class="muted ad-help">Native ads are designed into the bus-results list and labelled Ad / Sponsored.</p></div>'+
+    '<div><label class="ad-check"><input id="ad_results_native_enabled" type="checkbox"'+adChecked(c.results_native_enabled)+'> Show Native ad in bus results</label><div class="ad-field"><label>Insert after this many results</label><input id="ad_bus_every" type="number" min="1" max="20" value="'+adEscape(c.bus_every||4)+'"></div></div></div>'+
+    '<div class="ad-subhead">Full-screen ads</div><div class="ad-grid">'+
+    '<div><label class="ad-check"><input id="ad_fullscreen_enabled" type="checkbox"'+adChecked(c.fullscreen_enabled)+'> Enable Full-screen / Interstitial ads</label><p class="muted ad-help">Off by default. When enabled, navigation continues if no ad is available.</p></div>'+
+    '<div class="ad-field"><label>Show after this many route opens</label><input id="ad_fullscreen_every" type="number" min="2" max="20" value="'+adEscape(c.fullscreen_every||5)+'"></div></div>'+
+    '<p class="muted ad-help" style="margin-top:12px">Ads remain inactive until a valid App ID is entered and the relevant switches are enabled. Test ads are enabled only in Debug builds.</p>'+
+    '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-startio">Save Start.io settings</button></div></section>';
   }
   return html+'</div>';
 }
@@ -1344,7 +1349,7 @@ async function loadAdConfig(){
   if(rows&&rows[0]&&rows[0].config){
     var saved=rows[0].config;
     adConfig.my=Object.assign({},adConfig.my,saved.my||{});
-    adConfig.admob=Object.assign({},adConfig.admob,saved.admob||{});
+    adConfig.startio=Object.assign({},adConfig.startio,saved.startio||saved.admob||{});
   }
 }
 async function saveAdConfig(){
@@ -2836,7 +2841,7 @@ document.addEventListener('click', async function (e) {
       toast('App popup and ticker settings saved. Terms & Conditions were saved unchanged.'); render();
     }
 
-    else if (act === 'ad-subtab') { adSubtab=b.getAttribute('data-sub')==='admob'?'admob':'my'; render(); }
+    else if (act === 'ad-subtab') { adSubtab=b.getAttribute('data-sub')==='startio'?'startio':'my'; render(); }
     else if (act === 'ad-save-my') {
       adConfig.my.enabled=!!document.getElementById('ad_my_enabled').checked;
       adConfig.my.category=document.getElementById('ad_category').value;
@@ -2871,14 +2876,17 @@ document.addEventListener('click', async function (e) {
       if(adConfig.my.link_enabled&&!/^https?:\/\//i.test(adConfig.my.url))throw new Error('Enter a valid http:// or https:// URL.');
       await saveAdConfig();toast('My Advertisement settings saved.');render();
     }
-    else if (act === 'ad-save-admob') {
-      adConfig.admob.banner_enabled=document.getElementById('ad_banner_enabled').checked;
-      adConfig.admob.native_enabled=document.getElementById('ad_native_enabled').checked;
-      adConfig.admob.banner_unit_id=document.getElementById('ad_banner_unit_id').value.trim();
-      adConfig.admob.native_unit_id=document.getElementById('ad_native_unit_id').value.trim();
-      adConfig.admob.placements=Array.prototype.slice.call(document.querySelectorAll('input[name="ad_placement"]:checked')).map(function(x){return x.value;});
-      adConfig.admob.bus_every=Math.max(1,Math.min(20,parseInt(document.getElementById('ad_bus_every').value,10)||4));
-      await saveAdConfig();toast('AdMob settings saved.');render();
+    else if (act === 'ad-save-startio') {
+      adConfig.startio.app_id=document.getElementById('ad_startio_app_id').value.trim();
+      adConfig.startio.banner_enabled=document.getElementById('ad_banner_enabled').checked;
+      adConfig.startio.main_banner_enabled=document.getElementById('ad_main_banner_enabled').checked;
+      adConfig.startio.book_bus_banner_enabled=document.getElementById('ad_book_bus_banner_enabled').checked;
+      adConfig.startio.native_enabled=document.getElementById('ad_native_enabled').checked;
+      adConfig.startio.results_native_enabled=document.getElementById('ad_results_native_enabled').checked;
+      adConfig.startio.fullscreen_enabled=document.getElementById('ad_fullscreen_enabled').checked;
+      adConfig.startio.bus_every=Math.max(1,Math.min(20,parseInt(document.getElementById('ad_bus_every').value,10)||4));
+      adConfig.startio.fullscreen_every=Math.max(2,Math.min(20,parseInt(document.getElementById('ad_fullscreen_every').value,10)||5));
+      await saveAdConfig();toast('Start.io settings saved.');render();
     }
     else if (act === 'ad-upload-poster') { /* file input is handled by change listener */ }
     else if (act === 'ad-delete-poster') {
