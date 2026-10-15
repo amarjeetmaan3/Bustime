@@ -1,5 +1,5 @@
 {
-  "dataVersion": 68,
+  "dataVersion": 69,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -434,16 +434,6 @@
       "aliases": []
     },
     {
-      "id": "place_user_aj",
-      "kind": "place",
-      "name": {
-        "en": "aj",
-        "hi": "आज",
-        "pa": "ਅਜੇ"
-      },
-      "aliases": []
-    },
-    {
       "id": "place_user_gs",
       "kind": "place",
       "name": {
@@ -492,13 +482,6 @@
         "pa": "ਤਨ"
       },
       "aliases": []
-    },
-    {
-      "id": "place_user_aj_2",
-      "kind": "city",
-      "name": {
-        "en": "aj"
-      }
     },
     {
       "id": "place_user_gdvbh",
