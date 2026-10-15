@@ -49,10 +49,10 @@ jobs:
                   or isinstance(current.get("dataVersion"), bool)
                   or current["dataVersion"] < 1):
               raise SystemExit("routes.json must contain a positive integer dataVersion.")
-          for collection in ("places", "routes", "drivers", "taxiSeaters"):
+          for collection in ("places", "routes"):
               if not isinstance(current.get(collection), list):
                   raise SystemExit(f"routes.json field {collection!r} must be a list.")
-          for collection in ("places", "routes", "drivers"):
+          for collection in ("places", "routes"):
               seen = set()
               for index, item in enumerate(current[collection]):
                   if not isinstance(item, dict) or item.get("id") is None or not str(item.get("id")).strip():
@@ -61,8 +61,6 @@ jobs:
                   if ident in seen:
                       raise SystemExit(f"Duplicate id {ident!r} in {collection}.")
                   seen.add(ident)
-          if any(not isinstance(x, int) or isinstance(x, bool) or x <= 0 for x in current["taxiSeaters"]):
-              raise SystemExit("taxiSeaters must contain only positive integers.")
           for index, route in enumerate(current["routes"]):
               if "stops" in route and not isinstance(route["stops"], list):
                   raise SystemExit(f"routes[{index}].stops must be a list when supplied.")
@@ -138,24 +136,6 @@ jobs:
                                 if not (item["entity_type"] == "route" and item["entity_id"] == ident)]
                   if ident in old_routes:
                       changes.append({"entity_type": "route", "entity_id": ident, "operation": "delete", "payload": None})
-          compare("drivers", "driver", hidden_deletes=True)
-
-          def seaters(snapshot):
-              listed = [int(x) for x in snapshot.get("taxiSeaters", []) if str(x).isdigit()]
-              if listed:
-                  return set(listed)
-              return {int(d["seats"]) for d in snapshot.get("drivers", [])
-                      if d.get("type") == "taxi" and d.get("hidden") is not True
-                      and str(d.get("seats", "")).isdigit() and int(d["seats"]) > 0}
-
-          old_seaters = seaters(old)
-          new_seaters = seaters(current)
-          for seats in sorted(old_seaters | new_seaters):
-              if seats in new_seaters and seats not in old_seaters:
-                  changes.append({"entity_type": "seater", "entity_id": str(seats), "operation": "upsert", "payload": {"seats": seats}})
-              elif seats in old_seaters and seats not in new_seaters:
-                  changes.append({"entity_type": "seater", "entity_id": str(seats), "operation": "delete", "payload": None})
-
           if not changes:
               print("No data changes detected; revision unchanged.")
               sys.exit(0)
