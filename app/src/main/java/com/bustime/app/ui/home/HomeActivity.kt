@@ -54,7 +54,6 @@ class HomeActivity : AppCompatActivity() {
     private var swipeStartX = 0f
     private var swipeStartY = 0f
     private var swipeStartedInContent = false
-    private var swipeStartedInTaxiSeatFilters = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +63,7 @@ class HomeActivity : AppCompatActivity() {
         com.bustime.app.ads.CustomPopupManager.showLocalSponsorshipAd(this)
 
         // भाषा बदलने पर स्क्रीन दोबारा बनती है: जो टैब खुला था वही खुला रहे
-        currentTab = savedInstanceState?.getInt("TAB", 0) ?: 0
+        currentTab = 0
 
         // अपडेटर चेक करना
         GitHubUpdateChecker(this).checkForLatestUpdate()
@@ -97,11 +96,9 @@ class HomeActivity : AppCompatActivity() {
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 currentTab = tab?.position ?: 0
-                when (currentTab) {
-                    0 -> replaceFragment(BusFragment())
-                    1 -> replaceFragment(TaxiFragment())
-                    2 -> replaceFragment(AutoRickshawFragment())
-                }
+                // Bustime is now focused exclusively on bus routes and Book Bus.
+                // Keep one tab so old saved tab indices cannot open removed vehicle screens.
+                replaceFragment(BusFragment())
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
