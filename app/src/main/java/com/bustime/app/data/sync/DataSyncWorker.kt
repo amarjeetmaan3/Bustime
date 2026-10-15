@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.bustime.app.data.repository.AppRepository
+import com.bustime.app.utils.Constants
 
 /** Network-constrained background check; WorkManager's minimum periodic interval is 15 minutes. */
 class DataSyncWorker(
@@ -15,6 +16,8 @@ class DataSyncWorker(
         val repository = AppRepository.getInstance(applicationContext)
         val changed = repository.syncData()
         if (changed) {
+            applicationContext.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().putBoolean(KEY_PENDING_UI_REFRESH, true).apply()
             applicationContext.sendBroadcast(
                 Intent(ACTION_DATA_SYNCED).setPackage(applicationContext.packageName)
             )
@@ -24,5 +27,6 @@ class DataSyncWorker(
 
     companion object {
         const val ACTION_DATA_SYNCED = "com.bustime.app.ACTION_DATA_SYNCED"
+        const val KEY_PENDING_UI_REFRESH = "pending_data_ui_refresh"
     }
 }
