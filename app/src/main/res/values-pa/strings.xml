@@ -17,20 +17,6 @@
     <string name="departs_at">%1$s ਰਵਾਨਾ</string>
     <string name="route_stops">ਪੜਾਅ</string>
     <string name="back">ਵਾਪਸ</string>
-
-    <string name="taxi_select_seats">ਤੁਹਾਨੂੰ ਕਿੰਨੀਆਂ ਸੀਟਾਂ ਵਾਲੀ ਗੱਡੀ ਚਾਹੀਦੀ ਹੈ?</string>
-    <string name="seater_format">%1$d ਸੀਟਰ</string>
-    <string name="no_seaters">ਹਾਲੇ ਕੋਈ ਟੈਕਸੀ ਵਿਕਲਪ ਉਪਲਬਧ ਨਹੀਂ ਹੈ</string>
-    <string name="no_drivers">ਕੋਈ ਡਰਾਈਵਰ ਉਪਲਬਧ ਨਹੀਂ ਹੈ</string>
-
-    <string name="auto_all">ਸਾਰੇ</string>
-    <string name="auto_ev">EV (ਇਲੈਕਟ੍ਰਿਕ)</string>
-    <string name="auto_oil">ਪੈਟਰੋਲ / CNG</string>
-    <string name="no_autos">ਕੋਈ ਆਟੋ ਉਪਲਬਧ ਨਹੀਂ ਹੈ</string>
-
-    <string name="show_number">ਪੂਰੀ ਜਾਣਕਾਰੀ ਵੇਖੋ</string>
-    <string name="show_details">ਪੂਰੀ ਜਾਣਕਾਰੀ ਵੇਖੋ</string>
-    <string name="number_notice">ਧਿਆਨ ਦਿਓ: ਕਿਰਾਇਆ ਤੈਅ ਹੈ, ਮੋਲ-ਭਾਵ ਨਾ ਕਰੋ। ਨੰਬਰ ਕੁਝ ਸਕਿੰਟਾਂ ਵਿੱਚ ਦਿਖੇਗਾ…</string>
     <string name="call">ਕਾਲ</string>
     <string name="whatsapp">WhatsApp</string>
     <string name="action_failed">ਇਹ ਕੰਮ ਨਹੀਂ ਖੁੱਲ੍ਹ ਸਕਿਆ</string>
@@ -57,10 +43,6 @@
     <string name="ar_no_routes">ਅਜੇ ਕੋਈ ਰੂਟ ਉਪਲਬਧ ਨਹੀਂ। ਬਾਅਦ ਵਿੱਚ ਕੋਸ਼ਿਸ਼ ਕਰੋ।</string>
     <string name="correction_route">ਰੂਟ ਵਿੱਚ ਸੁਧਾਰ</string>
     <string name="book_bus">ਬੱਸ ਬੁੱਕ ਕਰੋ</string>
-    <string name="add_auto">ਆਟੋ ਜੋੜੋ</string>
-    <string name="correction_auto">ਆਟੋ ਵਿੱਚ ਸੁਧਾਰ</string>
-    <string name="add_taxi">ਟੈਕਸੀ ਜੋੜੋ</string>
-    <string name="correction_taxi">ਟੈਕਸੀ ਵਿੱਚ ਸੁਧਾਰ</string>
     <string name="bus_type">ਬੱਸ ਦੀ ਕਿਸਮ</string>
     <string name="seat_type">ਸੀਟਾਂ ਦੀ ਕਿਸਮ</string>
     <string name="operator_location">ਬੱਸ ਦੀ ਲੋਕੇਸ਼ਨ</string>
@@ -102,8 +84,6 @@
     <string name="no_areas_yet">ਹਾਲੇ ਕੋਈ ਇਲਾਕਾ ਉਪਲਬਧ ਨਹੀਂ। ਇਲਾਕੇ ਵਾਲੇ ਡਰਾਈਵਰ ਜੁੜਨ ਤੇ ਇੱਥੇ ਦਿਖੇਗਾ।</string>
     <string name="ar_stop_name_required">ਹਰ ਪੜਾਅ ਦਾ ਨਾਮ ਭਰੋ</string>
     <string name="ar_min_stops">ਰੂਟ ਵਿੱਚ ਘੱਟੋ-ਘੱਟ ਦੋ ਪੜਾਅ ਹੋਣੇ ਚਾਹੀਦੇ ਹਨ</string>
-    <string name="taxi_area_required">ਡਰਾਈਵਰ ਵੇਖਣ ਲਈ ਪਹਿਲਾਂ ਆਪਣਾ ਇਲਾਕਾ ਚੁਣੋ।</string>
-    <string name="taxi_no_area_drivers">ਇਸ ਇਲਾਕੇ ਅਤੇ ਸੀਟਾਂ ਦੀ ਕਿਸਮ ਲਈ ਕੋਈ ਡਰਾਈਵਰ ਨਹੀਂ ਮਿਲਿਆ।</string>
     <string name="bb_select_area_required">ਆਪਣਾ ਇਲਾਕਾ ਚੁਣੋ (ਲਾਜ਼ਮੀ)</string>
     <string name="bb_choose_area">ਇਲਾਕਾ ਚੁਣੋ</string>
     <string name="bb_no_areas_admin">ਹਾਲੇ ਕੋਈ ਸੇਵਾ ਇਲਾਕਾ ਨਹੀਂ ਹੈ। ਐਡਮਿਨ ਨੂੰ ਹਰ ਆਪਰੇਟਰ ਦਾ ਕੰਮ ਵਾਲਾ ਇਲਾਕਾ ਜੋੜਨਾ ਪਵੇਗਾ।</string>
@@ -154,10 +134,7 @@
     <string name="ar_remove_stop">ਪੜਾਅ ਹਟਾਓ</string>
     <string name="bb_no_operators">ਹਾਲੇ ਤੱਕ ਕੋਈ ਮਨਜ਼ੂਰਸ਼ੁਦਾ ਬੱਸ ਆਪਰੇਟਰ ਸੂਚੀ ਵਿੱਚ ਨਹੀਂ ਹੈ।</string>
     <string name="community_title_correction">ਰੂਟ ਵਿੱਚ ਸੁਧਾਰ</string>
-    <string name="community_title_vehicle">ਆਟੋ / ਟੈਕਸੀ ਜੋੜੋ</string>
     <string name="community_title_bus">ਆਪਣੀ ਬੱਸ ਜੋੜੋ</string>
-    <string name="community_title_taxi_correction">ਟੈਕਸੀ ਵਿੱਚ ਸੁਧਾਰ</string>
-    <string name="community_title_auto_correction">ਆਟੋ ਵਿੱਚ ਸੁਧਾਰ</string>
     <string name="community_title_feedback">ਸੁਝਾਅ / ਸ਼ਿਕਾਇਤ</string>
     <string name="community_open_route_details">ਸਹੀ ਰੂਟ ਚੁਣਿਆ ਰੱਖਣ ਲਈ ਰੂਟ ਦੇ ਵੇਰਵਿਆਂ ਵਾਲੇ ਪੰਨੇ ਤੋਂ ਹੀ ਰੂਟ ਸੁਧਾਰ ਖੋਲ੍ਹੋ।</string>
     <string name="community_complete_route_correction">ਪੂਰੇ ਰੂਟ ਵਿੱਚ ਸੁਧਾਰ</string>
@@ -173,19 +150,10 @@
     <string name="community_remove_stop_question">ਪੜਾਅ ਹਟਾਉਣਾ ਹੈ?</string>
     <string name="community_remove_stop_warning">ਇਹ ਪੜਾਅ ਸਿਰਫ਼ ਤੁਹਾਡੇ ਸੁਝਾਏ ਸੁਧਾਰ ਵਿੱਚੋਂ ਹਟੇਗਾ। ਐਡਮਿਨ ਦੀ ਮਨਜ਼ੂਰੀ ਤੱਕ ਮੌਜੂਦਾ ਰੂਟ ਨਹੀਂ ਬਦਲੇਗਾ।</string>
     <string name="remove">ਹਟਾਓ</string>
-    <string name="community_vehicle_type">ਵਾਹਨ ਦੀ ਕਿਸਮ</string>
-    <string name="community_auto">ਆਟੋ</string>
-    <string name="community_taxi">ਟੈਕਸੀ</string>
-    <string name="community_driver_name">ਡਰਾਈਵਰ ਦਾ ਨਾਮ</string>
-    <string name="community_vehicle_name">ਵਾਹਨ ਦਾ ਨਾਮ</string>
-    <string name="community_vehicle_model">ਵਾਹਨ ਦਾ ਮਾਡਲ ਨੰਬਰ</string>
-    <string name="community_vehicle_year">ਸਾਲ (4 ਅੰਕ)</string>
     <string name="community_seat_count">ਸੀਟਾਂ ਦੀ ਗਿਣਤੀ</string>
-    <string name="community_vehicle_registration">ਵਾਹਨ ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਨੰਬਰ</string>
     <string name="community_location_area">ਟਿਕਾਣਾ / ਸੇਵਾ ਖੇਤਰ ਦਾ ਪਤਾ (ਇੱਕ ਵਾਰ ਭਰੋ)</string>
     <string name="community_union_name">ਯੂਨੀਅਨ ਦਾ ਨਾਮ (ਲਾਜ਼ਮੀ; ਐਡਮਿਨ ਜਾਂਚੇਗਾ)</string>
     <string name="community_mobile_number">ਮੋਬਾਈਲ ਨੰਬਰ</string>
-    <string name="community_auto_fuel_type">ਆਟੋ ਦਾ ਬਾਲਣ ਕਿਸਮ</string>
     <string name="community_other_info">ਹੋਰ ਜਾਣਕਾਰੀ (ਵਿਕਲਪਿਕ)</string>
     <string name="community_submit_listing">ਲਿਸਟਿੰਗ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜੋ</string>
     <string name="community_service_name">ਸੇਵਾ ਦਾ ਨਾਮ</string>
@@ -197,8 +165,6 @@
     <string name="community_operator_mobile">ਆਪਰੇਟਰ ਦਾ ਮੋਬਾਈਲ ਨੰਬਰ</string>
     <string name="community_whatsapp_optional">WhatsApp ਨੰਬਰ (ਵਿਕਲਪਿਕ)</string>
     <string name="community_add_bus_submit">ਬੱਸ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜੋ</string>
-    <string name="community_correction_driver_name">ਡਰਾਈਵਰ / ਸੰਪਰਕ ਦਾ ਸਹੀ ਨਾਮ</string>
-    <string name="community_correction_vehicle">ਵਾਹਨ ਦਾ ਸਹੀ ਨਾਮ / ਮਾਡਲ</string>
     <string name="community_correct_mobile">ਸਹੀ ਮੋਬਾਈਲ ਨੰਬਰ</string>
     <string name="community_correct_seats">ਸੀਟਾਂ ਦੀ ਸਹੀ ਗਿਣਤੀ</string>
     <string name="community_correct_fuel">ਬਾਲਣ ਦੀ ਸਹੀ ਕਿਸਮ (EV ਜਾਂ Oil)</string>
@@ -219,16 +185,11 @@
     <string name="community_enter_stop_name">ਪੜਾਅ %1$d ਦਾ ਨਾਮ ਭਰੋ</string>
     <string name="community_stop_invalid_time">ਪੜਾਅ %1$d ਦਾ ਸਮਾਂ ਸਹੀ ਨਹੀਂ ਹੈ।</string>
     <string name="community_route_correction_sent">ਪੂਰੇ ਰੂਟ ਦਾ ਸੁਧਾਰ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤਾ ਗਿਆ ਹੈ।</string>
-    <string name="community_vehicle_type_label">ਵਾਹਨ ਦੀ ਕਿਸਮ</string>
-    <string name="community_fill_vehicle_required">ਸੀਟਾਂ ਦੀ ਗਿਣਤੀ, ਵਾਹਨ ਨੰਬਰ, ਸੇਵਾ ਖੇਤਰ ਅਤੇ ਯੂਨੀਅਨ ਦੇ ਨਾਮ ਸਮੇਤ ਸਾਰੇ ਲਾਜ਼ਮੀ ਖਾਨੇ ਭਰੋ।
-    </string>
     <string name="community_year_invalid">ਵਾਹਨ ਦਾ ਸਾਲ ਠੀਕ ਚਾਰ ਅੰਕਾਂ ਵਿੱਚ ਭਰੋ, ਜਿਵੇਂ 2022।</string>
     <string name="community_listing_sent">ਲਿਸਟਿੰਗ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ।</string>
     <string name="community_bus_submitted">ਬੱਸ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ।</string>
     <string name="community_correction_intro">ਇਸ %1$s ਲਿਸਟਿੰਗ ਦੀ ਜਾਣਕਾਰੀ ਠੀਕ ਕਰੋ। ਤੁਹਾਡੀ ਬੇਨਤੀ ਐਡਮਿਨ ਜਾਂਚੇਗਾ।</string>
-    <string name="community_driver_vehicle">ਡਰਾਈਵਰ: %1$s · ਵਾਹਨ: %2$s</string>
     <string name="community_corrected_details_required">ਸਹੀ ਨਾਮ, ਵਾਹਨ, ਮੋਬਾਈਲ ਨੰਬਰ ਭਰੋ ਅਤੇ ਸੁਧਾਰ ਦਾ ਕਾਰਨ ਦੱਸੋ।</string>
-    <string name="community_vehicle_correction_sent">ਸੁਧਾਰ ਦੀ ਬੇਨਤੀ ਐਡਮਿਨ ਦੀ ਜਾਂਚ ਲਈ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ।</string>
     <string name="community_please_feedback">ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਸੁਝਾਅ / ਸ਼ਿਕਾਇਤ ਲਿਖੋ।</string>
     <string name="community_thanks_feedback">ਧੰਨਵਾਦ। ਤੁਹਾਡਾ ਸੁਝਾਅ / ਸ਼ਿਕਾਇਤ ਭੇਜ ਦਿੱਤਾ ਗਿਆ ਹੈ।</string>
     <string name="community_send_failed">ਸਾਰੀਆਂ ਬੇਨਤੀਆਂ ਨਹੀਂ ਭੇਜੀਆਂ ਜਾ ਸਕੀਆਂ। ਇੰਟਰਨੈੱਟ ਜਾਂਚ ਕੇ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।
@@ -238,7 +199,6 @@
     <string name="community_feedback_submit_success">ਧੰਨਵਾਦ। ਤੁਹਾਡਾ ਸੁਝਾਅ / ਸ਼ਿਕਾਇਤ ਭੇਜ ਦਿੱਤਾ ਗਿਆ ਹੈ।</string>
     <string name="home_all_areas">ਸਾਰੇ ਇਲਾਕੇ</string>
     <string name="bus_from_to">ਕਿੱਥੋਂ → ਕਿੱਥੇ ਤੱਕ</string>
-    <string name="show_number_short">ਨੰਬਰ ਦਿਖਾਓ</string>
     <string name="community_duplicate_stop">ਇਸ ਰੂਟ ਵਿੱਚ ਇੱਕ ਪੜਾਅ ਦੋ ਵਾਰ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਵੱਖਰਾ ਪੜਾਅ ਚੁਣੋ ਜਾਂ ਭੇਜਣ ਤੋਂ ਪਹਿਲਾਂ ਦੁਹਰਾਇਆ ਪੜਾਅ ਹਟਾਓ।</string>
     <string name="community_route_label">ਰੂਟ: %1$s</string>
     <string name="bus_category_ordinary">ਆਮ</string>
@@ -249,8 +209,6 @@
     <string name="bus_category_seater">ਸੀਟਰ</string>
     <string name="bus_category_sleeper_seater">ਸਲੀਪਰ + ਸੀਟਰ</string>
     <string name="bus_category_custom">ਹੋਰ ਕਿਸਮ</string>
-    <string name="auto_select_area_first">ਡਰਾਈਵਰ ਵੇਖਣ ਲਈ ਪਹਿਲਾਂ ਆਪਣਾ ਇਲਾਕਾ ਚੁਣੋ।</string>
-    <string name="auto_no_drivers_filter">ਇਸ ਇਲਾਕੇ ਅਤੇ ਫਿਲਟਰ ਲਈ ਕੋਈ ਡਰਾਈਵਰ ਨਹੀਂ ਮਿਲਿਆ।</string>
     <string name="update_browser_not_found">ਬ੍ਰਾਊਜ਼ਰ ਨਹੀਂ ਮਿਲਿਆ</string>
     <string name="update_download_started">ਡਾਊਨਲੋਡ ਸ਼ੁਰੂ ਹੋ ਗਿਆ ਹੈ। ਨੋਟੀਫਿਕੇਸ਼ਨ ਵੇਖੋ।</string>
     <string name="update_download_start_failed">ਡਾਊਨਲੋਡ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋ ਸਕਿਆ</string>
