@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
+import com.bustime.app.ads.StartIoAdsManager
 import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.ui.details.RouteDetailActivity
 import com.bustime.app.ui.home.BusAdapter
@@ -50,7 +51,7 @@ class SearchActivity : AppCompatActivity() {
                 intent.getStringExtra("FROM_ID")?.let { detailIntent.putExtra("SEARCH_FROM_ID", it) }
                 intent.getStringExtra("TO_ID")?.let { detailIntent.putExtra("SEARCH_TO_ID", it) }
             }
-            startActivity(detailIntent)
+            StartIoAdsManager.maybeShowFullscreen(this) { startActivity(detailIntent) }
         }
         recycler.adapter = adapter
 
@@ -115,6 +116,13 @@ class SearchActivity : AppCompatActivity() {
             adapter.submit(items)
             tvEmpty.setText(emptyRes)
             tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+            if (items.isNotEmpty()) {
+                StartIoAdsManager.loadNativeAd(this@SearchActivity, items.size) { nativeAd, config ->
+                    if (!isFinishing && !isDestroyed && nativeAd != null) {
+                        adapter.submit(items, nativeAd, config.busEvery)
+                    }
+                }
+            }
         }
     }
 }
