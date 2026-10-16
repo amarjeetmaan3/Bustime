@@ -775,7 +775,7 @@ async function publishSharedDataDiff(before, after) {
   if (!changes.length) return 0;
   if (changes.length > 250) throw new Error('This publish contains ' + changes.length + ' changed routes/stops. Please publish smaller batches (250 changes maximum) so the shared sync remains consistent.');
   if (!sbToken || !cfg.sbUrl || !cfg.sbKey) throw new Error('Sign in to the owner admin and configure Supabase before publishing shared route data.');
-  var response = await fetch(cfg.sbUrl.replace(/\\/+$/, '') + '/functions/v1/mdm-publish', {
+  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method:'POST',
     headers:{ apikey:cfg.sbKey, Authorization:'Bearer '+sbToken, 'Content-Type':'application/json', 'Cache-Control':'no-store' },
     body:JSON.stringify({ action:'publish', changes:changes })
