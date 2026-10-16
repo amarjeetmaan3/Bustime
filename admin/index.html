@@ -1455,7 +1455,7 @@ function viewSettings() {
     '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="save-cfg">Save and load data</button></div>' +
     (data ? '<div class="alert ok">Loaded: data version ' + baseVersion + ', ' + data.places.length + ' places, ' + data.routes.length +
             ' routes.</div>' : '') + '</div>' +
-    '<div class="card"><h2>MDM</h2><p class="muted">Set or replace the separate password used to open MDM in the Android app. The password is stored as a salted server-side hash, not as readable text.</p>' +
+    '<div class="card"><h2>MDM</h2>' +
     '<button class="btn" data-act="mdm-toggle-form">MDM</button>' +
     (mdmPasswordFormOpen ? '<div style="max-width:440px;margin-top:14px"><label>New MDM password (minimum 8 characters)</label><input id="mdm_password" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter a new MDM password"><label>Confirm password</label><input id="mdm_password_confirm" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter it again"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="mdm-save-password">Save MDM password</button></div></div>' : '') +
     '</div>' +
