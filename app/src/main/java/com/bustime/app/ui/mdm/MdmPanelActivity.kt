@@ -276,7 +276,7 @@ class MdmPanelActivity : AppCompatActivity() {
                 val anyTime = drafts.mapNotNull { draftTime(it) }.firstOrNull() ?: error("Set at least one valid HH:mm time.")
                 val routeId = old?.id ?: "mdm_route_" + System.currentTimeMillis().toString(36)
                 val route = JSONObject().put("id", routeId).put("from", ids.first()).put("to", ids.last())
-                    .put("time", startTime ?: anyTime).put("arrive", arriveTime ?: JSONObject.NULL)
+                    .put("time", startTime ?: JSONObject.NULL).put("arrive", arriveTime ?: JSONObject.NULL)
                     .put("service", service.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                     .put("routeName", old?.routeName ?: JSONObject.NULL).put("contact", old?.contact ?: JSONObject.NULL)
                     .put("info", old?.info ?: JSONObject.NULL).put("longRoute", drafts.size > 8)
