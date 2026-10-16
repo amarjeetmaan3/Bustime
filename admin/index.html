@@ -397,7 +397,7 @@ function saveCfg() {
 var data = null, sha = null, baseVersion = 0, dirty = false;
 var mdmRevisionCursor = 0, mdmAutoSyncTimer = null, mdmAutoSyncBusy = false;
 var tab = 'settings';
-var contentSettings = {terms_enabled:true,terms:{en:'',hi:'',pa:''},popup_enabled:true,popup:{en:'',hi:'',pa:''},popup_seconds:5,ticker_enabled:true,ticker:{en:'',hi:'',pa:''},update_notifications_enabled:false};
+var contentSettings = {terms_enabled:true,terms:{en:'',hi:'',pa:''},popup_enabled:true,popup:{en:'',hi:'',pa:''},popup_seconds:5,ticker_enabled:true,ticker:{en:'',hi:'',pa:''},update_notifications_enabled:false,operator_directory_enabled:true};
 var sbToken = null, sbRefreshToken = null, subs = null, subsError = '';
 var authRestoring = true, dataLoadError = '';
 var ADMIN_AUTH_UID = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9';
@@ -1490,7 +1490,11 @@ function viewSettings() {
     '<button class="btn" data-act="mdm-toggle-form">MDM</button>' +
     (mdmPasswordFormOpen ? '<div style="max-width:440px;margin-top:14px"><label>New MDM password (minimum 8 characters)</label><input id="mdm_password" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter a new MDM password"><label>Confirm password</label><input id="mdm_password_confirm" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter it again"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="mdm-save-password">Save MDM password</button></div></div>' : '') +
     '</div>' +
-    '<div class="card"><h2>App Updater</h2><p class="muted">Control whether the Android app checks for new GitHub releases and shows the new-version popup. This does not interrupt a download already in progress.</p>' +
+    '<div class="card"><h2>Operator Directory Visibility</h2><p class="muted">Control whether approved bus operators are visible to users in the app’s Book Bus directory. This does not delete operator records or change their individual publish status.</p>' +
+    '<div class="content-toggle"><label for="settings_operator_directory_enabled">Show operators to app users</label><input id="settings_operator_directory_enabled" type="checkbox" '+(contentSettings.operator_directory_enabled!==false?'checked':'')+'></div>' +
+    '<p class="muted">ON: users can see active/published operators. OFF: the Book Bus directory is hidden for users; all operator data stays saved in the database.</p>' +
+    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-visibility-save">Save operator visibility</button></div></div>' +
+    '<div class="card"><h2>App Updater</h2><p class="muted">Control whether the Android app checks for new GitHub releases and shows the new-version popup. This does not interrupt a download already in progress.</p>'
     '<div class="content-toggle"><label for="settings_updater_enabled">Enable automatic app update checks</label><input id="settings_updater_enabled" type="checkbox" '+(contentSettings.update_notifications_enabled===true?'checked':'')+'></div>' +
     '<p class="muted">OFF means the app will not show new-version prompts. ON enables release checks on supported app builds.</p>' +
     '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="updater-setting-save">Save updater setting</button></div></div>' +
@@ -2940,6 +2944,14 @@ document.addEventListener('click', async function (e) {
 
 
 
+    else if (act === 'operator-visibility-save') {
+      var operatorDirectoryEnabled = !!document.getElementById('settings_operator_directory_enabled').checked;
+      await loadContentSettings();
+      contentSettings.operator_directory_enabled = operatorDirectoryEnabled;
+      await sbFetch('/rest/v1/app_content_settings?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:1,settings:contentSettings})});
+      toast(operatorDirectoryEnabled ? 'Operator directory is now visible to app users.' : 'Operator directory is now hidden from app users.');
+      render();
+    }
     else if (act === 'updater-setting-save') {
       var updaterEnabled = !!document.getElementById('settings_updater_enabled').checked;
       await loadContentSettings();
@@ -2957,7 +2969,8 @@ document.addEventListener('click', async function (e) {
         popup_seconds:Math.max(5,Math.min(60,parseInt(document.getElementById('content_popup_seconds').value,10)||5)),
         ticker_enabled:document.getElementById('content_ticker_enabled').checked,
         ticker:{en:document.getElementById('content_ticker_en').value.trim(),hi:document.getElementById('content_ticker_hi').value.trim(),pa:document.getElementById('content_ticker_pa').value.trim()},
-        update_notifications_enabled:document.getElementById('content_update_notifications_enabled').checked
+        update_notifications_enabled:document.getElementById('content_update_notifications_enabled').checked,
+        operator_directory_enabled:contentSettings.operator_directory_enabled!==false
       };
       await sbFetch('/rest/v1/app_content_settings?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:1,settings:contentSettings})});
       toast('App popup and ticker settings saved. Terms & Conditions were saved unchanged.'); render();
