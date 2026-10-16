@@ -8,6 +8,7 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.lifecycle.lifecycleScope
 import com.bustime.app.ui.common.StopListEditor
 import com.bustime.app.data.repository.AppRepository
@@ -26,15 +27,23 @@ import java.util.Locale
 class MdmPanelActivity : AppCompatActivity() {
     private val password by lazy { intent.getStringExtra(EXTRA_PASSWORD).orEmpty() }
     private lateinit var root: LinearLayout
+    private var pageBackAction: (() -> Unit)? = null
     private val repo by lazy { AppRepository.getInstance(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         root = LinearLayout(this).apply { orientation = 1; setPadding(24, 16, 24, 24) }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val action = pageBackAction
+                if (action != null) action() else finish()
+            }
+        })
         showHome()
     }
 
     private fun showPage(title: String, subtitle: String = "") {
+        pageBackAction = { showHome() }
         root.removeAllViews()
         root.addView(TextView(this).apply {
             text = title; textSize = 24f; setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -44,7 +53,7 @@ class MdmPanelActivity : AppCompatActivity() {
             text = subtitle; textSize = 14f; setTextColor(getColor(com.bustime.app.R.color.textSecondary))
             setPadding(0, 0, 0, dp(12))
         })
-        root.addView(Button(this).apply { text = "← Back"; setOnClickListener { showHome() } },
+        root.addView(Button(this).apply { text = "← Back"; setOnClickListener { val action = pageBackAction; if (action != null) action() else finish() } },
             LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
         showRoot()
     }
@@ -113,6 +122,7 @@ class MdmPanelActivity : AppCompatActivity() {
             }
             showPage("Route details", places[route.fromId]?.displayName("en").orEmpty() + " → " +
                 places[route.toId]?.displayName("en").orEmpty())
+            pageBackAction = { showRoutes() }
             root.addView(TextView(this@MdmPanelActivity).apply {
                 text = "Service: " + (route.serviceName?.takeIf { it.isNotBlank() } ?: "—") +
                     "\nRoute time: " + route.time + "\n\n" +
@@ -143,6 +153,7 @@ class MdmPanelActivity : AppCompatActivity() {
 
     private fun showStopDetails(stop: Place) {
         showPage(stop.displayName("en"), "Bus stop details")
+        pageBackAction = { showStops() }
         root.addView(TextView(this).apply {
             text = "English: " + stop.names["en"].orEmpty().ifBlank { "—" } +
                 "\nHindi: " + stop.names["hi"].orEmpty().ifBlank { "—" } +
@@ -174,15 +185,26 @@ class MdmPanelActivity : AppCompatActivity() {
             count.text = filtered.size.toString() + " item(s)"
             filtered.take(1000).forEach { item ->
                 val row = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(12), dp(12), dp(12))
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                    setPadding(dp(12), dp(12), dp(12), dp(12))
                     background = android.graphics.drawable.GradientDrawable().apply {
-                        setColor(getColor(com.bustime.app.R.color.surface)); cornerRadius = dp(9).toFloat()
+                        setColor(getColor(com.bustime.app.R.color.surface)); cornerRadius = dp(12).toFloat()
                         setStroke(dp(1), 0xFFE0E6ED.toInt())
                     }
                     isClickable = true; isFocusable = true; setOnClickListener { onSelect(item.third) }
                 }
-                row.addView(TextView(this).apply { text = item.first; textSize = 16f; setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(getColor(com.bustime.app.R.color.textPrimary)) })
-                row.addView(TextView(this).apply { text = item.second; textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, dp(4), 0, 0) })
+                val title = TextView(this).apply {
+                    text = item.first; textSize = 15f; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    setTextColor(getColor(com.bustime.app.R.color.textPrimary))
+                }
+                row.addView(title, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(12) })
+                val meta = TextView(this).apply {
+                    text = item.second; textSize = 12f; maxLines = 3
+                    gravity = Gravity.END
+                    setTextColor(getColor(com.bustime.app.R.color.textSecondary))
+                }
+                row.addView(meta, LinearLayout.LayoutParams(dp(112), -2))
                 list.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
             }
             if (filtered.isEmpty()) list.addView(TextView(this).apply { text = "No matches"; setPadding(dp(8), dp(16), dp(8), dp(16)) })
@@ -199,51 +221,133 @@ class MdmPanelActivity : AppCompatActivity() {
     private fun routeEditor(old: Route?) {
         lifecycleScope.launch {
             val places = withContext(Dispatchers.IO) { repo.getAllPlaces() }
-            val byId = places.associateBy { it.id }
             val oldStops = if (old == null) emptyList() else withContext(Dispatchers.IO) { repo.getRouteStops(old.id) }.sortedBy { it.stopOrder }
             val drafts = mutableListOf<JSONObject>()
-            if (oldStops.isNotEmpty()) oldStops.forEach { s ->
-                drafts.add(JSONObject().put("place_id", s.placeId)
-                    .put("name", byId[s.placeId]?.displayName("en") ?: s.placeId)
-                    .put("language", "en").put("time", s.time ?: JSONObject.NULL))
+            if (oldStops.isNotEmpty()) oldStops.forEach { stop ->
+                drafts.add(JSONObject().put("place_id", stop.placeId)
+                    .put("name", places.firstOrNull { it.id == stop.placeId }?.displayName("en") ?: stop.placeId)
+                    .put("language", "en").put("time", stop.time ?: JSONObject.NULL))
             } else { drafts.add(newDraft()); drafts.add(newDraft()) }
-
-            showPage(if (old == null) "Add Route" else "Correction Route",
-                "Edit the full route below. Preview and Publish are on this page.")
-            root.addView(TextView(this@MdmPanelActivity).apply {
-                text = "Numbered stop editor: set times, + to add a stop, and ⋮ to move or remove."
-                textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, 0, 0, dp(10))
-            })
-            val stopsBox = LinearLayout(this@MdmPanelActivity).apply { orientation = LinearLayout.VERTICAL }
-            root.addView(stopsBox)
-            val service = EditText(this@MdmPanelActivity).apply {
-                hint = "Service / bus name (optional)"; setSingleLine(true); setText(old?.serviceName.orEmpty())
-            }
-            root.addView(service, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
-            StopListEditor(this@MdmPanelActivity, stopsBox, places, drafts, minStops = 2).render()
-            val preview = TextView(this@MdmPanelActivity).apply {
-                textSize = 14f; setPadding(0, dp(12), 0, dp(12)); visibility = android.view.View.GONE
-            }
-            root.addView(preview)
-            button("Preview") {
-                val problem = validateRouteDrafts(drafts)
-                if (problem != null) { toast(problem); return@button }
-                preview.text = (if (old == null) "New route preview" else "Route correction preview") +
-                    (if (service.text.toString().trim().isBlank()) "" else "\nService: " + service.text.toString().trim()) +
-                    "\nStops: " + drafts.size + "\n\n" + drafts.mapIndexed { i, d ->
-                        (if (i == 0) "START" else if (i == drafts.lastIndex) "DESTINATION" else (i + 1).toString()) +
-                            "   " + d.optString("name").trim() + (draftTime(d)?.let { "   ·   " + it } ?: "")
-                    }.joinToString("\n")
-                preview.visibility = android.view.View.VISIBLE
-            }
-            button("Publish") {
-                val problem = validateRouteDrafts(drafts)
-                if (problem != null) { toast(problem); return@button }
-                publishRoute(old, drafts, service.text.toString().trim(), places)
-            }
-            showRoot()
+            renderRouteEditor(old, drafts, old?.serviceName.orEmpty(), places)
         }
     }
+
+    private fun renderRouteEditor(old: Route?, drafts: MutableList<JSONObject>, serviceValue: String, places: List<Place>) {
+        showPage(if (old == null) "Add Route" else "Correction Route",
+            "Add or correct stops, then open the full-page route preview before publishing.")
+        pageBackAction = { showHome() }
+        root.addView(TextView(this).apply {
+            text = "Add times where known. At least one stop must have a time."
+            textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, 0, 0, dp(10))
+        })
+        val stopsBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(stopsBox)
+        val service = EditText(this).apply {
+            hint = "Service / bus name (optional)"; setSingleLine(true); setText(serviceValue)
+        }
+        root.addView(service, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
+        StopListEditor(this, stopsBox, places, drafts, minStops = 2).render()
+        button("Preview route") {
+            val problem = validateRouteDrafts(drafts)
+            if (problem != null) { toast(problem); return@button }
+            showRoutePreview(old, drafts, service.text.toString().trim(), places)
+        }
+        button("Publish route") {
+            val problem = validateRouteDrafts(drafts)
+            if (problem != null) { toast(problem); return@button }
+            showRoutePreview(old, drafts, service.text.toString().trim(), places, true)
+        }
+        showRoot()
+    }
+
+    private fun showRoutePreview(
+        old: Route?,
+        drafts: MutableList<JSONObject>,
+        service: String,
+        places: List<Place>,
+        openPublishConfirmation: Boolean = false
+    ) {
+        val byId = places.associateBy { it.id }
+        showPage(if (old == null) "Route preview" else "Correction preview",
+            "Review the complete route exactly as a passenger-facing route detail page.")
+        pageBackAction = { renderRouteEditor(old, drafts, service, places) }
+
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(18), dp(18), dp(18))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(getColor(com.bustime.app.R.color.surface)); cornerRadius = dp(18).toFloat()
+                setStroke(dp(1), 0xFFE0E6ED.toInt())
+            }
+        }
+        val fromName = drafts.firstOrNull()?.optString("name").orEmpty().trim()
+        val toName = drafts.lastOrNull()?.optString("name").orEmpty().trim()
+        card.addView(TextView(this).apply {
+            text = fromName + "  →  " + toName; textSize = 22f; maxLines = 3
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(getColor(com.bustime.app.R.color.textPrimary))
+        })
+        if (service.isNotBlank()) card.addView(TextView(this).apply {
+            text = service; textSize = 15f; setPadding(0, dp(8), 0, 0)
+            setTextColor(getColor(com.bustime.app.R.color.textSecondary))
+        })
+        card.addView(TextView(this).apply {
+            text = drafts.size.toString() + " stops"; textSize = 13f
+            setPadding(0, dp(10), 0, dp(12)); setTextColor(getColor(com.bustime.app.R.color.textSecondary))
+        })
+        val timeline = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        drafts.forEachIndexed { index, draft ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(9), 0, dp(9))
+            }
+            val time = TextView(this).apply {
+                text = draftTime(draft)?.let { formatPreviewTime(it) } ?: "—"
+                textSize = 14f; setTypeface(typeface, android.graphics.Typeface.BOLD)
+                gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                setTextColor(getColor(com.bustime.app.R.color.textPrimary))
+            }
+            row.addView(time, LinearLayout.LayoutParams(dp(82), -2).apply { marginEnd = dp(10) })
+            val marker = TextView(this).apply {
+                text = if (index == 0) "●" else if (index == drafts.lastIndex) "●" else "•"
+                textSize = if (index == 0 || index == drafts.lastIndex) 18f else 22f
+                setTextColor(getColor(if (index == 0) com.bustime.app.R.color.stopFromHighlight else if (index == drafts.lastIndex) com.bustime.app.R.color.stopToHighlight else com.bustime.app.R.color.colorPrimary))
+            }
+            row.addView(marker, LinearLayout.LayoutParams(dp(24), -2))
+            val nameColumn = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            nameColumn.addView(TextView(this).apply {
+                text = draft.optString("name").trim(); textSize = 15f; maxLines = 3
+                setTypeface(typeface, if (index == 0 || index == drafts.lastIndex) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+                setTextColor(getColor(com.bustime.app.R.color.textPrimary))
+            })
+            if (index == 0 || index == drafts.lastIndex) nameColumn.addView(TextView(this).apply {
+                text = if (index == 0) "START" else "DESTINATION"; textSize = 10f
+                setTextColor(getColor(if (index == 0) com.bustime.app.R.color.stopFromHighlight else com.bustime.app.R.color.stopToHighlight))
+            })
+            row.addView(nameColumn, LinearLayout.LayoutParams(0, -2, 1f))
+            timeline.addView(row)
+            if (index < drafts.lastIndex) timeline.addView(View(this).apply {
+                setBackgroundColor(0xFFE0E6ED.toInt())
+            }, LinearLayout.LayoutParams(dp(1), dp(10)).apply { leftMargin = dp(92) })
+        }
+        card.addView(timeline)
+        root.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+        button("← Back to edit") { renderRouteEditor(old, drafts, service, places) }
+        button("Publish route") {
+            val problem = validateRouteDrafts(drafts)
+            if (problem != null) { toast(problem); return@button }
+            publishRoute(old, drafts, service, places)
+        }
+        showRoot()
+        if (openPublishConfirmation) toast("Review the preview, then tap Publish route.")
+    }
+
+    private fun formatPreviewTime(value: String): String = try {
+        val parts = value.split(":")
+        val hour = parts[0].toInt()
+        val minute = parts[1]
+        val suffix = if (hour < 12) "AM" else "PM"
+        ((hour % 12).let { if (it == 0) 12 else it }).toString() + ":" + minute + " " + suffix
+    } catch (_: Exception) { value }
 
     private fun newDraft() = JSONObject().put("place_id", JSONObject.NULL).put("name", "")
         .put("language", "en").put("time", JSONObject.NULL)
