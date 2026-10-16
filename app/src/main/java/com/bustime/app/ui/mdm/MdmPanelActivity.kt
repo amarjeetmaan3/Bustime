@@ -67,9 +67,7 @@ class MdmPanelActivity : AppCompatActivity() {
         button("Route List") { showRoutes() }
         button("Bus Stop List") { showStops() }
         button("Add Route") { routeEditor(null) }
-        button("Correction Route") { chooseRoute() }
         button("Add Bus Stop") { stopEditor(null) }
-        button("Correction Bus Stop") { chooseStop() }
         button("Refresh App Data") { lifecycleScope.launch { runCatching { repo.syncData() }.onSuccess { toast("Data refreshed"); showHome() }.onFailure { toast(it.message ?: "Refresh failed") } } }
         button("Back") { finish() }
         showRoot()
@@ -435,6 +433,25 @@ class MdmPanelActivity : AppCompatActivity() {
     private fun stopEditor(old: Place?) {
         showPage(if (old == null) "Add Bus Stop" else "Correction Bus Stop",
             "Enter the names you want to save. Existing translations are preserved when left blank.")
+        val kindOptions = listOf(
+            "stand" to "Bus Stand",
+            "village" to "Village",
+            "city" to "City",
+            "place" to "Other Place"
+        )
+        root.addView(TextView(this).apply {
+            text = "Type"; textSize = 14f; setPadding(0, dp(8), 0, dp(4))
+        })
+        val kindSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MdmPanelActivity,
+                android.R.layout.simple_spinner_item,
+                kindOptions.map { it.second }
+            ).also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+            val oldIndex = kindOptions.indexOfFirst { it.first == old?.kind }.takeIf { it >= 0 } ?: 3
+            setSelection(oldIndex)
+        }
+        root.addView(kindSpinner, LinearLayout.LayoutParams(-1, dp(48)))
         val en = EditText(this).apply { hint = "English name"; setSingleLine(true); setText(old?.names?.get("en").orEmpty()) }
         val hi = EditText(this).apply { hint = "Hindi name"; setSingleLine(true); setText(old?.names?.get("hi").orEmpty()) }
         val pa = EditText(this).apply { hint = "Punjabi name"; setSingleLine(true); setText(old?.names?.get("pa").orEmpty()) }
@@ -462,7 +479,8 @@ class MdmPanelActivity : AppCompatActivity() {
             val mergedNames = JSONObject()
             old?.names?.forEach { (language, value) -> if (value.isNotBlank()) mergedNames.put(language, value) }
             listOf("en", "hi", "pa").forEach { language -> if (names.has(language)) mergedNames.put(language, names.optString(language).trim()) }
-            val payload = JSONObject().put("id", id).put("kind", "stand").put("name", mergedNames)
+            val selectedKind = kindOptions.getOrNull(kindSpinner.selectedItemPosition)?.first ?: "place"
+            val payload = JSONObject().put("id", id).put("kind", selectedKind).put("name", mergedNames)
             publish(JSONArray().put(change("place", id, payload)))
         }
         showRoot()
