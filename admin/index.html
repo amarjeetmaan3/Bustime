@@ -409,7 +409,7 @@ function saveCfg() {
 var data = null, sha = null, baseVersion = 0, dirty = false;
 // Last clean shared state. Web Admin publishes the same entity deltas as Android MDM.
 var sharedBaseData = null;
-var mdmRevisionCursor = 0, mdmAutoSyncTimer = null, mdmAutoSyncBusy = false;
+var mdmRevisionCursor = 0, mdmAutoSyncTimer = null, mdmAutoSyncBusy = false, mdmSyncError = null;
 var tab = 'settings';
 var contentSettings = {terms_enabled:true,terms:{en:'',hi:'',pa:''},popup_enabled:true,popup:{en:'',hi:'',pa:''},popup_seconds:5,ticker_enabled:true,ticker:{en:'',hi:'',pa:''},update_notifications_enabled:false};
 var sbToken = null, sbRefreshToken = null, subs = null, subsError = '';
@@ -796,6 +796,7 @@ async function publishSharedDataDiff(before, after) {
   return changes.length;
 }
 async function mergeMdmPublishedChanges(sinceRevision) {
+  mdmSyncError = null;
   if (!cfg.sbUrl || !cfg.sbKey || !data) return false;
   var since = Math.max(0, Number(sinceRevision == null ? (data.snapshotRevision || 0) : (sinceRevision || 0)));
   function merge(list, item, replaceExisting) {
@@ -813,7 +814,7 @@ async function mergeMdmPublishedChanges(sinceRevision) {
     return list;
   }
   function remove(list, id) { return list.filter(function(x) { return String(x.id) !== String(id); }); }
-  var offset = 0, pages = 0, allChanges = [], maxRevision = since;
+  var offset = 0, pages = 0, allChanges = [], maxRevision = since, complete = false;
   try {
     while (pages++ < 20) {
       var url = cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/bustime-data-sync?action=changes&since=' + encodeURIComponent(since) + '&offset=' + offset;
@@ -825,9 +826,10 @@ async function mergeMdmPublishedChanges(sinceRevision) {
       var changes = await res.json();
       if (!Array.isArray(changes)) throw new Error('Invalid MDM change history');
       allChanges = allChanges.concat(changes);
-      if (changes.length < 1000) break;
+      if (changes.length < 1000) { complete = true; break; }
       offset += changes.length;
     }
+    if (!complete) throw new Error('MDM change history exceeds the 20,000-record sync limit; cursor was not advanced.');
     allChanges.forEach(function(change) {
       if (!change || !change.entity_type || !change.entity_id) return;
       var revision = Number(change.revision || 0);
@@ -842,6 +844,7 @@ async function mergeMdmPublishedChanges(sinceRevision) {
     mdmRevisionCursor = Math.max(mdmRevisionCursor, maxRevision);
     return allChanges.length > 0;
   } catch (err) {
+    mdmSyncError = err && err.message ? err.message : String(err);
     console.warn('MDM published changes could not be loaded:', err);
     return false;
   }
@@ -2577,6 +2580,7 @@ document.addEventListener('click', async function (e) {
       }
       b.disabled = true; b.textContent = 'Syncing…';
       var syncChanged = await mergeMdmPublishedChanges(mdmRevisionCursor);
+      if (mdmSyncError) throw new Error(mdmSyncError);
       sharedBaseData = cloneSharedEntities(data);
       render();
       toast(syncChanged ? 'Incremental sync applied.' : 'Sync complete · no new changes.');
