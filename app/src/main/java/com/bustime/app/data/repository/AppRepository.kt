@@ -19,6 +19,7 @@ class AppRepository private constructor(context: Context) {
     // ऐप खुलने पर चलाओ: पहली बार डेटा भरता है, फिर बदलाव देखता है
     suspend fun syncData() = snapshotSync.sync()
     fun didLastSyncFail(): Boolean = snapshotSync.lastSyncFailed
+    suspend fun getSyncStatus(): String = snapshotSync.getSyncStatus()
 
     // हर सवाल से पहले पक्का करता है कि पहली बार का डेटा भर चुका हो
     private suspend fun <T> query(block: suspend () -> T): T {
