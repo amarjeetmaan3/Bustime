@@ -249,17 +249,38 @@ class CommunityRequestActivity : AppCompatActivity() {
 
 
     private fun feedbackForm() {
-        spinner(getString(com.bustime.app.R.string.community_feedback_category), listOf(getString(com.bustime.app.R.string.community_suggestion), getString(com.bustime.app.R.string.community_incorrect_info), getString(com.bustime.app.R.string.community_app_problem), getString(com.bustime.app.R.string.community_other)), "feedback_category")
+        val language = LanguageHelper.current()
+        val categoryLabels = when (language) {
+            "hi" -> listOf("सुझाव", "गलत जानकारी", "ऐप की समस्या", "अन्य", "मेरा डेटा मिटाएँ")
+            "pa" -> listOf("ਸੁਝਾਅ", "ਗਲਤ ਜਾਣਕਾਰੀ", "ਐਪ ਦੀ ਸਮੱਸਿਆ", "ਹੋਰ", "ਮੇਰਾ ਡਾਟਾ ਮਿਟਾਓ")
+            else -> listOf("Suggestion", "Incorrect information", "App problem", "Other", "Delete my data")
+        }
+        spinner(getString(com.bustime.app.R.string.community_feedback_category), categoryLabels, "feedback_category")
         field("related_route", getString(com.bustime.app.R.string.community_related_route))
         field("feedback_text", getString(com.bustime.app.R.string.community_describe_feedback))
-        field("contact", getString(com.bustime.app.R.string.community_contact_optional))
+        val mobileLabel = when (language) {
+            "hi" -> "मोबाइल नंबर (अनिवार्य)"
+            "pa" -> "ਮੋਬਾਈਲ ਨੰਬਰ (ਲਾਜ਼ਮੀ)"
+            else -> "Mobile number (required)"
+        }
+        field("contact", mobileLabel)
+        fields["contact"]?.inputType = android.text.InputType.TYPE_CLASS_PHONE
         button(getString(com.bustime.app.R.string.community_send_feedback)) {
             val message = value("feedback_text")
             if (message.length < 4) { toast(getString(com.bustime.app.R.string.community_please_feedback)); return@button }
-            val feedbackCategories = listOf("Suggestion", "Incorrect information", "App problem", "Other")
+            val phone = digits(value("contact"))
+            if (phone.length !in 10..13) {
+                toast(when (language) {
+                    "hi" -> "कृपया 10 से 13 अंकों का मोबाइल नंबर भरें।"
+                    "pa" -> "ਕਿਰਪਾ ਕਰਕੇ 10 ਤੋਂ 13 ਅੰਕਾਂ ਦਾ ਮੋਬਾਈਲ ਨੰਬਰ ਭਰੋ।"
+                    else -> "Enter a valid mobile number (10–13 digits)."
+                })
+                return@button
+            }
+            val feedbackCategories = listOf("Suggestion", "Incorrect information", "App problem", "Other", "Delete my data")
             val body = JSONObject().put("category", feedbackCategories.getOrNull(spinners["feedback_category"]?.selectedItemPosition ?: -1) ?: "Other")
                 .put("related_route", value("related_route").takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-                .put("message", message).put("contact", digits(value("contact")).takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("message", message).put("contact", phone)
             sendRequests(listOf(body), "feedback_submissions", getString(com.bustime.app.R.string.community_thanks_feedback))
         }
     }
