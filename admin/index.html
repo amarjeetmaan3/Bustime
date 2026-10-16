@@ -442,7 +442,7 @@ async function fetchWithTimeout(url, options, timeoutMs) {
 }
 async function verifySingleAdmin() {
   if (!sbToken) return false;
-  var res = await fetchWithTimeout(cfg.sbUrl.replace(/\/+$/, '')) + '/auth/v1/user', {
+  var res = await fetchWithTimeout(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/user', {
     headers:{apikey:cfg.sbKey, Authorization:'Bearer '+sbToken}
   }, 10000);
   if (!res.ok) { saveAdminSession({}); return false; }
