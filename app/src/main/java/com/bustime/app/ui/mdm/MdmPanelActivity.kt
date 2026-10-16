@@ -10,6 +10,7 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.bustime.app.ui.common.StopListEditor
 import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.models.Place
 import com.bustime.app.models.Route
@@ -43,6 +44,8 @@ class MdmPanelActivity : AppCompatActivity() {
         button("Back") { finish() }
         setContentView(ScrollView(this).apply { addView(root) })
     }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun button(label:String, action:()->Unit) { root.addView(Button(this).apply { text=label; setOnClickListener { action() } }, LinearLayout.LayoutParams(-1,-2)) }
     private fun toast(s:String) = Toast.makeText(this,s,Toast.LENGTH_LONG).show()
