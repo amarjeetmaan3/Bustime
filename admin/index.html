@@ -1490,6 +1490,10 @@ function viewSettings() {
     '<button class="btn" data-act="mdm-toggle-form">MDM</button>' +
     (mdmPasswordFormOpen ? '<div style="max-width:440px;margin-top:14px"><label>New MDM password (minimum 8 characters)</label><input id="mdm_password" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter a new MDM password"><label>Confirm password</label><input id="mdm_password_confirm" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter it again"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="mdm-save-password">Save MDM password</button></div></div>' : '') +
     '</div>' +
+    '<div class="card"><h2>App Updater</h2><p class="muted">Control whether the Android app checks for new GitHub releases and shows the new-version popup. This does not interrupt a download already in progress.</p>' +
+    '<div class="content-toggle"><label for="settings_updater_enabled">Enable automatic app update checks</label><input id="settings_updater_enabled" type="checkbox" '+(contentSettings.update_notifications_enabled===true?'checked':'')+'></div>' +
+    '<p class="muted">OFF means the app will not show new-version prompts. ON enables release checks on supported app builds.</p>' +
+    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="updater-setting-save">Save updater setting</button></div></div>' +
     '<div class="card"><h2>Creating a token (one time)</h2><p class="muted">' +
     'GitHub &rarr; profile picture &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens &rarr; Generate new token.<br>' +
     '&bull; Repository access: only the <b>Bustime</b> repository<br>&bull; Repository permissions: <b>Contents &rarr; Read and write</b><br>' +
@@ -2452,7 +2456,7 @@ document.addEventListener('click', async function (e) {
       }
       if (tab === 'analytics' && sbToken) { loadAnalytics(); }
    if (tab === 'advertisement') { loadAdConfig().then(function(){render();}).catch(function(err){toast('Advertisement settings: '+err.message);}); }
-      if (tab === 'content') { loadContentSettings().then(function(){render();}).catch(function(err){toast('App text settings: '+err.message);}); }
+      if (tab === 'content' || tab === 'settings') { loadContentSettings().then(function(){render();}).catch(function(err){toast('App settings: '+err.message);}); }
       if (['review','busRequests','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
     }
     else if (act === 'close') { editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render(); }
@@ -2936,6 +2940,14 @@ document.addEventListener('click', async function (e) {
 
 
 
+    else if (act === 'updater-setting-save') {
+      var updaterEnabled = !!document.getElementById('settings_updater_enabled').checked;
+      await loadContentSettings();
+      contentSettings.update_notifications_enabled = updaterEnabled;
+      await sbFetch('/rest/v1/app_content_settings?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:1,settings:contentSettings})});
+      toast(updaterEnabled ? 'App updater enabled.' : 'App updater disabled.');
+      render();
+    }
     else if (act === 'content-save') {
       contentSettings = {
         terms_enabled:document.getElementById('content_terms_enabled').checked,
