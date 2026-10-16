@@ -133,7 +133,7 @@ class MdmPanelActivity : AppCompatActivity() {
         content.addView(count)
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(ScrollView(this).apply { addView(list) }, LinearLayout.LayoutParams(-1, dp(420)))
-        lateinit var dialog: AlertDialog
+        var dialog: AlertDialog? = null
         fun render(query: String) {
             list.removeAllViews()
             val q = norm(query)
@@ -148,7 +148,7 @@ class MdmPanelActivity : AppCompatActivity() {
                         setStroke(dp(1), 0xFFE0E6ED.toInt())
                     }
                     isClickable = true; isFocusable = true
-                    setOnClickListener { dialog.dismiss(); onSelect(item.third) }
+                    setOnClickListener { dialog?.dismiss(); onSelect(item.third) }
                 }
                 row.addView(TextView(this).apply {
                     text = item.first; textSize = 15f
@@ -170,7 +170,7 @@ class MdmPanelActivity : AppCompatActivity() {
         })
         dialog = AlertDialog.Builder(this).setTitle(title).setView(content).setNegativeButton("Close", null).create()
         render("")
-        dialog.show()
+        dialog?.show()
     }
 
     private fun routeEditor(old: Route?) {
