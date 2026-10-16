@@ -371,7 +371,7 @@
 <script>
 // ============ Settings (stored only in this browser) ============
 var CFG_KEY = 'bustime_admin_cfg';
-var DEFAULT_CFG = { owner:'amarjeetmaan3', repo:'Bustime', branch:'main', path:'app/src/main/assets/routes.json', token:'', sbUrl:'', sbKey:'', sbEmail:'' };
+var DEFAULT_CFG = { owner:'amarjeetmaan3', repo:'Bustime', branch:'main', path:'app/src/main/assets/routes.json', token:'', sbUrl:'https://mdryxbvmqsphbfkvqtnf.supabase.co', sbKey:'sb_publishable_1J6qNzpvPH-TTI-qxRU8wA_RVO7EpfM', sbEmail:'' };
 var cfg = loadCfg();
 function loadCfg() {
   try {
@@ -381,7 +381,7 @@ function loadCfg() {
       delete stored.token;
       localStorage.setItem(CFG_KEY, JSON.stringify(stored));
     }
-    return Object.assign({}, DEFAULT_CFG, stored, {token:''});
+    return Object.assign({}, DEFAULT_CFG, stored, {token:'', sbUrl:stored.sbUrl || DEFAULT_CFG.sbUrl, sbKey:stored.sbKey || DEFAULT_CFG.sbKey});
   } catch (e) { return Object.assign({}, DEFAULT_CFG); }
 }
 function saveCfg() {
