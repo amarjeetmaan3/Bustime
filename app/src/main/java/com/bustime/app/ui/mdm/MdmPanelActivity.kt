@@ -7,7 +7,6 @@ import android.text.TextWatcher
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bustime.app.ui.common.StopListEditor
@@ -245,19 +244,6 @@ class MdmPanelActivity : AppCompatActivity() {
         if (drafts.any { it.optString("name").trim().isBlank() }) return "Enter a name for every stop."
         if (drafts.none { draftTime(it) != null }) return "Set at least one time anywhere in the route."
         return null
-    }
-
-    private fun showRoutePreview(drafts: List<JSONObject>, service: String, old: Route?) {
-        val lines = drafts.mapIndexed { i, d ->
-            val label = if (i == 0) "START" else if (i == drafts.lastIndex) "DESTINATION" else (i + 1).toString()
-            label + "   " + d.optString("name").trim() + (draftTime(d)?.let { "   ·   " + it } ?: "")
-        }
-        val message = (if (old == null) "New route preview" else "Route correction preview") +
-            (if (service.isBlank()) "" else "\nService: " + service) +
-            "\nStops: " + drafts.size + "\n\n" + lines.joinToString("\n")
-        AlertDialog.Builder(this).setTitle("Preview before publish").setMessage(message)
-            .setNegativeButton("Back to edit", null)
-            .setPositiveButton("Looks good") { _, _ -> toast("Preview checked. Press Publish in the editor when ready.") }.show()
     }
 
     private fun publishRoute(old: Route?, drafts: List<JSONObject>, service: String, places: List<Place>) {
