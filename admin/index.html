@@ -1053,12 +1053,12 @@ async function dispatchDataSyncWorkflow(alreadyMirrored, dataVersion) {
   if (!response.ok) throw new Error('GitHub workflow trigger HTTP ' + response.status + ' - ' + (await response.text()).slice(0,180));
 }
 async function publish() {
-  if (!cfg.token) { toast('Add your GitHub token in Settings first'); return; }
+  if (!cfg.token) { toast('Add your GitHub token in Settings first'); return false; }
   publishWorkflowWarning='';
   var approvedUpdates=await mergeApprovedRouteSubmissions();
   var communityUpdates=await mergeApprovedCommunitySubmissions(baseVersion+1);
   var v = validate();
-  if (v.errors.length) { toast('Fix the errors first'); return; }
+  if (v.errors.length) { toast('Fix the errors first'); return false; }
   var out = {};
   if (data._note) out._note = data._note;
   out.dataVersion = baseVersion + 1;
@@ -1122,6 +1122,7 @@ async function publish() {
       });
     }catch(communitySyncError){publishSyncWarnings++;}
   }
+  return true;
 }
 
 // ============ Validation (same rules the app applies on import) ============
@@ -3143,7 +3144,12 @@ document.addEventListener('click', async function (e) {
     // ---- publish ----
     else if (act === 'publish') {
       b.disabled = true; b.textContent = 'Publishing...';
-      await publish(); publishOpen = false; toast('Snapshot saved · data version ' + baseVersion + (publishWorkflowWarning ? ' · Workflow trigger failed: ' + publishWorkflowWarning : (publishSyncWarnings ? ' · Some sync/approval updates need attention.' : ' · Shared sync and workflow trigger requested.'))); render();
+      var didPublish = await publish();
+      if (didPublish) {
+        publishOpen = false;
+        toast('Snapshot saved · data version ' + baseVersion + (publishWorkflowWarning ? ' · Workflow trigger failed: ' + publishWorkflowWarning : (publishSyncWarnings ? ' · Some sync/approval updates need attention.' : ' · Shared sync and workflow trigger requested.')));
+      }
+      render();
     }
   } catch (err) {
     toast('Error: ' + err.message); render();
