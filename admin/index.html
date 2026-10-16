@@ -2410,6 +2410,11 @@ document.addEventListener('click', async function (e) {
     if (act === 'analytics-refresh') { loadAnalytics(); }
     else if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render();
+      // Re-read MDM delta records when opening the places/routes workspace so newly added bus stands appear without a full browser reload.
+      if (['places','routes','bus','dashboard'].indexOf(tab) >= 0 && cfg.sbUrl && cfg.sbKey && data) {
+        await mergeMdmPublishedChanges();
+        render();
+      }
       if (tab === 'analytics' && sbToken) { loadAnalytics(); }
    if (tab === 'advertisement') { loadAdConfig().then(function(){render();}).catch(function(err){toast('Advertisement settings: '+err.message);}); }
       if (tab === 'content') { loadContentSettings().then(function(){render();}).catch(function(err){toast('App text settings: '+err.message);}); }
