@@ -381,7 +381,7 @@ function loadCfg() {
       delete stored.token;
       localStorage.setItem(CFG_KEY, JSON.stringify(stored));
     }
-    return Object.assign({}, DEFAULT_CFG, stored, {token:'', sbUrl:stored.sbUrl || DEFAULT_CFG.sbUrl, sbKey:stored.sbKey || DEFAULT_CFG.sbKey});
+    return Object.assign({}, DEFAULT_CFG, stored, {token:'', sbUrl:DEFAULT_CFG.sbUrl, sbKey:DEFAULT_CFG.sbKey});
   } catch (e) { return Object.assign({}, DEFAULT_CFG); }
 }
 function saveCfg() {
