@@ -142,7 +142,7 @@ class MdmPanelActivity : AppCompatActivity() {
                     orientation = LinearLayout.VERTICAL
                     setPadding(dp(11), dp(10), dp(11), dp(10))
                     background = android.graphics.drawable.GradientDrawable().apply {
-                        setColor(getColor(com.bustime.app.R.color.bgCard)); cornerRadius = dp(9).toFloat()
+                        setColor(getColor(com.bustime.app.R.color.surface)); cornerRadius = dp(9).toFloat()
                         setStroke(dp(1), 0xFFE0E6ED.toInt())
                     }
                     isClickable = true; isFocusable = true
