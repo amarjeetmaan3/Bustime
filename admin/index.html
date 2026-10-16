@@ -2571,6 +2571,10 @@ document.addEventListener('click', async function (e) {
   var act = b.getAttribute('data-act'), i = parseInt(b.getAttribute('data-i'), 10);
   try {
     if (act === 'sync-now') {
+      if (dirty) {
+        toast('Publish or discard your unpublished edits before syncing.');
+        return;
+      }
       b.disabled = true; b.textContent = 'Syncing…';
       var syncChanged = await mergeMdmPublishedChanges(mdmRevisionCursor);
       sharedBaseData = cloneSharedEntities(data);
