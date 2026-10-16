@@ -1,11 +1,8 @@
 name: Publish transport data deltas
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "app/src/main/assets/routes.json"
-      - ".github/workflows/publish-data-sync.yml"
+  repository_dispatch:
+    types: [bustime-data-published]
   workflow_dispatch:
 
 permissions:
@@ -28,6 +25,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           BEFORE_SHA: ${{ github.event.before }}
           EVENT_NAME: ${{ github.event_name }}
+          ALREADY_MIRRORED: ${{ github.event.client_payload.already_mirrored }}
         run: |
           python3 - <<'PY'
           import json, os, subprocess, urllib.request, urllib.error, hashlib, sys
@@ -97,6 +95,24 @@ jobs:
               raise SystemExit("data_sync_state row id=1 is missing; apply the incremental_data_sync migration first.")
           revision = int(state[0]["revision"])
           published_version = int(state[0].get("snapshot_version") or 0)
+          current_version = int(current.get("dataVersion", 0))
+          digest = hashlib.sha256(json.dumps(current, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+
+          # Web Admin already mirrors its delta through mdm-publish. In that case this
+          # dispatch only advances the published snapshot baseline; do not duplicate
+          # the same upserts/deletes as a second revision.
+          if os.environ.get("EVENT_NAME") == "repository_dispatch" and os.environ.get("ALREADY_MIRRORED", "").lower() == "true":
+              request("PATCH", "/rest/v1/data_sync_state?id=eq.1",
+                      {"snapshot_version": current_version, "snapshot_sha256": digest,
+                       "published_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()},
+                      "return=minimal")
+              print(f"Snapshot version {current_version} confirmed; delta already mirrored, no duplicate revision created.")
+              sys.exit(0)
+
+          if os.environ.get("EVENT_NAME") == "workflow_dispatch" and revision > 0 and published_version == current_version:
+              print(f"Snapshot version {current_version} is already published; no changes to replay.")
+              sys.exit(0)
+
           # If GitHub's current snapshot is ahead of Supabase, recover from the last
           # snapshot that Supabase says it has published. This handles skipped CI
           # commits and manual dispatches without losing delete tombstones.
