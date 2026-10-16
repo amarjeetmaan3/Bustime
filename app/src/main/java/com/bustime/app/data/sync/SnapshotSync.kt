@@ -87,7 +87,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                     .putLong(KEY_REVISION, publishedRevision)
                     .putLong(KEY_LAST_SYNC, System.currentTimeMillis())
                     .apply()
-                return@withLock refreshed
+                return refreshed
             }
             return false
         }
