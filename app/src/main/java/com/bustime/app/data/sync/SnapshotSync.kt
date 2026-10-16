@@ -120,6 +120,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         val id = change.get("entity_id")?.asString ?: return false
         val operation = change.get("operation")?.asString ?: return false
         val payload = change.get("payload")
+        val revision = change.get("revision")?.asLong ?: 0L
         if (operation == "delete") {
             when (type) {
                 "place" -> dao.deletePlace(id)
@@ -136,16 +137,28 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         return try {
             when (type) {
                 "place" -> {
-                    val dto = gson.fromJson(payload, PlaceDto::class.java)
-                    val data = SnapshotImporter.build(SnapshotDto(0, listOf(dto), emptyList()))
-                    val item = data.places.firstOrNull { it.id == id } ?: return false
-                    dao.upsertPlace(item)
+                    // Revision 1 is the original bulk baseline. Keep the current
+                    // bundled/remote snapshot authoritative for IDs it already has.
+                    if (revision <= 1L && dao.getPlaces(listOf(id)).isNotEmpty()) {
+                        Unit
+                    } else {
+                        val dto = gson.fromJson(payload, PlaceDto::class.java)
+                        val data = SnapshotImporter.build(SnapshotDto(0, listOf(dto), emptyList()))
+                        val item = data.places.firstOrNull { it.id == id } ?: return false
+                        dao.upsertPlace(item)
+                    }
                 }
                 "route" -> {
-                    val dto = gson.fromJson(payload, RouteDto::class.java)
-                    val data = SnapshotImporter.build(SnapshotDto(0, existingPlaces, listOf(dto)))
-                    val route = data.routes.firstOrNull { it.id == id } ?: return false
-                    dao.upsertRouteWithStops(route, data.stops.filter { it.routeId == id })
+                    // Do not let the old bulk baseline overwrite a newer snapshot's
+                    // route sequence or times. Later MDM revisions still replace it.
+                    if (revision <= 1L && dao.getRoute(id) != null) {
+                        Unit
+                    } else {
+                        val dto = gson.fromJson(payload, RouteDto::class.java)
+                        val data = SnapshotImporter.build(SnapshotDto(0, existingPlaces, listOf(dto)))
+                        val route = data.routes.firstOrNull { it.id == id } ?: return false
+                        dao.upsertRouteWithStops(route, data.stops.filter { it.routeId == id })
+                    }
                 }
                 // Ignore unsupported entity payloads without blocking the revision cursor.
                 else -> Unit
