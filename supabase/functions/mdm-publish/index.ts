@@ -28,7 +28,7 @@ Deno.serve(async (req: Request) => {
   const password = String(body.password || "");
   let authorized = false;
   const bearer = req.headers.get("Authorization") || "";
-  if (!password && /^Bearer\\s+/.test(bearer)) {
+  if (!password && /^Bearer\s+/.test(bearer)) {
     const userRes = await fetch(url + "/auth/v1/user", {
       headers: { apikey: req.headers.get("apikey") || "", Authorization: bearer, "Cache-Control": "no-store" }
     });
