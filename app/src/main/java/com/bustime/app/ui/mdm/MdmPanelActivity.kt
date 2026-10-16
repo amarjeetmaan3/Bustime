@@ -31,8 +31,28 @@ class MdmPanelActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        root = LinearLayout(this).apply { orientation = 1; setPadding(24,24,24,24) }
-        root.addView(TextView(this).apply { text = "MDM Admin"; textSize = 24f })
+        root = LinearLayout(this).apply { orientation = 1; setPadding(24, 16, 24, 24) }
+        showHome()
+    }
+
+    private fun showPage(title: String, subtitle: String = "") {
+        root.removeAllViews()
+        root.addView(TextView(this).apply {
+            text = title; textSize = 24f; setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, dp(8))
+        })
+        if (subtitle.isNotBlank()) root.addView(TextView(this).apply {
+            text = subtitle; textSize = 14f; setTextColor(getColor(com.bustime.app.R.color.textSecondary))
+            setPadding(0, 0, 0, dp(12))
+        })
+        root.addView(Button(this).apply { text = "← Back"; setOnClickListener { showHome() } },
+            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
+    }
+
+    private fun showHome() {
+        root.removeAllViews()
+        root.addView(TextView(this).apply { text = "MDM Admin"; textSize = 24f; setTypeface(typeface, android.graphics.Typeface.BOLD) })
         root.addView(TextView(this).apply { text = "Published changes sync to the app."; setPadding(0,8,0,16) })
         button("Route List") { showRoutes() }
         button("Bus Stop List") { showStops() }
@@ -40,9 +60,9 @@ class MdmPanelActivity : AppCompatActivity() {
         button("Correction Route") { chooseRoute() }
         button("Add Bus Stop") { stopEditor(null) }
         button("Correction Bus Stop") { chooseStop() }
-        button("Refresh App Data") { lifecycleScope.launch { runCatching { repo.syncData() }.onSuccess { toast("Data refreshed") }.onFailure { toast(it.message ?: "Refresh failed") } } }
+        button("Refresh App Data") { lifecycleScope.launch { runCatching { repo.syncData() }.onSuccess { toast("Data refreshed"); showHome() }.onFailure { toast(it.message ?: "Refresh failed") } } }
         button("Back") { finish() }
-        setContentView(ScrollView(this).apply { addView(root) })
+        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
@@ -64,8 +84,7 @@ class MdmPanelActivity : AppCompatActivity() {
                     Triple(from + " → " + to, "Time: " + r.time + (r.serviceName?.takeIf { it.isNotBlank() }?.let { " · " + it } ?: ""), r.id)
                 }
                 showSearchList("Route List", "Search a route, then tap it to open the full stop sequence.", entries) { id ->
-                    val selected = routes.firstOrNull { it.id == id }
-                    if (selected != null) showRouteDetails(selected, places)
+                    routes.firstOrNull { it.id == id }?.let { showRouteDetails(it, places) }
                 }
             }.onFailure { toast(it.message ?: "Could not load routes") }
         }
@@ -81,15 +100,16 @@ class MdmPanelActivity : AppCompatActivity() {
                 (i + 1).toString() + ". " + (place?.displayName("en") ?: stop.placeId) +
                     (stop.time?.takeIf { it.isNotBlank() }?.let { "  ·  " + it } ?: "")
             }
-            val from = places[route.fromId]?.displayName("en") ?: route.fromId
-            val to = places[route.toId]?.displayName("en") ?: route.toId
-            val message = from + " → " + to + "\n\nService: " +
-                (route.serviceName?.takeIf { it.isNotBlank() } ?: "—") +
-                "\nRoute time: " + route.time + "\n\n" +
-                lines.joinToString("\n").ifBlank { "No stop details found." }
-            AlertDialog.Builder(this@MdmPanelActivity).setTitle("Route details").setMessage(message)
-                .setNegativeButton("Close", null)
-                .setPositiveButton("Correct this route") { _, _ -> routeEditor(route) }.show()
+            showPage("Route details", places[route.fromId]?.displayName("en").orEmpty() + " → " +
+                places[route.toId]?.displayName("en").orEmpty())
+            root.addView(TextView(this@MdmPanelActivity).apply {
+                text = "Service: " + (route.serviceName?.takeIf { it.isNotBlank() } ?: "—") +
+                    "\nRoute time: " + route.time + "\n\n" +
+                    lines.joinToString("\n").ifBlank { "No stop details found." }
+                textSize = 15f; setPadding(0, 0, 0, dp(18))
+            })
+            button("Correct this route") { routeEditor(route) }
+            setContentView(ScrollView(this@MdmPanelActivity).apply { isFillViewport = true; addView(root) })
         }
     }
 
@@ -102,16 +122,7 @@ class MdmPanelActivity : AppCompatActivity() {
                     Triple(p.displayName("en"), (if (extra.isBlank()) "" else extra + "\n") + "ID: " + p.id, p.id)
                 }
                 showSearchList("Bus Stop List", "Search a stop, then tap it to inspect all names and correct it.", entries) { id ->
-                    val stop = places.firstOrNull { it.id == id }
-                    if (stop != null) {
-                        val msg = "English: " + (stop.names["en"].orEmpty().ifBlank { "—" }) +
-                            "\nHindi: " + (stop.names["hi"].orEmpty().ifBlank { "—" }) +
-                            "\nPunjabi: " + (stop.names["pa"].orEmpty().ifBlank { "—" }) +
-                            "\n\nPlace ID: " + stop.id
-                        AlertDialog.Builder(this@MdmPanelActivity).setTitle(stop.displayName("en")).setMessage(msg)
-                            .setNegativeButton("Close", null)
-                            .setPositiveButton("Correct this stop") { _, _ -> stopEditor(stop) }.show()
-                    }
+                    places.firstOrNull { it.id == id }?.let { showStopDetails(it) }
                 }
             }.onFailure { toast(it.message ?: "Could not load bus stops") }
         }
@@ -119,50 +130,49 @@ class MdmPanelActivity : AppCompatActivity() {
 
     private fun chooseStop() = showStops()
 
+    private fun showStopDetails(stop: Place) {
+        showPage(stop.displayName("en"), "Bus stop details")
+        root.addView(TextView(this).apply {
+            text = "English: " + stop.names["en"].orEmpty().ifBlank { "—" } +
+                "\nHindi: " + stop.names["hi"].orEmpty().ifBlank { "—" } +
+                "\nPunjabi: " + stop.names["pa"].orEmpty().ifBlank { "—" } +
+                "\n\nPlace ID: " + stop.id
+            textSize = 16f; setPadding(0, 0, 0, dp(18))
+        })
+        button("Correct this stop") { stopEditor(stop) }
+        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
+    }
+
     private fun showSearchList(
         title: String,
         hint: String,
         entries: List<Triple<String, String, String>>,
         onSelect: (String) -> Unit
     ) {
-        val content = box()
+        showPage(title, hint)
         val search = EditText(this).apply { this.hint = "Search…"; setSingleLine(true); textSize = 15f }
-        content.addView(search, LinearLayout.LayoutParams(-1, dp(48)))
-        content.addView(TextView(this).apply {
-            text = hint; textSize = 12f; setTextColor(getColor(com.bustime.app.R.color.textSecondary))
-            setPadding(0, dp(3), 0, dp(8))
-        })
-        val count = TextView(this).apply { textSize = 12f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)) }
-        content.addView(count)
+        root.addView(search, LinearLayout.LayoutParams(-1, dp(48)))
+        val count = TextView(this).apply { textSize = 12f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, dp(6), 0, dp(8)) }
+        root.addView(count)
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        content.addView(ScrollView(this).apply { addView(list) }, LinearLayout.LayoutParams(-1, dp(420)))
-        var dialog: AlertDialog? = null
+        root.addView(list)
         fun render(query: String) {
             list.removeAllViews()
             val q = norm(query)
             val filtered = entries.filter { norm(it.first + " " + it.second + " " + it.third).contains(q) }
             count.text = filtered.size.toString() + " item(s)"
-            filtered.take(500).forEach { item ->
+            filtered.take(1000).forEach { item ->
                 val row = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(dp(11), dp(10), dp(11), dp(10))
+                    orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(12), dp(12), dp(12))
                     background = android.graphics.drawable.GradientDrawable().apply {
                         setColor(getColor(com.bustime.app.R.color.surface)); cornerRadius = dp(9).toFloat()
                         setStroke(dp(1), 0xFFE0E6ED.toInt())
                     }
-                    isClickable = true; isFocusable = true
-                    setOnClickListener { dialog?.dismiss(); onSelect(item.third) }
+                    isClickable = true; isFocusable = true; setOnClickListener { onSelect(item.third) }
                 }
-                row.addView(TextView(this).apply {
-                    text = item.first; textSize = 15f
-                    setTextColor(getColor(com.bustime.app.R.color.textPrimary))
-                    setTypeface(typeface, android.graphics.Typeface.BOLD)
-                })
-                row.addView(TextView(this).apply {
-                    text = item.second; textSize = 12f
-                    setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, dp(3), 0, 0)
-                })
-                list.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) })
+                row.addView(TextView(this).apply { text = item.first; textSize = 16f; setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(getColor(com.bustime.app.R.color.textPrimary)) })
+                row.addView(TextView(this).apply { text = item.second; textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, dp(4), 0, 0) })
+                list.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
             }
             if (filtered.isEmpty()) list.addView(TextView(this).apply { text = "No matches"; setPadding(dp(8), dp(16), dp(8), dp(16)) })
         }
@@ -171,9 +181,8 @@ class MdmPanelActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { render(s?.toString().orEmpty()) }
             override fun afterTextChanged(s: Editable?) {}
         })
-        dialog = AlertDialog.Builder(this).setTitle(title).setView(content).setNegativeButton("Close", null).create()
         render("")
-        dialog?.show()
+        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
     }
 
     private fun routeEditor(old: Route?) {
@@ -182,47 +191,46 @@ class MdmPanelActivity : AppCompatActivity() {
             val byId = places.associateBy { it.id }
             val oldStops = if (old == null) emptyList() else withContext(Dispatchers.IO) { repo.getRouteStops(old.id) }.sortedBy { it.stopOrder }
             val drafts = mutableListOf<JSONObject>()
-            if (oldStops.isNotEmpty()) {
-                oldStops.forEach { s ->
-                    drafts.add(JSONObject().put("place_id", s.placeId)
-                        .put("name", byId[s.placeId]?.displayName("en") ?: s.placeId)
-                        .put("language", "en").put("time", s.time ?: JSONObject.NULL))
-                }
-            } else {
-                drafts.add(newDraft()); drafts.add(newDraft())
-            }
-            val content = box()
-            content.addView(TextView(this@MdmPanelActivity).apply {
-                text = "Numbered stop editor: tap a time to set it, + to add a stop, and ⋮ to move or remove. Preview before publishing."
-                textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary))
-                setPadding(0, 0, 0, dp(10))
+            if (oldStops.isNotEmpty()) oldStops.forEach { s ->
+                drafts.add(JSONObject().put("place_id", s.placeId)
+                    .put("name", byId[s.placeId]?.displayName("en") ?: s.placeId)
+                    .put("language", "en").put("time", s.time ?: JSONObject.NULL))
+            } else { drafts.add(newDraft()); drafts.add(newDraft()) }
+
+            showPage(if (old == null) "Add Route" else "Correction Route",
+                "Edit the full route below. Preview and Publish are on this page.")
+            root.addView(TextView(this@MdmPanelActivity).apply {
+                text = "Numbered stop editor: set times, + to add a stop, and ⋮ to move or remove."
+                textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, 0, 0, dp(10))
             })
             val stopsBox = LinearLayout(this@MdmPanelActivity).apply { orientation = LinearLayout.VERTICAL }
-            content.addView(stopsBox)
+            root.addView(stopsBox)
             val service = EditText(this@MdmPanelActivity).apply {
                 hint = "Service / bus name (optional)"; setSingleLine(true); setText(old?.serviceName.orEmpty())
             }
-            content.addView(service, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
+            root.addView(service, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
             StopListEditor(this@MdmPanelActivity, stopsBox, places, drafts, minStops = 2).render()
-            val scroll = ScrollView(this@MdmPanelActivity).apply { addView(content) }
-            val dialog = AlertDialog.Builder(this@MdmPanelActivity)
-                .setTitle(if (old == null) "Add Route" else "Correction Route")
-                .setView(scroll).setNegativeButton("Cancel", null).setNeutralButton("Preview", null)
-                .setPositiveButton("Publish", null).create()
-            dialog.setOnShowListener {
-                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                    val problem = validateRouteDrafts(drafts)
-                    if (problem != null) { toast(problem); return@setOnClickListener }
-                    showRoutePreview(drafts, service.text.toString().trim(), old)
-                }
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                    val problem = validateRouteDrafts(drafts)
-                    if (problem != null) { toast(problem); return@setOnClickListener }
-                    dialog.dismiss()
-                    publishRoute(old, drafts, service.text.toString().trim(), places)
-                }
+            val preview = TextView(this@MdmPanelActivity).apply {
+                textSize = 14f; setPadding(0, dp(12), 0, dp(12)); visibility = android.view.View.GONE
             }
-            dialog.show()
+            root.addView(preview)
+            button("Preview") {
+                val problem = validateRouteDrafts(drafts)
+                if (problem != null) { toast(problem); return@button }
+                preview.text = (if (old == null) "New route preview" else "Route correction preview") +
+                    (if (service.text.toString().trim().isBlank()) "" else "\nService: " + service.text.toString().trim()) +
+                    "\nStops: " + drafts.size + "\n\n" + drafts.mapIndexed { i, d ->
+                        (if (i == 0) "START" else if (i == drafts.lastIndex) "DESTINATION" else (i + 1).toString()) +
+                            "   " + d.optString("name").trim() + (draftTime(d)?.let { "   ·   " + it } ?: "")
+                    }.joinToString("\n")
+                preview.visibility = android.view.View.VISIBLE
+            }
+            button("Publish") {
+                val problem = validateRouteDrafts(drafts)
+                if (problem != null) { toast(problem); return@button }
+                publishRoute(old, drafts, service.text.toString().trim(), places)
+            }
+            setContentView(ScrollView(this@MdmPanelActivity).apply { isFillViewport = true; addView(root) })
         }
     }
 
@@ -298,50 +306,39 @@ class MdmPanelActivity : AppCompatActivity() {
     }
 
     private fun stopEditor(old: Place?) {
-        val content = box()
-        content.addView(TextView(this).apply {
-            text = "Enter names in English, Hindi and/or Punjabi. Preview the changes before publishing."
-            textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary))
-        })
+        showPage(if (old == null) "Add Bus Stop" else "Correction Bus Stop",
+            "Enter the names you want to save. Existing translations are preserved when left blank.")
         val en = EditText(this).apply { hint = "English name"; setSingleLine(true); setText(old?.names?.get("en").orEmpty()) }
         val hi = EditText(this).apply { hint = "Hindi name"; setSingleLine(true); setText(old?.names?.get("hi").orEmpty()) }
         val pa = EditText(this).apply { hint = "Punjabi name"; setSingleLine(true); setText(old?.names?.get("pa").orEmpty()) }
-        content.addView(en); content.addView(hi); content.addView(pa)
-        val dialog = AlertDialog.Builder(this).setTitle(if (old == null) "Add Bus Stop" else "Correction Bus Stop")
-            .setView(ScrollView(this).apply { addView(content) })
-            .setNegativeButton("Cancel", null).setNeutralButton("Preview", null).setPositiveButton("Publish", null).create()
-        dialog.setOnShowListener {
-            fun makeNames(): JSONObject = JSONObject().apply {
-                if (en.text.isNotBlank()) put("en", en.text.toString().trim())
-                if (hi.text.isNotBlank()) put("hi", hi.text.toString().trim())
-                if (pa.text.isNotBlank()) put("pa", pa.text.toString().trim())
-            }
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                val n = makeNames()
-                if (n.length() == 0) toast("Enter at least one name.")
-                else AlertDialog.Builder(this).setTitle("Bus stop preview")
-                    .setMessage("English: " + n.optString("en", "—") + "\nHindi: " + n.optString("hi", "—") + "\nPunjabi: " + n.optString("pa", "—"))
-                    .setPositiveButton("Looks good", null).show()
-            }
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val names = makeNames()
-                if (names.length() == 0) { toast("Enter at least one name."); return@setOnClickListener }
-                val label = names.optString("en").ifBlank { names.optString("hi").ifBlank { names.optString("pa") } }
-                val id = old?.id ?: ("mdm_" + slug(label).ifBlank { "place" } + "_" + Integer.toHexString(norm(label).hashCode()).takeLast(6))
-                // Preserve untouched translations when only one language is corrected.
-                val mergedNames = JSONObject()
-                old?.names?.forEach { (language, value) ->
-                    if (value.isNotBlank()) mergedNames.put(language, value)
-                }
-                listOf("en", "hi", "pa").forEach { language ->
-                    if (names.has(language)) mergedNames.put(language, names.optString(language).trim())
-                }
-                val payload = JSONObject().put("id", id).put("kind", old?.kind ?: "place").put("name", mergedNames)
-                dialog.dismiss()
-                publish(JSONArray().put(change("place", id, payload)))
+        root.addView(en); root.addView(hi); root.addView(pa)
+        val preview = TextView(this).apply { textSize = 15f; setPadding(0, dp(12), 0, dp(12)); visibility = android.view.View.GONE }
+        root.addView(preview)
+        fun makeNames() = JSONObject().apply {
+            if (en.text.isNotBlank()) put("en", en.text.toString().trim())
+            if (hi.text.isNotBlank()) put("hi", hi.text.toString().trim())
+            if (pa.text.isNotBlank()) put("pa", pa.text.toString().trim())
+        }
+        button("Preview") {
+            val n = makeNames()
+            if (n.length() == 0) toast("Enter at least one name.")
+            else {
+                preview.text = "English: " + n.optString("en", "—") + "\nHindi: " + n.optString("hi", "—") + "\nPunjabi: " + n.optString("pa", "—")
+                preview.visibility = android.view.View.VISIBLE
             }
         }
-        dialog.show()
+        button("Publish") {
+            val names = makeNames()
+            if (names.length() == 0) { toast("Enter at least one name."); return@button }
+            val label = names.optString("en").ifBlank { names.optString("hi").ifBlank { names.optString("pa") } }
+            val id = old?.id ?: ("mdm_" + slug(label).ifBlank { "place" } + "_" + Integer.toHexString(norm(label).hashCode()).takeLast(6))
+            val mergedNames = JSONObject()
+            old?.names?.forEach { (language, value) -> if (value.isNotBlank()) mergedNames.put(language, value) }
+            listOf("en", "hi", "pa").forEach { language -> if (names.has(language)) mergedNames.put(language, names.optString(language).trim()) }
+            val payload = JSONObject().put("id", id).put("kind", old?.kind ?: "stand").put("name", mergedNames)
+            publish(JSONArray().put(change("place", id, payload)))
+        }
+        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
     }
 
     private fun change(type:String,id:String,payload:JSONObject)=JSONObject().put("entity_type",type).put("entity_id",id).put("operation","upsert").put("payload",payload)
