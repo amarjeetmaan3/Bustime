@@ -1174,8 +1174,8 @@ function viewAnalytics() {
     '<input type="date" id="analyticsFrom" aria-label="Start date" style="max-width:180px;display:none">' +
     '<input type="date" id="analyticsTo" aria-label="End date" style="max-width:180px;display:none"></div>' +
     '<div class="stats" id="analyticsCards">' +
-    analyticsStat('—','App users','Waiting for analytics data') + analyticsStat('—','Bus searches','Waiting for analytics data') +
-    analyticsStat('—','Contact actions','Waiting for analytics data') + analyticsStat('—','Ad earnings','Start.io reporting not connected') + '</div>' +
+    analyticsStat('—','App installations','Unique installation IDs recorded since tracking was added') + analyticsStat('—','App sessions','Waiting for analytics data') +
+    analyticsStat('—','Bus searches','Waiting for analytics data') + analyticsStat('—','Contact actions','Waiting for analytics data') + analyticsStat('—','Ad earnings','Start.io reporting not connected') + '</div>' +
     '<div class="row2"><div class="card"><h2>Activity over time</h2><p class="muted">Daily app events</p><div class="analytics-empty"><div class="analytics-bars">' +
     '<i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>Tracking not configured</b><p class="muted">Bars will show real daily totals after the app sends analytics events.</p></div></div>' +
     '<div class="card"><h2>Usage by section</h2><p class="muted">Bus activity</p><div class="analytics-empty"><div class="analytics-bars horizontal">' +
@@ -1203,7 +1203,7 @@ async function loadAnalytics() {
   if (period && period.value !== 'custom') start.setHours(0,0,0,0);
   var daily = document.getElementById('analyticsDaily'), sections = document.getElementById('analyticsSections');
   if (!sbToken) {
-    cards.innerHTML = analyticsStat('—','App users','Admin sign-in required') + analyticsStat('—','Bus searches','Admin sign-in required') + analyticsStat('—','Contact actions','Admin sign-in required') + analyticsStat('—','Ad earnings','Start.io reporting not connected');
+    cards.innerHTML = analyticsStat('—','App installations','Admin sign-in required') + analyticsStat('—','App sessions','Admin sign-in required') + analyticsStat('—','Bus searches','Admin sign-in required') + analyticsStat('—','Contact actions','Admin sign-in required') + analyticsStat('—','Ad earnings','Start.io reporting not connected');
     if (daily) daily.innerHTML = '<b>Sign in to view analytics</b>';
     if (sections) sections.innerHTML = '<b>Sign in to view analytics</b>';
     return;
@@ -1211,13 +1211,23 @@ async function loadAnalytics() {
   try {
     var url = '/rest/v1/analytics_events?select=created_at,event_name,section,session_id,properties&created_at=gte.' + encodeURIComponent(start.toISOString()) + '&created_at=lte.' + encodeURIComponent(now.toISOString()) + '&order=created_at.asc&limit=5000';
     var events = await sbFetch(url) || [];
+    // All-time count, independent of the selected analytics period.
+    // Reinstalls or clearing app data can generate a new installation ID.
+    var installIds = {}, installOffset = 0, installPage = [];
+    do {
+      installPage = await sbFetch('/rest/v1/analytics_events?select=id,session_id&event_name=eq.app_install&order=id.asc&limit=1000&offset=' + installOffset) || [];
+      installPage.forEach(function(e){ if (e.session_id) installIds[e.session_id] = true; });
+      installOffset += installPage.length;
+    } while (installPage.length === 1000 && installOffset < 1000000);
+    var installationCount = Object.keys(installIds).length;
     var unique = {};
     events.forEach(function(e){ unique[e.session_id] = true; });
     function count(fn) { return events.filter(fn).length; }
     var bus = count(function(e){return e.section==='bus' && /search/.test(e.event_name);});
     var contacts = count(function(e){return /contact|call|whatsapp/.test(e.event_name);});
-    cards.innerHTML = analyticsStat(Object.keys(unique).length,'App sessions','Unique random app sessions in selected period') +
-      analyticsStat(bus,'Bus searches','From–To and stand searches') +
+    cards.innerHTML = analyticsStat(installationCount,'App installations','Unique installation IDs recorded since tracking was added; reinstalls may count again') +
+      analyticsStat(Object.keys(unique).length,'App sessions','Unique random app sessions in selected period') +
+      analyticsStat(bus,'Bus searches','From–To and stand searches')
       analyticsStat(contacts,'Contact actions','Recorded contact taps') +
       analyticsStat('—','Ad earnings','Connect official Start.io reporting');
     if (daily) {
