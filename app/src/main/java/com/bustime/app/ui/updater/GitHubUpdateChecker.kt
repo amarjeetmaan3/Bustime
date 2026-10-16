@@ -57,7 +57,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
             registerReceiverIfNeeded()
-            checkPendingInstall()   // डाउनलोड बैकग्राउंड में पूरा हो गया हो, या सेटिंग से लौटे हों
+            if (prefs.getBoolean(KEY_UPDATES_ENABLED, false)) checkPendingInstall()   // updater is remotely enabled
         }
 
         override fun onStop(owner: LifecycleOwner) {
@@ -71,20 +71,52 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     }
 
     fun checkForLatestUpdate() {
-        // username भरा नहीं है तो चेक ही मत करो
         if (Constants.GITHUB_OWNER.startsWith("YOUR_")) return
 
         activity.lifecycle.addObserver(lifecycleObserver)
-        val current = currentVersion()
-
-        // तुरंत: पिछली बार जो नया वर्ज़न दिखा था वो फ़ोन में सेव है
-        loadCached()?.let { if (isNewer(it.version, current)) onUpdateAvailable(it) }
-
-        // फिर ताज़ा जानकारी (बैकग्राउंड में)
         activity.lifecycleScope.launch {
+            val enabled = withContext(Dispatchers.IO) { fetchUpdateNotificationsEnabled() }
+            prefs.edit().putBoolean(KEY_UPDATES_ENABLED, enabled).apply()
+            if (!enabled) {
+                updateDialog?.dismiss()
+                updateDialog = null
+                installDialog?.dismiss()
+                installDialog = null
+                return@launch
+            }
+
+            val current = currentVersion()
+            loadCached()?.let { if (isNewer(it.version, current)) onUpdateAvailable(it) }
+
             val latest = withContext(Dispatchers.IO) { fetchLatestRelease() } ?: return@launch
             saveCached(latest)
             if (isNewer(latest.version, current)) onUpdateAvailable(latest)
+        }
+    }
+
+    /** Public read-only setting from the existing app content settings row. */
+    private fun fetchUpdateNotificationsEnabled(): Boolean {
+        var conn: HttpURLConnection? = null
+        return try {
+            conn = (URL(Constants.SUPABASE_URL.trimEnd('/') +
+                "/rest/v1/app_content_settings?id=eq.1&select=settings")
+                .openConnection() as HttpURLConnection).apply {
+                connectTimeout = 5000
+                readTimeout = 6000
+                setRequestProperty("apikey", Constants.SUPABASE_ANON_KEY)
+                if (Constants.SUPABASE_ANON_KEY.startsWith("eyJ")) {
+                    setRequestProperty("Authorization", "Bearer ${Constants.SUPABASE_ANON_KEY}")
+                }
+            }
+            if (conn.responseCode !in 200..299) return prefs.getBoolean(KEY_UPDATES_ENABLED, false)
+            val rows = org.json.JSONArray(conn.inputStream.bufferedReader().use { it.readText() })
+            if (rows.length() == 0) return false
+            rows.optJSONObject(0)?.optJSONObject("settings")
+                ?.optBoolean("update_notifications_enabled", false) ?: false
+        } catch (_: Exception) {
+            prefs.getBoolean(KEY_UPDATES_ENABLED, false)
+        } finally {
+            conn?.disconnect()
         }
     }
 
@@ -394,6 +426,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     }
 
     companion object {
+        private const val KEY_UPDATES_ENABLED = "update_notifications_enabled"
         private const val KEY_LATEST_VERSION = "latest_version"
         private const val KEY_LATEST_URL = "latest_url"
         private const val KEY_LATEST_SHA256 = "latest_sha256"
