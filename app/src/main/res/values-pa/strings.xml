@@ -263,4 +263,9 @@
 <string name="privacy_policy_link_label">ਪਰਦੇਦਾਰੀ ਨੀਤੀ ਪੜ੍ਹੋ</string>
     <string name="privacy_policy_title">ਪਰਦੇਦਾਰੀ ਨੀਤੀ</string>
     <string name="privacy_policy_menu">ਪਰਦੇਦਾਰੀ ਨੀਤੀ</string>
+
+    <!-- Refresh status messages -->
+    <string name="refresh_complete">ਡਾਟਾ ਸਫਲਤਾਪੂਰਵਕ ਅੱਪਡੇਟ ਹੋ ਗਿਆ</string>
+    <string name="refresh_latest">ਡਾਟਾ ਪਹਿਲਾਂ ਹੀ ਨਵਾਂ ਹੈ</string>
+    <string name="refresh_failed">ਰਿਫ੍ਰੈਸ਼ ਨਹੀਂ ਹੋ ਸਕਿਆ। ਇੰਟਰਨੈੱਟ ਜਾਂਚ ਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।</string>
 </resources>
