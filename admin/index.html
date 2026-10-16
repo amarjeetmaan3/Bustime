@@ -407,6 +407,8 @@ function saveCfg() {
 
 // ============ State ============
 var data = null, sha = null, baseVersion = 0, dirty = false;
+// Last clean shared state. Web Admin publishes the same entity deltas as Android MDM.
+var sharedBaseData = null;
 var mdmRevisionCursor = 0, mdmAutoSyncTimer = null, mdmAutoSyncBusy = false;
 var tab = 'settings';
 var contentSettings = {terms_enabled:true,terms:{en:'',hi:'',pa:''},popup_enabled:true,popup:{en:'',hi:'',pa:''},popup_seconds:5,ticker_enabled:true,ticker:{en:'',hi:'',pa:''},update_notifications_enabled:false};
@@ -731,6 +733,7 @@ async function loadData() {
   data = normalize(JSON.parse(b64decode(j.content)));
   // Overlay MDM delta records so new/corrected stops and routes appear before snapshot publish.
   await mergeMdmPublishedChanges();
+  sharedBaseData = JSON.parse(JSON.stringify({ places: data.places || [], routes: data.routes || [] }));
   sha = j.sha; baseVersion = data.dataVersion || 0; editing = null; publishOpen = false; setDirty(false);
 }
 async function publishAdminDelete(entityType, entityId) {
@@ -743,6 +746,44 @@ async function publishAdminDelete(entityType, entityId) {
   if (!response.ok || !result.ok) throw new Error(result.error || ('Could not permanently delete ' + entityType + ' (HTTP ' + response.status + ').'));
   mdmRevisionCursor = Math.max(mdmRevisionCursor, Number(result.revision || 0));
   return result.revision;
+}
+function cloneSharedEntities(value) {
+  return JSON.parse(JSON.stringify({ places: (value && value.places) || [], routes: (value && value.routes) || [] }));
+}
+function sharedEntityChanges(before, after) {
+  var changes = [];
+  ['places', 'routes'].forEach(function(listName) {
+    var type = listName === 'places' ? 'place' : 'route';
+    var oldMap = new Map(((before && before[listName]) || []).filter(function(x){return x && x.id;}).map(function(x){return [String(x.id), x];}));
+    var newMap = new Map(((after && after[listName]) || []).filter(function(x){return x && x.id;}).map(function(x){return [String(x.id), x];}));
+    oldMap.forEach(function(oldItem, id) {
+      if (!newMap.has(id)) changes.push({ entity_type:type, entity_id:id, operation:'delete', payload:null });
+    });
+    newMap.forEach(function(item, id) {
+      var oldItem = oldMap.get(id);
+      if (!oldItem || JSON.stringify(oldItem) !== JSON.stringify(item)) {
+        changes.push({ entity_type:type, entity_id:id, operation:'upsert', payload:item });
+      }
+    });
+  });
+  return changes;
+}
+// Web Admin and Android MDM write through the same revisioned change API.
+// The snapshot remains the full baseline, while this delta stream carries edits/deletes to all clients.
+async function publishSharedDataDiff(before, after) {
+  var changes = sharedEntityChanges(before, after);
+  if (!changes.length) return 0;
+  if (changes.length > 250) throw new Error('This publish contains ' + changes.length + ' changed routes/stops. Please publish smaller batches (250 changes maximum) so the shared sync remains consistent.');
+  if (!sbToken || !cfg.sbUrl || !cfg.sbKey) throw new Error('Sign in to the owner admin and configure Supabase before publishing shared route data.');
+  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
+    method:'POST',
+    headers:{ apikey:cfg.sbKey, Authorization:'Bearer '+sbToken, 'Content-Type':'application/json', 'Cache-Control':'no-store' },
+    body:JSON.stringify({ action:'publish', changes:changes })
+  });
+  var result = {}; try { result = await response.json(); } catch (_) {}
+  if (!response.ok || !result.ok) throw new Error(result.error || ('Shared data publish failed (HTTP '+response.status+').'));
+  mdmRevisionCursor = Math.max(mdmRevisionCursor, Number(result.revision || 0));
+  return changes.length;
 }
 async function mergeMdmPublishedChanges(sinceRevision) {
   if (!cfg.sbUrl || !cfg.sbKey || !data) return false;
@@ -1017,14 +1058,29 @@ async function publish() {
     sha: sha, branch: cfg.branch
   };
   var h = ghHeaders(); h['Content-Type'] = 'application/json';
+  // Keep the established Web Admin workflow: commit the full GitHub snapshot first.
+  // After GitHub confirms success, mirror route/place deltas to revisioned sync.
+  // If mirroring fails, retain the old diff baseline so a later Publish retries it.
+  var sharedBefore = cloneSharedEntities(sharedBaseData || { places:[], routes:[] });
+  var sharedAfter = cloneSharedEntities(data);
   var r = await fetch(apiUrl(), { method: 'PUT', headers: h, body: JSON.stringify(body) });
   if (r.status === 409 || r.status === 422) {
     throw new Error('The file was changed elsewhere in the meantime. Reload from GitHub (your unpublished changes will be lost).');
   }
   if (!r.ok) throw new Error('GitHub ' + r.status + ' - ' + (await r.text()).slice(0, 160));
   var j = await r.json();
-  sha = j.content.sha; baseVersion = out.dataVersion; data.dataVersion = out.dataVersion; setDirty(false);
+  sha = j.content.sha; baseVersion = out.dataVersion; data.dataVersion = out.dataVersion;
   publishSyncWarnings=0;
+  try {
+    await publishSharedDataDiff(sharedBefore, sharedAfter);
+    sharedBaseData = sharedAfter;
+    setDirty(false);
+  } catch (sharedSyncError) {
+    publishSyncWarnings++;
+    setDirty(true); // Keep Publish available to retry the shared delta mirror.
+    console.error('GitHub snapshot published, but shared MDM sync needs retry:', sharedSyncError);
+    toast('GitHub Snapshot published, but cross-panel sync failed. Publish again to retry. ' + (sharedSyncError.message || sharedSyncError));
+  }
   for(var ui=0;ui<approvedUpdates.length;ui++){
     var upd=approvedUpdates[ui];
     try{
@@ -3092,6 +3148,7 @@ async function pollMdmAutoSync() {
   try {
     var changed = await mergeMdmPublishedChanges(mdmRevisionCursor);
     if (changed && canApplyMdmAutoSync()) {
+      sharedBaseData = cloneSharedEntities(data);
       render();
       toast('Synced new MDM data.');
     }
