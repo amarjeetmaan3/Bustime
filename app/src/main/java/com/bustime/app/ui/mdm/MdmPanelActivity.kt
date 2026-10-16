@@ -328,7 +328,15 @@ class MdmPanelActivity : AppCompatActivity() {
                 if (names.length() == 0) { toast("Enter at least one name."); return@setOnClickListener }
                 val label = names.optString("en").ifBlank { names.optString("hi").ifBlank { names.optString("pa") } }
                 val id = old?.id ?: ("mdm_" + slug(label).ifBlank { "place" } + "_" + Integer.toHexString(norm(label).hashCode()).takeLast(6))
-                val payload = JSONObject().put("id", id).put("kind", old?.kind ?: "place").put("name", names)
+                // Preserve untouched translations when only one language is corrected.
+                val mergedNames = JSONObject()
+                old?.names?.forEach { (language, value) ->
+                    if (value.isNotBlank()) mergedNames.put(language, value)
+                }
+                listOf("en", "hi", "pa").forEach { language ->
+                    if (names.has(language)) mergedNames.put(language, names.optString(language).trim())
+                }
+                val payload = JSONObject().put("id", id).put("kind", old?.kind ?: "place").put("name", mergedNames)
                 dialog.dismiss()
                 publish(JSONArray().put(change("place", id, payload)))
             }
