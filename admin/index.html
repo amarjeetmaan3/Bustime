@@ -813,7 +813,7 @@ async function mergeMdmPublishedChanges(sinceRevision) {
     return list;
   }
   function remove(list, id) { return list.filter(function(x) { return String(x.id) !== String(id); }); }
-  var offset = 0, pages = 0, allChanges = [], maxRevision = since;
+  var offset = 0, pages = 0, allChanges = [], maxRevision = since, complete = false;
   try {
     while (pages++ < 20) {
       var url = cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/bustime-data-sync?action=changes&since=' + encodeURIComponent(since) + '&offset=' + offset;
@@ -825,9 +825,10 @@ async function mergeMdmPublishedChanges(sinceRevision) {
       var changes = await res.json();
       if (!Array.isArray(changes)) throw new Error('Invalid MDM change history');
       allChanges = allChanges.concat(changes);
-      if (changes.length < 1000) break;
+      if (changes.length < 1000) { complete = true; break; }
       offset += changes.length;
     }
+    if (!complete) throw new Error('MDM change history exceeds the 20,000-record sync limit; cursor was not advanced.');
     allChanges.forEach(function(change) {
       if (!change || !change.entity_type || !change.entity_id) return;
       var revision = Number(change.revision || 0);
@@ -843,7 +844,7 @@ async function mergeMdmPublishedChanges(sinceRevision) {
     return allChanges.length > 0;
   } catch (err) {
     console.warn('MDM published changes could not be loaded:', err);
-    return false;
+    throw err;
   }
 }
 // Approved submissions must survive page refreshes until the GitHub snapshot is published.
