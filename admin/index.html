@@ -735,7 +735,7 @@ async function loadData() {
 }
 async function publishAdminDelete(entityType, entityId) {
   if (!sbToken) throw new Error('Sign in as the owner admin before deleting published data.');
-  var response = await fetch(cfg.sbUrl.replace(/\\/+$/, '') + '/functions/v1/mdm-publish', {
+  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
     body: JSON.stringify({ action: 'publish', changes: [{ entity_type: entityType, entity_id: String(entityId), operation: 'delete', payload: null }] })
   });
