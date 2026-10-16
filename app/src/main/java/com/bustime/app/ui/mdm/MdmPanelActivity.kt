@@ -333,7 +333,7 @@ class MdmPanelActivity : AppCompatActivity() {
             val mergedNames = JSONObject()
             old?.names?.forEach { (language, value) -> if (value.isNotBlank()) mergedNames.put(language, value) }
             listOf("en", "hi", "pa").forEach { language -> if (names.has(language)) mergedNames.put(language, names.optString(language).trim()) }
-            val payload = JSONObject().put("id", id).put("kind", old?.kind ?: "stand").put("name", mergedNames)
+            val payload = JSONObject().put("id", id).put("kind", "stand").put("name", mergedNames)
             publish(JSONArray().put(change("place", id, payload)))
         }
         showRoot()
