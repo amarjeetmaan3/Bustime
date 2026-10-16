@@ -117,22 +117,19 @@ class MdmPanelActivity : AppCompatActivity() {
     private fun showRouteDetails(route: Route, places: Map<String, Place>) {
         lifecycleScope.launch {
             val stops = withContext(Dispatchers.IO) { repo.getRouteStops(route.id) }.sortedBy { it.stopOrder }
-            val lines = stops.mapIndexed { i, stop ->
-                val place = places[stop.placeId]
-                (i + 1).toString() + ". " + (place?.displayName("en") ?: stop.placeId) +
-                    (stop.time?.takeIf { it.isNotBlank() }?.let { "  ·  " + it } ?: "")
+            val lines = stops.map { stop ->
+                (stop.time to (places[stop.placeId]?.displayName("en") ?: stop.placeId))
             }
-            showPage("Route details", places[route.fromId]?.displayName("en").orEmpty() + " → " +
-                places[route.toId]?.displayName("en").orEmpty())
             pageBackAction = { showRoutes() }
-            root.addView(TextView(this@MdmPanelActivity).apply {
-                text = "Service: " + (route.serviceName?.takeIf { it.isNotBlank() } ?: "—") +
-                    "\nRoute time: " + route.time + "\n\n" +
-                    lines.joinToString("\n").ifBlank { "No stop details found." }
-                textSize = 15f; setPadding(0, 0, 0, dp(18))
-            })
-            button("Correct this route") { routeEditor(route) { showRouteDetails(route, places) } }
-            showRoot()
+            showPassengerStyleRoute(
+                title = (places[route.fromId]?.displayName("en") ?: route.fromId) + " → " +
+                    (places[route.toId]?.displayName("en") ?: route.toId),
+                service = route.serviceName?.takeIf { it.isNotBlank() } ?: route.routeName.orEmpty(),
+                info = route.info.orEmpty(),
+                stops = lines,
+                topActionLabel = "Correct this route",
+                topAction = { routeEditor(route) { showRouteDetails(route, places) } }
+            )
         }
     }
 
@@ -264,77 +261,109 @@ class MdmPanelActivity : AppCompatActivity() {
         places: List<Place>,
         returnAction: (() -> Unit)? = null
     ) {
-        val byId = places.associateBy { it.id }
-        showPage(if (old == null) "Route preview" else "Correction preview",
-            "Review the complete route exactly as a passenger-facing route detail page.")
         pageBackAction = { renderRouteEditor(old, drafts, service, places, returnAction) }
+        val lines = drafts.map { draft ->
+            (draftTime(draft) to draft.optString("name").trim())
+        }
+        showPassengerStyleRoute(
+            title = (drafts.firstOrNull()?.optString("name").orEmpty().trim()) + " → " +
+                drafts.lastOrNull()?.optString("name").orEmpty().trim(),
+            service = service,
+            info = old?.info.orEmpty(),
+            stops = lines,
+            topActionLabel = "← Back to edit",
+            topAction = { renderRouteEditor(old, drafts, service, places, returnAction) },
+            publishAction = {
+                val problem = validateRouteDrafts(drafts)
+                if (problem != null) { toast(problem); return@showPassengerStyleRoute }
+                publishRoute(old, drafts, service, places)
+            }
+        )
+    }
 
-        val card = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(18), dp(18), dp(18))
-            background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(getColor(com.bustime.app.R.color.surface)); cornerRadius = dp(18).toFloat()
-                setStroke(dp(1), 0xFFE0E6ED.toInt())
+    /**
+     * Uses the exact passenger-facing route detail layout and stop-row layout for both
+     * correction details and the Add/Correction Route preview.
+     */
+    private fun showPassengerStyleRoute(
+        title: String,
+        service: String,
+        info: String,
+        stops: List<Pair<String?, String>>,
+        topActionLabel: String,
+        topAction: () -> Unit,
+        publishAction: (() -> Unit)? = null
+    ) {
+        root.removeAllViews()
+        val page = layoutInflater.inflate(com.bustime.app.R.layout.activity_route_detail, null, false) as ScrollView
+        val content = page.getChildAt(0) as LinearLayout
+
+        page.findViewById<Button>(com.bustime.app.R.id.btnBackDetail).visibility = View.GONE
+        page.findViewById<TextView>(com.bustime.app.R.id.tvRouteTitle).text = title
+        val departureTime = stops.firstOrNull()?.first?.takeIf { !it.isNullOrBlank() }
+        val arrivalTime = stops.lastOrNull()?.first?.takeIf { !it.isNullOrBlank() }
+        page.findViewById<TextView>(com.bustime.app.R.id.tvRouteTime).apply {
+            if (departureTime != null && arrivalTime != null) {
+                text = getString(com.bustime.app.R.string.departs_at, formatPreviewTime(departureTime))
+                visibility = View.VISIBLE
+            } else {
+                text = ""
+                visibility = View.GONE
             }
         }
-        val fromName = drafts.firstOrNull()?.optString("name").orEmpty().trim()
-        val toName = drafts.lastOrNull()?.optString("name").orEmpty().trim()
-        card.addView(TextView(this).apply {
-            text = fromName + "  →  " + toName; textSize = 22f; maxLines = 3
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(getColor(com.bustime.app.R.color.textPrimary))
-        })
-        if (service.isNotBlank()) card.addView(TextView(this).apply {
-            text = service; textSize = 15f; setPadding(0, dp(8), 0, 0)
-            setTextColor(getColor(com.bustime.app.R.color.textSecondary))
-        })
-        card.addView(TextView(this).apply {
-            text = drafts.size.toString() + " stops"; textSize = 13f
-            setPadding(0, dp(10), 0, dp(12)); setTextColor(getColor(com.bustime.app.R.color.textSecondary))
-        })
-        val timeline = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        drafts.forEachIndexed { index, draft ->
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-                setPadding(0, dp(9), 0, dp(9))
+        page.findViewById<TextView>(com.bustime.app.R.id.tvRouteService).apply {
+            text = service
+            visibility = if (service.isBlank()) View.GONE else View.VISIBLE
+        }
+        page.findViewById<TextView>(com.bustime.app.R.id.tvRouteInfo).apply {
+            text = info
+            visibility = if (info.isBlank()) View.GONE else View.VISIBLE
+        }
+        page.findViewById<Button>(com.bustime.app.R.id.btnRouteCall).visibility = View.GONE
+        page.findViewById<Button>(com.bustime.app.R.id.btnRouteCorrection).apply {
+            text = topActionLabel
+            setOnClickListener { topAction() }
+        }
+
+        val container = page.findViewById<LinearLayout>(com.bustime.app.R.id.stopsContainer)
+        container.removeAllViews()
+        val inflater = android.view.LayoutInflater.from(this)
+        stops.forEachIndexed { index, stop ->
+            val row = inflater.inflate(com.bustime.app.R.layout.item_stop, container, false)
+            row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).text =
+                stop.first?.takeIf { it.isNotBlank() }?.let { formatPreviewTime(it) }.orEmpty()
+            row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).text = stop.second
+            row.findViewById<View>(com.bustime.app.R.id.lineTop).visibility =
+                if (index == 0) View.INVISIBLE else View.VISIBLE
+            row.findViewById<View>(com.bustime.app.R.id.lineBottom).visibility =
+                if (index == stops.lastIndex) View.INVISIBLE else View.VISIBLE
+            if (index == 0) {
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).textSize = 18f
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).textSize = 18f
+                val color = getColor(com.bustime.app.R.color.stopFromHighlight)
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).setTextColor(color)
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).setTextColor(color)
+                row.findViewById<View>(com.bustime.app.R.id.stopDot).backgroundTintList =
+                    android.content.res.ColorStateList.valueOf(color)
+            } else if (index == stops.lastIndex) {
+                val color = getColor(com.bustime.app.R.color.stopToHighlight)
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).setTextColor(color)
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).setTextColor(color)
+                row.findViewById<View>(com.bustime.app.R.id.stopDot).backgroundTintList =
+                    android.content.res.ColorStateList.valueOf(color)
             }
-            val time = TextView(this).apply {
-                text = draftTime(draft)?.let { formatPreviewTime(it) } ?: "—"
-                textSize = 14f; setTypeface(typeface, android.graphics.Typeface.BOLD)
-                gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                setTextColor(getColor(com.bustime.app.R.color.textPrimary))
-            }
-            row.addView(time, LinearLayout.LayoutParams(dp(82), -2).apply { marginEnd = dp(10) })
-            val marker = TextView(this).apply {
-                text = if (index == 0) "●" else if (index == drafts.lastIndex) "●" else "•"
-                textSize = if (index == 0 || index == drafts.lastIndex) 18f else 22f
-                setTextColor(getColor(if (index == 0) com.bustime.app.R.color.stopFromHighlight else if (index == drafts.lastIndex) com.bustime.app.R.color.stopToHighlight else com.bustime.app.R.color.colorPrimary))
-            }
-            row.addView(marker, LinearLayout.LayoutParams(dp(24), -2))
-            val nameColumn = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            nameColumn.addView(TextView(this).apply {
-                text = draft.optString("name").trim(); textSize = 15f; maxLines = 3
-                setTypeface(typeface, if (index == 0 || index == drafts.lastIndex) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
-                setTextColor(getColor(com.bustime.app.R.color.textPrimary))
+            container.addView(row)
+        }
+        if (publishAction != null) {
+            content.addView(Button(this).apply {
+                text = "Publish route"
+                setOnClickListener { publishAction() }
+            }, LinearLayout.LayoutParams(-1, -2).apply {
+                topMargin = dp(4)
+                bottomMargin = dp(18)
             })
-            if (index == 0 || index == drafts.lastIndex) nameColumn.addView(TextView(this).apply {
-                text = if (index == 0) "START" else "DESTINATION"; textSize = 10f
-                setTextColor(getColor(if (index == 0) com.bustime.app.R.color.stopFromHighlight else com.bustime.app.R.color.stopToHighlight))
-            })
-            row.addView(nameColumn, LinearLayout.LayoutParams(0, -2, 1f))
-            timeline.addView(row)
-            if (index < drafts.lastIndex) timeline.addView(View(this).apply {
-                setBackgroundColor(0xFFE0E6ED.toInt())
-            }, LinearLayout.LayoutParams(dp(1), dp(10)).apply { leftMargin = dp(92) })
         }
-        card.addView(timeline)
-        root.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
-        button("← Back to edit") { renderRouteEditor(old, drafts, service, places, returnAction) }
-        button("Publish route") {
-            val problem = validateRouteDrafts(drafts)
-            if (problem != null) { toast(problem); return@button }
-            publishRoute(old, drafts, service, places)
-        }
-        showRoot()
+        setContentView(page)
     }
 
     private fun formatPreviewTime(value: String): String = try {
