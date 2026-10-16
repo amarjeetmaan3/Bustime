@@ -63,7 +63,10 @@ object SnapshotImporter {
             val id = clean(r.id)
             val from = clean(r.from)
             val to = clean(r.to)
-            val time = clean(r.time)?.takeIf { TIME.matches(it) }
+            val startTime = clean(r.time)?.takeIf { TIME.matches(it) }
+            val arriveTime = clean(r.arrive)?.takeIf { TIME.matches(it) }
+            val intermediateTimes = r.stops.orEmpty().mapNotNull { clean(it.time)?.takeIf { t -> TIME.matches(t) } }
+            val time = startTime ?: intermediateTimes.firstOrNull() ?: arriveTime
             if (id == null || from == null || to == null || from == to ||
                 !places.containsKey(from) || !places.containsKey(to) ||
                 !routeIds.add(id)
@@ -73,7 +76,7 @@ object SnapshotImporter {
             var order = 0
             // The route departure time is also the scheduled time at the first stop.
             // Preserve it here so a time entered for the starting stand is not lost in the app.
-            stops.add(RouteStop(id, order++, from, time))
+            stops.add(RouteStop(id, order++, from, startTime))
             for (s in r.stops.orEmpty()) {
                 val pid = clean(s.place)
                 if (pid == null || !places.containsKey(pid) || pid == from || pid == to) {
@@ -81,7 +84,7 @@ object SnapshotImporter {
                 }
                 stops.add(RouteStop(id, order++, pid, clean(s.time)?.takeIf { TIME.matches(it) }))
             }
-            stops.add(RouteStop(id, order++, to, clean(r.arrive)?.takeIf { TIME.matches(it) }))
+            stops.add(RouteStop(id, order++, to, arriveTime))
             routes.add(
                 Route(id, from, to, time.orEmpty(), clean(r.service), clean(r.routeName), clean(r.contact), clean(r.info), r.longRoute == true, clean(r.startDate))
             )
