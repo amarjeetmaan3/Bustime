@@ -78,9 +78,38 @@ object CommunitySupabase {
     }
 
     fun getPublicOperators(): String? {
-        val conn = URL(Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/bus_operators?select=id,operator_name,service_name,bus_types,location,phone,whatsapp,details&active=eq.true&order=service_name.asc")
-            .openConnection() as HttpURLConnection
+        // Read the owner-controlled global visibility switch. Missing/temporarily unavailable
+        // settings keep the existing directory behavior; an explicit OFF hides all listings.
+        var settingsConn: HttpURLConnection? = null
+        try {
+            settingsConn = URL(Constants.SUPABASE_URL.trimEnd('/') +
+                "/rest/v1/app_content_settings?id=eq.1&select=settings")
+                .openConnection() as HttpURLConnection
+            settingsConn.requestMethod = "GET"
+            settingsConn.connectTimeout = 5000
+            settingsConn.readTimeout = 6000
+            settingsConn.setRequestProperty("apikey", Constants.SUPABASE_ANON_KEY)
+            if (Constants.SUPABASE_ANON_KEY.startsWith("eyJ")) {
+                settingsConn.setRequestProperty("Authorization", "Bearer ${Constants.SUPABASE_ANON_KEY}")
+            }
+            if (settingsConn.responseCode in 200..299) {
+                val rows = org.json.JSONArray(settingsConn.inputStream.bufferedReader().use { it.readText() })
+                val settings = rows.optJSONObject(0)?.optJSONObject("settings")
+                if (settings?.has("operator_directory_enabled") == true &&
+                    !settings.optBoolean("operator_directory_enabled", true)) {
+                    return "[]"
+                }
+            }
+        } catch (_: Exception) {
+            // Preserve current behavior if the settings endpoint is unavailable.
+        } finally {
+            settingsConn?.disconnect()
+        }
+
+        var conn: HttpURLConnection? = null
         return try {
+            conn = URL(Constants.SUPABASE_URL.trimEnd('/') + "/rest/v1/bus_operators?select=id,operator_name,service_name,bus_types,location,phone,whatsapp,details&active=eq.true&order=service_name.asc")
+                .openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
             conn.connectTimeout = 15000
             conn.readTimeout = 15000
@@ -92,7 +121,7 @@ object CommunitySupabase {
         } catch (_: Exception) {
             null
         } finally {
-            conn.disconnect()
+            conn?.disconnect()
         }
     }
 }
