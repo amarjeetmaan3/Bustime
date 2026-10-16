@@ -46,7 +46,7 @@ class MdmPanelActivity : AppCompatActivity() {
         })
         root.addView(Button(this).apply { text = "← Back"; setOnClickListener { showHome() } },
             LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
-        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
+        showRoot()
     }
 
     private fun showHome() {
@@ -61,10 +61,22 @@ class MdmPanelActivity : AppCompatActivity() {
         button("Correction Bus Stop") { chooseStop() }
         button("Refresh App Data") { lifecycleScope.launch { runCatching { repo.syncData() }.onSuccess { toast("Data refreshed"); showHome() }.onFailure { toast(it.message ?: "Refresh failed") } } }
         button("Back") { finish() }
-        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
+        showRoot()
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    // Reuse the page root safely when navigating between full-page MDM screens.
+    // Without detaching it from the previous ScrollView Android throws:
+    // "The specified child already has a parent."
+    private fun showRoot() {
+        (root.parent as? ViewGroup)?.removeView(root)
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            addView(root, ViewGroup.LayoutParams(-1, -2))
+        }
+        setContentView(scroll)
+    }
 
     private fun button(label:String, action:()->Unit) { root.addView(Button(this).apply { text=label; setOnClickListener { action() } }, LinearLayout.LayoutParams(-1,-2)) }
     private fun toast(s:String) = Toast.makeText(this,s,Toast.LENGTH_LONG).show()
@@ -108,7 +120,7 @@ class MdmPanelActivity : AppCompatActivity() {
                 textSize = 15f; setPadding(0, 0, 0, dp(18))
             })
             button("Correct this route") { routeEditor(route) }
-            setContentView(ScrollView(this@MdmPanelActivity).apply { isFillViewport = true; addView(root) })
+            showRoot()
         }
     }
 
@@ -139,7 +151,7 @@ class MdmPanelActivity : AppCompatActivity() {
             textSize = 16f; setPadding(0, 0, 0, dp(18))
         })
         button("Correct this stop") { stopEditor(stop) }
-        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
+        showRoot()
     }
 
     private fun showSearchList(
@@ -181,7 +193,7 @@ class MdmPanelActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
         render("")
-        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
+        showRoot()
     }
 
     private fun routeEditor(old: Route?) {
@@ -229,7 +241,7 @@ class MdmPanelActivity : AppCompatActivity() {
                 if (problem != null) { toast(problem); return@button }
                 publishRoute(old, drafts, service.text.toString().trim(), places)
             }
-            setContentView(ScrollView(this@MdmPanelActivity).apply { isFillViewport = true; addView(root) })
+            showRoot()
         }
     }
 
@@ -324,7 +336,7 @@ class MdmPanelActivity : AppCompatActivity() {
             val payload = JSONObject().put("id", id).put("kind", old?.kind ?: "stand").put("name", mergedNames)
             publish(JSONArray().put(change("place", id, payload)))
         }
-        setContentView(ScrollView(this).apply { isFillViewport = true; addView(root) })
+        showRoot()
     }
 
     private fun change(type:String,id:String,payload:JSONObject)=JSONObject().put("entity_type",type).put("entity_id",id).put("operation","upsert").put("payload",payload)
