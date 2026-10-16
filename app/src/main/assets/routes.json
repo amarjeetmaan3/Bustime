@@ -1,5 +1,6 @@
 {
-  "dataVersion": 73,
+  "dataVersion": 74,
+  "snapshotRevision": 14,
   "places": [
     {
       "id": "stand_sri_ganganagar",
@@ -30,11 +31,13 @@
     },
     {
       "id": "place_dhani_khichdhan",
-      "kind": "village",
+      "kind": "stand",
       "name": {
         "en": "Dhani khichdran",
-        "hi": "ढाणी खिचढा़न"
-      }
+        "hi": "ढाणी खिचढा़न",
+        "pa": "ਢਾਹਣੀ ਖਿਚੜਾਣ"
+      },
+      "aliases": []
     },
     {
       "id": "place_kishanpura_uttradha",
@@ -394,16 +397,6 @@
       "aliases": []
     },
     {
-      "id": "place_user_sitapur",
-      "kind": "place",
-      "name": {
-        "en": "sitapur",
-        "hi": "सीतापुर",
-        "pa": "ਸਿਤਾਪੂਰ"
-      },
-      "aliases": []
-    },
-    {
       "id": "place_user_raigarh",
       "kind": "place",
       "name": {
@@ -424,22 +417,52 @@
       "aliases": []
     },
     {
-      "id": "place_user_devipur",
-      "kind": "place",
-      "name": {
-        "en": "devipur",
-        "hi": "देवीपुर",
-        "pa": "ਦੇਵੀਪੁਰ"
-      },
-      "aliases": []
-    },
-    {
       "id": "place_ram",
       "kind": "place",
       "name": {
         "en": "Ram",
         "hi": "राम",
         "pa": "ਰਾਮ"
+      },
+      "aliases": []
+    },
+    {
+      "id": "mdm_jirakund_bca94e",
+      "kind": "place",
+      "name": {
+        "en": "jirakund",
+        "hi": "",
+        "pa": ""
+      },
+      "aliases": []
+    },
+    {
+      "id": "mdm_mirakund_602feb",
+      "kind": "place",
+      "name": {
+        "en": "mirakund",
+        "hi": "",
+        "pa": ""
+      },
+      "aliases": []
+    },
+    {
+      "id": "mdm_narikund_803eca",
+      "kind": "place",
+      "name": {
+        "en": "narikund",
+        "hi": "",
+        "pa": ""
+      },
+      "aliases": []
+    },
+    {
+      "id": "place_ajmer",
+      "kind": "place",
+      "name": {
+        "en": "Ajmer",
+        "hi": "अजमेर",
+        "pa": "ਅਜਮੇਰ"
       }
     }
   ],
