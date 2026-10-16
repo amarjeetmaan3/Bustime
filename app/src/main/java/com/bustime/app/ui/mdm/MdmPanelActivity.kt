@@ -519,9 +519,11 @@ class MdmPanelActivity : AppCompatActivity() {
         lifecycleScope.launch {
             runCatching {
                 val routes = withContext(Dispatchers.IO) { repo.getAllRoutes() }
+                val usedStopIds = withContext(Dispatchers.IO) {
+                    routes.associate { r -> r.id to repo.getRouteStops(r.id).map { it.placeId }.toSet() }
+                }
                 val using = routes.filter { r ->
-                    r.fromId == stop.id || r.toId == stop.id ||
-                        withContext(Dispatchers.IO) { repo.getRouteStops(r.id) }.any { it.placeId == stop.id }
+                    r.fromId == stop.id || r.toId == stop.id || usedStopIds[r.id].orEmpty().contains(stop.id)
                 }
                 if (using.isNotEmpty()) {
                     toast(uiText("Cannot delete this stop: it is used by " + using.size + " route(s). Correct those routes first.",
