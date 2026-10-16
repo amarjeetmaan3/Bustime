@@ -93,7 +93,7 @@ class SettingsActivity : AppCompatActivity() {
         root.addView(checkButton)
         root.addView(downloadButton)
         root.addView(Button(this).apply {
-            text = when (language) { "hi" -> "MDM एडमिन"; "pa" -> "MDM ਐਡਮਿਨ"; else -> "MDM Admin" }
+            text = when (language) { "hi" -> "MDM एडमिन"; "pa" -> "MDM ਐਡਮਿਨ"; else -> "MDM" }
             setOnClickListener { startActivity(android.content.Intent(this@SettingsActivity, MdmPasswordActivity::class.java)) }
         })
         root.addView(Button(this).apply { text = getString(com.bustime.app.R.string.back); setOnClickListener { finish() } })
