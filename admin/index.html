@@ -772,13 +772,23 @@ function sharedEntityChanges(before, after) {
 // The snapshot remains the full baseline, while this delta stream carries edits/deletes to all clients.
 async function publishSharedDataDiff(before, after) {
   var changes = sharedEntityChanges(before, after);
-  if (!changes.length) return 0;
+  if (!sbToken || !cfg.sbUrl || !cfg.sbKey) throw new Error('Sign in to the owner admin and configure Supabase before publishing shared route data.');
+  if (!changes.length) {
+    var snapshotResponse = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
+      method:'POST',
+      headers:{ apikey:cfg.sbKey, Authorization:'Bearer '+sbToken, 'Content-Type':'application/json', 'Cache-Control':'no-store' },
+      body:JSON.stringify({ action:'snapshot', snapshot_version:Number(data.dataVersion || 0) })
+    });
+    var snapshotResult = {}; try { snapshotResult = await snapshotResponse.json(); } catch (_) {}
+    if (!snapshotResponse.ok || !snapshotResult.ok) throw new Error(snapshotResult.error || ('Snapshot baseline update failed (HTTP '+snapshotResponse.status+').'));
+    return 0;
+  }
   if (changes.length > 250) throw new Error('This publish contains ' + changes.length + ' changed routes/stops. Please publish smaller batches (250 changes maximum) so the shared sync remains consistent.');
   if (!sbToken || !cfg.sbUrl || !cfg.sbKey) throw new Error('Sign in to the owner admin and configure Supabase before publishing shared route data.');
   var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method:'POST',
     headers:{ apikey:cfg.sbKey, Authorization:'Bearer '+sbToken, 'Content-Type':'application/json', 'Cache-Control':'no-store' },
-    body:JSON.stringify({ action:'publish', changes:changes })
+    body:JSON.stringify({ action:'publish', snapshot_version:Number(data.dataVersion || 0), changes:changes })
   });
   var result = {}; try { result = await response.json(); } catch (_) {}
   if (!response.ok || !result.ok) throw new Error(result.error || ('Shared data publish failed (HTTP '+response.status+').'));
