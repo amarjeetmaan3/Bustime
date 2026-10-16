@@ -38,6 +38,8 @@ import java.net.URL
  */
 class GitHubUpdateChecker(private val activity: AppCompatActivity) {
 
+    // OTA smoke-test release 667: verify the remotely saved updater switch against an installed v1.0.666 build.
+
     private data class LatestRelease(val version: String, val downloadUrl: String, val sha256: String)
 
     private val prefs = activity.getSharedPreferences("update_prefs", Context.MODE_PRIVATE)
