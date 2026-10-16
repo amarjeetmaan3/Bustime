@@ -47,8 +47,18 @@ object AnalyticsHelper {
                 }
                 conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
                 val code = conn.responseCode
+                if (event == "app_install") {
+                    val installPrefs = app.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+                    val edit = installPrefs.edit().putBoolean("analytics_install_pending", false).remove("analytics_install_pending_at")
+                    if (code in 200..299) edit.putBoolean("analytics_install_registered", true)
+                    edit.apply()
+                }
                 if (code !in 200..299) Log.w("AnalyticsHelper", "Analytics request failed: HTTP $code")
             } catch (e: Exception) {
+                if (event == "app_install") {
+                    app.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE).edit()
+                        .putBoolean("analytics_install_pending", false).remove("analytics_install_pending_at").apply()
+                }
                 Log.w("AnalyticsHelper", "Analytics event not sent", e)
             } finally {
                 conn?.disconnect()
@@ -61,7 +71,13 @@ object AnalyticsHelper {
         val app = context.applicationContext
         val prefs = app.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
         if (prefs.getBoolean("analytics_install_registered", false)) return
-        prefs.edit().putBoolean("analytics_install_registered", true).apply()
+        val pendingAt = prefs.getLong("analytics_install_pending_at", 0L)
+        val pending = prefs.getBoolean("analytics_install_pending", false)
+        if (pending && System.currentTimeMillis() - pendingAt < 15 * 60 * 1000L) return
+        prefs.edit()
+            .putBoolean("analytics_install_pending", true)
+            .putLong("analytics_install_pending_at", System.currentTimeMillis())
+            .apply()
         logEvent(app, "app_install", "app", JSONObject().put("tracking_version", 1))
     }
 
