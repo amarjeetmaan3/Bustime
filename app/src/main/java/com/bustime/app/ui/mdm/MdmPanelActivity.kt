@@ -1,5 +1,7 @@
 package com.bustime.app.ui.mdm
 
+import com.bustime.app.utils.LanguageHelper
+
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
@@ -24,6 +26,12 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
+
+private fun uiText(en: String, hi: String, pa: String): String = when (LanguageHelper.current()) {
+    "hi" -> hi
+    "pa" -> pa
+    else -> en
+}
 
 class MdmPanelActivity : AppCompatActivity() {
     private val password by lazy { intent.getStringExtra(EXTRA_PASSWORD).orEmpty() }
@@ -54,7 +62,7 @@ class MdmPanelActivity : AppCompatActivity() {
             text = subtitle; textSize = 14f; setTextColor(getColor(com.bustime.app.R.color.textSecondary))
             setPadding(0, 0, 0, dp(12))
         })
-        root.addView(Button(this).apply { text = "← Back"; setOnClickListener { val action = pageBackAction; if (action != null) action() else finish() } },
+        root.addView(Button(this).apply { text = uiText("← Back", "← वापस", "← ਵਾਪਸ"); setOnClickListener { val action = pageBackAction; if (action != null) action() else finish() } },
             LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
         showRoot()
     }
@@ -62,14 +70,14 @@ class MdmPanelActivity : AppCompatActivity() {
     private fun showHome() {
         pageBackAction = null
         root.removeAllViews()
-        root.addView(TextView(this).apply { text = "MDM Admin"; textSize = 24f; setTypeface(typeface, android.graphics.Typeface.BOLD) })
-        root.addView(TextView(this).apply { text = "Published changes sync to the app."; setPadding(0,8,0,16) })
-        button("Route List") { showRoutes() }
-        button("Bus Stop List") { showStops() }
-        button("Add Route") { routeEditor(null) }
-        button("Add Bus Stop") { stopEditor(null) }
-        button("Refresh App Data") { lifecycleScope.launch { runCatching { repo.syncData() }.onSuccess { toast("Data refreshed"); showHome() }.onFailure { toast(it.message ?: "Refresh failed") } } }
-        button("Back") { finish() }
+        root.addView(TextView(this).apply { text = uiText("MDM Admin", "MDM एडमिन", "MDM ਐਡਮਿਨ"); textSize = 24f; setTypeface(typeface, android.graphics.Typeface.BOLD) })
+        root.addView(TextView(this).apply { text = uiText("Published changes sync to the app.", "प्रकाशित बदलाव ऐप में सिंक होते हैं।", "ਪ੍ਰਕਾਸ਼ਿਤ ਤਬਦੀਲੀਆਂ ਐਪ ਵਿੱਚ ਸਿੰਕ ਹੁੰਦੀਆਂ ਹਨ।"); setPadding(0,8,0,16) })
+        button(uiText("Route List", "रूट सूची", "ਰੂਟ ਸੂਚੀ")) { showRoutes() }
+        button(uiText("Bus Stop List", "बस स्टॉप सूची", "ਬੱਸ ਸਟਾਪ ਸੂਚੀ")) { showStops() }
+        button(uiText("Add Route", "रूट जोड़ें", "ਰੂਟ ਜੋੜੋ")) { routeEditor(null) }
+        button(uiText("Add Bus Stop", "बस स्टॉप जोड़ें", "ਬੱਸ ਸਟਾਪ ਜੋੜੋ")) { stopEditor(null) }
+        button(uiText("Refresh App Data", "ऐप डेटा रीफ़्रेश करें", "ਐਪ ਡਾਟਾ ਰਿਫ੍ਰੈਸ਼ ਕਰੋ")) { lifecycleScope.launch { runCatching { repo.syncData() }.onSuccess { toast(uiText("Data refreshed", "डेटा रीफ़्रेश हो गया", "ਡਾਟਾ ਰਿਫ੍ਰੈਸ਼ ਹੋ ਗਿਆ")); showHome() }.onFailure { toast(it.message ?: uiText("Refresh failed", "रीफ़्रेश विफल", "ਰਿਫ੍ਰੈਸ਼ ਅਸਫਲ")) } } }
+        button(uiText("Back", "वापस", "ਵਾਪਸ")) { finish() }
         showRoot()
     }
 
@@ -106,7 +114,7 @@ class MdmPanelActivity : AppCompatActivity() {
                 showSearchList("Route List", "Search a route, then tap it to open the full stop sequence.", entries) { id ->
                     routes.firstOrNull { it.id == id }?.let { showRouteDetails(it, places) }
                 }
-            }.onFailure { toast(it.message ?: "Could not load routes") }
+            }.onFailure { toast(it.message ?: uiText("Could not load routes", "रूट लोड नहीं हो सके", "ਰੂਟ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੇ")) }
         }
     }
 
@@ -142,7 +150,7 @@ class MdmPanelActivity : AppCompatActivity() {
                 showSearchList("Bus Stop List", "Search a stop, then tap it to inspect all names and correct it.", entries) { id ->
                     places.firstOrNull { it.id == id }?.let { showStopDetails(it) }
                 }
-            }.onFailure { toast(it.message ?: "Could not load bus stops") }
+            }.onFailure { toast(it.message ?: uiText("Could not load bus stops", "बस स्टॉप लोड नहीं हो सके", "ਬੱਸ ਸਟਾਪ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੇ")) }
         }
     }
 
@@ -152,13 +160,13 @@ class MdmPanelActivity : AppCompatActivity() {
         showPage(stop.displayName("en"), "Bus stop details")
         pageBackAction = { showStops() }
         root.addView(TextView(this).apply {
-            text = "English: " + stop.names["en"].orEmpty().ifBlank { "—" } +
-                "\nHindi: " + stop.names["hi"].orEmpty().ifBlank { "—" } +
-                "\nPunjabi: " + stop.names["pa"].orEmpty().ifBlank { "—" } +
+            text = uiText("English: ", "अंग्रेज़ी: ", "ਅੰਗਰੇਜ਼ੀ: ") + stop.names["en"].orEmpty().ifBlank { "—" } +
+                "\n" + uiText("Hindi: ", "हिंदी: ", "ਹਿੰਦੀ: ") + stop.names["hi"].orEmpty().ifBlank { "—" } +
+                "\n" + uiText("Punjabi: ", "पंजाबी: ", "ਪੰਜਾਬੀ: ") + stop.names["pa"].orEmpty().ifBlank { "—" } +
                 "\n\nPlace ID: " + stop.id
             textSize = 16f; setPadding(0, 0, 0, dp(18))
         })
-        button("Correct this stop") { stopEditor(stop) }
+        button(uiText("Correct this stop", "इस स्टॉप में सुधार करें", "ਇਸ ਸਟਾਪ ਵਿੱਚ ਸੋਧ ਕਰੋ")) { stopEditor(stop) }
         showRoot()
     }
 
@@ -169,7 +177,7 @@ class MdmPanelActivity : AppCompatActivity() {
         onSelect: (String) -> Unit
     ) {
         showPage(title, hint)
-        val search = EditText(this).apply { this.hint = "Search…"; setSingleLine(true); textSize = 15f }
+        val search = EditText(this).apply { this.hint = uiText("Search…", "खोजें…", "ਖੋਜੋ…"); setSingleLine(true); textSize = 15f }
         root.addView(search, LinearLayout.LayoutParams(-1, dp(48)))
         val count = TextView(this).apply { textSize = 12f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, dp(6), 0, dp(8)) }
         root.addView(count)
@@ -179,7 +187,7 @@ class MdmPanelActivity : AppCompatActivity() {
             list.removeAllViews()
             val q = norm(query)
             val filtered = entries.filter { norm(it.first + " " + it.second + " " + it.third).contains(q) }
-            count.text = filtered.size.toString() + " item(s)"
+            count.text = filtered.size.toString() + uiText(" item(s)", " आइटम", " ਆਈਟਮ")
             filtered.take(1000).forEach { item ->
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
@@ -204,7 +212,7 @@ class MdmPanelActivity : AppCompatActivity() {
                 row.addView(meta, LinearLayout.LayoutParams(dp(112), -2))
                 list.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
             }
-            if (filtered.isEmpty()) list.addView(TextView(this).apply { text = "No matches"; setPadding(dp(8), dp(16), dp(8), dp(16)) })
+            if (filtered.isEmpty()) list.addView(TextView(this).apply { text = uiText("No matches", "कोई मेल नहीं मिला", "ਕੋਈ ਮੇਲ ਨਹੀਂ ਮਿਲਿਆ"); setPadding(dp(8), dp(16), dp(8), dp(16)) })
         }
         search.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -234,17 +242,17 @@ class MdmPanelActivity : AppCompatActivity() {
             "Add or correct stops, then open the full-page route preview before publishing.")
         pageBackAction = returnAction ?: { showHome() }
         root.addView(TextView(this).apply {
-            text = "Add times where known. At least one stop must have a time."
+            text = uiText("Add times where known. At least one stop must have a time.", "जहाँ समय पता हो वहाँ भरें। कम-से-कम एक स्टॉप का समय ज़रूरी है।", "ਜਿੱਥੇ ਸਮਾਂ ਪਤਾ ਹੋਵੇ ਉੱਥੇ ਭਰੋ। ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਟਾਪ ਦਾ ਸਮਾਂ ਲਾਜ਼ਮੀ ਹੈ।")
             textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, 0, 0, dp(10))
         })
         val stopsBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(stopsBox)
         val service = EditText(this).apply {
-            hint = "Service / bus name (optional)"; setSingleLine(true); setText(serviceValue)
+            hint = uiText("Service / bus name (optional)", "सेवा / बस का नाम (वैकल्पिक)", "ਸੇਵਾ / ਬੱਸ ਦਾ ਨਾਮ (ਵਿਕਲਪਿਕ)"); setSingleLine(true); setText(serviceValue)
         }
         root.addView(service, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
         StopListEditor(this, stopsBox, places, drafts, minStops = 2).render()
-        button("Preview route") {
+        button(uiText("Preview route", "रूट का पूर्वावलोकन", "ਰੂਟ ਦੀ ਝਲਕ")) {
             val problem = validateRouteDrafts(drafts)
             if (problem != null) { toast(problem); return@button }
             showRoutePreview(old, drafts, service.text.toString().trim(), places, returnAction)
@@ -354,7 +362,7 @@ class MdmPanelActivity : AppCompatActivity() {
         }
         if (publishAction != null) {
             content.addView(Button(this).apply {
-                text = "Publish route"
+                text = uiText("Publish route", "रूट प्रकाशित करें", "ਰੂਟ ਪ੍ਰਕਾਸ਼ਿਤ ਕਰੋ")
                 setOnClickListener { publishAction() }
             }, LinearLayout.LayoutParams(-1, -2).apply {
                 topMargin = dp(4)
@@ -426,7 +434,7 @@ class MdmPanelActivity : AppCompatActivity() {
                     })
                 changes.put(change("route", routeId, route))
                 publish(changes)
-            }.onFailure { toast(it.message ?: "Route publish failed") }
+            }.onFailure { toast(it.message ?: uiText("Route publish failed", "रूट प्रकाशित नहीं हो सका", "ਰੂਟ ਪ੍ਰਕਾਸ਼ਿਤ ਨਹੀਂ ਹੋ ਸਕਿਆ")) }
         }
     }
 
@@ -440,7 +448,7 @@ class MdmPanelActivity : AppCompatActivity() {
             "place" to "Other Place"
         )
         root.addView(TextView(this).apply {
-            text = "Type"; textSize = 14f; setPadding(0, dp(8), 0, dp(4))
+            text = uiText("Type", "प्रकार", "ਕਿਸਮ"); textSize = 14f; setPadding(0, dp(8), 0, dp(4))
         })
         val kindSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(
@@ -452,9 +460,9 @@ class MdmPanelActivity : AppCompatActivity() {
             setSelection(oldIndex)
         }
         root.addView(kindSpinner, LinearLayout.LayoutParams(-1, dp(48)))
-        val en = EditText(this).apply { hint = "English name"; setSingleLine(true); setText(old?.names?.get("en").orEmpty()) }
-        val hi = EditText(this).apply { hint = "Hindi name"; setSingleLine(true); setText(old?.names?.get("hi").orEmpty()) }
-        val pa = EditText(this).apply { hint = "Punjabi name"; setSingleLine(true); setText(old?.names?.get("pa").orEmpty()) }
+        val en = EditText(this).apply { hint = uiText("English name", "अंग्रेज़ी नाम", "ਅੰਗਰੇਜ਼ੀ ਨਾਮ"); setSingleLine(true); setText(old?.names?.get("en").orEmpty()) }
+        val hi = EditText(this).apply { hint = uiText("Hindi name", "हिंदी नाम", "ਹਿੰਦੀ ਨਾਮ"); setSingleLine(true); setText(old?.names?.get("hi").orEmpty()) }
+        val pa = EditText(this).apply { hint = uiText("Punjabi name", "पंजाबी नाम", "ਪੰਜਾਬੀ ਨਾਮ"); setSingleLine(true); setText(old?.names?.get("pa").orEmpty()) }
         root.addView(en); root.addView(hi); root.addView(pa)
         val preview = TextView(this).apply { textSize = 15f; setPadding(0, dp(12), 0, dp(12)); visibility = android.view.View.GONE }
         root.addView(preview)
@@ -463,17 +471,17 @@ class MdmPanelActivity : AppCompatActivity() {
             if (hi.text.isNotBlank()) put("hi", hi.text.toString().trim())
             if (pa.text.isNotBlank()) put("pa", pa.text.toString().trim())
         }
-        button("Preview") {
+        button(uiText("Preview", "पूर्वावलोकन", "ਝਲਕ")) {
             val n = makeNames()
-            if (n.length() == 0) toast("Enter at least one name.")
+            if (n.length() == 0) toast(uiText("Enter at least one name.", "कम-से-कम एक नाम भरें।", "ਘੱਟੋ-ਘੱਟ ਇੱਕ ਨਾਮ ਭਰੋ।"))
             else {
-                preview.text = "English: " + n.optString("en", "—") + "\nHindi: " + n.optString("hi", "—") + "\nPunjabi: " + n.optString("pa", "—")
+                preview.text = uiText("English: ", "अंग्रेज़ी: ", "ਅੰਗਰੇਜ਼ੀ: ") + n.optString("en", "—") + "\n" + uiText("Hindi: ", "हिंदी: ", "ਹਿੰਦੀ: ") + n.optString("hi", "—") + "\n" + uiText("Punjabi: ", "पंजाबी: ", "ਪੰਜਾਬੀ: ") + n.optString("pa", "—")
                 preview.visibility = android.view.View.VISIBLE
             }
         }
-        button("Publish") {
+        button(uiText("Publish", "प्रकाशित करें", "ਪ੍ਰਕਾਸ਼ਿਤ ਕਰੋ")) {
             val names = makeNames()
-            if (names.length() == 0) { toast("Enter at least one name."); return@button }
+            if (names.length() == 0) { toast(uiText("Enter at least one name.", "कम-से-कम एक नाम भरें।", "ਘੱਟੋ-ਘੱਟ ਇੱਕ ਨਾਮ ਭਰੋ।")); return@button }
             val label = names.optString("en").ifBlank { names.optString("hi").ifBlank { names.optString("pa") } }
             val id = old?.id ?: ("mdm_" + slug(label).ifBlank { "place" } + "_" + Integer.toHexString(norm(label).hashCode()).takeLast(6))
             val mergedNames = JSONObject()
@@ -496,9 +504,9 @@ class MdmPanelActivity : AppCompatActivity() {
             val body=JSONObject().put("action","publish").put("password",password).put("changes",changes)
             conn.outputStream.use{it.write(body.toString().toByteArray(Charsets.UTF_8))}
             val code=conn.responseCode;val raw=(if(code in 200..299)conn.inputStream else conn.errorStream)?.bufferedReader()?.use{it.readText()}.orEmpty();conn.disconnect()
-            val json=JSONObject(raw.ifBlank{"{}"});if(code !in 200..299||!json.optBoolean("ok"))error(json.optString("error","Publish failed"))
+            val json=JSONObject(raw.ifBlank{"{}"});if(code !in 200..299||!json.optBoolean("ok"))error(json.optString("error",uiText("Publish failed", "प्रकाशित नहीं हो सका", "ਪ੍ਰਕਾਸ਼ਿਤ ਨਹੀਂ ਹੋ ਸਕਿਆ")))
             json.optLong("revision")
-        }}.onSuccess { rev->runCatching{repo.syncData()};toast("Published successfully · revision $rev");recreate() }.onFailure{toast(it.message?:"Publish failed")}
+        }}.onSuccess { rev->runCatching{repo.syncData()};toast(uiText("Published successfully · revision $rev", "सफलतापूर्वक प्रकाशित · संशोधन $rev", "ਸਫਲਤਾਪੂਰਵਕ ਪ੍ਰਕਾਸ਼ਿਤ · ਰੀਵਿਜ਼ਨ $rev"));recreate() }.onFailure{toast(it.message?:uiText("Publish failed", "प्रकाशित नहीं हो सका", "ਪ੍ਰਕਾਸ਼ਿਤ ਨਹੀਂ ਹੋ ਸਕਿਆ"))}
     } }
     companion object { const val EXTRA_PASSWORD="mdm_password" }
 }
