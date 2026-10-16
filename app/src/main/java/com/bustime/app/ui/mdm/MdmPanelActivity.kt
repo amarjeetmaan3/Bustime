@@ -59,6 +59,7 @@ class MdmPanelActivity : AppCompatActivity() {
     }
 
     private fun showHome() {
+        pageBackAction = null
         root.removeAllViews()
         root.addView(TextView(this).apply { text = "MDM Admin"; textSize = 24f; setTypeface(typeface, android.graphics.Typeface.BOLD) })
         root.addView(TextView(this).apply { text = "Published changes sync to the app."; setPadding(0,8,0,16) })
@@ -252,11 +253,6 @@ class MdmPanelActivity : AppCompatActivity() {
             if (problem != null) { toast(problem); return@button }
             showRoutePreview(old, drafts, service.text.toString().trim(), places)
         }
-        button("Publish route") {
-            val problem = validateRouteDrafts(drafts)
-            if (problem != null) { toast(problem); return@button }
-            showRoutePreview(old, drafts, service.text.toString().trim(), places, true)
-        }
         showRoot()
     }
 
@@ -264,8 +260,7 @@ class MdmPanelActivity : AppCompatActivity() {
         old: Route?,
         drafts: MutableList<JSONObject>,
         service: String,
-        places: List<Place>,
-        openPublishConfirmation: Boolean = false
+        places: List<Place>
     ) {
         val byId = places.associateBy { it.id }
         showPage(if (old == null) "Route preview" else "Correction preview",
@@ -338,7 +333,6 @@ class MdmPanelActivity : AppCompatActivity() {
             publishRoute(old, drafts, service, places)
         }
         showRoot()
-        if (openPublishConfirmation) toast("Review the preview, then tap Publish route.")
     }
 
     private fun formatPreviewTime(value: String): String = try {
