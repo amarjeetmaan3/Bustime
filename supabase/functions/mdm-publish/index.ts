@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
   const stateUpdate = await fetch(url + "/rest/v1/data_sync_state?id=eq.1", {
     method: "PATCH",
     headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify({ revision, snapshot_version: Number(state.snapshot_version || 0) + 1, published_at: new Date().toISOString() })
+    body: JSON.stringify({ revision, published_at: new Date().toISOString() })
   });
   if (!stateUpdate.ok) return reply({ error: "sync_state_update_failed", revision }, 502);
   return reply({ ok: true, revision, published: changes.length });
