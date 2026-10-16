@@ -26,10 +26,6 @@ class MdmPasswordActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(24, 24, 24, 24) }
         root.addView(TextView(this).apply { text = "MDM"; textSize = 24f })
-        root.addView(TextView(this).apply {
-            text = "Enter the MDM password set from the web admin panel."
-            textSize = 15f; setPadding(0, 8, 0, 16)
-        })
         passwordInput = EditText(this).apply {
             hint = "MDM password"; inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD; maxLines = 1
         }
