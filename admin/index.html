@@ -2387,7 +2387,7 @@ document.addEventListener('click', async function (e) {
       if (!cfg.sbUrl || !cfg.sbKey || !sbToken) { toast('Sign in to Supabase first.'); return; }
       b.disabled = true; b.textContent = 'Saving…';
       try {
-        var mr = await fetch(cfg.sbUrl.replace(/\\/$/, '') + '/functions/v1/mdm-password', {
+        var mr = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken },
           body: JSON.stringify({ action: 'set', password: p1 })
