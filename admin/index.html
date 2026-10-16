@@ -706,7 +706,45 @@ async function loadData() {
   var j = await r.json();
   if (!j.content) throw new Error('Could not read the data file');
   data = normalize(JSON.parse(b64decode(j.content)));
+  // Overlay MDM delta records so new/corrected stops and routes appear before snapshot publish.
+  await mergeMdmPublishedChanges();
   sha = j.sha; baseVersion = data.dataVersion || 0; editing = null; publishOpen = false; setDirty(false);
+}
+async function mergeMdmPublishedChanges() {
+  if (!cfg.sbUrl || !cfg.sbKey || !data) return;
+  function merge(list, item) {
+    if (!item || !item.id) return list;
+    var index = list.findIndex(function(x) { return String(x.id) === String(item.id); });
+    if (index >= 0) list[index] = item; else list.push(item);
+    return list;
+  }
+  function remove(list, id) { return list.filter(function(x) { return String(x.id) !== String(id); }); }
+  var offset = 0, pages = 0;
+  try {
+    while (pages++ < 20) {
+      var url = cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/bustime-data-sync?action=changes&since=0&offset=' + offset;
+      var res = await fetch(url, {
+        headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + cfg.sbKey, Accept: 'application/json', 'Cache-Control': 'no-store' },
+        cache: 'no-store'
+      });
+      if (!res.ok) throw new Error('MDM change history HTTP ' + res.status);
+      var changes = await res.json();
+      if (!Array.isArray(changes)) throw new Error('Invalid MDM change history');
+      changes.forEach(function(change) {
+        if (!change || !change.entity_type || !change.entity_id) return;
+        var listName = change.entity_type === 'place' ? 'places' : (change.entity_type === 'route' ? 'routes' : '');
+        if (!listName) return;
+        if (change.operation === 'delete') data[listName] = remove(data[listName] || [], change.entity_id);
+        else if (change.operation === 'upsert' && change.payload && String(change.payload.id) === String(change.entity_id)) {
+          data[listName] = merge(data[listName] || [], change.payload);
+        }
+      });
+      if (changes.length < 1000) break;
+      offset += changes.length;
+    }
+  } catch (err) {
+    console.warn('MDM published changes could not be loaded:', err);
+  }
 }
 // Approved submissions must survive page refreshes until the GitHub snapshot is published.
 function approvedPlaceNameMap(place) {
