@@ -84,10 +84,10 @@ class MdmPanelActivity : AppCompatActivity() {
                 lines.forEach{(label,t)->val p=known[norm(label)];val id=p?.id?:("mdm_"+slug(label));ids.add(id);if(p==null)changes.put(change("place",id,JSONObject().put("id",id).put("kind","place").put("name",JSONObject().put("en",label))))}
                 val id=old?.id?:"mdm_route_"+System.currentTimeMillis().toString(36)
                 val route=JSONObject().put("id",id).put("from",ids.first()).put("to",ids.last())
-                    .put("time",lines.first().second.ifBlank{JSONObject.NULL}).put("arrive",lines.last().second.ifBlank{JSONObject.NULL})
-                    .put("service",service.text.toString().trim().ifBlank{JSONObject.NULL}).put("routeName",JSONObject.NULL)
+                    .put("time",lines.first().second.takeIf{it.isNotBlank()} ?: JSONObject.NULL).put("arrive",lines.last().second.takeIf{it.isNotBlank()} ?: JSONObject.NULL)
+                    .put("service",service.text.toString().trim().takeIf{it.isNotBlank()} ?: JSONObject.NULL).put("routeName",JSONObject.NULL)
                     .put("contact",JSONObject.NULL).put("info",JSONObject.NULL).put("longRoute",lines.size>8).put("startDate",JSONObject.NULL).put("hidden",false)
-                    .put("stops",JSONArray().also{a->lines.subList(1,lines.lastIndex).forEachIndexed{i,l->a.put(JSONObject().put("place",ids[i+1]).put("time",l.second.ifBlank{JSONObject.NULL}))}})
+                    .put("stops",JSONArray().also{a->lines.subList(1,lines.lastIndex).forEachIndexed{i,l->a.put(JSONObject().put("place",ids[i+1]).put("time",l.second.takeIf{it.isNotBlank()} ?: JSONObject.NULL))}})
                 changes.put(change("route",id,route));publish(changes)
             }.onFailure{toast(it.message?:"Route publish failed")} }
         }.show()
