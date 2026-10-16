@@ -1069,13 +1069,15 @@ async function publish() {
   }
   if (!r.ok) throw new Error('GitHub ' + r.status + ' - ' + (await r.text()).slice(0, 160));
   var j = await r.json();
-  sha = j.content.sha; baseVersion = out.dataVersion; data.dataVersion = out.dataVersion; setDirty(false);
+  sha = j.content.sha; baseVersion = out.dataVersion; data.dataVersion = out.dataVersion;
   publishSyncWarnings=0;
   try {
     await publishSharedDataDiff(sharedBefore, sharedAfter);
     sharedBaseData = sharedAfter;
+    setDirty(false);
   } catch (sharedSyncError) {
     publishSyncWarnings++;
+    setDirty(true); // Keep Publish available to retry the shared delta mirror.
     console.error('GitHub snapshot published, but shared MDM sync needs retry:', sharedSyncError);
     toast('GitHub Snapshot published, but cross-panel sync failed. Publish again to retry. ' + (sharedSyncError.message || sharedSyncError));
   }
