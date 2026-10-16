@@ -1058,30 +1058,27 @@ async function publish() {
     sha: sha, branch: cfg.branch
   };
   var h = ghHeaders(); h['Content-Type'] = 'application/json';
-  // Publish the exact same route/place changes through the shared MDM API first,
-  // so deletes become durable tombstones and Android/web clients see identical edits.
+  // Keep the established Web Admin workflow: commit the full GitHub snapshot first.
+  // After GitHub confirms success, mirror route/place deltas to revisioned sync.
+  // If mirroring fails, retain the old diff baseline so a later Publish retries it.
   var sharedBefore = cloneSharedEntities(sharedBaseData || { places:[], routes:[] });
   var sharedAfter = cloneSharedEntities(data);
-  var sharedCount = await publishSharedDataDiff(sharedBefore, sharedAfter);
-  var r;
-  try {
-    r = await fetch(apiUrl(), { method: 'PUT', headers: h, body: JSON.stringify(body) });
-  } catch (networkError) {
-    if (sharedCount) { try { await publishSharedDataDiff(sharedAfter, sharedBefore); } catch (rollbackError) { console.error('Shared data rollback failed after GitHub network error:', rollbackError); } }
-    throw networkError;
-  }
+  var r = await fetch(apiUrl(), { method: 'PUT', headers: h, body: JSON.stringify(body) });
   if (r.status === 409 || r.status === 422) {
-    if (sharedCount) { try { await publishSharedDataDiff(sharedAfter, sharedBefore); } catch (rollbackError) { console.error('Shared data rollback failed after GitHub conflict:', rollbackError); } }
     throw new Error('The file was changed elsewhere in the meantime. Reload from GitHub (your unpublished changes will be lost).');
   }
-  if (!r.ok) {
-    var githubError = 'GitHub ' + r.status + ' - ' + (await r.text()).slice(0, 160);
-    if (sharedCount) { try { await publishSharedDataDiff(sharedAfter, sharedBefore); } catch (rollbackError) { console.error('Shared data rollback failed after GitHub error:', rollbackError); githubError += ' Shared data rollback also needs checking.'; } }
-    throw new Error(githubError);
-  }
+  if (!r.ok) throw new Error('GitHub ' + r.status + ' - ' + (await r.text()).slice(0, 160));
   var j = await r.json();
-  sha = j.content.sha; baseVersion = out.dataVersion; data.dataVersion = out.dataVersion; sharedBaseData = cloneSharedEntities(data); setDirty(false);
+  sha = j.content.sha; baseVersion = out.dataVersion; data.dataVersion = out.dataVersion; setDirty(false);
   publishSyncWarnings=0;
+  try {
+    await publishSharedDataDiff(sharedBefore, sharedAfter);
+    sharedBaseData = sharedAfter;
+  } catch (sharedSyncError) {
+    publishSyncWarnings++;
+    console.error('GitHub snapshot published, but shared MDM sync needs retry:', sharedSyncError);
+    toast('GitHub Snapshot published, but cross-panel sync failed. Publish again to retry. ' + (sharedSyncError.message || sharedSyncError));
+  }
   for(var ui=0;ui<approvedUpdates.length;ui++){
     var upd=approvedUpdates[ui];
     try{
