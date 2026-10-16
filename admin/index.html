@@ -1260,6 +1260,9 @@ function viewDashboard() {
   var v = validate();
   return '<div class="stats">' +
     stat(data.places.length, 'Places (' + stands + ' bus stands)') + stat(data.routes.length, 'Bus routes') + '</div>' +
+    '<div class="card"><h2>Data Sync</h2><p class="muted">Checks and applies only published changes after the current revision. Full snapshot is not downloaded for normal sync.</p>' +
+    '<div class="toolbar"><button class="btn primary" data-act="sync-now">Sync Now</button><button class="btn" data-act="sync-revision">Check Revision</button><button class="btn" data-act="sync-status">Sync Status</button></div>' +
+    '<p class="muted" id="adminSyncStatus">Current revision cursor: ' + Number(mdmRevisionCursor || 0) + '</p></div>' +
     '<div class="card"><h2>Data health</h2><p class="muted">Published data version: ' + baseVersion + '. ' +
     (dirty ? 'You have unpublished changes.' : 'Everything is published.') + '</p>' + reportHtml(v) + '</div>' +
     '<div class="card"><h2>How it works</h2><p class="muted">Edit bus stops and routes here, then press <b>Publish</b>. ' +
@@ -2567,7 +2570,29 @@ document.addEventListener('click', async function (e) {
   if (!b) return;
   var act = b.getAttribute('data-act'), i = parseInt(b.getAttribute('data-i'), 10);
   try {
-    if (act === 'analytics-refresh') { loadAnalytics(); }
+    if (act === 'sync-now') {
+      b.disabled = true; b.textContent = 'Syncing…';
+      var syncChanged = await mergeMdmPublishedChanges(mdmRevisionCursor);
+      sharedBaseData = cloneSharedEntities(data);
+      render();
+      toast(syncChanged ? 'Incremental sync applied.' : 'Sync complete · no new changes.');
+    }
+    else if (act === 'sync-revision' || act === 'sync-status') {
+      var syncStatusEl = document.getElementById('adminSyncStatus');
+      if (syncStatusEl) syncStatusEl.textContent = 'Checking Supabase revision…';
+      var statusUrl = cfg.sbUrl.replace(/\\/+$/, '') + '/functions/v1/bustime-data-sync?action=status';
+      var statusRes = await fetch(statusUrl, {headers:{apikey:cfg.sbKey,Authorization:'Bearer '+cfg.sbKey,Accept:'application/json','Cache-Control':'no-store'},cache:'no-store'});
+      if (!statusRes.ok) throw new Error('Sync status HTTP ' + statusRes.status);
+      var statusRows = await statusRes.json();
+      if (!Array.isArray(statusRows) || !statusRows.length) throw new Error('Sync status unavailable');
+      var sr = Number(statusRows[0].revision || 0), sv = Number(statusRows[0].snapshot_version || 0);
+      var statusText = 'Server revision: ' + sr + ' · Snapshot v' + sv + ' · Admin cursor: ' + Number(mdmRevisionCursor || 0);
+      render();
+      var statusEl = document.getElementById('adminSyncStatus');
+      if (statusEl) statusEl.textContent = statusText;
+      toast(statusText);
+    }
+    else if (act === 'analytics-refresh') { loadAnalytics(); }
     else if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render();
       // Re-read MDM delta records when opening the places/routes workspace so newly added bus stands appear without a full browser reload.
