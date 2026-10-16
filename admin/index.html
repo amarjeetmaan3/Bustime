@@ -283,6 +283,18 @@
   .content-settings .content-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; background:#F8FAFC; border:1px solid var(--line); border-radius:8px; }
   .content-settings .content-toggle label { margin:0; font-size:14px; font-weight:500; color:var(--ink); }
   .content-settings .content-toggle input { width:18px; height:18px; min-height:18px; accent-color:var(--brand); box-shadow:none; }
+  .updater-setting-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:#F8FAFC; }
+  .updater-setting-copy { min-width:0; }
+  .updater-setting-copy strong { display:block; color:var(--ink); font-size:14.5px; }
+  .updater-setting-copy p { margin:4px 0 0; color:var(--muted); font-size:13.5px; }
+  .updater-switch { flex:0 0 auto; display:inline-flex; align-items:center; gap:10px; min-width:116px; justify-content:flex-start; border:1px solid var(--red-line); border-radius:999px; padding:5px 13px 5px 6px; background:var(--red-l); color:var(--red); box-shadow:none; }
+  .updater-switch.on { border-color:var(--green-line); background:var(--green-l); color:var(--green); }
+  .updater-switch-track { width:40px; height:24px; display:inline-flex; align-items:center; padding:3px; border-radius:999px; background:var(--red); transition:background .15s; }
+  .updater-switch.on .updater-switch-track { background:var(--green); }
+  .updater-switch-knob { display:block; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2); transform:translateX(0); transition:transform .15s; }
+  .updater-switch.on .updater-switch-knob { transform:translateX(16px); }
+  .updater-switch strong { font-size:13px; letter-spacing:.03em; }
+  @media (max-width:520px) { .updater-setting-row { align-items:flex-start; flex-direction:column; } }
   .content-settings .content-savebar { position:sticky; bottom:12px; display:flex; justify-content:flex-end; padding:12px; background:rgba(255,255,255,.96); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-md); backdrop-filter:blur(8px); }
   .content-settings .content-savebar .btn { min-width:190px; }
 
@@ -1494,9 +1506,10 @@ function viewSettings() {
     '<div class="content-toggle"><label for="settings_operator_directory_enabled">Show operators to app users</label><input id="settings_operator_directory_enabled" type="checkbox" '+(contentSettings.operator_directory_enabled!==false?'checked':'')+'></div>' +
     '<p class="muted">ON: users can see active/published operators. OFF: the Book Bus directory is hidden for users; all operator data stays saved in the database.</p>' +
     '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="operator-visibility-save">Save operator visibility</button></div></div>' +
-    '<div class="card"><h2>App Updater</h2><p class="muted">Control whether the Android app checks for new GitHub releases and shows the new-version popup. This does not interrupt a download already in progress.</p>'
-    '<div class="content-toggle"><label for="settings_updater_enabled">Enable automatic app update checks</label><input id="settings_updater_enabled" type="checkbox" '+(contentSettings.update_notifications_enabled===true?'checked':'')+'></div>' +
-    '<p class="muted">OFF means the app will not show new-version prompts. ON enables release checks on supported app builds.</p>' +
+    '<div class="card"><h2>App Updater</h2><p class="muted">Control whether the Android app checks for new GitHub releases and shows the new-version popup. The saved setting applies across admin sessions and page refreshes.</p>' +
+    '<div class="updater-setting-row"><div class="updater-setting-copy"><strong>Automatic app update prompts</strong><p id="settings_updater_status">'+(contentSettings.update_notifications_enabled===true?'ON — users can receive new-version prompts.':'OFF — users will not receive new-version prompts.')+'</p></div>' +
+    '<button id="settings_updater_toggle" type="button" class="updater-switch '+(contentSettings.update_notifications_enabled===true?'on':'off')+'" role="switch" aria-checked="'+(contentSettings.update_notifications_enabled===true?'true':'false')+'" data-act="updater-toggle"><span class="updater-switch-track"><span class="updater-switch-knob"></span></span><strong>'+(contentSettings.update_notifications_enabled===true?'ON':'OFF')+'</strong></button></div>' +
+    '<p class="muted" style="margin-top:10px">Green = ON, red = OFF. Press the switch to change it, then press Save. This does not cancel an Android download already in progress.</p>' +
     '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="updater-setting-save">Save updater setting</button></div></div>' +
     '<div class="card"><h2>Creating a token (one time)</h2><p class="muted">' +
     'GitHub &rarr; profile picture &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens &rarr; Generate new token.<br>' +
@@ -1540,10 +1553,7 @@ function viewContentSettings() {
     contentLanguageFields('content_popup','Popup message',s.popup,4)+
     '<label class="content-label" for="content_popup_seconds">Auto-dismiss duration · 5–60 seconds</label><input id="content_popup_seconds" type="number" min="5" max="60" value="'+Math.max(5,Math.min(60,parseInt(s.popup_seconds,10)||5))+'" style="max-width:180px">'+
     '</section>'+
-    '<section class="card content-panel"><div class="content-panel-head"><div><h2>App Update Notifications</h2><p class="muted">Turn off the new-version popup on supported app builds. This does not turn off route/data sync or hide Android’s notification for a download already in progress.</p></div></div>'+
-    '<div class="content-toggle"><label for="content_update_notifications_enabled">Show app update notifications</label><input id="content_update_notifications_enabled" type="checkbox" '+(s.update_notifications_enabled===true?'checked':'')+'></div>'+
-    '<p class="muted">OFF by default. Turn ON when you are ready to announce the latest release.</p>'+
-    '</section>'+
+    '<section class="card content-panel"><div class="content-panel-head"><div><h2>App Update Notifications</h2><p class="muted">Current saved status: <strong>'+(s.update_notifications_enabled===true?'ON':'OFF')+'</strong>. Change this from Settings → App Updater using the red/green switch and Save button. This does not turn off route/data sync or cancel a download already in progress.</p></div></div></section>'+
     '<section class="card content-panel"><div class="content-panel-head"><div><h2>Scrolling Warning Ticker</h2><p class="muted">Message shown in the Bus section. The app pairs the selected language with Hindi where applicable.</p></div></div>'+
     '<div class="content-toggle"><label for="content_ticker_enabled">Enable warning ticker</label><input id="content_ticker_enabled" type="checkbox" '+(s.ticker_enabled?'checked':'')+'></div>'+
     contentLanguageFields('content_ticker','Ticker message',s.ticker,3)+
@@ -2952,12 +2962,25 @@ document.addEventListener('click', async function (e) {
       toast(operatorDirectoryEnabled ? 'Operator directory is now visible to app users.' : 'Operator directory is now hidden from app users.');
       render();
     }
+    else if (act === 'updater-toggle') {
+      contentSettings.update_notifications_enabled = contentSettings.update_notifications_enabled !== true;
+      var updaterOn = contentSettings.update_notifications_enabled === true;
+      var updaterButton = document.getElementById('settings_updater_toggle');
+      var updaterStatus = document.getElementById('settings_updater_status');
+      if (updaterButton) {
+        updaterButton.className = 'updater-switch ' + (updaterOn ? 'on' : 'off');
+        updaterButton.setAttribute('aria-checked', updaterOn ? 'true' : 'false');
+        updaterButton.innerHTML = '<span class="updater-switch-track"><span class="updater-switch-knob"></span></span><strong>' + (updaterOn ? 'ON' : 'OFF') + '</strong>';
+      }
+      if (updaterStatus) updaterStatus.textContent = updaterOn ? 'ON — users can receive new-version prompts.' : 'OFF — users will not receive new-version prompts.';
+    }
     else if (act === 'updater-setting-save') {
-      var updaterEnabled = !!document.getElementById('settings_updater_enabled').checked;
+      var updaterEnabled = contentSettings.update_notifications_enabled === true;
       await loadContentSettings();
       contentSettings.update_notifications_enabled = updaterEnabled;
       await sbFetch('/rest/v1/app_content_settings?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:1,settings:contentSettings})});
-      toast(updaterEnabled ? 'App updater enabled.' : 'App updater disabled.');
+      await loadContentSettings();
+      toast(contentSettings.update_notifications_enabled === updaterEnabled ? (updaterEnabled ? 'App updater saved: ON.' : 'App updater saved: OFF.') : 'Could not verify updater setting; reload and check it.');
       render();
     }
     else if (act === 'content-save') {
@@ -2969,7 +2992,7 @@ document.addEventListener('click', async function (e) {
         popup_seconds:Math.max(5,Math.min(60,parseInt(document.getElementById('content_popup_seconds').value,10)||5)),
         ticker_enabled:document.getElementById('content_ticker_enabled').checked,
         ticker:{en:document.getElementById('content_ticker_en').value.trim(),hi:document.getElementById('content_ticker_hi').value.trim(),pa:document.getElementById('content_ticker_pa').value.trim()},
-        update_notifications_enabled:document.getElementById('content_update_notifications_enabled').checked,
+        update_notifications_enabled:contentSettings.update_notifications_enabled===true,
         operator_directory_enabled:contentSettings.operator_directory_enabled!==false
       };
       await sbFetch('/rest/v1/app_content_settings?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:1,settings:contentSettings})});
