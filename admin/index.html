@@ -1406,6 +1406,7 @@ async function deleteAdPoster(){
   toast('Poster deleted and campaign URL cleared.');
 }
 
+var mdmPasswordFormOpen = false;
 function viewSettings() {
   return '<div class="card"><h2>GitHub connection</h2><p class="muted">Data is read from and published to the file below in your repository.</p>' +
     '<div class="row2"><div><label>GitHub username</label><input id="c_owner" value="' + esc(cfg.owner) + '"></div>' +
@@ -1416,6 +1417,10 @@ function viewSettings() {
     '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="save-cfg">Save and load data</button></div>' +
     (data ? '<div class="alert ok">Loaded: data version ' + baseVersion + ', ' + data.places.length + ' places, ' + data.routes.length +
             ' routes.</div>' : '') + '</div>' +
+    '<div class="card"><h2>MDM</h2><p class="muted">Set or replace the separate password used to open MDM in the Android app. The password is stored as a salted server-side hash, not as readable text.</p>' +
+    '<button class="btn" data-act="mdm-toggle-form">MDM</button>' +
+    (mdmPasswordFormOpen ? '<div style="max-width:440px;margin-top:14px"><label>New MDM password (minimum 8 characters)</label><input id="mdm_password" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter a new MDM password"><label>Confirm password</label><input id="mdm_password_confirm" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter it again"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="mdm-save-password">Save MDM password</button></div></div>' : '') +
+    '</div>' +
     '<div class="card"><h2>Creating a token (one time)</h2><p class="muted">' +
     'GitHub &rarr; profile picture &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens &rarr; Generate new token.<br>' +
     '&bull; Repository access: only the <b>Bustime</b> repository<br>&bull; Repository permissions: <b>Contents &rarr; Read and write</b><br>' +
@@ -2374,6 +2379,24 @@ document.addEventListener('click', async function (e) {
     }
     else if (act === 'close') { editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
+    else if (act === 'mdm-toggle-form') { mdmPasswordFormOpen = !mdmPasswordFormOpen; render(); }
+    else if (act === 'mdm-save-password') {
+      var p1 = val('mdm_password'), p2 = val('mdm_password_confirm');
+      if (p1.length < 8) { toast('Use at least 8 characters for the MDM password.'); return; }
+      if (p1 !== p2) { toast('The two passwords do not match.'); return; }
+      if (!cfg.sbUrl || !cfg.sbKey || !sbToken) { toast('Sign in to Supabase first.'); return; }
+      b.disabled = true; b.textContent = 'Saving…';
+      try {
+        var mr = await fetch(cfg.sbUrl.replace(/\\/$/, '') + '/functions/v1/mdm-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken },
+          body: JSON.stringify({ action: 'set', password: p1 })
+        });
+        var mj = await mr.json().catch(function(){ return {}; });
+        if (!mr.ok || !mj.ok) throw new Error(mj.error || ('HTTP ' + mr.status));
+        mdmPasswordFormOpen = false; render(); toast('MDM password saved securely.');
+      } catch (err) { toast('Could not save MDM password: ' + (err.message || err)); b.disabled = false; b.textContent = 'Save MDM password'; }
+    }
     else if (act === 'save-cfg') {
       cfg.owner = val('c_owner'); cfg.repo = val('c_repo'); cfg.branch = val('c_branch');
       cfg.path = val('c_path'); cfg.token = document.getElementById('c_token').value.trim(); saveCfg();
