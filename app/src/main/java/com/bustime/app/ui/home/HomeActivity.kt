@@ -180,7 +180,7 @@ class HomeActivity : AppCompatActivity() {
                 }
                 Toast.makeText(this@HomeActivity, message, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(this@HomeActivity, "Refresh failed: " + (e.message ?: "Please try again"), Toast.LENGTH_LONG).show()
+                Toast.makeText(this@HomeActivity, getString(R.string.refresh_failed), Toast.LENGTH_LONG).show()
             } finally {
                 refreshItem.actionView = null
                 refreshItem.setIcon(R.drawable.ic_refresh)
