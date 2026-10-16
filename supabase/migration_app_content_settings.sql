@@ -14,7 +14,8 @@ values (1, jsonb_build_object(
   'popup', jsonb_build_object('en', '', 'hi', '', 'pa', ''),
   'popup_seconds', 5,
   'ticker_enabled', true,
-  'ticker', jsonb_build_object('en', '', 'hi', '', 'pa', '')
+  'ticker', jsonb_build_object('en', '', 'hi', '', 'pa', ''),
+  'update_notifications_enabled', false
 ))
 on conflict (id) do nothing;
 
