@@ -732,7 +732,7 @@ async function mergeMdmPublishedChanges(sinceRevision) {
   var offset = 0, pages = 0, allChanges = [], maxRevision = since;
   try {
     while (pages++ < 20) {
-      var url = cfg.sbUrl.replace(/\\/+$/, '') + '/functions/v1/bustime-data-sync?action=changes&since=' + encodeURIComponent(since) + '&offset=' + offset;
+      var url = cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/bustime-data-sync?action=changes&since=' + encodeURIComponent(since) + '&offset=' + offset;
       var res = await fetch(url, {
         headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + cfg.sbKey, Accept: 'application/json', 'Cache-Control': 'no-store' },
         cache: 'no-store'
