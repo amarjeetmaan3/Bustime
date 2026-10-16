@@ -4,5 +4,5 @@
     <item android:id="@+id/action_refresh" android:title="@string/refresh_routes" android:icon="@drawable/ic_refresh" app:showAsAction="always" />
     <item android:id="@+id/action_feedback" android:title="@string/feedback" app:showAsAction="never" />
     <item android:id="@+id/action_privacy_policy" android:title="@string/privacy_policy_menu" app:showAsAction="never" />
-    <item android:id="@+id/action_language" android:title="@string/language" android:icon="@drawable/ic_language" app:iconTint="?attr/colorOnPrimary" app:showAsAction="always" />
+    <item android:id="@+id/action_settings" android:title="Settings" app:showAsAction="never" />\n    <item android:id="@+id/action_language" android:title="@string/language" android:icon="@drawable/ic_language" app:iconTint="?attr/colorOnPrimary" app:showAsAction="always" />
 </menu>
