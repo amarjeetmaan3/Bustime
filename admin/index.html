@@ -417,11 +417,20 @@ function saveAdminSession(session) {
     else localStorage.removeItem(ADMIN_SESSION_KEY);
   } catch (_) {}
 }
+async function fetchWithTimeout(url, options, timeoutMs) {
+  var controller = new AbortController();
+  var timer = setTimeout(function(){ controller.abort(); }, timeoutMs || 10000);
+  try {
+    return await fetch(url, Object.assign({}, options || {}, {signal:controller.signal}));
+  } finally {
+    clearTimeout(timer);
+  }
+}
 async function verifySingleAdmin() {
   if (!sbToken) return false;
-  var res = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/user', {
+  var res = await fetchWithTimeout(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/user', {
     headers:{apikey:cfg.sbKey, Authorization:'Bearer '+sbToken}
-  });
+  }, 10000);
   if (!res.ok) { saveAdminSession({}); return false; }
   var user = await res.json();
   if (!user || user.id !== ADMIN_AUTH_UID) {
@@ -434,10 +443,10 @@ async function restoreAdminSession() {
   try {
     var stored = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
     if (!stored || !stored.refresh_token || !cfg.sbUrl || !cfg.sbKey) return false;
-    var res = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/token?grant_type=refresh_token', {
+    var res = await fetchWithTimeout(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/token?grant_type=refresh_token', {
       method:'POST', headers:{apikey:cfg.sbKey,'Content-Type':'application/json'},
       body:JSON.stringify({refresh_token:stored.refresh_token})
-    });
+    }, 10000);
     if (!res.ok) { saveAdminSession({}); return false; }
     var session = await res.json();
     saveAdminSession(session);
