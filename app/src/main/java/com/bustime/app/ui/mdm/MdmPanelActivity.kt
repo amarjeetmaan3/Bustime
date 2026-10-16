@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.activity.OnBackPressedCallback
 import androidx.lifecycle.lifecycleScope
 import com.bustime.app.ui.common.StopListEditor
@@ -134,7 +135,8 @@ class MdmPanelActivity : AppCompatActivity() {
                 info = route.info.orEmpty(),
                 stops = lines,
                 topActionLabel = uiText("Correct this route", "इस रूट में सुधार करें", "ਇਸ ਰੂਟ ਵਿੱਚ ਸੋਧ ਕਰੋ"),
-                topAction = { routeEditor(route) { showRouteDetails(route, places) } }
+                topAction = { routeEditor(route) { showRouteDetails(route, places) } },
+                deleteAction = { confirmDeleteRoute(route) }
             )
         }
     }
@@ -167,6 +169,7 @@ class MdmPanelActivity : AppCompatActivity() {
             textSize = 16f; setPadding(0, 0, 0, dp(18))
         })
         button(uiText("Correct this stop", "इस स्टॉप में सुधार करें", "ਇਸ ਸਟਾਪ ਵਿੱਚ ਸੋਧ ਕਰੋ")) { stopEditor(stop) }
+        button(uiText("Delete this stop", "यह बस स्टॉप हटाएँ", "ਇਹ ਬੱਸ ਸਟਾਪ ਮਿਟਾਓ")) { confirmDeleteStop(stop) }
         showRoot()
     }
 
@@ -298,7 +301,8 @@ class MdmPanelActivity : AppCompatActivity() {
         stops: List<Pair<String?, String>>,
         topActionLabel: String,
         topAction: () -> Unit,
-        publishAction: (() -> Unit)? = null
+        publishAction: (() -> Unit)? = null,
+        deleteAction: (() -> Unit)? = null
     ) {
         root.removeAllViews()
         val page = layoutInflater.inflate(com.bustime.app.R.layout.activity_route_detail, null, false) as ScrollView
@@ -368,6 +372,13 @@ class MdmPanelActivity : AppCompatActivity() {
                 topMargin = dp(4)
                 bottomMargin = dp(18)
             })
+        }
+        if (deleteAction != null) {
+            content.addView(Button(this).apply {
+                text = uiText("Delete route", "रूट हटाएँ", "ਰੂਟ ਮਿਟਾਓ")
+                setTextColor(0xFFB42318.toInt())
+                setOnClickListener { deleteAction() }
+            }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(18) })
         }
         setContentView(page)
     }
@@ -492,6 +503,43 @@ class MdmPanelActivity : AppCompatActivity() {
             publish(JSONArray().put(change("place", id, payload)))
         }
         showRoot()
+    }
+
+    private fun confirmDeleteRoute(route: Route) {
+        AlertDialog.Builder(this)
+            .setTitle(uiText("Delete route?", "रूट हटाएँ?", "ਰੂਟ ਮਿਟਾਉਣਾ ਹੈ?"))
+            .setMessage(uiText("This route will be permanently removed from the app. This cannot be undone.", "यह रूट ऐप से स्थायी रूप से हट जाएगा। यह वापस नहीं किया जा सकता।", "ਇਹ ਰੂਟ ਐਪ ਤੋਂ ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟ ਜਾਵੇਗਾ। ਇਸਨੂੰ ਵਾਪਸ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ।"))
+            .setNegativeButton(uiText("Cancel", "रद्द करें", "ਰੱਦ ਕਰੋ"), null)
+            .setPositiveButton(uiText("Delete", "हटाएँ", "ਮਿਟਾਓ")) { _, _ ->
+                publish(JSONArray().put(JSONObject().put("entity_type", "route").put("entity_id", route.id).put("operation", "delete").put("payload", JSONObject.NULL)))
+            }.show()
+    }
+
+    private fun confirmDeleteStop(stop: Place) {
+        lifecycleScope.launch {
+            runCatching {
+                val routes = withContext(Dispatchers.IO) { repo.getAllRoutes() }
+                val usedStopIds = withContext(Dispatchers.IO) {
+                    routes.associate { r -> r.id to repo.getRouteStops(r.id).map { it.placeId }.toSet() }
+                }
+                val using = routes.filter { r ->
+                    r.fromId == stop.id || r.toId == stop.id || usedStopIds[r.id].orEmpty().contains(stop.id)
+                }
+                if (using.isNotEmpty()) {
+                    toast(uiText("Cannot delete this stop: it is used by " + using.size + " route(s). Correct those routes first.",
+                        "यह स्टॉप नहीं हट सकता: " + using.size + " रूट में इस्तेमाल है। पहले उन रूटों में सुधार करें।",
+                        "ਇਹ ਸਟਾਪ ਨਹੀਂ ਮਿਟ ਸਕਦਾ: ਇਹ " + using.size + " ਰੂਟਾਂ ਵਿੱਚ ਵਰਤਿਆ ਗਿਆ ਹੈ। ਪਹਿਲਾਂ ਉਹਨਾਂ ਰੂਟਾਂ ਨੂੰ ਸੋਧੋ।"))
+                    return@runCatching
+                }
+                AlertDialog.Builder(this@MdmPanelActivity)
+                    .setTitle(uiText("Delete bus stop?", "बस स्टॉप हटाएँ?", "ਬੱਸ ਸਟਾਪ ਮਿਟਾਓ?"))
+                    .setMessage(uiText("This stop will be permanently removed. This cannot be undone.", "यह स्टॉप स्थायी रूप से हट जाएगा। यह वापस नहीं किया जा सकता।", "ਇਹ ਸਟਾਪ ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟ ਜਾਵੇਗਾ।"))
+                    .setNegativeButton(uiText("Cancel", "रद्द करें", "ਰੱਦ ਕਰੋ"), null)
+                    .setPositiveButton(uiText("Delete", "हटाएँ", "ਮਿਟਾਓ")) { _, _ ->
+                        publish(JSONArray().put(JSONObject().put("entity_type", "place").put("entity_id", stop.id).put("operation", "delete").put("payload", JSONObject.NULL)))
+                    }.show()
+            }.onFailure { toast(it.message ?: uiText("Could not check stop usage", "स्टॉप का उपयोग जाँच नहीं सके", "ਸਟਾਪ ਦੀ ਵਰਤੋਂ ਨਹੀਂ ਜਾਂਚ ਸਕੇ")) }
+        }
     }
 
     private fun change(type:String,id:String,payload:JSONObject)=JSONObject().put("entity_type",type).put("entity_id",id).put("operation","upsert").put("payload",payload)

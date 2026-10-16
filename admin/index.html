@@ -733,6 +733,17 @@ async function loadData() {
   await mergeMdmPublishedChanges();
   sha = j.sha; baseVersion = data.dataVersion || 0; editing = null; publishOpen = false; setDirty(false);
 }
+async function publishAdminDelete(entityType, entityId) {
+  if (!sbToken) throw new Error('Sign in as the owner admin before deleting published data.');
+  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
+    method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    body: JSON.stringify({ action: 'publish', changes: [{ entity_type: entityType, entity_id: String(entityId), operation: 'delete', payload: null }] })
+  });
+  var result = {}; try { result = await response.json(); } catch (_) {}
+  if (!response.ok || !result.ok) throw new Error(result.error || ('Could not permanently delete ' + entityType + ' (HTTP ' + response.status + ').'));
+  mdmRevisionCursor = Math.max(mdmRevisionCursor, Number(result.revision || 0));
+  return result.revision;
+}
 async function mergeMdmPublishedChanges(sinceRevision) {
   if (!cfg.sbUrl || !cfg.sbKey || !data) return false;
   var since = Math.max(0, Number(sinceRevision || 0));
@@ -2555,7 +2566,10 @@ document.addEventListener('click', async function (e) {
         return r.from === pid || r.to === pid || (r.stops || []).some(function (s) { return s.place === pid; });
       });
       if (used.length) { toast('This place is used in ' + used.length + ' route(s). Change those routes first.'); return; }
-      if (confirm('Delete "' + pname(data.places[i]) + '"?')) { data.places.splice(i, 1); setDirty(true); render(); }
+      if (confirm('Permanently delete "' + pname(data.places[i]) + '"? This cannot be undone.')) {
+        try { await publishAdminDelete('place', pid); data.places.splice(i, 1); setDirty(true); render(); toast('Bus stop deleted permanently. Publish the snapshot when ready.'); }
+        catch (err) { toast('Delete failed: ' + (err.message || err)); }
+      }
     }
     else if (act === 'save-place') {
       var name = {};
@@ -2611,18 +2625,16 @@ document.addEventListener('click', async function (e) {
     else if (act === 'del-route') {
       var routeToDelete = data.routes[i];
       if (!routeToDelete) { toast('Route not found. Refresh and try again.'); return; }
-      if (confirm('Delete this route and its linked approved submissions? Publish afterward to remove it from the app.')) {
-        // Remove linked approvals too, otherwise Publish can re-import the deleted route.
-        if (routeToDelete.id && cfg.sbUrl && cfg.sbKey && sbToken) {
-          await sbFetch('/rest/v1/route_submissions?route_id=eq.' + encodeURIComponent(routeToDelete.id), {
-            method: 'DELETE', headers: { Prefer: 'return=minimal' }
-          });
-          if (Array.isArray(subs)) {
-            subs = subs.filter(function (sub) { return String(sub.route_id || '') !== String(routeToDelete.id); });
+      if (confirm('Permanently delete this route from the app? This cannot be undone.')) {
+        try {
+          await publishAdminDelete('route', routeToDelete.id);
+          if (routeToDelete.id && cfg.sbUrl && cfg.sbKey && sbToken) {
+            await sbFetch('/rest/v1/route_submissions?route_id=eq.' + encodeURIComponent(routeToDelete.id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+            if (Array.isArray(subs)) subs = subs.filter(function (sub) { return String(sub.route_id || '') !== String(routeToDelete.id); });
           }
-        }
-        data.routes.splice(i, 1); setDirty(true); render();
-        toast('Route deleted. Publish to remove it from the app snapshot.');
+          data.routes.splice(i, 1); setDirty(true); render();
+          toast('Route deleted permanently. Publish the snapshot when ready.');
+        } catch (err) { toast('Delete failed: ' + (err.message || err)); }
       }
     }
     else if (act === 'save-route') {
