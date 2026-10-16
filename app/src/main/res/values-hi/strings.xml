@@ -263,4 +263,9 @@
 <string name="privacy_policy_link_label">प्राइवेसी पॉलिसी पढ़ें</string>
     <string name="privacy_policy_title">प्राइवेसी पॉलिसी</string>
     <string name="privacy_policy_menu">प्राइवेसी पॉलिसी</string>
+
+    <!-- Refresh status messages -->
+    <string name="refresh_complete">डेटा सफलतापूर्वक अपडेट हो गया</string>
+    <string name="refresh_latest">डेटा पहले से नवीनतम है</string>
+    <string name="refresh_failed">रीफ़्रेश नहीं हो सका। इंटरनेट जाँचकर फिर कोशिश करें।</string>
 </resources>
