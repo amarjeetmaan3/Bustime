@@ -1280,7 +1280,7 @@ function viewRoutes() {
       return '<tr><td><span class="route-time">' + esc(fmtTime(r.time)) + '</span>' +
         (r.arrive ? '<div class="route-subline">Arrival ' + esc(fmtTime(r.arrive)) + '</div>' : '') + '</td>' +
         '<td><div class="route-line"><span class="endpoint">' + esc(from) + '</span><span class="arrow">→</span><span class="endpoint">' + esc(to) + '</span></div>' +
-        '<div class="route-subline">' + esc(r.from || '') + ' · ' + esc(r.to || '') + '</div></td>' +
+        '</td>' +
         '<td>' + (r.service ? '<b>' + esc(r.service) + '</b>' : '<span class="muted">No service name</span>') +
         (r.contact ? '<div class="route-subline">Contact: ' + esc(r.contact) + '</div>' : '') + '</td>' +
         '<td><span class="route-count">' + stopCount + '</span><div class="route-subline">' + (r.stops || []).length + ' intermediate</div></td>' +
