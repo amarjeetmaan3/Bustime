@@ -98,7 +98,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     private fun fetchUpdateNotificationsEnabled(): Boolean {
         var conn: HttpURLConnection? = null
         return try {
-            conn = (URL(Constants.SUPABASE_URL.trimEnd('/') +
+            val connection = (URL(Constants.SUPABASE_URL.trimEnd('/') +
                 "/rest/v1/app_content_settings?id=eq.1&select=settings")
                 .openConnection() as HttpURLConnection).apply {
                 connectTimeout = 5000
@@ -108,8 +108,9 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
                     setRequestProperty("Authorization", "Bearer ${Constants.SUPABASE_ANON_KEY}")
                 }
             }
-            if (conn.responseCode !in 200..299) return prefs.getBoolean(KEY_UPDATES_ENABLED, false)
-            val rows = org.json.JSONArray(conn.inputStream.bufferedReader().use { it.readText() })
+            conn = connection
+            if (connection.responseCode !in 200..299) return prefs.getBoolean(KEY_UPDATES_ENABLED, false)
+            val rows = org.json.JSONArray(connection.inputStream.bufferedReader().use { it.readText() })
             if (rows.length() == 0) return false
             rows.optJSONObject(0)?.optJSONObject("settings")
                 ?.optBoolean("update_notifications_enabled", false) ?: false
