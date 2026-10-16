@@ -77,14 +77,13 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         if (publishedRevision <= localRevision) return false
         // A fresh install or an older build must replace its baseline first, so
         // records deleted before this device's first delta cursor cannot survive.
+        var baselineChanged = false
         if (localRevision == 0L) {
-            // Never send the old snapshot ETag here. A 304 cannot establish that
-            // this device has the baseline needed to safely skip earlier deltas.
-            val snapshotChanged = fetchRemoteSnapshot(forceFull = true)
-            if (!lastSyncFailed) {
-                prefs.edit().putLong(KEY_REVISION, publishedRevision).apply()
-            }
-            return snapshotChanged
+            // Install the full baseline first, then replay the complete delta history.
+            // MDM-published changes may not exist in routes.json, so skipping history
+            // here would make MDM data disappear on fresh installs or older builds.
+            baselineChanged = fetchRemoteSnapshot(forceFull = true)
+            if (lastSyncFailed) return false
         }
 
         val changes = ArrayList<JsonObject>()
@@ -113,7 +112,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             .putLong(KEY_LAST_SYNC, System.currentTimeMillis())
             .apply()
         Log.d(TAG, "Incremental revision $publishedRevision applied (${changes.size} changes)")
-        return changes.isNotEmpty()
+        return changes.isNotEmpty() || baselineChanged
     }
 
     private suspend fun applyChange(change: JsonObject): Boolean {
