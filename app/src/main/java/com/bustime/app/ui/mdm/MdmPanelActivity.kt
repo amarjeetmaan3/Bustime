@@ -239,7 +239,7 @@ class MdmPanelActivity : AppCompatActivity() {
 
     private fun renderRouteEditor(old: Route?, drafts: MutableList<JSONObject>, serviceValue: String, places: List<Place>, returnAction: (() -> Unit)? = null) {
         showPage(if (old == null) uiText("Add Route", "रूट जोड़ें", "ਰੂਟ ਜੋੜੋ") else uiText("Correction Route", "रूट सुधारें", "ਰੂਟ ਵਿੱਚ ਸੋਧ ਕਰੋ"),
-            uiText(uiText("Add or correct stops, then open the full-page route preview before publishing.", "स्टॉप जोड़ें या सुधारें, फिर प्रकाशित करने से पहले पूरे पेज पर रूट का पूर्वावलोकन देखें।", "ਸਟਾਪ ਜੋੜੋ ਜਾਂ ਸੋਧੋ, ਫਿਰ ਪ੍ਰਕਾਸ਼ਿਤ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਪੂਰੇ ਪੰਨੇ ਉੱਤੇ ਰੂਟ ਦੀ ਝਲਕ ਵੇਖੋ।"), "स्टॉप जोड़ें या सुधारें, फिर प्रकाशित करने से पहले पूरे पेज पर रूट का पूर्वावलोकन देखें।", "ਸਟਾਪ ਜੋੜੋ ਜਾਂ ਸੋਧੋ, ਫਿਰ ਪ੍ਰਕਾਸ਼ਿਤ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਪੂਰੇ ਪੰਨੇ ਉੱਤੇ ਰੂਟ ਦੀ ਝਲਕ ਵੇਖੋ।"))
+            uiText("Add or correct stops, then open the full-page route preview before publishing.", "स्टॉप जोड़ें या सुधारें, फिर प्रकाशित करने से पहले पूरे पेज पर रूट का पूर्वावलोकन देखें।", "ਸਟਾਪ ਜੋੜੋ ਜਾਂ ਸੋਧੋ, ਫਿਰ ਪ੍ਰਕਾਸ਼ਿਤ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਪੂਰੇ ਪੰਨੇ ਉੱਤੇ ਰੂਟ ਦੀ ਝਲਕ ਵੇਖੋ।"))
         pageBackAction = returnAction ?: { showHome() }
         root.addView(TextView(this).apply {
             text = uiText("Add times where known. At least one stop must have a time.", "जहाँ समय पता हो वहाँ भरें। कम-से-कम एक स्टॉप का समय ज़रूरी है।", "ਜਿੱਥੇ ਸਮਾਂ ਪਤਾ ਹੋਵੇ ਉੱਥੇ ਭਰੋ। ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਟਾਪ ਦਾ ਸਮਾਂ ਲਾਜ਼ਮੀ ਹੈ।")
@@ -440,7 +440,7 @@ class MdmPanelActivity : AppCompatActivity() {
 
     private fun stopEditor(old: Place?) {
         showPage(if (old == null) uiText("Add Bus Stop", "बस स्टॉप जोड़ें", "ਬੱਸ ਸਟਾਪ ਜੋੜੋ") else uiText("Correction Bus Stop", "बस स्टॉप सुधारें", "ਬੱਸ ਸਟਾਪ ਵਿੱਚ ਸੋਧ ਕਰੋ"),
-            uiText(uiText("Enter the names you want to save. Existing translations are preserved when left blank.", "वे नाम भरें जिन्हें सेव करना है। खाली छोड़े गए मौजूदा अनुवाद सुरक्षित रहेंगे।", "ਉਹ ਨਾਮ ਭਰੋ ਜੋ ਸੇਵ ਕਰਨੇ ਹਨ। ਖਾਲੀ ਛੱਡੇ ਮੌਜੂਦਾ ਅਨੁਵਾਦ ਸੁਰੱਖਿਅਤ ਰਹਿਣਗੇ।"), "वे नाम भरें जिन्हें सेव करना है। खाली छोड़ी गई मौजूदा अनुवादित प्रविष्टियाँ सुरक्षित रहेंगी।", "ਉਹ ਨਾਮ ਭਰੋ ਜੋ ਸੇਵ ਕਰਨੇ ਹਨ। ਖਾਲੀ ਛੱਡੇ ਮੌਜੂਦਾ ਅਨੁਵਾਦ ਜਿਉਂ ਦੇ ਤਿਉਂ ਰਹਿਣਗੇ।"))
+            uiText("Enter the names you want to save. Existing translations are preserved when left blank.", "वे नाम भरें जिन्हें सेव करना है। खाली छोड़े गए मौजूदा अनुवाद सुरक्षित रहेंगे।", "ਉਹ ਨਾਮ ਭਰੋ ਜੋ ਸੇਵ ਕਰਨੇ ਹਨ। ਖਾਲੀ ਛੱਡੇ ਮੌਜੂਦਾ ਅਨੁਵਾਦ ਸੁਰੱਖਿਅਤ ਰਹਿਣਗੇ।"))
         val kindOptions = listOf(
             "stand" to uiText("Bus Stand", "बस स्टैंड", "ਬੱਸ ਅੱਡਾ"),
             "village" to uiText("Village", "गाँव", "ਪਿੰਡ"),
