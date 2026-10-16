@@ -74,7 +74,23 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         val publishedRevision = stateRow.get("revision")?.asLong ?: 0L
         val localRevision = prefs.getLong(KEY_REVISION, 0L)
         if (publishedRevision == 0L) return null
-        if (publishedRevision <= localRevision) return false
+        val publishedSnapshotVersion = stateRow.get("snapshot_version")?.asInt ?: 0
+        val localSnapshotVersion = prefs.getInt(KEY_VERSION, 0)
+        if (publishedRevision <= localRevision) {
+            // Snapshot-only publishes can advance the baseline version without a
+            // new delta revision. Detect that case instead of incorrectly reporting
+            // "already current" and leaving this device on an older snapshot.
+            if (publishedSnapshotVersion > localSnapshotVersion) {
+                val refreshed = fetchRemoteSnapshot(forceFull = true)
+                if (lastSyncFailed) return false
+                prefs.edit()
+                    .putLong(KEY_REVISION, publishedRevision)
+                    .putLong(KEY_LAST_SYNC, System.currentTimeMillis())
+                    .apply()
+                return@withLock refreshed
+            }
+            return false
+        }
         // A fresh install or an older build must replace its baseline first, so
         // records deleted before this device's first delta cursor cannot survive.
         var baselineChanged = false
