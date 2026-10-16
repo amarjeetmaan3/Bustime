@@ -57,7 +57,20 @@ Deno.serve(async (req: Request) => {
     const state = await stateRes.json();
     return reply({ ok: true, state: Array.isArray(state) ? state[0] : null });
   }
+  if (body.action === "snapshot") {
+    const snapshotVersion = Number(body.snapshot_version);
+    if (!Number.isSafeInteger(snapshotVersion) || snapshotVersion < 1) return reply({ error: "invalid_snapshot_version" }, 400);
+    const snapshotUpdate = await fetch(url + "/rest/v1/data_sync_state?id=eq.1", {
+      method: "PATCH",
+      headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ snapshot_version: snapshotVersion, published_at: new Date().toISOString() })
+    });
+    if (!snapshotUpdate.ok) return reply({ error: "snapshot_state_update_failed" }, 502);
+    return reply({ ok: true, snapshot_version: snapshotVersion });
+  }
   if (body.action !== "publish") return reply({ error: "unknown_action" }, 400);
+  const snapshotVersion = body.snapshot_version === undefined ? null : Number(body.snapshot_version);
+  if (snapshotVersion !== null && (!Number.isSafeInteger(snapshotVersion) || snapshotVersion < 1)) return reply({ error: "invalid_snapshot_version" }, 400);
   const input = body.changes;
   if (!Array.isArray(input) || input.length < 1 || input.length > 250) return reply({ error: "invalid_changes" }, 400);
   const changes: Array<Record<string, unknown>> = [];
@@ -104,7 +117,7 @@ Deno.serve(async (req: Request) => {
   const stateUpdate = await fetch(url + "/rest/v1/data_sync_state?id=eq.1", {
     method: "PATCH",
     headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify({ revision, published_at: new Date().toISOString() })
+    body: JSON.stringify(Object.assign({ revision, published_at: new Date().toISOString() }, snapshotVersion === null ? {} : { snapshot_version: snapshotVersion }))
   });
   if (!stateUpdate.ok) return reply({ error: "sync_state_update_failed", revision }, 502);
   return reply({ ok: true, revision, published: changes.length });
