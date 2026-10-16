@@ -50,7 +50,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
-            if (id != -1L && id == prefs.getLong(KEY_DL_ID, -1L)) checkPendingInstall()
+            if (id != -1L && id == prefs.getLong(KEY_DL_ID, -1L) && prefs.getBoolean(KEY_UPDATES_ENABLED, false)) checkPendingInstall()
         }
     }
 
@@ -73,7 +73,6 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     fun checkForLatestUpdate() {
         if (Constants.GITHUB_OWNER.startsWith("YOUR_")) return
 
-        activity.lifecycle.addObserver(lifecycleObserver)
         activity.lifecycleScope.launch {
             val enabled = withContext(Dispatchers.IO) { fetchUpdateNotificationsEnabled() }
             prefs.edit().putBoolean(KEY_UPDATES_ENABLED, enabled).apply()
@@ -85,6 +84,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
                 return@launch
             }
 
+            activity.lifecycle.addObserver(lifecycleObserver)
             val current = currentVersion()
             loadCached()?.let { if (isNewer(it.version, current)) onUpdateAvailable(it) }
 
