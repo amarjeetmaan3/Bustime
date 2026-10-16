@@ -68,7 +68,7 @@ class MdmPasswordActivity : AppCompatActivity() {
             }
             openButton.isEnabled = true
             when {
-                result.first -> startActivity(Intent(this@MdmPasswordActivity, MdmPanelActivity::class.java))
+                result.first -> startActivity(Intent(this@MdmPasswordActivity, MdmPanelActivity::class.java).putExtra(MdmPanelActivity.EXTRA_PASSWORD, password))
                 !result.second -> Toast.makeText(this@MdmPasswordActivity, "Set the MDM password in the web admin Settings tab first.", Toast.LENGTH_LONG).show()
                 else -> Toast.makeText(this@MdmPasswordActivity, "Incorrect password or connection error.", Toast.LENGTH_LONG).show()
             }
