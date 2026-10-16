@@ -2580,7 +2580,7 @@ document.addEventListener('click', async function (e) {
     else if (act === 'sync-revision' || act === 'sync-status') {
       var syncStatusEl = document.getElementById('adminSyncStatus');
       if (syncStatusEl) syncStatusEl.textContent = 'Checking Supabase revision…';
-      var statusUrl = cfg.sbUrl.replace(/\\/+$/, '') + '/functions/v1/bustime-data-sync?action=status';
+      var statusUrl = cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/bustime-data-sync?action=status';
       var statusRes = await fetch(statusUrl, {headers:{apikey:cfg.sbKey,Authorization:'Bearer '+cfg.sbKey,Accept:'application/json','Cache-Control':'no-store'},cache:'no-store'});
       if (!statusRes.ok) throw new Error('Sync status HTTP ' + statusRes.status);
       var statusRows = await statusRes.json();
