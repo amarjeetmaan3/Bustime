@@ -712,14 +712,18 @@ async function loadData() {
 }
 async function mergeMdmPublishedChanges() {
   if (!cfg.sbUrl || !cfg.sbKey || !data) return;
-  function merge(list, item) {
+  function merge(list, item, replaceExisting) {
     if (!item || !item.id) return list;
     if (typeof item.name === "string") item.name = { en: item.name.trim(), hi: "", pa: "" };
     else if (!item.name || typeof item.name !== "object" || Array.isArray(item.name)) item.name = { en: "", hi: "", pa: "" };
     else item.name = { en: String(item.name.en || "").trim(), hi: String(item.name.hi || "").trim(), pa: String(item.name.pa || "").trim() };
     if (!Array.isArray(item.aliases)) item.aliases = item.aliases ? [String(item.aliases)] : [];
     var index = list.findIndex(function(x) { return String(x.id) === String(item.id); });
-    if (index >= 0) list[index] = item; else list.push(item);
+    // Revision 1 is the original bulk baseline. The current routes.json snapshot
+    // is newer/authoritative for IDs it already contains; baseline only fills gaps.
+    // Later revisions are actual MDM edits and must replace existing records.
+    if (index >= 0) { if (replaceExisting) list[index] = item; }
+    else list.push(item);
     return list;
   }
   function remove(list, id) { return list.filter(function(x) { return String(x.id) !== String(id); }); }
@@ -740,7 +744,7 @@ async function mergeMdmPublishedChanges() {
         if (!listName) return;
         if (change.operation === 'delete') data[listName] = remove(data[listName] || [], change.entity_id);
         else if (change.operation === 'upsert' && change.payload && String(change.payload.id) === String(change.entity_id)) {
-          data[listName] = merge(data[listName] || [], change.payload);
+          data[listName] = merge(data[listName] || [], change.payload, Number(change.revision || 0) > 1);
         }
       });
       if (changes.length < 1000) break;
