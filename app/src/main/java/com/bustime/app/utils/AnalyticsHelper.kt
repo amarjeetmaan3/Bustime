@@ -56,6 +56,15 @@ object AnalyticsHelper {
         }
     }
 
+    /** Count one installation after rollout; this preference survives app updates. */
+    fun logFirstInstall(context: Context) {
+        val app = context.applicationContext
+        val prefs = app.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean("analytics_install_registered", false)) return
+        prefs.edit().putBoolean("analytics_install_registered", true).apply()
+        logEvent(app, "app_install", "app", JSONObject().put("tracking_version", 1))
+    }
+
     fun logAppOpened(context: Context) = logEvent(context, "app_open", "app")
     fun logSearchEvent(context: Context, from: String, to: String, vehicleType: String) =
         logEvent(context, "bus_route_search", "bus", JSONObject().put("from_id", from).put("to_id", to).put("vehicle_type", vehicleType))
