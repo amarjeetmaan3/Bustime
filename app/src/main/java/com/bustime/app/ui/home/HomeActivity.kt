@@ -72,6 +72,7 @@ class HomeActivity : AppCompatActivity() {
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_language -> { showLanguageDialog(); true }
+                R.id.action_settings -> { startActivity(Intent(this, com.bustime.app.ui.mdm.SettingsActivity::class.java)); true }
                 R.id.action_refresh -> { refreshData(toolbar); true }
                 R.id.action_feedback -> {
                     startActivity(android.content.Intent(this, com.bustime.app.ui.community.CommunityRequestActivity::class.java).putExtra("mode", "feedback")); true
