@@ -109,9 +109,9 @@ class MdmPanelActivity : AppCompatActivity() {
                 val entries = routes.map { r ->
                     val from = places[r.fromId]?.displayName("en") ?: r.fromId
                     val to = places[r.toId]?.displayName("en") ?: r.toId
-                    Triple(from + " → " + to, "Time: " + r.time + (r.serviceName?.takeIf { it.isNotBlank() }?.let { " · " + it } ?: ""), r.id)
+                    Triple(from + " → " + to, uiText("Time: ", "समय: ", "ਸਮਾਂ: ") + r.time + (r.serviceName?.takeIf { it.isNotBlank() }?.let { " · " + it } ?: ""), r.id)
                 }
-                showSearchList("Route List", "Search a route, then tap it to open the full stop sequence.", entries) { id ->
+                showSearchList(uiText("Route List", "रूट सूची", "ਰੂਟ ਸੂਚੀ"), uiText("Search a route, then tap it to open the full stop sequence.", "रूट खोजें और पूरा स्टॉप क्रम खोलने के लिए चुनें।", "ਰੂਟ ਖੋਜੋ ਅਤੇ ਸਟਾਪਾਂ ਦਾ ਪੂਰਾ ਕ੍ਰਮ ਖੋਲ੍ਹਣ ਲਈ ਚੁਣੋ।"), entries) { id ->
                     routes.firstOrNull { it.id == id }?.let { showRouteDetails(it, places) }
                 }
             }.onFailure { toast(it.message ?: uiText("Could not load routes", "रूट लोड नहीं हो सके", "ਰੂਟ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੇ")) }
@@ -133,7 +133,7 @@ class MdmPanelActivity : AppCompatActivity() {
                 service = route.serviceName?.takeIf { it.isNotBlank() } ?: route.routeName.orEmpty(),
                 info = route.info.orEmpty(),
                 stops = lines,
-                topActionLabel = "Correct this route",
+                topActionLabel = uiText("Correct this route", "इस रूट में सुधार करें", "ਇਸ ਰੂਟ ਵਿੱਚ ਸੋਧ ਕਰੋ"),
                 topAction = { routeEditor(route) { showRouteDetails(route, places) } }
             )
         }
@@ -147,7 +147,7 @@ class MdmPanelActivity : AppCompatActivity() {
                     val extra = listOf(p.names["hi"], p.names["pa"]).filterNotNull().filter { it.isNotBlank() }.joinToString(" · ")
                     Triple(p.displayName("en"), (if (extra.isBlank()) "" else extra + "\n") + "ID: " + p.id, p.id)
                 }
-                showSearchList("Bus Stop List", "Search a stop, then tap it to inspect all names and correct it.", entries) { id ->
+                showSearchList(uiText("Bus Stop List", "बस स्टॉप सूची", "ਬੱਸ ਸਟਾਪ ਸੂਚੀ"), uiText("Search a stop, then tap it to inspect all names and correct it.", "स्टॉप खोजें, सभी नाम देखने और सुधार करने के लिए चुनें।", "ਸਟਾਪ ਖੋਜੋ, ਸਾਰੇ ਨਾਮ ਵੇਖਣ ਅਤੇ ਸੋਧ ਕਰਨ ਲਈ ਚੁਣੋ।"), entries) { id ->
                     places.firstOrNull { it.id == id }?.let { showStopDetails(it) }
                 }
             }.onFailure { toast(it.message ?: uiText("Could not load bus stops", "बस स्टॉप लोड नहीं हो सके", "ਬੱਸ ਸਟਾਪ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੇ")) }
@@ -157,7 +157,7 @@ class MdmPanelActivity : AppCompatActivity() {
     private fun chooseStop() = showStops()
 
     private fun showStopDetails(stop: Place) {
-        showPage(stop.displayName("en"), "Bus stop details")
+        showPage(stop.displayName("en"), uiText("Bus stop details", "बस स्टॉप विवरण", "ਬੱਸ ਸਟਾਪ ਵੇਰਵੇ"))
         pageBackAction = { showStops() }
         root.addView(TextView(this).apply {
             text = uiText("English: ", "अंग्रेज़ी: ", "ਅੰਗਰੇਜ਼ੀ: ") + stop.names["en"].orEmpty().ifBlank { "—" } +
@@ -238,8 +238,8 @@ class MdmPanelActivity : AppCompatActivity() {
     }
 
     private fun renderRouteEditor(old: Route?, drafts: MutableList<JSONObject>, serviceValue: String, places: List<Place>, returnAction: (() -> Unit)? = null) {
-        showPage(if (old == null) "Add Route" else "Correction Route",
-            "Add or correct stops, then open the full-page route preview before publishing.")
+        showPage(if (old == null) uiText("Add Route", "रूट जोड़ें", "ਰੂਟ ਜੋੜੋ") else uiText("Correction Route", "रूट सुधारें", "ਰੂਟ ਵਿੱਚ ਸੋਧ ਕਰੋ"),
+            uiText("Add or correct stops, then open the full-page route preview before publishing.", "स्टॉप जोड़ें या सुधारें, फिर प्रकाशित करने से पहले पूरे पेज पर रूट का पूर्वावलोकन देखें।", "ਸਟਾਪ ਜੋੜੋ ਜਾਂ ਸੋਧੋ, ਫਿਰ ਪ੍ਰਕਾਸ਼ਿਤ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਪੂਰੇ ਪੰਨੇ ਉੱਤੇ ਰੂਟ ਦੀ ਝਲਕ ਵੇਖੋ।"))
         pageBackAction = returnAction ?: { showHome() }
         root.addView(TextView(this).apply {
             text = uiText("Add times where known. At least one stop must have a time.", "जहाँ समय पता हो वहाँ भरें। कम-से-कम एक स्टॉप का समय ज़रूरी है।", "ਜਿੱਥੇ ਸਮਾਂ ਪਤਾ ਹੋਵੇ ਉੱਥੇ ਭਰੋ। ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਟਾਪ ਦਾ ਸਮਾਂ ਲਾਜ਼ਮੀ ਹੈ।")
@@ -277,7 +277,7 @@ class MdmPanelActivity : AppCompatActivity() {
             service = service,
             info = old?.info.orEmpty(),
             stops = lines,
-            topActionLabel = "← Back to edit",
+            topActionLabel = uiText("← Back to edit", "← संपादन पर वापस", "← ਸੋਧ ਵੱਲ ਵਾਪਸ"),
             topAction = { renderRouteEditor(old, drafts, service, places, returnAction) },
             publishAction = {
                 val problem = validateRouteDrafts(drafts)
@@ -387,9 +387,9 @@ class MdmPanelActivity : AppCompatActivity() {
         d.optString("time").takeIf { !d.isNull("time") && it.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$")) }
 
     private fun validateRouteDrafts(drafts: List<JSONObject>): String? {
-        if (drafts.size < 2) return "A route needs a start and destination."
-        if (drafts.any { it.optString("name").trim().isBlank() }) return "Enter a name for every stop."
-        if (drafts.none { draftTime(it) != null }) return "Set at least one time anywhere in the route."
+        if (drafts.size < 2) return uiText("A route needs a start and destination.", "रूट में शुरुआत और गंतव्य होना चाहिए।", "ਰੂਟ ਵਿੱਚ ਸ਼ੁਰੂਆਤ ਅਤੇ ਮੰਜ਼ਿਲ ਹੋਣੀ ਚਾਹੀਦੀ ਹੈ।")
+        if (drafts.any { it.optString("name").trim().isBlank() }) return uiText("Enter a name for every stop.", "हर स्टॉप का नाम भरें।", "ਹਰ ਸਟਾਪ ਦਾ ਨਾਮ ਭਰੋ।")
+        if (drafts.none { draftTime(it) != null }) return uiText("Set at least one time anywhere in the route.", "रूट में कम-से-कम एक स्टॉप का समय भरें।", "ਰੂਟ ਵਿੱਚ ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਟਾਪ ਦਾ ਸਮਾਂ ਭਰੋ।")
         return null
     }
 
@@ -416,10 +416,10 @@ class MdmPanelActivity : AppCompatActivity() {
                         }
                     }
                 }
-                if (ids.first() == ids.last()) error("Start and destination must be different places.")
+                if (ids.first() == ids.last()) error(uiText("Start and destination must be different places.", "शुरुआत और गंतव्य अलग-अलग स्थान होने चाहिए।", "ਸ਼ੁਰੂਆਤ ਅਤੇ ਮੰਜ਼ਿਲ ਵੱਖ-ਵੱਖ ਥਾਵਾਂ ਹੋਣੀਆਂ ਚਾਹੀਦੀਆਂ ਹਨ।"))
                 val startTime = draftTime(drafts.first())
                 val arriveTime = draftTime(drafts.last())
-                val anyTime = drafts.mapNotNull { draftTime(it) }.firstOrNull() ?: error("Set at least one valid HH:mm time.")
+                val anyTime = drafts.mapNotNull { draftTime(it) }.firstOrNull() ?: error(uiText("Set at least one valid HH:mm time.", "कम-से-कम एक सही HH:mm समय भरें।", "ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਹੀ HH:mm ਸਮਾਂ ਭਰੋ।"))
                 val routeId = old?.id ?: "mdm_route_" + System.currentTimeMillis().toString(36)
                 val route = JSONObject().put("id", routeId).put("from", ids.first()).put("to", ids.last())
                     .put("time", startTime ?: JSONObject.NULL).put("arrive", arriveTime ?: JSONObject.NULL)
@@ -439,13 +439,13 @@ class MdmPanelActivity : AppCompatActivity() {
     }
 
     private fun stopEditor(old: Place?) {
-        showPage(if (old == null) "Add Bus Stop" else "Correction Bus Stop",
-            "Enter the names you want to save. Existing translations are preserved when left blank.")
+        showPage(if (old == null) uiText("Add Bus Stop", "बस स्टॉप जोड़ें", "ਬੱਸ ਸਟਾਪ ਜੋੜੋ") else uiText("Correction Bus Stop", "बस स्टॉप सुधारें", "ਬੱਸ ਸਟਾਪ ਵਿੱਚ ਸੋਧ ਕਰੋ"),
+            uiText("Enter the names you want to save. Existing translations are preserved when left blank.", "वे नाम भरें जिन्हें सेव करना है। खाली छोड़ी गई मौजूदा अनुवादित प्रविष्टियाँ सुरक्षित रहेंगी।", "ਉਹ ਨਾਮ ਭਰੋ ਜੋ ਸੇਵ ਕਰਨੇ ਹਨ। ਖਾਲੀ ਛੱਡੇ ਮੌਜੂਦਾ ਅਨੁਵਾਦ ਜਿਉਂ ਦੇ ਤਿਉਂ ਰਹਿਣਗੇ।"))
         val kindOptions = listOf(
-            "stand" to "Bus Stand",
-            "village" to "Village",
-            "city" to "City",
-            "place" to "Other Place"
+            "stand" to uiText("Bus Stand", "बस स्टैंड", "ਬੱਸ ਅੱਡਾ"),
+            "village" to uiText("Village", "गाँव", "ਪਿੰਡ"),
+            "city" to uiText("City", "शहर", "ਸ਼ਹਿਰ"),
+            "place" to uiText("Other Place", "अन्य स्थान", "ਹੋਰ ਥਾਂ")
         )
         root.addView(TextView(this).apply {
             text = uiText("Type", "प्रकार", "ਕਿਸਮ"); textSize = 14f; setPadding(0, dp(8), 0, dp(4))
