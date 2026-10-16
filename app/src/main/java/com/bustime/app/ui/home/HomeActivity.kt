@@ -54,6 +54,7 @@ class HomeActivity : AppCompatActivity() {
         setContentView(R.layout.activity_home)
         StartIoAdsManager.attachBanner(this, findViewById(R.id.startioMainBanner), "main")
         scheduleBackgroundDataSync()
+        AnalyticsHelper.logFirstInstall(this)
         AnalyticsHelper.logAppOpened(this)
         com.bustime.app.ads.CustomPopupManager.showLocalSponsorshipAd(this)
 

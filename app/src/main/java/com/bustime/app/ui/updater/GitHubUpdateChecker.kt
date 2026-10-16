@@ -40,7 +40,12 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
 
     // OTA smoke-test release 667: verify the remotely saved updater switch against an installed v1.0.666 build.
 
-    private data class LatestRelease(val version: String, val downloadUrl: String, val sha256: String)
+    private data class LatestRelease(val version: String, val downloadUrl: String, val sha256: String, val notes: String)
+    data class ManualUpdateInfo(val version: String, val downloadUrl: String, val sha256: String, val notes: String) {
+        val hasVerifiedApk: Boolean
+            get() = downloadUrl.endsWith(".apk", ignoreCase = true) &&
+                sha256.matches(Regex("^[a-fA-F0-9]{64}$"))
+    }
 
     private val prefs = activity.getSharedPreferences("update_prefs", Context.MODE_PRIVATE)
     private var updateDialog: AlertDialog? = null
@@ -48,18 +53,19 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
     private var receiverRegistered = false
     private var promptedThisSession = false
     private var verifyingDownload = false
+    private var lifecycleObserverRegistered = false
 
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
-            if (id != -1L && id == prefs.getLong(KEY_DL_ID, -1L) && prefs.getBoolean(KEY_UPDATES_ENABLED, false)) checkPendingInstall()
+            if (id != -1L && id == prefs.getLong(KEY_DL_ID, -1L)) checkPendingInstall()
         }
     }
 
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
             registerReceiverIfNeeded()
-            if (prefs.getBoolean(KEY_UPDATES_ENABLED, false)) checkPendingInstall()   // updater is remotely enabled
+            checkPendingInstall() // Manual downloads work even when automatic pop-ups are disabled.
         }
 
         override fun onStop(owner: LifecycleOwner) {
@@ -86,7 +92,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
                 return@launch
             }
 
-            activity.lifecycle.addObserver(lifecycleObserver)
+            ensureLifecycleObserver()
             val current = currentVersion()
             loadCached()?.let { if (isNewer(it.version, current)) onUpdateAvailable(it) }
 
@@ -94,6 +100,39 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             saveCached(latest)
             if (isNewer(latest.version, current)) onUpdateAvailable(latest)
         }
+    }
+
+    fun currentInstalledVersion(): String = currentVersion()
+
+    /** Quiet, manual check used by Settings; it never shows an automatic update pop-up. */
+    fun checkForUpdatesManually(callback: (String, ManualUpdateInfo?, String?) -> Unit) {
+        ensureLifecycleObserver()
+        registerReceiverIfNeeded()
+        checkPendingInstall()
+        activity.lifecycleScope.launch {
+            val latest = withContext(Dispatchers.IO) { fetchLatestRelease() }
+            if (latest == null) {
+                callback(currentVersion(), null, "Could not check for updates. Check your internet connection and try again.")
+            } else {
+                saveCached(latest)
+                callback(currentVersion(), ManualUpdateInfo(latest.version, latest.downloadUrl, latest.sha256, latest.notes), null)
+            }
+        }
+    }
+
+    /** Starts a user-requested download; the automatic notification switch does not apply. */
+    fun downloadUpdateManually(info: ManualUpdateInfo) {
+        if (!isNewer(info.version, currentVersion())) {
+            Toast.makeText(activity, "You're using the latest version.", Toast.LENGTH_LONG).show()
+            return
+        }
+        startDownload(LatestRelease(info.version, info.downloadUrl, info.sha256, info.notes))
+    }
+
+    private fun ensureLifecycleObserver() {
+        if (lifecycleObserverRegistered) return
+        activity.lifecycle.addObserver(lifecycleObserver)
+        lifecycleObserverRegistered = true
     }
 
     /** Public read-only setting from the existing app content settings row. */
@@ -358,7 +397,8 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
         val v = prefs.getString(KEY_LATEST_VERSION, null) ?: return null
         val u = prefs.getString(KEY_LATEST_URL, null) ?: return null
         val digest = prefs.getString(KEY_LATEST_SHA256, null) ?: ""
-        return LatestRelease(v, u, digest)
+        val notes = prefs.getString(KEY_LATEST_NOTES, null) ?: ""
+        return LatestRelease(v, u, digest, notes)
     }
 
     private fun saveCached(latest: LatestRelease) {
@@ -366,6 +406,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
             .putString(KEY_LATEST_VERSION, latest.version)
             .putString(KEY_LATEST_URL, latest.downloadUrl)
             .putString(KEY_LATEST_SHA256, latest.sha256)
+            .putString(KEY_LATEST_NOTES, latest.notes)
             .apply()
     }
 
@@ -402,7 +443,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
                 }
             }
             // Without a published digest, open the release page instead of installing an unverified APK.
-            LatestRelease(tag.removePrefix("v"), apkUrl, sha256)
+            LatestRelease(tag.removePrefix("v"), apkUrl, sha256, json.optString("body").trim().take(1200))
         } catch (e: Exception) {
             null
         } finally {
@@ -433,6 +474,7 @@ class GitHubUpdateChecker(private val activity: AppCompatActivity) {
         private const val KEY_LATEST_VERSION = "latest_version"
         private const val KEY_LATEST_URL = "latest_url"
         private const val KEY_LATEST_SHA256 = "latest_sha256"
+        private const val KEY_LATEST_NOTES = "latest_notes"
         private const val KEY_DL_ID = "download_id"
         private const val KEY_DL_VERSION = "download_version"
         private const val KEY_DL_SHA256 = "download_sha256"

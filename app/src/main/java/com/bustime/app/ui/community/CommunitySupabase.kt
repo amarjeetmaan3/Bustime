@@ -18,6 +18,13 @@ object CommunitySupabase {
             lastError = "Unsupported submission table: $table"
             return false
         }
+        if (table == "feedback_submissions") {
+            val phone = body.optString("contact", "")
+            if (!phone.matches(Regex("^[0-9]{10,13}$"))) {
+                lastError = "Feedback requires a valid 10–13 digit mobile number"
+                return false
+            }
+        }
         var conn: HttpURLConnection? = null
         return try {
             if (!isConfigured()) {
