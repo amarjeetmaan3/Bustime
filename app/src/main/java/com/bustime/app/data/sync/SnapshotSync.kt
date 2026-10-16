@@ -60,6 +60,19 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         }
     }
 
+    suspend fun getSyncStatus(): String = withContext(Dispatchers.IO) {
+        val state = getJson("${Constants.SUPABASE_URL}/functions/v1/bustime-data-sync?action=status")
+        val localRevision = prefs.getLong(KEY_REVISION, 0L)
+        val localVersion = prefs.getInt(KEY_VERSION, 0)
+        if (state == null || !state.isJsonArray || state.asJsonArray.size() == 0) {
+            return@withContext "Local revision $localRevision · snapshot v$localVersion · server status unavailable"
+        }
+        val row = state.asJsonArray[0].asJsonObject
+        val serverRevision = row.get("revision")?.asLong ?: 0L
+        val serverVersion = row.get("snapshot_version")?.asInt ?: 0
+        "Local revision $localRevision / Server revision $serverRevision · Local snapshot v$localVersion / Server snapshot v$serverVersion"
+    }
+
     private suspend fun importBundled() {
         val text = context.assets.open(ASSET_NAME).bufferedReader().use { it.readText() }
         applySnapshot(text, null)
