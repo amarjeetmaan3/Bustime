@@ -130,7 +130,7 @@ class MdmPanelActivity : AppCompatActivity() {
                     lines.joinToString("\n").ifBlank { "No stop details found." }
                 textSize = 15f; setPadding(0, 0, 0, dp(18))
             })
-            button("Correct this route") { routeEditor(route) }
+            button("Correct this route") { routeEditor(route) { showRouteDetails(route, places) } }
             showRoot()
         }
     }
@@ -219,7 +219,7 @@ class MdmPanelActivity : AppCompatActivity() {
         showRoot()
     }
 
-    private fun routeEditor(old: Route?) {
+    private fun routeEditor(old: Route?, returnAction: (() -> Unit)? = null) {
         lifecycleScope.launch {
             val places = withContext(Dispatchers.IO) { repo.getAllPlaces() }
             val oldStops = if (old == null) emptyList() else withContext(Dispatchers.IO) { repo.getRouteStops(old.id) }.sortedBy { it.stopOrder }
@@ -229,14 +229,14 @@ class MdmPanelActivity : AppCompatActivity() {
                     .put("name", places.firstOrNull { it.id == stop.placeId }?.displayName("en") ?: stop.placeId)
                     .put("language", "en").put("time", stop.time ?: JSONObject.NULL))
             } else { drafts.add(newDraft()); drafts.add(newDraft()) }
-            renderRouteEditor(old, drafts, old?.serviceName.orEmpty(), places)
+            renderRouteEditor(old, drafts, old?.serviceName.orEmpty(), places, returnAction)
         }
     }
 
-    private fun renderRouteEditor(old: Route?, drafts: MutableList<JSONObject>, serviceValue: String, places: List<Place>) {
+    private fun renderRouteEditor(old: Route?, drafts: MutableList<JSONObject>, serviceValue: String, places: List<Place>, returnAction: (() -> Unit)? = null) {
         showPage(if (old == null) "Add Route" else "Correction Route",
             "Add or correct stops, then open the full-page route preview before publishing.")
-        pageBackAction = { showHome() }
+        pageBackAction = returnAction ?: { showHome() }
         root.addView(TextView(this).apply {
             text = "Add times where known. At least one stop must have a time."
             textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, 0, 0, dp(10))
@@ -251,7 +251,7 @@ class MdmPanelActivity : AppCompatActivity() {
         button("Preview route") {
             val problem = validateRouteDrafts(drafts)
             if (problem != null) { toast(problem); return@button }
-            showRoutePreview(old, drafts, service.text.toString().trim(), places)
+            showRoutePreview(old, drafts, service.text.toString().trim(), places, returnAction)
         }
         showRoot()
     }
@@ -260,12 +260,13 @@ class MdmPanelActivity : AppCompatActivity() {
         old: Route?,
         drafts: MutableList<JSONObject>,
         service: String,
-        places: List<Place>
+        places: List<Place>,
+        returnAction: (() -> Unit)? = null
     ) {
         val byId = places.associateBy { it.id }
         showPage(if (old == null) "Route preview" else "Correction preview",
             "Review the complete route exactly as a passenger-facing route detail page.")
-        pageBackAction = { renderRouteEditor(old, drafts, service, places) }
+        pageBackAction = { renderRouteEditor(old, drafts, service, places, returnAction) }
 
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(18), dp(18), dp(18))
@@ -326,7 +327,7 @@ class MdmPanelActivity : AppCompatActivity() {
         }
         card.addView(timeline)
         root.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
-        button("← Back to edit") { renderRouteEditor(old, drafts, service, places) }
+        button("← Back to edit") { renderRouteEditor(old, drafts, service, places, returnAction) }
         button("Publish route") {
             val problem = validateRouteDrafts(drafts)
             if (problem != null) { toast(problem); return@button }
