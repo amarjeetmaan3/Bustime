@@ -711,8 +711,8 @@ function normalize(d) {
   return o;
 }
 async function loadData() {
-  var r = await fetch(apiUrl() + '?ref=' + encodeURIComponent(cfg.branch) + '&t=' + Date.now(),
-                      { headers: ghHeaders(), cache: 'no-store' });
+  var r = await fetchWithTimeout(apiUrl() + '?ref=' + encodeURIComponent(cfg.branch) + '&t=' + Date.now(),
+                      { headers: ghHeaders(), cache: 'no-store' }, 12000);
   if (!r.ok) throw new Error('GitHub ' + r.status + ' - ' + (await r.text()).slice(0, 160));
   var j = await r.json();
   if (!j.content) throw new Error('Could not read the data file');
@@ -1549,12 +1549,12 @@ async function sbFetch(path, opts) {
   var base = cfg.sbUrl.replace(/\/+$/, '');
   var headers = Object.assign({ apikey: cfg.sbKey, 'Content-Type': 'application/json' }, opts.headers || {});
   if (sbToken) headers.Authorization = 'Bearer ' + sbToken;
-  var res = await fetch(base + path, Object.assign({}, opts, { headers: headers }));
+  var res = await fetchWithTimeout(base + path, Object.assign({}, opts, { headers: headers }), 12000);
   if (res.status === 401 && sbRefreshToken && !opts.__bustimeRetried) {
-    var refreshRes = await fetch(base + '/auth/v1/token?grant_type=refresh_token', {
+    var refreshRes = await fetchWithTimeout(base + '/auth/v1/token?grant_type=refresh_token', {
       method:'POST', headers:{apikey:cfg.sbKey,'Content-Type':'application/json'},
       body:JSON.stringify({refresh_token:sbRefreshToken})
-    });
+    }, 12000);
     var refreshed = await refreshRes.json();
     if (refreshRes.ok) {
       saveAdminSession(refreshed);
@@ -1587,7 +1587,7 @@ async function sbFetchRetryOnce(path, opts) {
   var base = cfg.sbUrl.replace(/\/+$/, '');
   var headers = Object.assign({apikey:cfg.sbKey,'Content-Type':'application/json'}, opts.headers || {});
   if (sbToken) headers.Authorization = 'Bearer ' + sbToken;
-  var res = await fetch(base + path, Object.assign({}, opts, {headers:headers}));
+  var res = await fetchWithTimeout(base + path, Object.assign({}, opts, {headers:headers}), 12000);
   if (!res.ok) { var t=''; try { var j=await res.json(); t=j.message||j.error_description||''; } catch (_) {} throw new Error('Supabase '+res.status+(t?': '+t:'')); }
   if (res.status===204) return null;
   var raw=await res.text(); if(!raw||!raw.trim()) return null;
@@ -1597,10 +1597,10 @@ async function sbFetchRetryOnce(path, opts) {
 }
 async function sbLogin(email, password) {
   var base = cfg.sbUrl.replace(/\/+$/, '');
-  var res = await fetch(base + '/auth/v1/token?grant_type=password', {
+  var res = await fetchWithTimeout(base + '/auth/v1/token?grant_type=password', {
     method: 'POST', headers: { apikey: cfg.sbKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: email, password: password })
-  });
+  }, 12000);
   var j = await res.json();
   if (!res.ok) throw new Error(j.error_description || j.msg || 'Login failed');
   saveAdminSession(j);
@@ -3055,17 +3055,24 @@ function startMdmAutoSync() {
 authRestoring = true;
 render();
 (async function bootAdmin() {
-  var restored = await restoreAdminSession();
-  authRestoring = false;
-  if (!restored) { render(); return; }
-  dataLoadError = ''; subsError = '';
-  render();
-  var loads = await Promise.allSettled([loadData(), loadSubs(), loadCommunity(), loadAdConfig()]);
-  if (loads[0].status === 'rejected') dataLoadError = loads[0].reason.message || 'Could not load GitHub route data.';
-  if (loads[1].status === 'rejected') subsError = loads[1].reason.message || 'Could not load route submissions.';
-  if (loads.some(function(x){return x.status==='rejected';})) toast('Session restored. Some data failed to load; use Refresh in that section.');
-  render();
-  startMdmAutoSync();
+  try {
+    var restored = await restoreAdminSession();
+    authRestoring = false;
+    if (!restored) { render(); return; }
+    dataLoadError = ''; subsError = '';
+    render();
+    var loads = await Promise.allSettled([loadData(), loadSubs(), loadCommunity(), loadAdConfig()]);
+    if (loads[0].status === 'rejected') dataLoadError = loads[0].reason && loads[0].reason.message || 'Could not load GitHub route data.';
+    if (loads[1].status === 'rejected') subsError = loads[1].reason && loads[1].reason.message || 'Could not load route submissions.';
+    if (loads.some(function(x){return x.status==='rejected';})) toast('Some data failed to load. Check your connection and use Refresh in that section.');
+    render();
+    startMdmAutoSync();
+  } catch (err) {
+    console.error('Bustime admin startup failed:', err);
+    authRestoring = false;
+    dataLoadError = (err && err.name === 'AbortError') ? 'The server took too long to respond. Check your connection and retry.' : ((err && err.message) || 'Admin startup failed. Please reload and sign in again.');
+    try { render(); } catch (renderError) { console.error('Admin recovery render failed:', renderError); }
+  }
 })();
 
 </script>
