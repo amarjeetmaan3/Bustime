@@ -262,7 +262,7 @@ class MdmPanelActivity : AppCompatActivity() {
                     })
                     val actions = LinearLayout(this@MdmPanelActivity).apply { orientation = LinearLayout.HORIZONTAL }
                     if (q.kind == "feedback") {
-                        if (status == "pending") actions.addView(Button(this@MdmPanelActivity).apply { text = "Mark Seen"; isAllCaps = false; setOnClickListener { updateReviewItem(q.table, id, "reviewed") } }, LinearLayout.LayoutParams(0, dp(44), 1f))
+                        if (status == "pending" || status == "approved" || status == "rejected") actions.addView(Button(this@MdmPanelActivity).apply { text = "Mark Seen"; isAllCaps = false; setOnClickListener { updateReviewItem(q.table, id, "reviewed") } }, LinearLayout.LayoutParams(0, dp(44), 1f))
                         else if (status == "reviewed") actions.addView(Button(this@MdmPanelActivity).apply { text = "Mark Unseen"; isAllCaps = false; setOnClickListener { updateReviewItem(q.table, id, "pending") } }, LinearLayout.LayoutParams(0, dp(44), 1f))
                     } else {
                         if (status == "pending" || status == "reviewed") actions.addView(Button(this@MdmPanelActivity).apply { text = "Approve"; isAllCaps = false; setOnClickListener { updateReviewItem(q.table, id, "approved") } }, LinearLayout.LayoutParams(0, dp(44), 1f))
