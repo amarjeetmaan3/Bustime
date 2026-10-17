@@ -77,7 +77,7 @@ class MdmPanelActivity : AppCompatActivity() {
         button(uiText("Bus Stop List", "बस स्टॉप सूची", "ਬੱਸ ਸਟਾਪ ਸੂਚੀ")) { showStops() }
         button(uiText("Recycle Bin", "रिसायकल बिन", "ਰੀਸਾਈਕਲ ਬਿਨ")) { showRecycleBin() }
         button(uiText("Add Route", "रूट जोड़ें", "ਰੂਟ ਜੋੜੋ")) { routeEditor(null) }
-        button(uiText("Correction Route", "रूट सुधारें", "ਰੂਟ ਵਿੱਚ ਸੋਧ ਕਰੋ")) { showRoutes() }
+        button(uiText("Correction Route", "रूट सुधारें", "ਰੂਟ ਵਿੱਚ ਸੋਧ ਕਰੋ")) { showRoutesForCorrection() }
         button(uiText("Add Bus Stop", "बस स्टॉप जोड़ें", "ਬੱਸ ਸਟਾਪ ਜੋੜੋ")) { stopEditor(null) }
         button(uiText("Back", "वापस", "ਵਾਪਸ")) { finish() }
         showRoot()
@@ -221,6 +221,27 @@ class MdmPanelActivity : AppCompatActivity() {
                 }
                 showSearchList(uiText("Route List", "रूट सूची", "ਰੂਟ ਸੂਚੀ"), uiText("Search a route, then tap it to open the full stop sequence.", "रूट खोजें और पूरा स्टॉप क्रम खोलने के लिए चुनें।", "ਰੂਟ ਖੋਜੋ ਅਤੇ ਸਟਾਪਾਂ ਦਾ ਪੂਰਾ ਕ੍ਰਮ ਖੋਲ੍ਹਣ ਲਈ ਚੁਣੋ।"), entries) { id ->
                     routes.firstOrNull { it.id == id }?.let { showRouteDetails(it, places) }
+                }
+            }.onFailure { toast(it.message ?: uiText("Could not load routes", "रूट लोड नहीं हो सके", "ਰੂਟ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੇ")) }
+        }
+    }
+
+    private fun showRoutesForCorrection() {
+        lifecycleScope.launch {
+            runCatching {
+                val routes = withContext(Dispatchers.IO) { repo.getAllRoutes() }
+                val places = withContext(Dispatchers.IO) { repo.getAllPlaces() }.associateBy { it.id }
+                val entries = routes.map { route ->
+                    val from = places[route.fromId]?.displayName("en") ?: route.fromId
+                    val to = places[route.toId]?.displayName("en") ?: route.toId
+                    Triple(from + " → " + to, uiText("Time: ", "समय: ", "ਸਮਾਂ: ") + route.time, route.id)
+                }
+                showSearchList(
+                    uiText("Correction Route", "रूट सुधारें", "ਰੂਟ ਵਿੱਚ ਸੋਧ ਕਰੋ"),
+                    uiText("Select an existing route to open the route editor.", "रूट एडिटर खोलने के लिए मौजूदा रूट चुनें।", "ਰੂਟ ਐਡੀਟਰ ਖੋਲ੍ਹਣ ਲਈ ਮੌਜੂਦਾ ਰੂਟ ਚੁਣੋ।"),
+                    entries
+                ) { id ->
+                    routes.firstOrNull { it.id == id }?.let { route -> routeEditor(route) { showRoutesForCorrection() } }
                 }
             }.onFailure { toast(it.message ?: uiText("Could not load routes", "रूट लोड नहीं हो सके", "ਰੂਟ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੇ")) }
         }
