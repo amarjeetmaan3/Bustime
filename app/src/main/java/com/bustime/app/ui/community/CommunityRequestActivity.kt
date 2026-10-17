@@ -131,7 +131,6 @@ class CommunityRequestActivity : AppCompatActivity() {
         if (phone.length !in 10..13) { toast(getString(com.bustime.app.R.string.community_enter_valid_mobile)); return }
         if (correctionDrafts.size < 2) { toast(getString(com.bustime.app.R.string.community_route_two_stops)); return }
         val proposed = org.json.JSONArray()
-        val seen = mutableMapOf<String, Int>()
         correctionDrafts.forEachIndexed { index, d ->
             val name = d.optString("name").trim()
             if (name.isBlank()) { toast(getString(com.bustime.app.R.string.community_enter_stop_name, index + 1)); return }
@@ -148,16 +147,11 @@ class CommunityRequestActivity : AppCompatActivity() {
                 }
             }
             if (id.isBlank() && matchingPlace != null) id = matchingPlace.id
-            val key = id.ifBlank { normalizedName }
-            seen[key] = (seen[key] ?: 0) + 1
             proposed.put(JSONObject().put("place_id", id.ifBlank { JSONObject.NULL }).put("name", name)
                 .put("language", d.optString("language", LanguageHelper.current()))
                 .put("time", t.ifBlank { JSONObject.NULL }).put("position", index))
         }
-        if (seen.values.any { it > 1 }) {
-            toast(getString(com.bustime.app.R.string.community_duplicate_stop))
-            return
-        }
+        // Repeated stops are valid route points; keep the submitted order intact.
         sendRouteEdit(route, proposed, phone)
     }
 
