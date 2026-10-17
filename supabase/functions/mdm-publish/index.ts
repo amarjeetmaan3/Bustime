@@ -136,16 +136,19 @@ Deno.serve(async (req: Request) => {
       }
     }
     if (operation === "delete") {
-      let savedPayload: unknown = payload && typeof payload === "object" ? payload : null;
-      if (!savedPayload) {
-        const prior = await fetch(url + "/rest/v1/data_change_log?select=payload&entity_type=eq." + entity_type + "&entity_id=eq." + encodeURIComponent(entity_id) + "&operation=eq.upsert&order=revision.desc&limit=1", {
-          headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }
-        });
-        if (prior.ok) {
-          const priorRows = await prior.json();
-          if (Array.isArray(priorRows) && priorRows.length) savedPayload = priorRows[0].payload;
+      const suppliedPayload: Record<string, unknown> = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+      let savedPayload: unknown = null;
+      // Prefer the latest full published payload and overlay caller fields, preserving fields not represented in compact Android models.
+      const prior = await fetch(url + "/rest/v1/data_change_log?select=payload&entity_type=eq." + entity_type + "&entity_id=eq." + encodeURIComponent(entity_id) + "&operation=eq.upsert&order=revision.desc&limit=1", {
+        headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }
+      });
+      if (prior.ok) {
+        const priorRows = await prior.json();
+        if (Array.isArray(priorRows) && priorRows.length && priorRows[0].payload && typeof priorRows[0].payload === "object") {
+          savedPayload = Object.assign({}, priorRows[0].payload, suppliedPayload);
         }
       }
+      if (!savedPayload && Object.keys(suppliedPayload).length) savedPayload = suppliedPayload;
       if (!savedPayload || typeof savedPayload !== "object") return reply({ error: "delete_payload_required_for_recovery", entity_type, entity_id }, 409);
       deleteArchives.push({ entity_type, entity_id, payload: savedPayload });
     }
