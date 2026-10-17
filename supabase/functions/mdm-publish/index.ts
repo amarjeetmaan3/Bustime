@@ -180,14 +180,19 @@ Deno.serve(async (req: Request) => {
         const r = payload as Record<string, unknown>;
         const from = String(r.from || "").trim(), to = String(r.to || "").trim();
         if (!from || !to || !Array.isArray(r.stops)) return reply({ error: "route_invalid_endpoints_or_stops" }, 400);
-        // Validate every ordered stop is present. Repeated stops are valid route points
-        // (for example, a service may pass through Ajmer more than once).
+        // Validate the complete ordered stop sequence, including endpoints.
+        // Canonical stop IDs prevent users bypassing suggestions by manually typing an existing name.
         const routeStops = [from, ...(r.stops as Array<Record<string, unknown>>).map(s => String(s?.place ?? s?.place_id ?? s?.id ?? "").trim()), to];
-        const normalizedStops = routeStops.map(v => v.toLocaleLowerCase().replace(/\s+/g, " ").trim());
+        const normalizedStops = routeStops.map(v => v.toLocaleLowerCase().replace(/\\s+/g, " ").trim());
         if (normalizedStops.some(v => !v)) {
           return reply({ error: "route_invalid_stops", message: "Every route stop must have a valid place." }, 400);
         }
-        if (new Set(normalizedStops).size < 2) return reply({ error: "route_needs_distinct_places", message: "A route must include at least two different places; repeated stops are allowed." }, 400);
+        if (new Set(normalizedStops).size < 2) {
+          return reply({ error: "route_needs_distinct_places", message: "A route must include at least two different places." }, 400);
+        }
+        if (new Set(normalizedStops).size !== normalizedStops.length) {
+          return reply({ error: "route_duplicate_stop", message: "The same bus stop cannot appear more than once in a route." }, 400);
+        }
         const time = (v: unknown) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
         const hasTime = time(r.time) || time(r.arrive) || (r.stops as Array<Record<string, unknown>>).some(s => time(s?.time));
         if (!hasTime) return reply({ error: "route_needs_at_least_one_time" }, 400);
