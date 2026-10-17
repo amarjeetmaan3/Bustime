@@ -1166,7 +1166,7 @@ function validate() {
     rids[r.id] = true;
     if (!pids[r.from]) errors.push(tag + ': "From" place does not exist');
     if (!pids[r.to]) errors.push(tag + ': "To" place does not exist');
-    if (r.from && r.from === r.to) errors.push(tag + ': From and To are the same');
+    var routePlaces = [r.from].concat((r.stops || []).map(function (s) { return s.place; })).concat([r.to]).filter(Boolean); if (new Set(routePlaces).size < 2) errors.push(tag + ': route must include at least two different places');
     if (!TIME_RE.test(r.time || '') && !TIME_RE.test(r.arrive || '') && !(r.stops || []).some(function (s) { return TIME_RE.test(s.time || ''); })) errors.push(tag + ': no valid time anywhere on the route');
     (r.stops || []).forEach(function (s) { if (!pids[s.place]) errors.push(tag + ': a stop refers to a missing place'); });
   });
@@ -2286,17 +2286,9 @@ function edUsedIds(info){
 }
 // Returns an error message if the same place appears twice in the route being edited, else ''.
 function edDuplicateError(mode){
-  var keys=edEditorKeys(mode),ids=keys.map(function(k){return edGroupIdentity(mode,k);});
-  var from=ids[0],to=ids[ids.length-1],seen={};
-  if(from.id&&from.id===to.id)return 'From and To must be different places ("'+from.label+'").';
-  var msg=function(label){return 'The place "'+label+'" is used more than once in this route. Change or remove the repeated stop.';};
-  for(var i=1;i<ids.length-1;i++){
-    var g=ids[i];if(!g.id)continue;
-    if(mode==='route'&&(g.id===from.id||g.id===to.id))return msg(g.label);
-    if(mode==='review'&&(g.id===from.id||g.id===to.id))continue;   // a stop equal to From/To is that endpoint's own time
-    if(seen[g.id])return msg(g.label);
-    seen[g.id]=true;
-  }
+  var keys=edEditorKeys(mode),ids=keys.map(function(k){return edGroupIdentity(mode,k);}).filter(function(g){return !!g.id;});
+  var unique={};ids.forEach(function(g){unique[g.id]=true;});
+  if(Object.keys(unique).length<2)return 'A route must include at least two different places. Repeated stops along the way are allowed.';
   return '';
 }
 var edSug={el:null,input:null,on:-1};
@@ -2767,7 +2759,7 @@ document.addEventListener('click', async function (e) {
       var dupRoute=edDuplicateError('route');if(dupRoute){toast(dupRoute);return;}
       var from=ensureRoutePlace('from'),to=ensureRoutePlace('to');
       if(!from||!to){toast('Could not resolve From and To names');return;}
-      if(from===to){toast('From and To must be different places');return;}
+      var routePlaceIds=[from,to].concat(routeRows.map(function(row){return ensureRoutePlace(row.getAttribute('data-route-stop'));}));if(new Set(routePlaceIds.filter(Boolean)).size<2){toast('A route must include at least two different places. Repeated stops along the way are allowed.');return;}
       var stops=[],previousTime=TIME_RE.test(time)?time:'',dayOffset=0;
       routeRows.forEach(function(row){
         var key=row.getAttribute('data-route-stop'),sp=ensureRoutePlace(key),st=row.querySelector('.st_time').value;

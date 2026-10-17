@@ -50,6 +50,59 @@ Deno.serve(async (req: Request) => {
     if (!equal(actual, fromB64(secret.password_hash))) return reply({ error: "invalid_password" }, 401);
   }
 
+  // Authenticated Review Center API; only these fixed submission tables can be accessed.
+  const reviewTables = ["route_submissions", "correction_submissions", "feedback_submissions", "bus_operator_submissions"] as const;
+  if (body.action === "review-list") {
+    const result: Record<string, unknown> = { ok: true, failed: [] as string[] };
+    for (const table of reviewTables) {
+      const r = await fetch(url + "/rest/v1/" + table + "?select=*&order=created_at.desc&limit=300", {
+        headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }
+      });
+      if (!r.ok) { (result.failed as string[]).push(table + ": " + r.status); result[table] = []; }
+      else result[table] = await r.json();
+    }
+    return reply(result);
+  }
+  if (body.action === "review-edit") {
+    const table = String(body.table || ""), id = String(body.id || "").trim();
+    if (!(reviewTables as readonly string[]).includes(table) || !id || id.length > 100) return reply({ error: "invalid_review_item" }, 400);
+    const allowed: Record<string, string[]> = {
+      route_submissions: ["from_text", "to_text", "start_time", "service_name", "phone", "stops", "route_text"],
+      correction_submissions: ["notes", "phone", "missing_place_name", "missing_time", "corrected_time", "proposed_stops", "change_summary"],
+      feedback_submissions: ["category", "related_route", "message", "contact"],
+      bus_operator_submissions: ["operator_name", "service_name", "bus_type", "seat_type", "sleeper_count", "seater_count", "from_text", "to_text", "location", "phone", "whatsapp", "details", "bus_types"]
+    };
+    if (!body.fields || typeof body.fields !== "object" || Array.isArray(body.fields)) return reply({ error: "invalid_review_fields" }, 400);
+    const fields = body.fields as Record<string, unknown>;
+    const keys = Object.keys(fields);
+    if (!keys.length || keys.some(key => !allowed[table].includes(key))) return reply({ error: "review_field_not_allowed" }, 400);
+    const r = await fetch(url + "/rest/v1/" + table + "?id=eq." + encodeURIComponent(id), {
+      method: "PATCH",
+      headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify(fields)
+    });
+    if (!r.ok) return reply({ error: "review_edit_failed", detail: (await r.text()).slice(0, 200) }, 502);
+    const rows = await r.json();
+    return rows.length ? reply({ ok: true, item: rows[0] }) : reply({ error: "review_item_not_found" }, 404);
+  }
+  if (body.action === "review-status" || body.action === "review-delete") {
+    const table = String(body.table || ""), id = String(body.id || "").trim();
+    if (!(reviewTables as readonly string[]).includes(table) || !id || id.length > 100) return reply({ error: "invalid_review_item" }, 400);
+    const endpoint = url + "/rest/v1/" + table + "?id=eq." + encodeURIComponent(id);
+    if (body.action === "review-delete") {
+      const r = await fetch(endpoint, { method: "DELETE", headers: { apikey: service, Authorization: "Bearer " + service, Prefer: "return=representation" } });
+      if (!r.ok) return reply({ error: "review_delete_failed", detail: (await r.text()).slice(0, 200) }, 502);
+      const rows = await r.json();
+      return rows.length ? reply({ ok: true, deleted: true }) : reply({ error: "review_item_not_found" }, 404);
+    }
+    const status = String(body.status || "");
+    if (!["pending", "approved", "rejected"].includes(status)) return reply({ error: "invalid_review_status" }, 400);
+    const r = await fetch(endpoint, { method: "PATCH", headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ status }) });
+    if (!r.ok) return reply({ error: "review_status_update_failed", detail: (await r.text()).slice(0, 200) }, 502);
+    const rows = await r.json();
+    return rows.length ? reply({ ok: true, item: rows[0] }) : reply({ error: "review_item_not_found" }, 404);
+  }
+
   // Shared Recycle Bin actions; only the authenticated owner/MDM password reaches here.
   if (body.action === "recycle-list") {
     const r = await fetch(url + "/rest/v1/data_recycle_bin?select=id,entity_type,entity_id,payload,deleted_at,deleted_revision&restored_at=is.null&permanently_deleted_at=is.null&order=deleted_at.desc&limit=500", {
@@ -136,6 +189,7 @@ Deno.serve(async (req: Request) => {
         if (normalizedStops.some(v => !v)) {
           return reply({ error: "route_invalid_stops", message: "Every route stop must have a valid place." }, 400);
         }
+        if (new Set(normalizedStops).size < 2) return reply({ error: "route_needs_distinct_places", message: "A route must include at least two different places; repeated stops are allowed." }, 400);
         const time = (v: unknown) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
         const hasTime = time(r.time) || time(r.arrive) || (r.stops as Array<Record<string, unknown>>).some(s => time(s?.time));
         if (!hasTime) return reply({ error: "route_needs_at_least_one_time" }, 400);
