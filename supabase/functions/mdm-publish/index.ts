@@ -63,6 +63,28 @@ Deno.serve(async (req: Request) => {
     }
     return reply(result);
   }
+  if (body.action === "review-edit") {
+    const table = String(body.table || ""), id = String(body.id || "").trim();
+    if (!(reviewTables as readonly string[]).includes(table) || !id || id.length > 100) return reply({ error: "invalid_review_item" }, 400);
+    const allowed: Record<string, string[]> = {
+      route_submissions: ["from_text", "to_text", "start_time", "service_name", "phone", "stops", "route_text"],
+      correction_submissions: ["notes", "phone", "missing_place_name", "missing_time", "corrected_time", "proposed_stops", "change_summary"],
+      feedback_submissions: ["category", "related_route", "message", "contact"],
+      bus_operator_submissions: ["operator_name", "service_name", "bus_type", "seat_type", "sleeper_count", "seater_count", "from_text", "to_text", "location", "phone", "whatsapp", "details", "bus_types"]
+    };
+    if (!body.fields || typeof body.fields !== "object" || Array.isArray(body.fields)) return reply({ error: "invalid_review_fields" }, 400);
+    const fields = body.fields as Record<string, unknown>;
+    const keys = Object.keys(fields);
+    if (!keys.length || keys.some(key => !allowed[table].includes(key))) return reply({ error: "review_field_not_allowed" }, 400);
+    const r = await fetch(url + "/rest/v1/" + table + "?id=eq." + encodeURIComponent(id), {
+      method: "PATCH",
+      headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify(fields)
+    });
+    if (!r.ok) return reply({ error: "review_edit_failed", detail: (await r.text()).slice(0, 200) }, 502);
+    const rows = await r.json();
+    return rows.length ? reply({ ok: true, item: rows[0] }) : reply({ error: "review_item_not_found" }, 404);
+  }
   if (body.action === "review-status" || body.action === "review-delete") {
     const table = String(body.table || ""), id = String(body.id || "").trim();
     if (!(reviewTables as readonly string[]).includes(table) || !id || id.length > 100) return reply({ error: "invalid_review_item" }, 400);
