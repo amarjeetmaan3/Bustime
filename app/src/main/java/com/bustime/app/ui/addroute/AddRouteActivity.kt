@@ -155,6 +155,14 @@ class AddRouteActivity : AppCompatActivity() {
         if (phone.length !in 10..13) { Toast.makeText(this, R.string.ar_need_phone, Toast.LENGTH_SHORT).show(); return }
         val service = findViewById<EditText>(R.id.etService).text.toString().trim()
         if (drafts.size < 2) { Toast.makeText(this, R.string.ar_min_stops, Toast.LENGTH_SHORT).show(); return }
+        val distinctPlaces = drafts.map { d ->
+            if (!d.isNull("place_id")) "id:" + d.optString("place_id")
+            else "name:" + d.optString("name").trim().lowercase().replace(Regex("\\s+"), " ")
+        }.distinct().size
+        if (distinctPlaces < 2) {
+            Toast.makeText(this, "A route must include at least two different places. Repeated stops along the way are allowed.", Toast.LENGTH_LONG).show()
+            return
+        }
 
         val stops = JSONArray()
         for (d in drafts) {
