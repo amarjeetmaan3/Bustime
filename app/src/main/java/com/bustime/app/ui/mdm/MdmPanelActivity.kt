@@ -262,7 +262,8 @@ class MdmPanelActivity : AppCompatActivity() {
         if (isBus) {
             addField("operator_name", uiText("Operator / person name", "ऑपरेटर / व्यक्ति का नाम", "ਆਪਰੇਟਰ / ਵਿਅਕਤੀ ਦਾ ਨਾਮ"))
             addField("service_name", uiText("Bus service name", "बस सेवा का नाम", "ਬੱਸ ਸੇਵਾ ਦਾ ਨਾਮ"))
-            addField("bus_type", uiText("Bus type", "बस का प्रकार", "ਬੱਸ ਦੀ ਕਿਸਮ"))
+            addField("bus_types", uiText("Bus types (comma separated)", "बस के प्रकार (कॉमा से अलग)", "ਬੱਸ ਦੀਆਂ ਕਿਸਮਾਂ (ਕੌਮੇ ਨਾਲ ਵੱਖ ਕਰੋ)"))
+            values["bus_types"]?.setText((item.optJSONArray("bus_types")?.let { a -> (0 until a.length()).map { a.optString(it) }.joinToString(", ") } ?: item.optString("bus_type")).ifBlank { "Ordinary" })
             addField("location", uiText("Location / area", "स्थान / एरिया", "ਥਾਂ / ਇਲਾਕਾ"))
             addField("phone", uiText("Mobile number", "मोबाइल नंबर", "ਮੋਬਾਈਲ ਨੰਬਰ"), phone = true)
             addField("whatsapp", uiText("WhatsApp (optional)", "व्हाट्सऐप (वैकल्पिक)", "ਵਟਸਐਪ (ਵਿਕਲਪਿਕ)"), phone = true)
@@ -275,7 +276,10 @@ class MdmPanelActivity : AppCompatActivity() {
         }
         button(uiText("Save Request", "रिक्वेस्ट सेव करें", "ਬੇਨਤੀ ਸੇਵ ਕਰੋ")) {
             val fields = JSONObject()
-            values.forEach { (key, edit) -> fields.put(key, edit.text.toString().trim()) }
+            values.forEach { (key, edit) ->
+                if (isBus && key == "bus_types") fields.put(key, JSONArray(edit.text.toString().split(",").map { it.trim() }.filter { it.isNotBlank() }.distinct()))
+                else fields.put(key, edit.text.toString().trim())
+            }
             if (isBus && (fields.optString("operator_name").isBlank() || fields.optString("phone").isBlank())) {
                 toast(uiText("Name and mobile number are required.", "नाम और मोबाइल नंबर ज़रूरी हैं।", "ਨਾਮ ਅਤੇ ਮੋਬਾਈਲ ਨੰਬਰ ਲਾਜ਼ਮੀ ਹਨ।")); return@button
             }
