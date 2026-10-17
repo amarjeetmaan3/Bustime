@@ -78,34 +78,6 @@ class MdmPanelActivity : AppCompatActivity() {
         button(uiText("Recycle Bin", "रिसायकल बिन", "ਰੀਸਾਈਕਲ ਬਿਨ")) { showRecycleBin() }
         button(uiText("Add Route", "रूट जोड़ें", "ਰੂਟ ਜੋੜੋ")) { routeEditor(null) }
         button(uiText("Add Bus Stop", "बस स्टॉप जोड़ें", "ਬੱਸ ਸਟਾਪ ਜੋੜੋ")) { stopEditor(null) }
-        button(uiText("Sync Now (changes only)", "अभी सिंक करें (केवल बदलाव)", "ਹੁਣੇ ਸਿੰਕ ਕਰੋ (ਸਿਰਫ਼ ਤਬਦੀਲੀਆਂ)")) {
-            lifecycleScope.launch {
-                runCatching { repo.syncData() }.onSuccess {
-                    if (repo.didLastSyncFail()) toast(uiText("Sync failed; existing data was kept.", "सिंक विफल; पुराना डेटा सुरक्षित है।", "ਸਿੰਕ ਅਸਫਲ; ਮੌਜੂਦਾ ਡਾਟਾ ਸੁਰੱਖਿਅਤ ਹੈ।"))
-                    else toast(uiText("Sync check completed.", "सिंक जाँच पूरी हुई।", "ਸਿੰਕ ਜਾਂਚ ਪੂਰੀ ਹੋਈ।"))
-                }.onFailure { toast(it.message ?: uiText("Sync failed", "सिंक विफल", "ਸਿੰਕ ਅਸਫਲ")) }
-            }
-        }
-        button(uiText("Check Revision", "रिवीजन जाँचें", "ਰੀਵਿਜ਼ਨ ਜਾਂਚੋ")) {
-            lifecycleScope.launch {
-                runCatching { repo.getSyncStatus() }.onSuccess { toast(it) }
-                    .onFailure { toast(it.message ?: uiText("Could not check revision", "रिवीजन नहीं जाँची जा सकी", "ਰੀਵਿਜ਼ਨ ਨਹੀਂ ਜਾਂਚੀ ਜਾ ਸਕੀ")) }
-            }
-        }
-        button(uiText("Sync Status", "सिंक स्थिति", "ਸਿੰਕ ਸਥਿਤੀ")) {
-            lifecycleScope.launch {
-                runCatching { repo.getSyncStatus() }.onSuccess { toast(it) }
-                    .onFailure { toast(it.message ?: uiText("Sync status unavailable", "सिंक स्थिति उपलब्ध नहीं", "ਸਿੰਕ ਸਥਿਤੀ ਉਪਲਬਧ ਨਹੀਂ")) }
-            }
-        }
-        button(uiText("Refresh App Data", "ऐप डेटा रीफ़्रेश करें", "ਐਪ ਡਾਟਾ ਰਿਫ੍ਰੈਸ਼ ਕਰੋ")) {
-            lifecycleScope.launch {
-                runCatching { repo.syncData() }.onSuccess {
-                    if (repo.didLastSyncFail()) toast(uiText("Refresh failed; existing data was kept.", "रीफ़्रेश विफल; पुराना डेटा सुरक्षित है।", "ਰਿਫ੍ਰੈਸ਼ ਅਸਫਲ; ਮੌਜੂਦਾ ਡਾਟਾ ਸੁਰੱਖਿਅਤ ਹੈ।"))
-                    else toast(uiText("Refresh check completed.", "रीफ़्रेश जाँच पूरी हुई।", "ਰਿਫ੍ਰੈਸ਼ ਜਾਂਚ ਪੂਰੀ ਹੋਈ।"))
-                }.onFailure { toast(it.message ?: uiText("Refresh failed", "रीफ़्रेश विफल", "ਰਿਫ੍ਰੈਸ਼ ਅਸਫਲ")) }
-            }
-        }
         button(uiText("Back", "वापस", "ਵਾਪਸ")) { finish() }
         showRoot()
     }
