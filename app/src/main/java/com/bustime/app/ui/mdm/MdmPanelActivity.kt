@@ -389,7 +389,7 @@ class MdmPanelActivity : AppCompatActivity() {
             topActionLabel = uiText("← Back to edit", "← संपादन पर वापस", "← ਸੋਧ ਵੱਲ ਵਾਪਸ"),
             topAction = { renderRouteEditor(old, drafts, service, places, returnAction) },
             publishAction = {
-                val problem = validateRouteDrafts(drafts)
+                val problem = validateRouteDrafts(drafts, places)
                 if (problem != null) { toast(problem); return@showPassengerStyleRoute }
                 publishRoute(old, drafts, service, places)
             }
