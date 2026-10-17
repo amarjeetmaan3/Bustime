@@ -129,12 +129,12 @@ Deno.serve(async (req: Request) => {
         const r = payload as Record<string, unknown>;
         const from = String(r.from || "").trim(), to = String(r.to || "").trim();
         if (!from || !to || !Array.isArray(r.stops)) return reply({ error: "route_invalid_endpoints_or_stops" }, 400);
-        // Validate the complete ordered route, not only the start and destination.
-        // MDM and Web Admin must reject the same Place appearing at any two positions.
+        // Validate every ordered stop is present. Repeated stops are valid route points
+        // (for example, a service may pass through Ajmer more than once).
         const routeStops = [from, ...(r.stops as Array<Record<string, unknown>>).map(s => String(s?.place ?? s?.place_id ?? s?.id ?? "").trim()), to];
         const normalizedStops = routeStops.map(v => v.toLocaleLowerCase().replace(/\s+/g, " ").trim());
-        if (normalizedStops.some(v => !v) || new Set(normalizedStops).size !== normalizedStops.length) {
-          return reply({ error: "route_duplicate_stop", message: "A stop appears more than once in this route." }, 400);
+        if (normalizedStops.some(v => !v)) {
+          return reply({ error: "route_invalid_stops", message: "Every route stop must have a valid place." }, 400);
         }
         const time = (v: unknown) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
         const hasTime = time(r.time) || time(r.arrive) || (r.stops as Array<Record<string, unknown>>).some(s => time(s?.time));
