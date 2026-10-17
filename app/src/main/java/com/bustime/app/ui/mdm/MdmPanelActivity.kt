@@ -533,6 +533,86 @@ class MdmPanelActivity : AppCompatActivity() {
                 topAction = { routeEditor(route) { showRouteDetails(route, places) } },
                 deleteAction = { confirmDeleteRoute(route) }
             )
+            addRouteCopyActions(route, places)
+        }
+    }
+
+    /**
+     * These actions exist only in the Android MDM route-details screen.
+     * Copy keeps the current stop order; Return reverses it. Both start a NEW
+     * route draft and intentionally clear every stop time.
+     */
+    private fun addRouteCopyActions(route: Route, places: Map<String, Place>) {
+        val correction = findViewById<Button>(com.bustime.app.R.id.btnRouteCorrection)
+        val row = correction.parent as? ViewGroup ?: return
+        val cardContent = row.parent as? LinearLayout ?: return
+        val index = cardContent.indexOfChild(row)
+        if (index < 0) return
+
+        val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        actions.addView(Button(this).apply {
+            text = uiText("Copy Route", "रूट कॉपी करें", "ਰੂਟ ਕਾਪੀ ਕਰੋ")
+            isAllCaps = false
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+            setOnClickListener { createRouteVariant(route, reverse = false, places = places) }
+        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(4) })
+        actions.addView(Button(this).apply {
+            text = uiText("Return Route", "वापसी रूट", "ਵਾਪਸੀ ਰੂਟ")
+            isAllCaps = false
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+            setOnClickListener { createRouteVariant(route, reverse = true, places = places) }
+        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(4) })
+        cardContent.addView(actions, index + 1, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(6)
+        })
+    }
+
+    private fun createRouteVariant(source: Route, reverse: Boolean, placesById: Map<String, Place>) {
+        lifecycleScope.launch {
+            runCatching {
+                val places = withContext(Dispatchers.IO) { repo.getAllPlaces() }
+                val storedStops = withContext(Dispatchers.IO) { repo.getRouteStops(source.id) }
+                    .sortedBy { it.stopOrder }
+                val completeStops = if (storedStops.size >= 2) {
+                    storedStops
+                } else {
+                    val ids = listOf(source.fromId) + storedStops.map { it.placeId } + listOf(source.toId)
+                    ids.distinct().mapIndexed { index, id ->
+                        com.bustime.app.models.RouteStop(
+                            routeId = source.id,
+                            placeId = id,
+                            stopOrder = index,
+                            time = null
+                        )
+                    }
+                }
+                if (completeStops.size < 2) error(uiText(
+                    "This route does not have enough stops to copy.",
+                    "इस रूट में कॉपी करने के लिए पर्याप्त स्टॉप नहीं हैं।",
+                    "ਇਸ ਰੂਟ ਵਿੱਚ ਕਾਪੀ ਕਰਨ ਲਈ ਕਾਫ਼ੀ ਸਟਾਪ ਨਹੀਂ ਹਨ।"
+                ))
+                val orderedStops = if (reverse) completeStops.asReversed() else completeStops
+                val drafts = orderedStops.map { stop ->
+                    JSONObject()
+                        .put("place_id", stop.placeId)
+                        .put("name", places.firstOrNull { it.id == stop.placeId }?.displayName("en") ?: stop.placeId)
+                        .put("language", "en")
+                        .put("time", JSONObject.NULL)
+                }.toMutableList()
+                renderRouteEditor(
+                    old = null,
+                    drafts = drafts,
+                    serviceValue = source.serviceName.orEmpty(),
+                    places = places,
+                    returnAction = { showRouteDetails(source, places.associateBy { it.id }) }
+                )
+            }.onFailure {
+                toast(it.message ?: uiText(
+                    "Could not prepare the new route.",
+                    "नया रूट तैयार नहीं हो सका।",
+                    "ਨਵਾਂ ਰੂਟ ਤਿਆਰ ਨਹੀਂ ਹੋ ਸਕਿਆ।"
+                ))
+            }
         }
     }
 
