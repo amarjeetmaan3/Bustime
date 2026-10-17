@@ -606,8 +606,8 @@ var NAV = [
 ];
 var TITLES = {
   dashboard:'Dashboard', analytics:'Analytics & Stats', bus:'Bus', places:'Bus · Places',
-  routes:'Bus · Routes', busRequests:'Bus · Route Requests', addBus:'Bus · Add Your Bus', busDirectory:'Bus · Operator Directory',
-  corrections:'Review Center · Corrections', feedbackReview:'Review Center · Feedback',
+  routes:'Bus · Routes', busRequests:'Review Center · Add Route / Pending Bus Route', addBus:'Bus · Add Your Bus', busDirectory:'Bus · Operator Directory',
+  corrections:'Review Center · Route Corrections', feedbackReview:'Review Center · Feedback',
   review:'Review Center', content:'App Text & Warnings', advertisement:'Advertisement', settings:'Settings', recycleBin:'Recycle Bin'
 };
 
@@ -1251,7 +1251,7 @@ function refreshWorkspaceNav() {
   var items = [], active = tab;
   // Keep every user-submission queue inside one Review Center workspace.
   if (['review','busRequests','addBus','corrections','feedbackReview'].indexOf(tab) >= 0) {
-    items = [['review','Overview'],['busRequests','Add Route Requests'],['corrections','Route Corrections'],['feedbackReview','Feedback'],['addBus','Book Bus / Add Your Bus']];
+    items = [['review','Overview'],['busRequests','Add Route / Pending Bus Route'],['corrections','Route Corrections'],['feedbackReview','Feedback'],['addBus','Book Bus / Add Your Bus']];
     active = tab;
   } else if (['bus','places','routes','busDirectory'].indexOf(tab) >= 0) {
     items = [['places','Places & Bus Stands'],['routes','Bus Routes'],['busDirectory','Operator Directory']];
