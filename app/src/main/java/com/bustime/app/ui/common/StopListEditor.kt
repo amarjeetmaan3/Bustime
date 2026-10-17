@@ -52,6 +52,27 @@ class StopListEditor(
     private fun timesWith(index: Int, value: String): List<String?> =
         drafts.mapIndexed { i, d -> if (i == index) value else timeOf(d) }
 
+    /** Returns the first repeated stop positions (1-based) after resolving typed aliases to canonical places. */
+    fun duplicateStopIndexes(): Pair<Int, Int>? {
+        fun normalize(value: String): String = value.trim().lowercase(Locale.ROOT).replace(Regex("\\s+"), " ")
+        val firstSeen = mutableMapOf<String, Int>()
+        drafts.forEachIndexed { index, draft ->
+            val name = draft.optString("name").trim()
+            if (name.isBlank()) return@forEachIndexed
+            val explicitId = if (draft.isNull("place_id")) "" else draft.optString("place_id").trim()
+            val canonical = if (explicitId.isNotBlank()) {
+                allPlaces.firstOrNull { it.id == explicitId }
+            } else {
+                allPlaces.firstOrNull { place -> place.names.values.any { alias -> normalize(alias) == normalize(name) } }
+            }
+            val key = canonical?.let { "id:${it.id}" } ?: "name:${normalize(name)}"
+            val previous = firstSeen[key]
+            if (previous != null) return previous to (index + 1)
+            firstSeen[key] = index + 1
+        }
+        return null
+    }
+
     fun render() {
         box.removeAllViews()
         val bg = android.util.TypedValue()
