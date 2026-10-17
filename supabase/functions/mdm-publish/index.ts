@@ -69,9 +69,10 @@ Deno.serve(async (req: Request) => {
     const allowed: Record<string, string[]> = {
       route_submissions: ["from_text", "to_text", "start_time", "service_name", "phone", "stops", "route_text"],
       correction_submissions: ["notes", "phone", "missing_place_name", "missing_time", "corrected_time", "proposed_stops", "change_summary"],
-      feedback_submissions: ["category", "related_route", "message", "contact"],
+      feedback_submissions: [],
       bus_operator_submissions: ["operator_name", "service_name", "bus_type", "seat_type", "sleeper_count", "seater_count", "from_text", "to_text", "location", "phone", "whatsapp", "details", "bus_types"]
     };
+    if (table === "feedback_submissions") return reply({ error: "feedback_is_read_only" }, 403);
     if (!body.fields || typeof body.fields !== "object" || Array.isArray(body.fields)) return reply({ error: "invalid_review_fields" }, 400);
     const fields = body.fields as Record<string, unknown>;
     const keys = Object.keys(fields);
@@ -90,6 +91,7 @@ Deno.serve(async (req: Request) => {
     if (!(reviewTables as readonly string[]).includes(table) || !id || id.length > 100) return reply({ error: "invalid_review_item" }, 400);
     const endpoint = url + "/rest/v1/" + table + "?id=eq." + encodeURIComponent(id);
     const status = body.action === "review-delete" ? "deleted" : String(body.status || "");
+    if (table === "feedback_submissions" && (body.action === "review-delete" || !["pending", "reviewed"].includes(status))) return reply({ error: "feedback_status_not_allowed" }, 403);
     if (!["pending", "reviewed", "approved", "rejected", "deleted"].includes(status)) return reply({ error: "invalid_review_status" }, 400);
     const patch: Record<string, unknown> = { status };
     if (status === "reviewed") patch.reviewed_at = new Date().toISOString();
