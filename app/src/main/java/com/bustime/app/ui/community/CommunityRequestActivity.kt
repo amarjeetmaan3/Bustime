@@ -130,6 +130,16 @@ class CommunityRequestActivity : AppCompatActivity() {
         val phone = digits(value("phone"))
         if (phone.length !in 10..13) { toast(getString(com.bustime.app.R.string.community_enter_valid_mobile)); return }
         if (correctionDrafts.size < 2) { toast(getString(com.bustime.app.R.string.community_route_two_stops)); return }
+        val duplicate = correctionList?.duplicateStopIndexes()
+        if (duplicate != null) {
+            val message = when (LanguageHelper.current()) {
+                "hi" -> "स्टॉप ${duplicate.first} और ${duplicate.second} एक ही जगह हैं। हर स्टॉप केवल एक बार रखें।"
+                "pa" -> "ਸਟਾਪ ${duplicate.first} ਅਤੇ ${duplicate.second} ਇੱਕੋ ਥਾਂ ਹਨ। ਹਰ ਸਟਾਪ ਸਿਰਫ਼ ਇੱਕ ਵਾਰ ਰੱਖੋ।"
+                else -> "Stops ${duplicate.first} and ${duplicate.second} refer to the same place. Each stop can appear only once."
+            }
+            toast(message)
+            return
+        }
         val proposed = org.json.JSONArray()
         correctionDrafts.forEachIndexed { index, d ->
             val name = d.optString("name").trim()
@@ -151,7 +161,6 @@ class CommunityRequestActivity : AppCompatActivity() {
                 .put("language", d.optString("language", LanguageHelper.current()))
                 .put("time", t.ifBlank { JSONObject.NULL }).put("position", index))
         }
-        // Repeated stops are valid route points; keep the submitted order intact.
         sendRouteEdit(route, proposed, phone)
     }
 
