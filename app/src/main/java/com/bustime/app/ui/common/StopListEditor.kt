@@ -54,7 +54,7 @@ class StopListEditor(
 
     /** Returns the first repeated stop positions (1-based) after resolving typed aliases to canonical places. */
     fun duplicateStopIndexes(): Pair<Int, Int>? {
-        fun normalize(value: String): String = value.trim().lowercase(Locale.ROOT).replace(Regex("\\\\s+"), " ")
+        fun normalize(value: String): String = value.trim().lowercase(Locale.ROOT).replace(Regex("\\s+"), " ")
         val firstSeen = mutableMapOf<String, Int>()
         drafts.forEachIndexed { index, draft ->
             val name = draft.optString("name").trim()
