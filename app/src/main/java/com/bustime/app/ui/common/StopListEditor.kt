@@ -190,7 +190,11 @@ class StopListEditor(
                 text = if (t.isBlank()) "" else t
                 contentDescription = if (t.isBlank()) activity.getString(R.string.ar_tap_time) else t
                 textSize = 12f
-                if (t.isBlank()) setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_time_outline, 0, 0, 0) else setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                // Empty time field: show a small, centered clock icon only. Do not use
+                // intrinsic drawable sizing here because it can make the clock look oversized.
+                val clock = if (t.isBlank()) androidx.core.content.ContextCompat.getDrawable(activity, R.drawable.ic_time_outline) else null
+                clock?.setBounds(0, 0, dp(18), dp(18))
+                setCompoundDrawables(clock, null, null, null)
                 gravity = Gravity.CENTER
                 setTextColor(if (t.isBlank()) (if (night) 0xFFB0BEC5.toInt() else 0xFF64748B.toInt()) else android.graphics.Color.rgb(58, 133, 190))
                 setPadding(dp(5), dp(4), dp(5), dp(4))
@@ -210,7 +214,15 @@ class StopListEditor(
                         if (ok) {
                             draft.put("time", value)
                             text = value
+                            // Once a time is selected, show the time text without the clock icon.
+                            setCompoundDrawables(null, null, null, null)
+                            contentDescription = value
                             setTextColor(android.graphics.Color.rgb(58, 133, 190))
+                            background = android.graphics.drawable.GradientDrawable().apply {
+                                setColor(if (night) 0xFF303943.toInt() else 0xFFEAF3FA.toInt())
+                                setStroke(dp(1), if (night) 0xFF4B5563.toInt() else 0xFFD5DDE7.toInt())
+                                cornerRadius = dp(6).toFloat()
+                            }
                         }
                     }, h, m, true)
                     dialog.setButton(DialogInterface.BUTTON_NEUTRAL, activity.getString(R.string.ar_clear)) { _, _ ->
