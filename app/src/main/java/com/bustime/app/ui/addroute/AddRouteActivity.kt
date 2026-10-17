@@ -52,6 +52,7 @@ class AddRouteActivity : AppCompatActivity() {
         repo = AppRepository.getInstance(this)
         stopsBox = findViewById(R.id.stopsBox)
         btnSubmit = findViewById(R.id.btnSubmitRoute)
+        btnSubmit.isEnabled = false
         val spinner = findViewById<Spinner>(R.id.spRoute)
 
         setMode(true)
@@ -70,6 +71,7 @@ class AddRouteActivity : AppCompatActivity() {
             
             )
             editor?.render()
+            btnSubmit.isEnabled = true
 
             val allRoutes = repo.getAllRoutes()
             val stopsByRoute = repo.getAllRouteStops()
