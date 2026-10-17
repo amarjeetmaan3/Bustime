@@ -1221,7 +1221,8 @@ function render() {
   var counts = data ? { places:(data.places||[]).length, routes:(data.routes||[]).length } : {};
   refreshWorkspaceNav();
   $('#nav').innerHTML = NAV.map(function (n) {
-    return '<button data-act="tab" data-t="' + n[0] + '" class="' + (tab === n[0] ? 'on' : '') + '">' + n[1] +
+    var reviewTabs = ['review','busRequests','addBus','corrections','feedbackReview'];
+    return '<button data-act="tab" data-t="' + n[0] + '" class="' + ((tab === n[0] || (n[0] === 'review' && reviewTabs.indexOf(tab) >= 0)) ? 'on' : '') + '">' + n[1] +
       (counts[n[0]] != null ? '<span class="count">' + counts[n[0]] + '</span>' : '') + '</button>';
   }).join('');
   refreshChrome();
@@ -1248,12 +1249,13 @@ function refreshWorkspaceNav() {
   var host = $('#workspaceNav');
   if (!host) return;
   var items = [], active = tab;
-  if (['bus','places','routes','busRequests','addBus','busDirectory'].indexOf(tab) >= 0) {
-    items = [['places','Places & Bus Stands'],['routes','Bus Routes'],['busRequests','Route Requests'],['addBus','Add Bus Requests'],['busDirectory','Operator Directory']];
-    active = ['places','routes','busRequests','addBus','busDirectory'].indexOf(tab) >= 0 ? tab : 'bus';
-  } else if (tab==='review' || tab==='corrections' || tab==='feedbackReview') {
-    items = [['review','Overview'],['corrections','Corrections'],['feedbackReview','Feedback']];
+  // Keep every user-submission queue inside one Review Center workspace.
+  if (['review','busRequests','addBus','corrections','feedbackReview'].indexOf(tab) >= 0) {
+    items = [['review','Overview'],['busRequests','Add Route Requests'],['corrections','Route Corrections'],['feedbackReview','Feedback'],['addBus','Book Bus / Add Your Bus']];
     active = tab;
+  } else if (['bus','places','routes','busDirectory'].indexOf(tab) >= 0) {
+    items = [['places','Places & Bus Stands'],['routes','Bus Routes'],['busDirectory','Operator Directory']];
+    active = ['places','routes','busDirectory'].indexOf(tab) >= 0 ? tab : 'bus';
   }
   host.innerHTML = items.length ? workspaceTabs(items,active) : '';
   host.style.display = items.length ? 'flex' : 'none';
@@ -1985,8 +1987,8 @@ function viewCommunity(mode) {
 function viewReview() {
   if (!sbToken) return viewSupabaseSignIn();
   var all = [];
-  [['corrections','Route corrections'],['feedback','Feedback'],['busSubmissions','Add Bus']].forEach(function(pair){
-    (community[pair[0]]||[]).forEach(function(x){all.push(x);});
+  [['corrections','Route corrections'],['feedback','Feedback'],['busSubmissions','Book Bus / Add Your Bus']].forEach(function(pair){
+    (community[pair[0]]||[]).forEach(function(x){x._kind=pair[0];x._label=pair[1];all.push(x);});
   });
   var pendingRoutes=(subs||[]).filter(function(x){return x.status==='pending';}).length;
   var pendingCorrections=all.filter(function(x){return x.status==='pending' && (x._kind==='corrections' || x._kind==='feedback' && /correct/i.test((x.category||'')+' '+(x.message||'')));}).length;
@@ -1997,7 +1999,7 @@ function viewReview() {
     '<div class="bus-route-stat"><div class="iconbox">↗</div><div><strong>'+pendingRoutes+'</strong><span>Pending bus route requests</span><button class="btn sm" data-act="tab" data-t="busRequests">Open requests →</button></div></div>'+
     '<div class="bus-route-stat"><div class="iconbox">✓</div><div><strong>'+pendingCorrections+'</strong><span>Pending corrections</span><button class="btn sm" data-act="tab" data-t="corrections">Review corrections →</button></div></div>'+
     '<div class="bus-route-stat"><div class="iconbox">B</div><div><strong>'+pendingBus+'</strong><span>Pending Add Bus submissions</span><button class="btn sm" data-act="tab" data-t="addBus">Open Add Bus →</button></div></div>'+
-    '<div class="bus-route-stat"><div class="iconbox">✉</div><div><strong>'+pendingFeedback+'</strong><span>Pending feedback</span><button class="btn sm" data-act="tab" data-t="corrections">Open review →</button></div></div>'+
+    '<div class="bus-route-stat"><div class="iconbox">✉</div><div><strong>'+pendingFeedback+'</strong><span>Pending feedback</span><button class="btn sm" data-act="tab" data-t="feedbackReview">Open feedback →</button></div></div>'+
     '</div><div class="card"><h2>How requests are organized</h2><p class="muted">Bus route submissions, route corrections, feedback, and Add Bus operator submissions are reviewed here. Book Bus remains an information and contact feature, not a booking queue.</p></div>';
 }
 function communityTable(kind, record) {
