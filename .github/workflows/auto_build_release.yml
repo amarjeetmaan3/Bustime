@@ -104,11 +104,19 @@ jobs:
           fi
           echo "PASS: APK native-library compatibility check completed."
 
+      - name: Rename Debug APK for easy sharing
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -print -quit)"
+          test -n "$APK"
+          mv "$APK" app/build/outputs/apk/debug/Bustime.apk
+
       - name: Upload Debug APK as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Bustime-Debug-APK
-          path: app/build/outputs/apk/debug/*.apk
+          name: Bustime-APK
+          path: app/build/outputs/apk/debug/Bustime.apk
 
       # ---------- Store बिल्ड (सिर्फ़ जब सीक्रेट्स हों) ----------
       - name: Decode release keystore
@@ -124,13 +132,22 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: gradle assembleRelease bundleRelease -PappVersionCode=${{ github.run_number }}
 
+      - name: Rename signed Release APK for easy sharing
+        if: env.HAS_RELEASE_KEY == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
+          test -n "$APK"
+          mv "$APK" app/build/outputs/apk/release/Bustime.apk
+
       - name: Upload Release files as Artifact
         if: env.HAS_RELEASE_KEY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Bustime-Release
           path: |
-            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/release/Bustime.apk
             app/build/outputs/bundle/release/*.aab
 
       # ---------- GitHub Release (अपडेटर इसी से पढ़ता है) ----------
@@ -142,7 +159,7 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: Bustime v1.0.${{ github.run_number }}
           files: |
-            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/release/Bustime.apk
             app/build/outputs/bundle/release/*.aab
           make_latest: true
 
@@ -154,5 +171,5 @@ jobs:
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Bustime v1.0.${{ github.run_number }}
-          files: app/build/outputs/apk/debug/*.apk
+          files: app/build/outputs/apk/debug/Bustime.apk
           make_latest: true
