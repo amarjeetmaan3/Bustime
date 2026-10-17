@@ -95,6 +95,7 @@ Deno.serve(async (req: Request) => {
     if (!["pending", "reviewed", "approved", "rejected", "deleted"].includes(status)) return reply({ error: "invalid_review_status" }, 400);
     const patch: Record<string, unknown> = { status };
     if (status === "reviewed") patch.reviewed_at = new Date().toISOString();
+    if (table === "feedback_submissions" && status === "pending") patch.reviewed_at = null;
     if (status === "approved") { patch.approved_at = new Date().toISOString(); patch.reviewed_at = new Date().toISOString(); }
     if (body.action === "review-delete") patch.reviewed_at = new Date().toISOString();
     const r = await fetch(endpoint, { method: "PATCH", headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify(patch) });
