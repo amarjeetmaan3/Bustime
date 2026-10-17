@@ -84,7 +84,7 @@ class MdmPanelActivity : AppCompatActivity() {
         showRoot()
     }
 
-    private fun callReview(action: String, table: String? = null, id: String? = null, status: String? = null): JSONObject {
+    private fun callReview(action: String, table: String? = null, id: String? = null, status: String? = null, fields: JSONObject? = null): JSONObject {
         val conn = (URL(Constants.SUPABASE_URL.trimEnd('/') + "/functions/v1/mdm-publish").openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"; connectTimeout = 20000; readTimeout = 20000; doOutput = true
             setRequestProperty("apikey", Constants.SUPABASE_ANON_KEY); setRequestProperty("Content-Type", "application/json")
@@ -93,6 +93,7 @@ class MdmPanelActivity : AppCompatActivity() {
         if (table != null) body.put("table", table)
         if (id != null) body.put("id", id)
         if (status != null) body.put("status", status)
+        if (fields != null) body.put("fields", fields)
         conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
         val code = conn.responseCode
         val raw = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
@@ -215,6 +216,12 @@ class MdmPanelActivity : AppCompatActivity() {
                                 }
                                 card.addView(editButton, LinearLayout.LayoutParams(-1, dp(44)))
                             }
+                            if (table == "bus_operator_submissions" || table == "feedback_submissions") {
+                                card.addView(Button(this@MdmPanelActivity).apply {
+                                    text = uiText("Edit Request", "रिक्वेस्ट एडिट करें", "ਬੇਨਤੀ ਸੋਧੋ")
+                                    setOnClickListener { editReviewRequest(table, item) }
+                                }, LinearLayout.LayoutParams(-1, dp(44)))
+                            }
                             card.addView(reviewButton, LinearLayout.LayoutParams(-1, dp(44)))
                             root.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
                         }
@@ -227,6 +234,61 @@ class MdmPanelActivity : AppCompatActivity() {
                 }
                 .onFailure { toast(it.message ?: uiText("Could not load Review Center", "रिव्यू सेंटर लोड नहीं हुआ", "ਰੀਵਿਊ ਸੈਂਟਰ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ")) }
         }
+    }
+
+    private fun editReviewRequest(table: String, item: JSONObject) {
+        val id = item.optString("id")
+        val isBus = table == "bus_operator_submissions"
+        if (!isBus && table != "feedback_submissions") return
+        showPage(
+            if (isBus) uiText("Edit Add Your Bus Request", "बस रिक्वेस्ट एडिट करें", "ਬੱਸ ਬੇਨਤੀ ਸੋਧੋ") else uiText("Edit Feedback", "फीडबैक एडिट करें", "ਫੀਡਬੈਕ ਸੋਧੋ"),
+            uiText("Edit the submitted details, then save the request.", "भेजी गई जानकारी एडिट करके सेव करें।", "ਭੇਜੀ ਜਾਣਕਾਰੀ ਸੋਧ ਕੇ ਸੇਵ ਕਰੋ।")
+        )
+        pageBackAction = { showReviewCenter() }
+        val values = linkedMapOf<String, EditText>()
+        fun addField(key: String, label: String, multiline: Boolean = false, phone: Boolean = false) {
+            root.addView(TextView(this).apply {
+                text = label; textSize = 13f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, dp(8), 0, dp(3))
+            })
+            val edit = EditText(this).apply {
+                setText(item.optString(key).takeIf { it != "null" }.orEmpty())
+                hint = label
+                if (multiline) { minLines = 3; maxLines = 6 } else setSingleLine(true)
+                if (phone) inputType = InputType.TYPE_CLASS_PHONE
+            }
+            root.addView(edit, LinearLayout.LayoutParams(-1, if (multiline) dp(100) else dp(48)))
+            values[key] = edit
+        }
+        if (isBus) {
+            addField("operator_name", uiText("Operator / person name", "ऑपरेटर / व्यक्ति का नाम", "ਆਪਰੇਟਰ / ਵਿਅਕਤੀ ਦਾ ਨਾਮ"))
+            addField("service_name", uiText("Bus service name", "बस सेवा का नाम", "ਬੱਸ ਸੇਵਾ ਦਾ ਨਾਮ"))
+            addField("bus_type", uiText("Bus type", "बस का प्रकार", "ਬੱਸ ਦੀ ਕਿਸਮ"))
+            addField("location", uiText("Location / area", "स्थान / एरिया", "ਥਾਂ / ਇਲਾਕਾ"))
+            addField("phone", uiText("Mobile number", "मोबाइल नंबर", "ਮੋਬਾਈਲ ਨੰਬਰ"), phone = true)
+            addField("whatsapp", uiText("WhatsApp (optional)", "व्हाट्सऐप (वैकल्पिक)", "ਵਟਸਐਪ (ਵਿਕਲਪਿਕ)"), phone = true)
+            addField("details", uiText("Other information", "अन्य जानकारी", "ਹੋਰ ਜਾਣਕਾਰੀ"), multiline = true)
+        } else {
+            addField("category", uiText("Category", "श्रेणी", "ਸ਼੍ਰੇਣੀ"))
+            addField("related_route", uiText("Related route (optional)", "संबंधित रूट (वैकल्पिक)", "ਸੰਬੰਧਿਤ ਰੂਟ (ਵਿਕਲਪਿਕ)"))
+            addField("contact", uiText("Mobile number (optional)", "मोबाइल नंबर (वैकल्पिक)", "ਮੋਬਾਈਲ ਨੰਬਰ (ਵਿਕਲਪਿਕ)"), phone = true)
+            addField("message", uiText("Feedback / message", "फीडबैक / संदेश", "ਫੀਡਬੈਕ / ਸੁਨੇਹਾ"), multiline = true)
+        }
+        button(uiText("Save Request", "रिक्वेस्ट सेव करें", "ਬੇਨਤੀ ਸੇਵ ਕਰੋ")) {
+            val fields = JSONObject()
+            values.forEach { (key, edit) -> fields.put(key, edit.text.toString().trim()) }
+            if (isBus && (fields.optString("operator_name").isBlank() || fields.optString("phone").isBlank())) {
+                toast(uiText("Name and mobile number are required.", "नाम और मोबाइल नंबर ज़रूरी हैं।", "ਨਾਮ ਅਤੇ ਮੋਬਾਈਲ ਨੰਬਰ ਲਾਜ਼ਮੀ ਹਨ।")); return@button
+            }
+            if (!isBus && fields.optString("message").length < 4) {
+                toast(uiText("Enter at least 4 characters of feedback.", "कम-से-कम 4 अक्षरों का फीडबैक भरें।", "ਘੱਟੋ-ਘੱਟ 4 ਅੱਖਰਾਂ ਦਾ ਫੀਡਬੈਕ ਲਿਖੋ।")); return@button
+            }
+            lifecycleScope.launch {
+                runCatching { withContext(Dispatchers.IO) { callReview("review-edit", table, id, fields = fields) } }
+                    .onSuccess { toast(uiText("Request saved.", "रिक्वेस्ट सेव हो गई।", "ਬੇਨਤੀ ਸੇਵ ਹੋ ਗਈ।")); showReviewCenter() }
+                    .onFailure { toast(it.message ?: uiText("Could not save request", "रिक्वेस्ट सेव नहीं हुई", "ਬੇਨਤੀ ਸੇਵ ਨਹੀਂ ਹੋਈ")) }
+            }
+        }
+        showRoot()
     }
 
     private fun updateReviewItem(table: String, id: String, status: String) {
