@@ -144,7 +144,16 @@ Deno.serve(async (req: Request) => {
       if (prior.ok) {
         const priorRows = await prior.json();
         if (Array.isArray(priorRows) && priorRows.length && priorRows[0].payload && typeof priorRows[0].payload === "object") {
-          savedPayload = Object.assign({}, priorRows[0].payload, suppliedPayload);
+          const latestPayload = priorRows[0].payload as Record<string, unknown>;
+          const mergedPayload: Record<string, unknown> = Object.assign({}, latestPayload);
+          // The last published payload is authoritative. Fill only missing fields from
+          // compact Android delete payloads; never replace full values with null/partial data.
+          for (const [key, value] of Object.entries(suppliedPayload)) {
+            if ((mergedPayload[key] === undefined || mergedPayload[key] === null) && value !== null) {
+              mergedPayload[key] = value;
+            }
+          }
+          savedPayload = mergedPayload;
         }
       }
       if (!savedPayload && Object.keys(suppliedPayload).length) savedPayload = suppliedPayload;
