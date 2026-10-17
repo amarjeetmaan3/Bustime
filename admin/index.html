@@ -3213,7 +3213,7 @@ document.addEventListener('click', async function (e) {
       var didPublish = await publish();
       if (didPublish) {
         publishOpen = false;
-        toast('Snapshot saved · data version ' + baseVersion + (publishSyncWarnings ? ' · Some sync/approval updates need attention.' : ' · Shared Supabase sync published.'));
+        toast('Data published to Supabase · revision ' + Number(mdmRevisionCursor || 0) + (publishSyncWarnings ? ' · Some backup/approval updates need attention.' : ' · Incremental sync ready.'));
       }
       render();
     }
