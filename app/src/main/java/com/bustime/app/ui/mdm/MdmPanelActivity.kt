@@ -102,6 +102,50 @@ class MdmPanelActivity : AppCompatActivity() {
         return result
     }
 
+    private fun editReviewRoute(table: String, item: JSONObject) {
+        lifecycleScope.launch {
+            runCatching {
+                val places = withContext(Dispatchers.IO) { repo.getAllPlaces() }
+                val old = if (table == "correction_submissions") {
+                    withContext(Dispatchers.IO) { repo.getRoute(item.optString("route_id")) }
+                } else null
+                val rawStops = if (table == "route_submissions") item.optJSONArray("stops") else item.optJSONArray("proposed_stops")
+                val drafts = mutableListOf<JSONObject>()
+                if (rawStops != null) {
+                    for (i in 0 until rawStops.length()) {
+                        val st = rawStops.optJSONObject(i) ?: continue
+                        val pid = st.optString("place").ifBlank { st.optString("place_id") }
+                        val place = places.firstOrNull { it.id == pid }
+                        val name = st.optString("name").ifBlank { place?.displayName("en") ?: pid }
+                        if (name.isNotBlank()) drafts.add(JSONObject()
+                            .put("place_id", if (place == null) JSONObject.NULL else place.id)
+                            .put("name", name).put("language", "en")
+                            .put("time", st.optString("time").takeIf { it.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$")) } ?: JSONObject.NULL))
+                    }
+                }
+                if (drafts.size < 2 && old != null) {
+                    drafts.clear()
+                    val oldStops = withContext(Dispatchers.IO) { repo.getRouteStops(old.id) }.sortedBy { it.stopOrder }
+                    oldStops.forEach { stop ->
+                        val place = places.firstOrNull { it.id == stop.placeId }
+                        drafts.add(JSONObject().put("place_id", stop.placeId)
+                            .put("name", place?.displayName("en") ?: stop.placeId).put("language", "en")
+                            .put("time", stop.time ?: JSONObject.NULL))
+                    }
+                }
+                if (drafts.size < 2) {
+                    drafts.clear()
+                    val from = item.optString("from_text").ifBlank { item.optString("from_id") }
+                    val to = item.optString("to_text").ifBlank { item.optString("to_id") }
+                    if (from.isNotBlank()) drafts.add(JSONObject().put("place_id", JSONObject.NULL).put("name", from).put("language", "en").put("time", item.optString("start_time").takeIf { it.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$")) } ?: JSONObject.NULL))
+                    if (to.isNotBlank()) drafts.add(JSONObject().put("place_id", JSONObject.NULL).put("name", to).put("language", "en").put("time", JSONObject.NULL))
+                }
+                if (drafts.size < 2) error(uiText("This request does not contain enough route details to open the editor.", "इस रिक्वेस्ट में एडिटर खोलने के लिए पर्याप्त रूट जानकारी नहीं है।", "ਇਸ ਬੇਨਤੀ ਵਿੱਚ ਐਡੀਟਰ ਖੋਲ੍ਹਣ ਲਈ ਕਾਫ਼ੀ ਰੂਟ ਜਾਣਕਾਰੀ ਨਹੀਂ ਹੈ।"))
+                showRoutePreview(old, drafts, item.optString("service_name"), places) { showReviewCenter() }
+            }.onFailure { toast(it.message ?: uiText("Could not open route editor", "रूट एडिटर नहीं खुला", "ਰੂਟ ਐਡੀਟਰ ਨਹੀਂ ਖੁੱਲ੍ਹਿਆ")) }
+        }
+    }
+
     private fun showReviewCenter() {
         lifecycleScope.launch {
             runCatching { withContext(Dispatchers.IO) { callReview("review-list") } }
@@ -163,6 +207,13 @@ class MdmPanelActivity : AppCompatActivity() {
                                         .setNeutralButton(uiText("Reject", "अस्वीकार करें", "ਰੱਦ ਕਰੋ")) { _, _ -> updateReviewItem(table, id, "rejected") }
                                         .setNegativeButton(uiText("Close", "बंद करें", "ਬੰਦ ਕਰੋ"), null).show()
                                 }
+                            }
+                            if (table == "route_submissions" || table == "correction_submissions") {
+                                val editButton = Button(this@MdmPanelActivity).apply {
+                                    text = uiText("Edit Route", "रूट एडिट करें", "ਰੂਟ ਸੋਧੋ")
+                                    setOnClickListener { editReviewRoute(table, item) }
+                                }
+                                card.addView(editButton, LinearLayout.LayoutParams(-1, dp(44)))
                             }
                             card.addView(reviewButton, LinearLayout.LayoutParams(-1, dp(44)))
                             root.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
