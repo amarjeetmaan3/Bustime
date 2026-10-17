@@ -554,13 +554,13 @@ class MdmPanelActivity : AppCompatActivity() {
             text = uiText("Copy Route", "रूट कॉपी करें", "ਰੂਟ ਕਾਪੀ ਕਰੋ")
             isAllCaps = false
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
-            setOnClickListener { createRouteVariant(route, reverse = false, places = places) }
+            setOnClickListener { createRouteVariant(route, reverse = false, placesById = places) }
         }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(4) })
         actions.addView(Button(this).apply {
             text = uiText("Return Route", "वापसी रूट", "ਵਾਪਸੀ ਰੂਟ")
             isAllCaps = false
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
-            setOnClickListener { createRouteVariant(route, reverse = true, places = places) }
+            setOnClickListener { createRouteVariant(route, reverse = true, placesById = places) }
         }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(4) })
         cardContent.addView(actions, index + 1, LinearLayout.LayoutParams(-1, -2).apply {
             topMargin = dp(6)
