@@ -50,6 +50,37 @@ Deno.serve(async (req: Request) => {
     if (!equal(actual, fromB64(secret.password_hash))) return reply({ error: "invalid_password" }, 401);
   }
 
+  // Authenticated Review Center API; only these fixed submission tables can be accessed.
+  const reviewTables = ["route_submissions", "correction_submissions", "feedback_submissions", "bus_operator_submissions"] as const;
+  if (body.action === "review-list") {
+    const result: Record<string, unknown> = { ok: true, failed: [] as string[] };
+    for (const table of reviewTables) {
+      const r = await fetch(url + "/rest/v1/" + table + "?select=*&order=created_at.desc&limit=300", {
+        headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }
+      });
+      if (!r.ok) { (result.failed as string[]).push(table + ": " + r.status); result[table] = []; }
+      else result[table] = await r.json();
+    }
+    return reply(result);
+  }
+  if (body.action === "review-status" || body.action === "review-delete") {
+    const table = String(body.table || ""), id = String(body.id || "").trim();
+    if (!(reviewTables as readonly string[]).includes(table) || !id || id.length > 100) return reply({ error: "invalid_review_item" }, 400);
+    const endpoint = url + "/rest/v1/" + table + "?id=eq." + encodeURIComponent(id);
+    if (body.action === "review-delete") {
+      const r = await fetch(endpoint, { method: "DELETE", headers: { apikey: service, Authorization: "Bearer " + service, Prefer: "return=representation" } });
+      if (!r.ok) return reply({ error: "review_delete_failed", detail: (await r.text()).slice(0, 200) }, 502);
+      const rows = await r.json();
+      return rows.length ? reply({ ok: true, deleted: true }) : reply({ error: "review_item_not_found" }, 404);
+    }
+    const status = String(body.status || "");
+    if (!["pending", "approved", "rejected"].includes(status)) return reply({ error: "invalid_review_status" }, 400);
+    const r = await fetch(endpoint, { method: "PATCH", headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ status }) });
+    if (!r.ok) return reply({ error: "review_status_update_failed", detail: (await r.text()).slice(0, 200) }, 502);
+    const rows = await r.json();
+    return rows.length ? reply({ ok: true, item: rows[0] }) : reply({ error: "review_item_not_found" }, 404);
+  }
+
   // Shared Recycle Bin actions; only the authenticated owner/MDM password reaches here.
   if (body.action === "recycle-list") {
     const r = await fetch(url + "/rest/v1/data_recycle_bin?select=id,entity_type,entity_id,payload,deleted_at,deleted_revision&restored_at=is.null&permanently_deleted_at=is.null&order=deleted_at.desc&limit=500", {
