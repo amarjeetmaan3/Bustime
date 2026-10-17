@@ -67,8 +67,10 @@ class StopListEditor(
             }
             val key = canonical?.let { "id:${it.id}" } ?: "name:${normalize(name)}"
             val previous = firstSeen[key]
-            if (previous != null) return previous to (index + 1)
-            firstSeen[key] = index + 1
+            // A circular route may start and end at the same place; no other repeated stop is allowed.
+            val allowedCircularEndpoint = previous == 1 && index + 1 == drafts.size
+            if (previous != null && !allowedCircularEndpoint) return previous to (index + 1)
+            if (previous == null) firstSeen[key] = index + 1
         }
         return null
     }
