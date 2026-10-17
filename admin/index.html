@@ -2715,7 +2715,7 @@ document.addEventListener('click', async function (e) {
       if (used.length) { toast('This place is used in ' + used.length + ' route(s). Change those routes first.'); return; }
       if (dirty) { toast('Publish or discard your unpublished edits before deleting.'); return; }
       if (confirm('Move "' + pname(data.places[i]) + '" to the Recycle Bin?')) {
-        try { await publishAdminDelete('place', pid, data.places[i]); data.places.splice(i, 1); render(); toast('Bus stop moved to Recycle Bin.'); }
+        try { await publishAdminDelete('place', pid, data.places[i]); data.places.splice(i, 1); sharedBaseData = cloneSharedEntities(data); setDirty(false); render(); toast('Bus stop moved to Recycle Bin.'); }
         catch (err) { toast('Delete failed: ' + (err.message || err)); }
       }
     }
@@ -2778,7 +2778,7 @@ document.addEventListener('click', async function (e) {
         try {
           await publishAdminDelete('route', routeToDelete.id, routeToDelete);
           // Keep route-submission history intact; deleting a published route must not erase request records.
-          data.routes.splice(i, 1); render();
+          data.routes.splice(i, 1); sharedBaseData = cloneSharedEntities(data); setDirty(false); render();
           toast('Route moved to Recycle Bin.');
         } catch (err) { toast('Delete failed: ' + (err.message || err)); }
       }
