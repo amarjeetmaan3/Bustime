@@ -786,7 +786,7 @@ function sharedEntityChanges(before, after) {
     var oldMap = new Map(((before && before[listName]) || []).filter(function(x){return x && x.id;}).map(function(x){return [String(x.id), x];}));
     var newMap = new Map(((after && after[listName]) || []).filter(function(x){return x && x.id;}).map(function(x){return [String(x.id), x];}));
     oldMap.forEach(function(oldItem, id) {
-      if (!newMap.has(id)) changes.push({ entity_type:type, entity_id:id, operation:'delete', payload:null });
+      if (!newMap.has(id)) changes.push({ entity_type:type, entity_id:id, operation:'delete', payload:oldItem });
     });
     newMap.forEach(function(item, id) {
       var oldItem = oldMap.get(id);
