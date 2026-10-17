@@ -1084,19 +1084,8 @@ async function mergeApprovedCommunitySubmissions(nextVersion){
   return updates;
 }
 var publishSyncWarnings=0;
-var publishWorkflowWarning='';
-async function dispatchDataSyncWorkflow(alreadyMirrored, dataVersion) {
-  if (!cfg.token) throw new Error('GitHub token is missing.');
-  var response = await fetch('https://api.github.com/repos/' + cfg.owner + '/' + cfg.repo + '/dispatches', {
-    method:'POST',
-    headers:Object.assign({}, ghHeaders(), {'Content-Type':'application/json'}),
-    body:JSON.stringify({event_type:'bustime-data-published', client_payload:{already_mirrored:!!alreadyMirrored, data_version:Number(dataVersion||0)}})
-  });
-  if (!response.ok) throw new Error('GitHub workflow trigger HTTP ' + response.status + ' - ' + (await response.text()).slice(0,180));
-}
 async function publish() {
   if (!cfg.token) { toast('Add your GitHub token in Settings first'); return false; }
-  publishWorkflowWarning='';
   var approvedUpdates=await mergeApprovedRouteSubmissions();
   var communityUpdates=await mergeApprovedCommunitySubmissions(baseVersion+1);
   var v = validate();
@@ -1138,13 +1127,6 @@ async function publish() {
     setDirty(true); // Keep Publish available to retry the shared delta mirror.
     console.error('GitHub snapshot published, but shared MDM sync needs retry:', sharedSyncError);
     toast('GitHub Snapshot published, but cross-panel sync failed. Publish again to retry. ' + (sharedSyncError.message || sharedSyncError));
-  }
-  try {
-    await dispatchDataSyncWorkflow(sharedMirrorSucceeded, out.dataVersion);
-  } catch (workflowError) {
-    publishWorkflowWarning = workflowError.message || String(workflowError);
-    publishSyncWarnings++;
-    console.error('Snapshot saved but GitHub data-sync workflow could not be triggered:', workflowError);
   }
   for(var ui=0;ui<approvedUpdates.length;ui++){
     var upd=approvedUpdates[ui];
@@ -3237,7 +3219,7 @@ document.addEventListener('click', async function (e) {
       var didPublish = await publish();
       if (didPublish) {
         publishOpen = false;
-        toast('Snapshot saved · data version ' + baseVersion + (publishWorkflowWarning ? ' · Workflow trigger failed: ' + publishWorkflowWarning : (publishSyncWarnings ? ' · Some sync/approval updates need attention.' : ' · Shared sync and workflow trigger requested.')));
+        toast('Snapshot saved · data version ' + baseVersion + (publishSyncWarnings ? ' · Some sync/approval updates need attention.' : ' · Shared Supabase sync published.'));
       }
       render();
     }
