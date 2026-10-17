@@ -642,7 +642,7 @@ class MdmPanelActivity : AppCompatActivity() {
     private fun confirmDeleteRoute(route: Route) {
         AlertDialog.Builder(this)
             .setTitle(uiText("Delete route?", "रूट हटाएँ?", "ਰੂਟ ਮਿਟਾਉਣਾ ਹੈ?"))
-            .setMessage(uiText("This route will move to the Recycle Bin and can be restored.", "यह रूट ऐप से स्थायी रूप से हट जाएगा। यह वापस नहीं किया जा सकता।", "ਇਹ ਰੂਟ ਰੀਸਾਈਕਲ ਬਿਨ ਵਿੱਚ ਜਾਵੇਗਾ ਅਤੇ ਵਾਪਸ ਲਿਆ ਸਕਦੇ ਹੋ।"))
+            .setMessage(uiText("This route will move to the Recycle Bin and can be restored.", "यह रूट रिसायकल बिन में जाएगा और वापस लाया जा सकता है।", "ਇਹ ਰੂਟ ਰੀਸਾਈਕਲ ਬਿਨ ਵਿੱਚ ਜਾਵੇਗਾ ਅਤੇ ਵਾਪਸ ਲਿਆ ਸਕਦੇ ਹੋ।"))
             .setNegativeButton(uiText("Cancel", "रद्द करें", "ਰੱਦ ਕਰੋ"), null)
             .setPositiveButton(uiText("Delete", "हटाएँ", "ਮਿਟਾਓ")) { _, _ ->
                 lifecycleScope.launch { runCatching { routePayload(route) }.onSuccess { payload -> publish(JSONArray().put(JSONObject().put("entity_type", "route").put("entity_id", route.id).put("operation", "delete").put("payload", payload))) }.onFailure { toast(it.message ?: "Could not prepare recovery copy") } }
@@ -667,7 +667,7 @@ class MdmPanelActivity : AppCompatActivity() {
                 }
                 AlertDialog.Builder(this@MdmPanelActivity)
                     .setTitle(uiText("Delete bus stop?", "बस स्टॉप हटाएँ?", "ਬੱਸ ਸਟਾਪ ਮਿਟਾਓ?"))
-                    .setMessage(uiText("This stop will move to the Recycle Bin and can be restored.", "यह स्टॉप स्थायी रूप से हट जाएगा। यह वापस नहीं किया जा सकता।", "ਇਹ ਸਟਾਪ ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟ ਜਾਵੇਗਾ।"))
+                    .setMessage(uiText("This stop will move to the Recycle Bin and can be restored.", "यह स्टॉप रिसायकल बिन में जाएगा और वापस लाया जा सकता है।", "ਇਹ ਸਟਾਪ ਰੀਸਾਈਕਲ ਬਿਨ ਵਿੱਚ ਜਾਵੇਗਾ ਅਤੇ ਵਾਪਸ ਲਿਆ ਸਕਦੇ ਹੋ।"))
                     .setNegativeButton(uiText("Cancel", "रद्द करें", "ਰੱਦ ਕਰੋ"), null)
                     .setPositiveButton(uiText("Delete", "हटाएँ", "ਮਿਟਾਓ")) { _, _ ->
                         publish(JSONArray().put(JSONObject().put("entity_type", "place").put("entity_id", stop.id).put("operation", "delete").put("payload", placePayload(stop))))
