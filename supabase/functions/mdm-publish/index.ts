@@ -167,6 +167,7 @@ Deno.serve(async (req: Request) => {
         if (normalizedStops.some(v => !v)) {
           return reply({ error: "route_invalid_stops", message: "Every route stop must have a valid place." }, 400);
         }
+        if (new Set(normalizedStops).size < 2) return reply({ error: "route_needs_distinct_places", message: "A route must include at least two different places; repeated stops are allowed." }, 400);
         const time = (v: unknown) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
         const hasTime = time(r.time) || time(r.arrive) || (r.stops as Array<Record<string, unknown>>).some(s => time(s?.time));
         if (!hasTime) return reply({ error: "route_needs_at_least_one_time" }, 400);
