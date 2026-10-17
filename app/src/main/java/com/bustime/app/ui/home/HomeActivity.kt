@@ -26,6 +26,9 @@ import com.bustime.app.ui.updater.GitHubUpdateChecker
 import com.bustime.app.utils.LanguageHelper
 import com.bustime.app.utils.AnalyticsHelper
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import androidx.core.content.ContextCompat
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -39,6 +42,7 @@ import java.util.concurrent.TimeUnit
 class HomeActivity : AppCompatActivity() {
 
     private var syncReceiverRegistered = false
+    private var foregroundSyncJob: Job? = null
     private val syncReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE).edit()
@@ -103,6 +107,12 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        foregroundSyncJob?.cancel()
+        foregroundSyncJob = null
+        super.onPause()
+    }
+
     override fun onStop() {
         if (syncReceiverRegistered) {
             unregisterReceiver(syncReceiver)
@@ -113,14 +123,21 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch {
-            val changed = AppRepository.getInstance(this@HomeActivity).syncData()
+        // While the app is visible, check the tiny revision cursor frequently.
+        // No user notification or update dialog: apply deltas silently and redraw only when records changed.
+        foregroundSyncJob?.cancel()
+        foregroundSyncJob = lifecycleScope.launch {
+            val repository = AppRepository.getInstance(this@HomeActivity)
             val prefs = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
-            val pendingUiRefresh = prefs.getBoolean(DataSyncWorker.KEY_PENDING_UI_REFRESH, false)
-            if ((changed || pendingUiRefresh) && !isFinishing &&
-                supportFragmentManager.findFragmentById(R.id.fragmentContainer) != null) {
-                prefs.edit().putBoolean(DataSyncWorker.KEY_PENDING_UI_REFRESH, false).apply()
-                refreshCurrentTab()
+            while (isActive && !isFinishing) {
+                val changed = repository.syncData()
+                val pendingUiRefresh = prefs.getBoolean(DataSyncWorker.KEY_PENDING_UI_REFRESH, false)
+                if ((changed || pendingUiRefresh) && !isFinishing &&
+                    supportFragmentManager.findFragmentById(R.id.fragmentContainer) != null) {
+                    prefs.edit().putBoolean(DataSyncWorker.KEY_PENDING_UI_REFRESH, false).apply()
+                    refreshCurrentTab()
+                }
+                delay(10_000)
             }
         }
         // Marquee can miss its first start while the window is still gaining focus.
