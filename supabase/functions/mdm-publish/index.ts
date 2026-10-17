@@ -190,8 +190,11 @@ Deno.serve(async (req: Request) => {
         if (new Set(normalizedStops).size < 2) {
           return reply({ error: "route_needs_distinct_places", message: "A route must include at least two different places." }, 400);
         }
-        if (new Set(normalizedStops).size !== normalizedStops.length) {
-          return reply({ error: "route_duplicate_stop", message: "The same bus stop cannot appear more than once in a route." }, 400);
+        const circularRoute = normalizedStops.length >= 3 &&
+          normalizedStops[0] === normalizedStops[normalizedStops.length - 1] &&
+          new Set(normalizedStops.slice(0, -1)).size === normalizedStops.length - 1;
+        if (new Set(normalizedStops).size !== normalizedStops.length && !circularRoute) {
+          return reply({ error: "route_duplicate_stop", message: "A stop cannot repeat inside a route. Only matching start/end stops are allowed for a circular route." }, 400);
         }
         const time = (v: unknown) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
         const hasTime = time(r.time) || time(r.arrive) || (r.stops as Array<Record<string, unknown>>).some(s => time(s?.time));
