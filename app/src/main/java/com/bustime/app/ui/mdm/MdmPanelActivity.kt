@@ -723,9 +723,10 @@ class MdmPanelActivity : AppCompatActivity() {
         drafts.forEachIndexed { index, draft ->
             val name = draft.optString("name").trim()
             val selectedId = if (draft.isNull("place_id")) "" else draft.optString("place_id").trim()
-            val canonical = places.firstOrNull { place ->
-                (selectedId.isNotBlank() && place.id == selectedId) ||
-                    place.names.values.any { alias -> normalizeStop(alias) == normalizeStop(name) }
+            val canonical = if (selectedId.isNotBlank()) {
+                places.firstOrNull { it.id == selectedId }
+            } else {
+                places.firstOrNull { place -> place.names.values.any { alias -> normalizeStop(alias) == normalizeStop(name) } }
             }
             val key = canonical?.let { "id:${it.id}" } ?: "name:${normalizeStop(name)}"
             val previous = seen[key]
