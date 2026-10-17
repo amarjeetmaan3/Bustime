@@ -367,6 +367,7 @@
       <h1 id="pageTitle">Dashboard</h1>
       <span class="pill" id="verPill"></span>
       <span class="pill dirty" id="dirty" style="display:none">Unpublished changes</span>
+      <button class="btn" data-act="recycle-bin" id="recycleBinBtn" style="display:none">Recycle Bin</button>
       <button class="btn" data-act="sb-logout" id="adminSignOut" style="display:none">Sign out</button>
       <button class="btn primary" data-act="open-publish" id="pubBtn">Publish</button>
 
@@ -410,6 +411,7 @@ var data = null, sha = null, baseVersion = 0, dirty = false;
 // Last clean shared state. Web Admin publishes the same entity deltas as Android MDM.
 var sharedBaseData = null;
 var mdmRevisionCursor = 0, mdmAutoSyncTimer = null, mdmAutoSyncBusy = false, mdmSyncError = null;
+var recycleBinItems = [];
 var tab = 'settings';
 var contentSettings = {terms_enabled:true,terms:{en:'',hi:'',pa:''},popup_enabled:true,popup:{en:'',hi:'',pa:''},popup_seconds:5,ticker_enabled:true,ticker:{en:'',hi:'',pa:''},update_notifications_enabled:false};
 var sbToken = null, sbRefreshToken = null, subs = null, subsError = '';
@@ -606,7 +608,7 @@ var TITLES = {
   dashboard:'Dashboard', analytics:'Analytics & Stats', bus:'Bus', places:'Bus · Places',
   routes:'Bus · Routes', busRequests:'Bus · Route Requests', addBus:'Bus · Add Your Bus', busDirectory:'Bus · Operator Directory',
   corrections:'Review Center · Corrections', feedbackReview:'Review Center · Feedback',
-  review:'Review Center', content:'App Text & Warnings', advertisement:'Advertisement', settings:'Settings'
+  review:'Review Center', content:'App Text & Warnings', advertisement:'Advertisement', settings:'Settings', recycleBin:'Recycle Bin'
 };
 
 // ============ Helpers ============
@@ -736,16 +738,43 @@ async function loadData() {
   sharedBaseData = JSON.parse(JSON.stringify({ places: data.places || [], routes: data.routes || [] }));
   sha = j.sha; baseVersion = data.dataVersion || 0; editing = null; publishOpen = false; setDirty(false);
 }
-async function publishAdminDelete(entityType, entityId) {
+async function publishAdminDelete(entityType, entityId, payload) {
   if (!sbToken) throw new Error('Sign in as the owner admin before deleting published data.');
   var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-    body: JSON.stringify({ action: 'publish', changes: [{ entity_type: entityType, entity_id: String(entityId), operation: 'delete', payload: null }] })
+    body: JSON.stringify({ action: 'publish', changes: [{ entity_type: entityType, entity_id: String(entityId), operation: 'delete', payload: payload || null }] })
   });
   var result = {}; try { result = await response.json(); } catch (_) {}
-  if (!response.ok || !result.ok) throw new Error(result.error || ('Could not permanently delete ' + entityType + ' (HTTP ' + response.status + ').'));
+  if (!response.ok || !result.ok) throw new Error(result.error || ('Could not move ' + entityType + ' (HTTP ' + response.status + ').'));
   mdmRevisionCursor = Math.max(mdmRevisionCursor, Number(result.revision || 0));
   return result.revision;
+}
+async function recycleRequest(action, id) {
+  if (!sbToken) throw new Error('Sign in as the owner admin first.');
+  var body = { action: action };
+  if (id != null) body.id = Number(id);
+  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
+    method:'POST',
+    headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken,'Content-Type':'application/json','Cache-Control':'no-store'},
+    body:JSON.stringify(body), cache:'no-store'
+  });
+  var result = {}; try { result = await response.json(); } catch (_) {}
+  if (!response.ok || !result.ok) throw new Error(result.error || ('Recycle Bin request failed (HTTP '+response.status+').'));
+  return result;
+}
+async function loadRecycleBin() {
+  var result = await recycleRequest('recycle-list');
+  recycleBinItems = Array.isArray(result.items) ? result.items : [];
+}
+function viewRecycleBin() {
+  return '<div class="bus-page-head"><div><h2>Recycle Bin</h2><p class="muted">Deleted bus routes and stops stay recoverable here until permanently deleted.</p></div><button class="btn" data-act="recycle-bin-refresh">Refresh</button></div>' +
+    '<div class="tablewrap"><table><thead><tr><th>Type</th><th>Record</th><th>Deleted</th><th style="text-align:right">Actions</th></tr></thead><tbody>' +
+    (recycleBinItems.map(function(item){
+      var p=item.payload||{}, label=item.entity_type==='route'
+        ? (p.from||'?')+' → '+(p.to||'?')
+        : (((p.name||{}).en)||((p.name||{}).hi)||((p.name||{}).pa)||item.entity_id);
+      return '<tr><td><span class="badge gray">'+esc(item.entity_type)+'</span></td><td><b>'+esc(label)+'</b><div class="route-subline">ID: '+esc(item.entity_id)+'</div></td><td>'+esc(item.deleted_at||'')+'</td><td class="actions"><button class="btn sm" data-act="recycle-restore" data-id="'+Number(item.id)+'">Restore</button><button class="btn sm danger" data-act="recycle-purge" data-id="'+Number(item.id)+'">Permanent delete</button></td></tr>';
+    }).join('') || '<tr><td colspan="4" class="empty">Recycle Bin is empty.</td></tr>') + '</tbody></table></div>';
 }
 function cloneSharedEntities(value) {
   return JSON.parse(JSON.stringify({ places: (value && value.places) || [], routes: (value && value.routes) || [] }));
@@ -1184,6 +1213,7 @@ function refreshChrome() {
   $('#pageTitle').textContent = TITLES[tab] || '';
   var signOut = $('#adminSignOut');
   if (signOut) signOut.style.display = sbToken ? 'inline-block' : 'none';
+  var recycleBtn = $('#recycleBinBtn'); if (recycleBtn) recycleBtn.style.display = sbToken ? 'inline-block' : 'none';
 }
 function render() {
   var v = $('#view');
@@ -1224,7 +1254,7 @@ function render() {
     places:viewPlaces, routes:viewRoutes,
     busRequests:viewBusRequests, busDirectory:function(){return viewCommunity('busDirectory');},
     addBus:function(){return viewCommunity('bus');},
-    corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, content:viewContentSettings, advertisement:viewAdvertisement, settings:viewSettings };
+    corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, content:viewContentSettings, advertisement:viewAdvertisement, settings:viewSettings, recycleBin:viewRecycleBin };
   if (dataTabs.indexOf(tab) >= 0 && !data) {
     v.innerHTML = '<div class="card"><h2>' + (dataLoadError ? 'Could not load route data' : 'Loading route data…') + '</h2><p class="muted">' + esc(dataLoadError || 'Fetching the current bus routes and places from GitHub.') + '</p>' + (dataLoadError ? '<button class="btn primary" data-act="data-retry">Retry loading</button> ' : '') + '<button class="btn" data-act="tab" data-t="settings">Open Settings</button></div>';
   } else {
@@ -2573,7 +2603,25 @@ document.addEventListener('click', async function (e) {
   if (!b) return;
   var act = b.getAttribute('data-act'), i = parseInt(b.getAttribute('data-i'), 10);
   try {
-    if (act === 'sync-now') {
+    if (act === 'recycle-bin') {
+      if (dirty) { toast('Publish or discard your unpublished edits before opening Recycle Bin.'); return; }
+      tab = 'recycleBin'; await loadRecycleBin(); render();
+    }
+    else if (act === 'recycle-bin-refresh') { await loadRecycleBin(); render(); }
+    else if (act === 'recycle-restore') {
+      var recycleId = Number(b.getAttribute('data-id'));
+      if (!confirm('Restore this record to published data?')) return;
+      await recycleRequest('recycle-restore', recycleId);
+      await mergeMdmPublishedChanges(mdmRevisionCursor);
+      await loadRecycleBin(); tab = 'recycleBin'; render(); toast('Record restored and published.');
+    }
+    else if (act === 'recycle-purge') {
+      var purgeId = Number(b.getAttribute('data-id'));
+      if (!confirm('Permanently delete this recovery copy? This cannot be undone.')) return;
+      await recycleRequest('recycle-purge', purgeId);
+      await loadRecycleBin(); tab = 'recycleBin'; render(); toast('Recovery copy permanently deleted.');
+    }
+    else if (act === 'sync-now') {
       if (dirty) {
         toast('Publish or discard your unpublished edits before syncing.');
         return;
@@ -2689,8 +2737,9 @@ document.addEventListener('click', async function (e) {
         return r.from === pid || r.to === pid || (r.stops || []).some(function (s) { return s.place === pid; });
       });
       if (used.length) { toast('This place is used in ' + used.length + ' route(s). Change those routes first.'); return; }
-      if (confirm('Permanently delete "' + pname(data.places[i]) + '"? This cannot be undone.')) {
-        try { await publishAdminDelete('place', pid); data.places.splice(i, 1); setDirty(true); render(); toast('Bus stop deleted permanently. Publish the snapshot when ready.'); }
+      if (dirty) { toast('Publish or discard your unpublished edits before deleting.'); return; }
+      if (confirm('Move "' + pname(data.places[i]) + '" to the Recycle Bin?')) {
+        try { await publishAdminDelete('place', pid, data.places[i]); data.places.splice(i, 1); render(); toast('Bus stop moved to Recycle Bin.'); }
         catch (err) { toast('Delete failed: ' + (err.message || err)); }
       }
     }
@@ -2748,15 +2797,16 @@ document.addEventListener('click', async function (e) {
     else if (act === 'del-route') {
       var routeToDelete = data.routes[i];
       if (!routeToDelete) { toast('Route not found. Refresh and try again.'); return; }
-      if (confirm('Permanently delete this route from the app? This cannot be undone.')) {
+      if (dirty) { toast('Publish or discard your unpublished edits before deleting.'); return; }
+      if (confirm('Move this route to the Recycle Bin?')) {
         try {
-          await publishAdminDelete('route', routeToDelete.id);
+          await publishAdminDelete('route', routeToDelete.id, routeToDelete);
           if (routeToDelete.id && cfg.sbUrl && cfg.sbKey && sbToken) {
             await sbFetch('/rest/v1/route_submissions?route_id=eq.' + encodeURIComponent(routeToDelete.id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
             if (Array.isArray(subs)) subs = subs.filter(function (sub) { return String(sub.route_id || '') !== String(routeToDelete.id); });
           }
-          data.routes.splice(i, 1); setDirty(true); render();
-          toast('Route deleted permanently. Publish the snapshot when ready.');
+          data.routes.splice(i, 1); render();
+          toast('Route moved to Recycle Bin.');
         } catch (err) { toast('Delete failed: ' + (err.message || err)); }
       }
     }
