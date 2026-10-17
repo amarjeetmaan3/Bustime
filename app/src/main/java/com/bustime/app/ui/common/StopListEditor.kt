@@ -60,9 +60,10 @@ class StopListEditor(
             val name = draft.optString("name").trim()
             if (name.isBlank()) return@forEachIndexed
             val explicitId = if (draft.isNull("place_id")) "" else draft.optString("place_id").trim()
-            val canonical = allPlaces.firstOrNull { place ->
-                (explicitId.isNotBlank() && place.id == explicitId) ||
-                    place.names.values.any { alias -> normalize(alias) == normalize(name) }
+            val canonical = if (explicitId.isNotBlank()) {
+                allPlaces.firstOrNull { it.id == explicitId }
+            } else {
+                allPlaces.firstOrNull { place -> place.names.values.any { alias -> normalize(alias) == normalize(name) } }
             }
             val key = canonical?.let { "id:${it.id}" } ?: "name:${normalize(name)}"
             val previous = firstSeen[key]
