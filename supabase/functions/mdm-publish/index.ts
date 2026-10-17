@@ -62,9 +62,8 @@ Deno.serve(async (req: Request) => {
     const id = Number(body.id);
     if (!Number.isSafeInteger(id) || id < 1) return reply({ error: "invalid_recycle_id" }, 400);
     const r = await fetch(url + "/rest/v1/data_recycle_bin?id=eq." + id + "&restored_at=is.null&permanently_deleted_at=is.null", {
-      method: "PATCH",
-      headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify({ permanently_deleted_at: new Date().toISOString(), payload: null })
+      method: "DELETE",
+      headers: { apikey: service, Authorization: "Bearer " + service, Prefer: "return=representation" }
     });
     if (!r.ok) return reply({ error: "recycle_purge_failed" }, 502);
     const rows = await r.json();
