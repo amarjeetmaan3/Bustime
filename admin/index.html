@@ -2801,10 +2801,7 @@ document.addEventListener('click', async function (e) {
       if (confirm('Move this route to the Recycle Bin?')) {
         try {
           await publishAdminDelete('route', routeToDelete.id, routeToDelete);
-          if (routeToDelete.id && cfg.sbUrl && cfg.sbKey && sbToken) {
-            await sbFetch('/rest/v1/route_submissions?route_id=eq.' + encodeURIComponent(routeToDelete.id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
-            if (Array.isArray(subs)) subs = subs.filter(function (sub) { return String(sub.route_id || '') !== String(routeToDelete.id); });
-          }
+          // Keep route-submission history intact; deleting a published route must not erase request records.
           data.routes.splice(i, 1); render();
           toast('Route moved to Recycle Bin.');
         } catch (err) { toast('Delete failed: ' + (err.message || err)); }
