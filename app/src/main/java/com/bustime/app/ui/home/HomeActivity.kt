@@ -208,7 +208,17 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun refreshCurrentTab() {
-        replaceFragment(BusFragment())
+        // Redraw the tab that is actually visible after a sync. Replacing every
+        // screen with BusFragment would silently send Taxi/Auto/other tabs back
+        // to Bus whenever background data changed.
+        val current = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
+            ?: return
+        val refreshed = Fragment.instantiate(
+            this,
+            current.javaClass.name,
+            current.arguments
+        )
+        replaceFragment(refreshed)
     }
 
     private fun updateLanguageIndicator(toolbar: Toolbar) {
