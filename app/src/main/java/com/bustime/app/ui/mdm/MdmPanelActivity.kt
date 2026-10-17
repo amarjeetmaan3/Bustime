@@ -717,7 +717,27 @@ class MdmPanelActivity : AppCompatActivity() {
         if (drafts.size < 2) return uiText("A route needs a start and destination.", "रूट में शुरुआत और गंतव्य होना चाहिए।", "ਰੂਟ ਵਿੱਚ ਸ਼ੁਰੂਆਤ ਅਤੇ ਮੰਜ਼ਿਲ ਹੋਣੀ ਚਾਹੀਦੀ ਹੈ।")
         if (drafts.any { it.optString("name").trim().isBlank() }) return uiText("Enter a name for every stop.", "हर स्टॉप का नाम भरें।", "ਹਰ ਸਟਾਪ ਦਾ ਨਾਮ ਭਰੋ।")
 
-        // Repeated places are valid: a real route can pass through the same town more than once.
+        // Resolve selected IDs and manually typed English/Hindi/Punjabi aliases to one canonical key.
+        fun normalizeStop(value: String) = value.trim().lowercase(Locale.ROOT).replace(Regex("\\\\s+"), " ")
+        val seen = mutableMapOf<String, Int>()
+        drafts.forEachIndexed { index, draft ->
+            val name = draft.optString("name").trim()
+            val selectedId = if (draft.isNull("place_id")) "" else draft.optString("place_id").trim()
+            val canonical = places.firstOrNull { place ->
+                (selectedId.isNotBlank() && place.id == selectedId) ||
+                    place.names.values.any { alias -> normalizeStop(alias) == normalizeStop(name) }
+            }
+            val key = canonical?.let { "id:${it.id}" } ?: "name:${normalizeStop(name)}"
+            val previous = seen[key]
+            if (previous != null) {
+                return uiText(
+                    "Stops ${previous} and ${index + 1} refer to the same place. Each stop can appear only once.",
+                    "स्टॉप ${previous} और ${index + 1} एक ही जगह हैं। हर स्टॉप केवल एक बार रखें।",
+                    "ਸਟਾਪ ${previous} ਅਤੇ ${index + 1} ਇੱਕੋ ਥਾਂ ਹਨ। ਹਰ ਸਟਾਪ ਸਿਰਫ਼ ਇੱਕ ਵਾਰ ਰੱਖੋ।"
+                )
+            }
+            seen[key] = index + 1
+        }
         if (drafts.none { draftTime(it) != null }) return uiText("Set at least one time anywhere in the route.", "रूट में कम-से-कम एक स्टॉप का समय भरें।", "ਰੂਟ ਵਿੱਚ ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਟਾਪ ਦਾ ਸਮਾਂ ਭਰੋ।")
         return null
     }
