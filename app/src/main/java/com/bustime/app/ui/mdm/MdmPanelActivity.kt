@@ -142,7 +142,7 @@ class MdmPanelActivity : AppCompatActivity() {
                     if (to.isNotBlank()) drafts.add(JSONObject().put("place_id", JSONObject.NULL).put("name", to).put("language", "en").put("time", JSONObject.NULL))
                 }
                 if (drafts.size < 2) error(uiText("This request does not contain enough route details to open the editor.", "इस रिक्वेस्ट में एडिटर खोलने के लिए पर्याप्त रूट जानकारी नहीं है।", "ਇਸ ਬੇਨਤੀ ਵਿੱਚ ਐਡੀਟਰ ਖੋਲ੍ਹਣ ਲਈ ਕਾਫ਼ੀ ਰੂਟ ਜਾਣਕਾਰੀ ਨਹੀਂ ਹੈ।"))
-                showRoutePreview(old, drafts, item.optString("service_name"), places) { showReviewCenter() }
+                renderRouteEditor(old, drafts, item.optString("service_name"), places) { showReviewCenter() }
             }.onFailure { toast(it.message ?: uiText("Could not open route editor", "रूट एडिटर नहीं खुला", "ਰੂਟ ਐਡੀਟਰ ਨਹੀਂ ਖੁੱਲ੍ਹਿਆ")) }
         }
     }
