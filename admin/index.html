@@ -1929,8 +1929,8 @@ function viewCommunity(mode) {
   if (community._failed && community._failed.length) html = '<div class="card" style="border-color:#c0392b"><b>Some tables failed to load:</b><br>' + community._failed.map(esc).join('<br>') + '<br><span class="muted">Tables failed to load: ' + community._failed.map(esc).join(', ') + '. Check the error and refresh.</span></div>' + html;
   if (mode !== 'busDirectory') {
   var scoped = all.filter(matchesMode);
-  var selectedCounts = scoped.reduce(function(total,x){ if(total[x.status] !== undefined) total[x.status]++; return total; }, {pending:0,approved:0,rejected:0});
-  html += '<div class="toolbar">' + ['pending','approved','rejected'].map(function(st){ return '<button class="btn '+(communityStatus===st?'primary':'')+'" data-act="community-status" data-status="'+st+'">'+st[0].toUpperCase()+st.slice(1)+' ('+selectedCounts[st]+')</button>'; }).join('') + '</div>';
+  var selectedCounts = scoped.reduce(function(total,x){ if(total[x.status] !== undefined) total[x.status]++; return total; }, {pending:0,reviewed:0,approved:0,rejected:0});
+  html += '<div class="toolbar">' + ['pending','reviewed','approved','rejected'].map(function(st){ return '<button class="btn '+(communityStatus===st?'primary':'')+'" data-act="community-status" data-status="'+st+'">'+(st==='reviewed'?'Seen':st[0].toUpperCase()+st.slice(1))+' ('+selectedCounts[st]+')</button>'; }).join('') + '</div>';
   var filtered = scoped.filter(function(x){ return x.status === communityStatus; });
   if (!filtered.length) html += '<div class="card"><p class="muted">No '+esc(communityStatus)+' requests match this filter.</p></div>';
   filtered.forEach(function(x){
@@ -1958,8 +1958,7 @@ function viewCommunity(mode) {
     } else {
       details = '<p><b>'+esc(x.category)+'</b> · Route '+esc(x.related_route||'-')+'</p><p>'+esc(x.message)+'</p><p class="muted">Contact: '+esc(x.contact||'-')+'</p>';
     }
-    var actions = (x.status==='pending' ? (x._kind==='feedback' ? '<button class="btn primary" data-act="community-approve" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Approve</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open review</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>') : (x.status==='rejected' ? '<span class="badge gray">Rejected</span>' : '<span class="badge green">Approved</span>')) +
-      '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete</button>';
+    var actions = x._kind==='feedback' ? (x.status==='pending' ? '<button class="btn primary" data-act="feedback-seen" data-id="'+esc(x.id)+'">Mark Seen</button>' : x.status==='reviewed' ? '<button class="btn" data-act="feedback-unseen" data-id="'+esc(x.id)+'">Mark Unseen</button>' : '<span class="badge gray">'+esc(x.status||'Unknown')+'</span>') : ((x.status==='pending' ? '<button class="btn primary" data-act="community-open" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Open review</button><button class="btn danger" data-act="community-reject" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Reject</button>' : (x.status==='rejected' ? '<span class="badge gray">Rejected</span>' : x.status==='reviewed' ? '<span class="badge green">Seen</span>' : '<span class="badge green">Approved</span>')) + '<button class="btn danger" data-act="community-delete" data-kind="'+x._kind+'" data-id="'+esc(x.id)+'">Delete</button>');
     var correctionRoute=x._kind==='corrections'?(data.routes||[]).find(function(r){return String(r.id)===String(x.route_id);}):null;
     var correctionRouteName=correctionRoute?(pname(placeById(correctionRoute.from))+' → '+pname(placeById(correctionRoute.to))):'';
     var cardTitle=x._kind==='corrections'?(correctionRouteName||('Route '+String(x.route_id||'correction')))+' · '+String(x.request_type||'correction'):(x._label+' · '+(x.request_type||x.category||'Request'));
@@ -3010,12 +3009,20 @@ document.addEventListener('click', async function (e) {
       toast('Approved reviewed data; original submission retained. Publish separately to make snapshot changes live.');render();return;
     }
     else if (act === 'community-refresh') { await loadCommunity(); render(); }
+    else if (act === 'feedback-seen' || act === 'feedback-unseen') {
+      var fid=b.getAttribute('data-id'), feedback=(community.feedback||[]).find(function(x){return x.id===fid;});
+      if(!feedback){toast('Feedback not found. Refresh the list.');return;}
+      var seen=act==='feedback-seen', stamp=new Date().toISOString();
+      await sbFetch('/rest/v1/feedback_submissions?id=eq.'+encodeURIComponent(fid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:seen?'reviewed':'pending',reviewed_at:seen?stamp:null})});
+      feedback.status=seen?'reviewed':'pending';feedback.reviewed_at=seen?stamp:null;communityStatus=seen?'reviewed':'pending';toast(seen?'Feedback marked as seen.':'Feedback moved back to unseen.');render();return;
+    }
     else if (act === 'community-status') { communityStatus = b.getAttribute('data-status'); render(); }
     else if (act === 'community-section') { communitySection = b.getAttribute('data-section') || 'corrections'; render(); }
     else if (act === 'community-reject' || act === 'community-approve') {
       var kind = b.getAttribute('data-kind'), cid = b.getAttribute('data-id');
       var listKey = kind, record = (community[listKey] || []).find(function(x){return x.id===cid;}), table = communityTable(kind,record);
       if (!record || record.status !== 'pending') { toast('This request is no longer pending. Refresh the list.'); return; }
+      if (kind === 'feedback') { toast('Feedback is read-only. Use Mark Seen to acknowledge it.'); return; }
       if (act === 'community-approve') {
         if (kind === 'corrections') applyApprovedCorrection(record);
         if (kind === 'busSubmissions') {
