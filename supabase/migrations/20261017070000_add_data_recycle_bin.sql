@@ -3,7 +3,7 @@ create table if not exists public.data_recycle_bin (
   id bigint generated always as identity primary key,
   entity_type text not null check (entity_type in ('place','route')),
   entity_id text not null,
-  payload jsonb not null,
+  payload jsonb, -- nullable only after explicit permanent purge
   deleted_at timestamptz not null default now(),
   deleted_revision bigint,
   restored_at timestamptz,
