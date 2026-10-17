@@ -75,6 +75,7 @@ class MdmPanelActivity : AppCompatActivity() {
         root.addView(TextView(this).apply { text = uiText("Published changes sync to the app.", "प्रकाशित बदलाव ऐप में सिंक होते हैं।", "ਪ੍ਰਕਾਸ਼ਿਤ ਤਬਦੀਲੀਆਂ ਐਪ ਵਿੱਚ ਸਿੰਕ ਹੁੰਦੀਆਂ ਹਨ।"); setPadding(0,8,0,16) })
         button(uiText("Route List", "रूट सूची", "ਰੂਟ ਸੂਚੀ")) { showRoutes() }
         button(uiText("Bus Stop List", "बस स्टॉप सूची", "ਬੱਸ ਸਟਾਪ ਸੂਚੀ")) { showStops() }
+        button(uiText("Recycle Bin", "रिसायकल बिन", "ਰੀਸਾਈਕਲ ਬਿਨ")) { showRecycleBin() }
         button(uiText("Add Route", "रूट जोड़ें", "ਰੂਟ ਜੋੜੋ")) { routeEditor(null) }
         button(uiText("Add Bus Stop", "बस स्टॉप जोड़ें", "ਬੱਸ ਸਟਾਪ ਜੋੜੋ")) { stopEditor(null) }
         button(uiText("Sync Now (changes only)", "अभी सिंक करें (केवल बदलाव)", "ਹੁਣੇ ਸਿੰਕ ਕਰੋ (ਸਿਰਫ਼ ਤਬਦੀਲੀਆਂ)")) {
@@ -107,6 +108,112 @@ class MdmPanelActivity : AppCompatActivity() {
         }
         button(uiText("Back", "वापस", "ਵਾਪਸ")) { finish() }
         showRoot()
+    }
+
+    private fun callRecycle(action: String, id: Long? = null): JSONObject {
+        val conn = (URL(Constants.SUPABASE_URL.trimEnd('/') + "/functions/v1/mdm-publish").openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"; connectTimeout = 20000; readTimeout = 20000; doOutput = true
+            setRequestProperty("apikey", Constants.SUPABASE_ANON_KEY)
+            setRequestProperty("Content-Type", "application/json")
+        }
+        val body = JSONObject().put("action", action).put("password", password)
+        if (id != null) body.put("id", id)
+        conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+        val code = conn.responseCode
+        val raw = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+        conn.disconnect()
+        val result = JSONObject(raw.ifBlank { "{}" })
+        if (code !in 200..299 || !result.optBoolean("ok")) error(result.optString("error", "Recycle Bin request failed"))
+        return result
+    }
+
+    private fun showRecycleBin() {
+        lifecycleScope.launch {
+            runCatching { withContext(Dispatchers.IO) { callRecycle("recycle-list") } }
+                .onSuccess { response ->
+                    val items = response.optJSONArray("items") ?: JSONArray()
+                    showPage(uiText("Recycle Bin", "रिसायकल बिन", "ਰੀਸਾਈਕਲ ਬਿਨ"),
+                        uiText("Deleted route and stop records can be restored here.", "डिलीट किए गए रूट और स्टॉप यहाँ से वापस लाए जा सकते हैं।", "ਮਿਟਾਏ ਰੂਟ ਅਤੇ ਸਟਾਪ ਇੱਥੋਂ ਵਾਪਸ ਲਿਆ ਸਕਦੇ ਹੋ।"))
+                    if (items.length() == 0) {
+                        root.addView(TextView(this@MdmPanelActivity).apply {
+                            text = uiText("Recycle Bin is empty.", "रिसायकल बिन खाली है।", "ਰੀਸਾਈਕਲ ਬਿਨ ਖਾਲੀ ਹੈ।")
+                            textSize = 16f; setPadding(0, dp(12), 0, dp(12))
+                        })
+                    }
+                    for (i in 0 until items.length()) {
+                        val item = items.getJSONObject(i)
+                        val id = item.optLong("id")
+                        val type = item.optString("entity_type")
+                        val entityId = item.optString("entity_id")
+                        val payload = item.optJSONObject("payload") ?: JSONObject()
+                        val label = if (type == "route") {
+                            payload.optString("from", "?") + " → " + payload.optString("to", "?")
+                        } else {
+                            val names = payload.optJSONObject("name")
+                            names?.optString("en")?.takeIf { it.isNotBlank() }
+                                ?: names?.optString("hi")?.takeIf { it.isNotBlank() }
+                                ?: entityId
+                        }
+                        root.addView(TextView(this@MdmPanelActivity).apply {
+                            text = label + "\n" + type.uppercase(Locale.ROOT) + " · ID: " + entityId + "\n" + item.optString("deleted_at")
+                            textSize = 14f; setPadding(0, dp(12), 0, dp(4))
+                        })
+                        val actions = LinearLayout(this@MdmPanelActivity).apply { orientation = 0 }
+                        actions.addView(Button(this@MdmPanelActivity).apply {
+                            text = uiText("Restore", "वापस लाएँ", "ਰੀਸਟੋਰ ਕਰੋ")
+                            setOnClickListener {
+                                lifecycleScope.launch {
+                                    runCatching { withContext(Dispatchers.IO) { callRecycle("recycle-restore", id) } }
+                                        .onSuccess { runCatching { repo.syncData() }; showRecycleBin() }
+                                        .onFailure { toast(it.message ?: "Restore failed") }
+                                }
+                            }
+                        }, LinearLayout.LayoutParams(0, -2, 1f))
+                        actions.addView(Button(this@MdmPanelActivity).apply {
+                            text = uiText("Permanent Delete", "हमेशा के लिए हटाएँ", "ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟਾਓ")
+                            setOnClickListener {
+                                AlertDialog.Builder(this@MdmPanelActivity)
+                                    .setTitle(uiText("Permanently delete?", "हमेशा के लिए हटाएँ?", "ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟਾਉਣਾ ਹੈ?"))
+                                    .setMessage(uiText("This removes the recovery copy permanently.", "इससे रिकवरी कॉपी हमेशा के लिए हट जाएगी।", "ਇਸ ਨਾਲ ਰਿਕਵਰੀ ਕਾਪੀ ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟ ਜਾਵੇਗੀ।"))
+                                    .setNegativeButton(uiText("Cancel", "रद्द करें", "ਰੱਦ ਕਰੋ"), null)
+                                    .setPositiveButton(uiText("Delete", "हटाएँ", "ਮਿਟਾਓ")) { _, _ ->
+                                        lifecycleScope.launch {
+                                            runCatching { withContext(Dispatchers.IO) { callRecycle("recycle-purge", id) } }
+                                                .onSuccess { showRecycleBin() }
+                                                .onFailure { toast(it.message ?: "Permanent delete failed") }
+                                        }
+                                    }.show()
+                            }
+                        }, LinearLayout.LayoutParams(0, -2, 1f))
+                        root.addView(actions)
+                    }
+                    showRoot()
+                }
+                .onFailure { toast(it.message ?: uiText("Could not load Recycle Bin", "रिसायकल बिन लोड नहीं हुआ", "ਰੀਸਾਈਕਲ ਬਿਨ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ")) }
+        }
+    }
+
+    private suspend fun routePayload(route: Route): JSONObject {
+        val stopRows = repo.getRouteStops(route.id).sortedBy { it.stopOrder }
+        val stops = JSONArray()
+        stopRows.forEach { stop ->
+            stops.put(JSONObject().put("place", stop.placeId).put("time", stop.time ?: JSONObject.NULL))
+        }
+        return JSONObject()
+            .put("id", route.id).put("from", route.fromId).put("to", route.toId)
+            .put("time", route.time.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+            .put("service", route.serviceName ?: JSONObject.NULL)
+            .put("routeName", route.routeName ?: JSONObject.NULL)
+            .put("contact", route.contact ?: JSONObject.NULL).put("info", route.info ?: JSONObject.NULL)
+            .put("longRoute", route.longRoute).put("startDate", route.startDate ?: JSONObject.NULL)
+            .put("stops", stops)
+    }
+
+    private fun placePayload(place: Place): JSONObject {
+        val names = JSONObject()
+        place.names.forEach { (lang, name) -> names.put(lang, name) }
+        return JSONObject().put("id", place.id).put("kind", place.kind).put("name", names)
+            .put("city", place.city ?: JSONObject.NULL).put("district", place.district ?: JSONObject.NULL)
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
@@ -535,10 +642,10 @@ class MdmPanelActivity : AppCompatActivity() {
     private fun confirmDeleteRoute(route: Route) {
         AlertDialog.Builder(this)
             .setTitle(uiText("Delete route?", "रूट हटाएँ?", "ਰੂਟ ਮਿਟਾਉਣਾ ਹੈ?"))
-            .setMessage(uiText("This route will be permanently removed from the app. This cannot be undone.", "यह रूट ऐप से स्थायी रूप से हट जाएगा। यह वापस नहीं किया जा सकता।", "ਇਹ ਰੂਟ ਐਪ ਤੋਂ ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟ ਜਾਵੇਗਾ। ਇਸਨੂੰ ਵਾਪਸ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ।"))
+            .setMessage(uiText("This route will move to the Recycle Bin and can be restored.", "यह रूट ऐप से स्थायी रूप से हट जाएगा। यह वापस नहीं किया जा सकता।", "ਇਹ ਰੂਟ ਰੀਸਾਈਕਲ ਬਿਨ ਵਿੱਚ ਜਾਵੇਗਾ ਅਤੇ ਵਾਪਸ ਲਿਆ ਸਕਦੇ ਹੋ।"))
             .setNegativeButton(uiText("Cancel", "रद्द करें", "ਰੱਦ ਕਰੋ"), null)
             .setPositiveButton(uiText("Delete", "हटाएँ", "ਮਿਟਾਓ")) { _, _ ->
-                publish(JSONArray().put(JSONObject().put("entity_type", "route").put("entity_id", route.id).put("operation", "delete").put("payload", JSONObject.NULL)))
+                lifecycleScope.launch { runCatching { routePayload(route) }.onSuccess { payload -> publish(JSONArray().put(JSONObject().put("entity_type", "route").put("entity_id", route.id).put("operation", "delete").put("payload", payload))) }.onFailure { toast(it.message ?: "Could not prepare recovery copy") } }
             }.show()
     }
 
@@ -560,10 +667,10 @@ class MdmPanelActivity : AppCompatActivity() {
                 }
                 AlertDialog.Builder(this@MdmPanelActivity)
                     .setTitle(uiText("Delete bus stop?", "बस स्टॉप हटाएँ?", "ਬੱਸ ਸਟਾਪ ਮਿਟਾਓ?"))
-                    .setMessage(uiText("This stop will be permanently removed. This cannot be undone.", "यह स्टॉप स्थायी रूप से हट जाएगा। यह वापस नहीं किया जा सकता।", "ਇਹ ਸਟਾਪ ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟ ਜਾਵੇਗਾ।"))
+                    .setMessage(uiText("This stop will move to the Recycle Bin and can be restored.", "यह स्टॉप स्थायी रूप से हट जाएगा। यह वापस नहीं किया जा सकता।", "ਇਹ ਸਟਾਪ ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟ ਜਾਵੇਗਾ।"))
                     .setNegativeButton(uiText("Cancel", "रद्द करें", "ਰੱਦ ਕਰੋ"), null)
                     .setPositiveButton(uiText("Delete", "हटाएँ", "ਮਿਟਾਓ")) { _, _ ->
-                        publish(JSONArray().put(JSONObject().put("entity_type", "place").put("entity_id", stop.id).put("operation", "delete").put("payload", JSONObject.NULL)))
+                        publish(JSONArray().put(JSONObject().put("entity_type", "place").put("entity_id", stop.id).put("operation", "delete").put("payload", placePayload(stop))))
                     }.show()
             }.onFailure { toast(it.message ?: uiText("Could not check stop usage", "स्टॉप का उपयोग जाँच नहीं सके", "ਸਟਾਪ ਦੀ ਵਰਤੋਂ ਨਹੀਂ ਜਾਂਚ ਸਕੇ")) }
         }

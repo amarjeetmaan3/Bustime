@@ -50,6 +50,42 @@ Deno.serve(async (req: Request) => {
     if (!equal(actual, fromB64(secret.password_hash))) return reply({ error: "invalid_password" }, 401);
   }
 
+  // Shared Recycle Bin actions; only the authenticated owner/MDM password reaches here.
+  if (body.action === "recycle-list") {
+    const r = await fetch(url + "/rest/v1/data_recycle_bin?select=id,entity_type,entity_id,payload,deleted_at,deleted_revision&restored_at=is.null&permanently_deleted_at=is.null&order=deleted_at.desc&limit=500", {
+      headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }
+    });
+    if (!r.ok) return reply({ error: "recycle_bin_read_failed" }, 502);
+    return reply({ ok: true, items: await r.json() });
+  }
+  if (body.action === "recycle-purge") {
+    const id = Number(body.id);
+    if (!Number.isSafeInteger(id) || id < 1) return reply({ error: "invalid_recycle_id" }, 400);
+    const r = await fetch(url + "/rest/v1/data_recycle_bin?id=eq." + id + "&restored_at=is.null&permanently_deleted_at=is.null", {
+      method: "PATCH",
+      headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify({ permanently_deleted_at: new Date().toISOString(), payload: null })
+    });
+    if (!r.ok) return reply({ error: "recycle_purge_failed" }, 502);
+    const rows = await r.json();
+    return rows.length ? reply({ ok: true, purged: true }) : reply({ error: "recycle_item_not_found" }, 404);
+  }
+  let restoreId: number | null = null;
+  if (body.action === "recycle-restore") {
+    const id = Number(body.id);
+    if (!Number.isSafeInteger(id) || id < 1) return reply({ error: "invalid_recycle_id" }, 400);
+    const r = await fetch(url + "/rest/v1/data_recycle_bin?select=id,entity_type,entity_id,payload&id=eq." + id + "&restored_at=is.null&permanently_deleted_at=is.null&limit=1", {
+      headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }
+    });
+    if (!r.ok) return reply({ error: "recycle_item_read_failed" }, 502);
+    const rows = await r.json();
+    if (!Array.isArray(rows) || !rows.length || !rows[0].payload) return reply({ error: "recycle_item_not_found_or_payload_missing" }, 404);
+    const item = rows[0];
+    restoreId = id;
+    body.action = "publish";
+    body.changes = [{ entity_type: item.entity_type, entity_id: item.entity_id, operation: "upsert", payload: item.payload }];
+  }
+
   if (body.action === "list") {
     const stateRes = await fetch(url + "/rest/v1/data_sync_state?select=revision,snapshot_version,published_at&id=eq.1", {
       headers: { apikey: service, Authorization: "Bearer " + service }
@@ -74,6 +110,7 @@ Deno.serve(async (req: Request) => {
   const input = body.changes;
   if (!Array.isArray(input) || input.length < 1 || input.length > 250) return reply({ error: "invalid_changes" }, 400);
   const changes: Array<Record<string, unknown>> = [];
+  const deleteArchives: Array<{entity_type:string;entity_id:string;payload:unknown}> = [];
   for (const c of input) {
     if (!c || typeof c !== "object") return reply({ error: "invalid_change" }, 400);
     const entity_type = String(c.entity_type || "");
@@ -98,7 +135,24 @@ Deno.serve(async (req: Request) => {
         if (!hasTime) return reply({ error: "route_needs_at_least_one_time" }, 400);
       }
     }
-    changes.push({ entity_type, entity_id, operation, payload });
+    if (operation === "delete") {
+      const suppliedPayload: Record<string, unknown> = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+      let savedPayload: unknown = null;
+      // Prefer the latest full published payload and overlay caller fields, preserving fields not represented in compact Android models.
+      const prior = await fetch(url + "/rest/v1/data_change_log?select=payload&entity_type=eq." + entity_type + "&entity_id=eq." + encodeURIComponent(entity_id) + "&operation=eq.upsert&order=revision.desc&limit=1", {
+        headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }
+      });
+      if (prior.ok) {
+        const priorRows = await prior.json();
+        if (Array.isArray(priorRows) && priorRows.length && priorRows[0].payload && typeof priorRows[0].payload === "object") {
+          savedPayload = Object.assign({}, priorRows[0].payload, suppliedPayload);
+        }
+      }
+      if (!savedPayload && Object.keys(suppliedPayload).length) savedPayload = suppliedPayload;
+      if (!savedPayload || typeof savedPayload !== "object") return reply({ error: "delete_payload_required_for_recovery", entity_type, entity_id }, 409);
+      deleteArchives.push({ entity_type, entity_id, payload: savedPayload });
+    }
+    changes.push({ entity_type, entity_id, operation, payload: operation === "delete" ? null : payload });
   }
   const stateRes = await fetch(url + "/rest/v1/data_sync_state?select=revision,snapshot_version&id=eq.1", {
     headers: { apikey: service, Authorization: "Bearer " + service }
@@ -107,6 +161,29 @@ Deno.serve(async (req: Request) => {
   const stateRows = await stateRes.json();
   if (!Array.isArray(stateRows) || !stateRows.length) return reply({ error: "sync_state_missing" }, 503);
   const state = stateRows[0], revision = Number(state.revision || 0) + 1;
+  // Archive complete payloads before emitting tombstones, so a failed archive never destroys recoverability.
+  for (const item of deleteArchives) {
+    const existing = await fetch(url + "/rest/v1/data_recycle_bin?select=id&entity_type=eq." + item.entity_type + "&entity_id=eq." + encodeURIComponent(item.entity_id) + "&restored_at=is.null&permanently_deleted_at=is.null&limit=1", {
+      headers: { apikey: service, Authorization: "Bearer " + service }
+    });
+    if (!existing.ok) return reply({ error: "recycle_bin_check_failed" }, 502);
+    const existingRows = await existing.json();
+    let archived: Response;
+    if (Array.isArray(existingRows) && existingRows.length) {
+      archived = await fetch(url + "/rest/v1/data_recycle_bin?id=eq." + existingRows[0].id, {
+        method: "PATCH",
+        headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ payload: item.payload, deleted_at: new Date().toISOString(), deleted_revision: revision })
+      });
+    } else {
+      archived = await fetch(url + "/rest/v1/data_recycle_bin", {
+        method: "POST",
+        headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ entity_type: item.entity_type, entity_id: item.entity_id, payload: item.payload, deleted_revision: revision })
+      });
+    }
+    if (!archived.ok) return reply({ error: "recycle_bin_archive_failed", detail: (await archived.text()).slice(0, 200) }, 502);
+  }
   const rows = changes.map(c => ({ revision, ...c }));
   const insert = await fetch(url + "/rest/v1/data_change_log", {
     method: "POST",
@@ -120,5 +197,13 @@ Deno.serve(async (req: Request) => {
     body: JSON.stringify(Object.assign({ revision, published_at: new Date().toISOString() }, snapshotVersion === null ? {} : { snapshot_version: snapshotVersion }))
   });
   if (!stateUpdate.ok) return reply({ error: "sync_state_update_failed", revision }, 502);
-  return reply({ ok: true, revision, published: changes.length });
+  if (restoreId !== null) {
+    const restored = await fetch(url + "/rest/v1/data_recycle_bin?id=eq." + restoreId + "&restored_at=is.null", {
+      method: "PATCH",
+      headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ restored_at: new Date().toISOString() })
+    });
+    if (!restored.ok) return reply({ error: "restore_marker_failed", revision }, 502);
+  }
+  return reply({ ok: true, revision, published: changes.length, restored: restoreId !== null });
 });
