@@ -529,24 +529,7 @@ class MdmPanelActivity : AppCompatActivity() {
         if (drafts.size < 2) return uiText("A route needs a start and destination.", "रूट में शुरुआत और गंतव्य होना चाहिए।", "ਰੂਟ ਵਿੱਚ ਸ਼ੁਰੂਆਤ ਅਤੇ ਮੰਜ਼ਿਲ ਹੋਣੀ ਚਾਹੀਦੀ ਹੈ।")
         if (drafts.any { it.optString("name").trim().isBlank() }) return uiText("Enter a name for every stop.", "हर स्टॉप का नाम भरें।", "ਹਰ ਸਟਾਪ ਦਾ ਨਾਮ ਭਰੋ।")
 
-        // Resolve multilingual names to the existing Place ID before checking duplicates.
-        // This prevents a repeated stop from slipping through as an endpoint or an intermediate stop.
-        val seenStops = mutableSetOf<String>()
-        for (draft in drafts) {
-            val label = draft.optString("name").trim()
-            val selectedId = draft.optString("place_id").takeIf { !draft.isNull("place_id") && it.isNotBlank() }
-            val resolvedId = selectedId ?: places.firstOrNull { place ->
-                place.names.values.any { norm(it) == norm(label) }
-            }?.id
-            val key = resolvedId?.let { "id:$it" } ?: "name:${norm(label)}"
-            if (!seenStops.add(key)) {
-                return uiText(
-                    "“$label” appears more than once in this route. Choose a different stop or remove the duplicate.",
-                    "“$label” इस रूट में एक से ज़्यादा बार है। कोई दूसरा स्टॉप चुनें या दोहराया स्टॉप हटाएँ।",
-                    "“$label” ਇਸ ਰੂਟ ਵਿੱਚ ਇੱਕ ਤੋਂ ਵੱਧ ਵਾਰ ਹੈ। ਵੱਖਰਾ ਸਟਾਪ ਚੁਣੋ ਜਾਂ ਦੁਹਰਾਇਆ ਸਟਾਪ ਹਟਾਓ।"
-                )
-            }
-        }
+        // Repeated places are valid: a real route can pass through the same town more than once.
         if (drafts.none { draftTime(it) != null }) return uiText("Set at least one time anywhere in the route.", "रूट में कम-से-कम एक स्टॉप का समय भरें।", "ਰੂਟ ਵਿੱਚ ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਟਾਪ ਦਾ ਸਮਾਂ ਭਰੋ।")
         return null
     }
