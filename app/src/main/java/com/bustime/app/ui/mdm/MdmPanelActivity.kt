@@ -730,14 +730,16 @@ class MdmPanelActivity : AppCompatActivity() {
             }
             val key = canonical?.let { "id:${it.id}" } ?: "name:${normalizeStop(name)}"
             val previous = seen[key]
-            if (previous != null) {
+            // Allow only the start/end pair of a circular route; intermediate duplicates are invalid.
+            val allowedCircularEndpoint = previous == 1 && index + 1 == drafts.size
+            if (previous != null && !allowedCircularEndpoint) {
                 return uiText(
                     "Stops ${previous} and ${index + 1} refer to the same place. Each stop can appear only once.",
                     "स्टॉप ${previous} और ${index + 1} एक ही जगह हैं। हर स्टॉप केवल एक बार रखें।",
                     "ਸਟਾਪ ${previous} ਅਤੇ ${index + 1} ਇੱਕੋ ਥਾਂ ਹਨ। ਹਰ ਸਟਾਪ ਸਿਰਫ਼ ਇੱਕ ਵਾਰ ਰੱਖੋ।"
                 )
             }
-            seen[key] = index + 1
+            if (previous == null) seen[key] = index + 1
         }
         if (drafts.none { draftTime(it) != null }) return uiText("Set at least one time anywhere in the route.", "रूट में कम-से-कम एक स्टॉप का समय भरें।", "ਰੂਟ ਵਿੱਚ ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਟਾਪ ਦਾ ਸਮਾਂ ਭਰੋ।")
         return null
