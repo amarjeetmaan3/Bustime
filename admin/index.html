@@ -1755,12 +1755,12 @@ function viewRouteReview() {
       '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="sb-login">Sign in</button></div></div>';
   }
   if (!subs) return '<div class="card"><p class="muted">Loading...</p></div>' + (subsError ? '<div class="alert err">' + esc(subsError) + '</div>' : '');
-  var counts = { pending:0, approved:0, rejected:0 };
+  var counts = { pending:0, reviewed:0, approved:0, rejected:0, deleted:0 };
   subs.forEach(function (s) { if (counts[s.status] !== undefined) counts[s.status]++; });
   var head = '<div class="toolbar"><span class="grow muted">Approved and rejected submissions remain in their own lists.</span>' +
     '<button class="btn" data-act="sb-refresh">Refresh</button><button class="btn" data-act="sb-logout">Sign out</button></div>' +
-    '<div class="toolbar" style="flex-wrap:wrap">' + ['pending','approved','rejected'].map(function (st) {
-      var label = st === 'pending' ? 'Pending' : st === 'approved' ? 'Approved' : 'Rejected';
+    '<div class="toolbar" style="flex-wrap:wrap">' + ['pending','reviewed','approved','rejected','deleted'].map(function (st) {
+      var label = st === 'pending' ? 'Pending' : st === 'reviewed' ? 'Reviewed' : st === 'approved' ? 'Approved' : st === 'rejected' ? 'Rejected' : 'Deleted';
       return '<button class="btn ' + (reviewStatus === st ? 'primary' : '') + '" data-act="review-status" data-status="' + st + '">' + label + ' (' + counts[st] + ')</button>';
     }).join('') + '</div>';
   var filtered = subs.map(function (s, index) { return { s:s, index:index }; }).filter(function (x) { return x.s.status === reviewStatus; });
@@ -1886,10 +1886,10 @@ function viewSupabaseSignIn() {
 function viewBusRequests() {
   if (!sbToken) return viewSupabaseSignIn();
   if (!subs) return '<div class="card"><p class="muted">Loading bus route submissions…</p><button class="btn" data-act="sb-refresh">Refresh</button></div>';
-  var counts={pending:0,approved:0,rejected:0};
+  var counts={pending:0,reviewed:0,approved:0,rejected:0,deleted:0};
   subs.forEach(function(x){if(counts[x.status]!==undefined) counts[x.status]++;});
   var html='<div class="bus-page-head"><div><h2>Bus Route Requests</h2><p class="muted">New public route submissions are reviewed here. Approval updates route data; publish when you are ready to make approved changes live.</p></div><div><button class="btn" data-act="sb-refresh">Refresh</button> <button class="btn" data-act="sb-logout">Sign out</button></div></div>';
-  html+='<div class="chips">'+['pending','approved','rejected'].map(function(st){return '<button class="btn '+(reviewStatus===st?'primary':'')+'" data-act="review-status" data-status="'+st+'">'+st[0].toUpperCase()+st.slice(1)+' <span class="badge gray">'+counts[st]+'</span></button>';}).join('')+'</div>';
+  html+='<div class="chips">'+['pending','reviewed','approved','rejected','deleted'].map(function(st){return '<button class="btn '+(reviewStatus===st?'primary':'')+'" data-act="review-status" data-status="'+st+'">'+(st==='reviewed'?'Reviewed':st[0].toUpperCase()+st.slice(1))+' <span class="badge gray">'+counts[st]+'</span></button>';}).join('')+'</div>';
   var rows=subs.map(function(x,i){return {s:x,index:i};}).filter(function(x){return x.s.status===reviewStatus;});
   if(!rows.length) return html+'<div class="card"><h2>No '+esc(reviewStatus)+' route requests</h2><p class="muted">There are no submissions in this status right now.</p></div>';
   return html+rows.map(function(x){
