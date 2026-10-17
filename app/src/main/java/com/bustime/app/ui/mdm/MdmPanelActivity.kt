@@ -202,12 +202,11 @@ class MdmPanelActivity : AppCompatActivity() {
         return JSONObject()
             .put("id", route.id).put("from", route.fromId).put("to", route.toId)
             .put("time", route.time.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
-            .put("arrive", JSONObject.NULL)
             .put("service", route.serviceName ?: JSONObject.NULL)
             .put("routeName", route.routeName ?: JSONObject.NULL)
             .put("contact", route.contact ?: JSONObject.NULL).put("info", route.info ?: JSONObject.NULL)
             .put("longRoute", route.longRoute).put("startDate", route.startDate ?: JSONObject.NULL)
-            .put("hidden", false).put("stops", stops)
+            .put("stops", stops)
     }
 
     private fun placePayload(place: Place): JSONObject {
