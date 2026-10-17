@@ -1775,6 +1775,8 @@ function viewRouteReview() {
         '<input type="time" class="sub_t" data-place="' + esc(st.place || '') + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' ? 'disabled' : '') + '></div>';
     }).join('');
     var actions = (s.status === 'pending' ? '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Open</button><button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button>' :
+      s.status === 'reviewed' ? '<span class="badge">Reviewed</span><button class="btn" data-act="sb-status-pending" data-i="' + i + '">Move to Pending</button>' :
+      s.status === 'deleted' ? '<span class="badge gray">Deleted</span><button class="btn" data-act="sb-status-pending" data-i="' + i + '">Restore</button>' :
       s.status === 'approved' ? '<span class="badge">Approved</span>' : '<span class="badge gray">Rejected</span>') +
       '<button class="btn danger" data-act="sb-delete" data-i="' + i + '">Delete</button>';
     var fromLabel = s.from_text || pname(placeById(s.from_id)) || s.from_id || '(missing From)';
@@ -1896,7 +1898,7 @@ function viewBusRequests() {
     var r=x.s, from=r.from_text||pname(placeById(r.from_id))||r.from_id||'Missing start', to=r.to_text||pname(placeById(r.to_id))||r.to_id||'Missing destination';
     var detailKey='bus-sub-'+x.index;
     var stopDetails=(r.stops||[]).map(function(st){return '<div class="stoprow"><span class="grow">'+esc(st.name||pname(placeById(st.place))||st.place||'Unnamed stop')+'</span><span class="route-time">'+esc(st.time||'Time unknown')+'</span></div>';}).join('')||'<p class="muted">No intermediate stops included.</p>';
-    return '<div class="card request-card" data-sub="'+x.index+'" data-request-card="'+detailKey+'" style="padding:7px 12px;margin-bottom:5px"><div class="request-row"><div class="request-title" title="'+esc(from+' → '+to)+'">'+esc(from)+' → '+esc(to)+'</div><div class="request-summary">'+esc(r.service_name||'Service not provided')+' · '+esc(r.start_time||'Time unknown')+'</div><div class="request-summary">Submitted '+esc(new Date(r.created_at).toLocaleString())+' · '+esc(r.phone||'No phone')+' · '+esc(r.status)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap"><button class="btn sm" data-act="community-toggle-details" data-detail="'+detailKey+'">Details ▾</button>'+(r.status==='pending'?'<button class="btn primary" data-act="sb-approve" data-i="'+x.index+'">Open review</button><button class="btn danger" data-act="sb-reject" data-i="'+x.index+'">Reject</button>':'<span class="badge">'+esc(r.status==='approved'?'Approved':'Rejected')+'</span>')+'<button class="btn danger" data-act="sb-delete" data-i="'+x.index+'">Delete</button></div></div><div class="request-details"><div class="row2"><div><label>Service</label><div>'+esc(r.service_name||'Not provided')+'</div></div><div><label>Departure</label><div><b>'+esc(r.start_time||'Not provided')+'</b></div></div></div><label>Stops and timings</label>'+stopDetails+'</div></div>';
+    return '<div class="card request-card" data-sub="'+x.index+'" data-request-card="'+detailKey+'" style="padding:7px 12px;margin-bottom:5px"><div class="request-row"><div class="request-title" title="'+esc(from+' → '+to)+'">'+esc(from)+' → '+esc(to)+'</div><div class="request-summary">'+esc(r.service_name||'Service not provided')+' · '+esc(r.start_time||'Time unknown')+'</div><div class="request-summary">Submitted '+esc(new Date(r.created_at).toLocaleString())+' · '+esc(r.phone||'No phone')+' · '+esc(r.status)+'</div><div class="request-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap"><button class="btn sm" data-act="community-toggle-details" data-detail="'+detailKey+'">Details ▾</button>'+(r.status==='pending'?'<button class="btn primary" data-act="sb-approve" data-i="'+x.index+'">Open review</button><button class="btn danger" data-act="sb-reject" data-i="'+x.index+'">Reject</button>':r.status==='reviewed'?'<span class="badge">Reviewed</span><button class="btn" data-act="sb-status-pending" data-i="'+x.index+'">Move to Pending</button>':r.status==='deleted'?'<span class="badge gray">Deleted</span><button class="btn" data-act="sb-status-pending" data-i="'+x.index+'">Restore</button>':'<span class="badge">'+esc(r.status==='approved'?'Approved':'Rejected')+'</span>')+'<button class="btn danger" data-act="sb-delete" data-i="'+x.index+'">Delete</button></div></div><div class="request-details"><div class="row2"><div><label>Service</label><div>'+esc(r.service_name||'Not provided')+'</div></div><div><label>Departure</label><div><b>'+esc(r.start_time||'Not provided')+'</b></div></div></div><label>Stops and timings</label>'+stopDetails+'</div></div>';
   }).join('');
 }
 function viewCommunity(mode) {
@@ -2833,6 +2835,11 @@ document.addEventListener('click', async function (e) {
     }
     else if (act === 'sb-refresh') { subs = null; render(); await Promise.allSettled([loadSubs(), loadCommunity()]); render(); }
     else if (act === 'review-status') { reviewStatus = b.getAttribute('data-status'); render(); }
+    else if (act === 'sb-status-pending') {
+      var pendingSub=subs&&subs[i];if(!pendingSub){toast('Request not found. Refresh the list.');return;}
+      await sbFetch('/rest/v1/route_submissions?id=eq.'+encodeURIComponent(pendingSub.id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'pending',reviewed_at:null})});
+      pendingSub.status='pending';pendingSub.reviewed_at=null;reviewStatus='pending';toast('Request moved to Pending.');render();return;
+    }
     else if (act === 'sb-reject') {
       if (!confirm('Reject this submission?')) return;
       await sbFetch('/rest/v1/route_submissions?id=eq.' + subs[i].id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'rejected' }) });
