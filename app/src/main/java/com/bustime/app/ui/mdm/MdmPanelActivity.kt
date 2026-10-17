@@ -718,7 +718,7 @@ class MdmPanelActivity : AppCompatActivity() {
         if (drafts.any { it.optString("name").trim().isBlank() }) return uiText("Enter a name for every stop.", "हर स्टॉप का नाम भरें।", "ਹਰ ਸਟਾਪ ਦਾ ਨਾਮ ਭਰੋ।")
 
         // Resolve selected IDs and manually typed English/Hindi/Punjabi aliases to one canonical key.
-        fun normalizeStop(value: String) = value.trim().lowercase(Locale.ROOT).replace(Regex("\\\\s+"), " ")
+        fun normalizeStop(value: String) = value.trim().lowercase(Locale.ROOT).replace(Regex("\\s+"), " ")
         val seen = mutableMapOf<String, Int>()
         drafts.forEachIndexed { index, draft ->
             val name = draft.optString("name").trim()
