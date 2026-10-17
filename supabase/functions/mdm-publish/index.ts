@@ -183,7 +183,7 @@ Deno.serve(async (req: Request) => {
         // Validate the complete ordered stop sequence, including endpoints.
         // Canonical stop IDs prevent users bypassing suggestions by manually typing an existing name.
         const routeStops = [from, ...(r.stops as Array<Record<string, unknown>>).map(s => String(s?.place ?? s?.place_id ?? s?.id ?? "").trim()), to];
-        const normalizedStops = routeStops.map(v => v.toLocaleLowerCase().replace(/\\s+/g, " ").trim());
+        const normalizedStops = routeStops.map(v => v.toLocaleLowerCase().replace(/\s+/g, " ").trim());
         if (normalizedStops.some(v => !v)) {
           return reply({ error: "route_invalid_stops", message: "Every route stop must have a valid place." }, 400);
         }
