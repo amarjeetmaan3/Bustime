@@ -170,7 +170,7 @@ Deno.serve(async (req: Request) => {
       archived = await fetch(url + "/rest/v1/data_recycle_bin?id=eq." + existingRows[0].id, {
         method: "PATCH",
         headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ payload: item.payload, deleted_at: new Date().toISOString() })
+        body: JSON.stringify({ payload: item.payload, deleted_at: new Date().toISOString(), deleted_revision: revision })
       });
     } else {
       archived = await fetch(url + "/rest/v1/data_recycle_bin", {
