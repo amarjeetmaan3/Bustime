@@ -1987,8 +1987,8 @@ function viewCommunity(mode) {
 function viewReview() {
   if (!sbToken) return viewSupabaseSignIn();
   var all = [];
-  [['corrections','Route corrections'],['feedback','Feedback'],['busSubmissions','Add Bus']].forEach(function(pair){
-    (community[pair[0]]||[]).forEach(function(x){all.push(x);});
+  [['corrections','Route corrections'],['feedback','Feedback'],['busSubmissions','Book Bus / Add Your Bus']].forEach(function(pair){
+    (community[pair[0]]||[]).forEach(function(x){x._kind=pair[0];x._label=pair[1];all.push(x);});
   });
   var pendingRoutes=(subs||[]).filter(function(x){return x.status==='pending';}).length;
   var pendingCorrections=all.filter(function(x){return x.status==='pending' && (x._kind==='corrections' || x._kind==='feedback' && /correct/i.test((x.category||'')+' '+(x.message||'')));}).length;
