@@ -89,15 +89,13 @@ Deno.serve(async (req: Request) => {
     const table = String(body.table || ""), id = String(body.id || "").trim();
     if (!(reviewTables as readonly string[]).includes(table) || !id || id.length > 100) return reply({ error: "invalid_review_item" }, 400);
     const endpoint = url + "/rest/v1/" + table + "?id=eq." + encodeURIComponent(id);
-    if (body.action === "review-delete") {
-      const r = await fetch(endpoint, { method: "DELETE", headers: { apikey: service, Authorization: "Bearer " + service, Prefer: "return=representation" } });
-      if (!r.ok) return reply({ error: "review_delete_failed", detail: (await r.text()).slice(0, 200) }, 502);
-      const rows = await r.json();
-      return rows.length ? reply({ ok: true, deleted: true }) : reply({ error: "review_item_not_found" }, 404);
-    }
-    const status = String(body.status || "");
-    if (!["pending", "approved", "rejected"].includes(status)) return reply({ error: "invalid_review_status" }, 400);
-    const r = await fetch(endpoint, { method: "PATCH", headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ status }) });
+    const status = body.action === "review-delete" ? "deleted" : String(body.status || "");
+    if (!["pending", "reviewed", "approved", "rejected", "deleted"].includes(status)) return reply({ error: "invalid_review_status" }, 400);
+    const patch: Record<string, unknown> = { status };
+    if (status === "reviewed") patch.reviewed_at = new Date().toISOString();
+    if (status === "approved") { patch.approved_at = new Date().toISOString(); patch.reviewed_at = new Date().toISOString(); }
+    if (body.action === "review-delete") patch.reviewed_at = new Date().toISOString();
+    const r = await fetch(endpoint, { method: "PATCH", headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify(patch) });
     if (!r.ok) return reply({ error: "review_status_update_failed", detail: (await r.text()).slice(0, 200) }, 502);
     const rows = await r.json();
     return rows.length ? reply({ ok: true, item: rows[0] }) : reply({ error: "review_item_not_found" }, 404);

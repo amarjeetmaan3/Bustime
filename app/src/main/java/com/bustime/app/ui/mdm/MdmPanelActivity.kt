@@ -152,84 +152,52 @@ class MdmPanelActivity : AppCompatActivity() {
             runCatching { withContext(Dispatchers.IO) { callReview("review-list") } }
                 .onSuccess { response ->
                     showPage(uiText("Review Center", "रिव्यू सेंटर", "ਰੀਵਿਊ ਸੈਂਟਰ"),
-                        uiText("Review Add Route, route corrections, Add Your Bus and feedback requests.", "Add Route, रूट करेक्शन, Add Your Bus और फीडबैक रिक्वेस्ट यहाँ देखें।", "Add Route, ਰੂਟ ਸੋਧਾਂ, Add Your Bus ਅਤੇ ਫੀਡਬੈਕ ਬੇਨਤੀਆਂ ਇੱਥੇ ਵੇਖੋ।"))
+                        uiText("All user requests, grouped by status. Open a request to inspect or edit it.", "सभी रिक्वेस्ट स्टेटस के अनुसार। देखने या एडिट करने के लिए खोलें।", "ਸਾਰੀਆਂ ਬੇਨਤੀਆਂ ਸਟੇਟਸ ਮੁਤਾਬਕ। ਵੇਖਣ ਜਾਂ ਸੋਧਣ ਲਈ ਖੋਲ੍ਹੋ।"))
                     val failed = response.optJSONArray("failed") ?: JSONArray()
                     if (failed.length() > 0) root.addView(TextView(this@MdmPanelActivity).apply {
-                        text = uiText("Some queues could not load: ", "कुछ कतारें लोड नहीं हुईं: ", "ਕੁਝ ਕਤਾਰਾਂ ਲੋਡ ਨਹੀਂ ਹੋਈਆਂ: ") + (0 until failed.length()).joinToString { failed.optString(it) }
-                        setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, 0, 0, dp(10))
+                        text = "Some queues failed to load: " + (0 until failed.length()).joinToString { failed.optString(it) }
+                        setTextColor(getColor(com.bustime.app.R.color.textSecondary))
                     })
+                    data class Q(val table:String,val title:String,val kind:String,val rows:JSONArray)
                     val queues = listOf(
-                        Triple("route_submissions", uiText("Pending Bus Routes", "पेंडिंग बस रूट", "ਪੈਂਡਿੰਗ ਬੱਸ ਰੂਟ"), "route"),
-                        Triple("correction_submissions", uiText("Route Corrections", "रूट करेक्शन", "ਰੂਟ ਸੋਧਾਂ"), "correction"),
-                        Triple("bus_operator_submissions", uiText("Add Your Bus", "अपनी बस जोड़ें", "ਆਪਣੀ ਬੱਸ ਜੋੜੋ"), "bus"),
-                        Triple("feedback_submissions", uiText("Feedback", "फीडबैक", "ਫੀਡਬੈਕ"), "feedback")
+                        Q("route_submissions","Bus Route Requests","route",response.optJSONArray("route_submissions")?:JSONArray()),
+                        Q("correction_submissions","Route Corrections","correction",response.optJSONArray("correction_submissions")?:JSONArray()),
+                        Q("bus_operator_submissions","Add Your Bus / Book a Bus","bus",response.optJSONArray("bus_operator_submissions")?:JSONArray()),
+                        Q("feedback_submissions","Feedback","feedback",response.optJSONArray("feedback_submissions")?:JSONArray())
                     )
-                    for ((table, title, kind) in queues) {
-                        val items = response.optJSONArray(table) ?: JSONArray()
-                        root.addView(TextView(this@MdmPanelActivity).apply {
-                            text = title + " (" + items.length() + ")"; textSize = 18f
-                            setTypeface(typeface, android.graphics.Typeface.BOLD); setPadding(0, dp(14), 0, dp(5))
-                        })
-                        if (items.length() == 0) root.addView(TextView(this@MdmPanelActivity).apply {
-                            text = uiText("No requests in this queue.", "इस कतार में कोई रिक्वेस्ट नहीं है।", "ਇਸ ਕਤਾਰ ਵਿੱਚ ਕੋਈ ਬੇਨਤੀ ਨਹੀਂ ਹੈ।")
-                            setPadding(dp(8), dp(5), dp(8), dp(8)); setTextColor(getColor(com.bustime.app.R.color.textSecondary))
-                        })
-                        for (i in 0 until items.length()) {
-                            val item = items.optJSONObject(i) ?: continue
-                            val id = item.optString("id")
-                            val status = item.optString("status", "pending")
-                            val heading = when (kind) {
-                                "route" -> item.optString("from_id") + " → " + item.optString("to_id")
-                                "correction" -> item.optString("request_type").replace('_', ' ') + " · " + item.optString("route_id")
-                                "bus" -> item.optString("service_name").ifBlank { item.optString("operator_name") }.ifBlank { "Add Your Bus" }
-                                else -> item.optString("category").ifBlank { "Feedback" }
+                    fun v(o:JSONObject,vararg keys:String):String { for(k in keys){val x=o.opt(k);if(x!=null&&x!=JSONObject.NULL){val s=x.toString().trim();if(s.isNotBlank()&&s!="null"&&s!="[]")return s}};return "" }
+                    fun stops(a:JSONArray?):String { if(a==null)return "";val out=mutableListOf<String>();for(i in 0 until a.length()){val o=a.optJSONObject(i);val n=if(o!=null)v(o,"name","place_name","place","place_id")else a.optString(i);if(n.isNotBlank()&&n!="null")out.add(n)};return out.joinToString(" → ") }
+                    val states=listOf("pending" to "Pending","reviewed" to "Reviewed","approved" to "Approved","rejected" to "Rejected","deleted" to "Deleted")
+                    for((status,title) in states){
+                        val rows=queues.flatMap{q->(0 until q.rows.length()).mapNotNull{idx->val o=q.rows.optJSONObject(idx)?:return@mapNotNull null;if(v(o,"status").ifBlank{"pending"}.lowercase(Locale.ROOT)==status)q to o else null}}
+                        val panel=LinearLayout(this@MdmPanelActivity).apply{orientation=1;setPadding(dp(12),dp(10),dp(12),dp(10));background=android.graphics.drawable.GradientDrawable().apply{setColor(getColor(com.bustime.app.R.color.surface));cornerRadius=dp(12).toFloat();setStroke(dp(1),getColor(com.bustime.app.R.color.divider))}}
+                        panel.addView(TextView(this@MdmPanelActivity).apply{text=title+"  ·  "+rows.size;textSize=18f;setTypeface(typeface,android.graphics.Typeface.BOLD)})
+                        if(rows.isEmpty())panel.addView(TextView(this@MdmPanelActivity).apply{text="No requests in this section.";setTextColor(getColor(com.bustime.app.R.color.textSecondary));setPadding(0,dp(6),0,dp(6))})
+                        for(q in queues){val list=rows.filter{it.first.table==q.table};if(list.isEmpty())continue
+                            panel.addView(TextView(this@MdmPanelActivity).apply{text=q.title+"  ·  "+list.size;textSize=14f;setTypeface(typeface,android.graphics.Typeface.BOLD);setPadding(0,dp(9),0,dp(4))})
+                            for((_,o) in list){
+                                val id=v(o,"id");val routeStops=stops(o.optJSONArray("stops"));val from=v(o,"from_text","from_id").ifBlank{routeStops.substringBefore(" → ")};val to=v(o,"to_text","to_id").ifBlank{routeStops.substringAfterLast(" → ")}
+                                val heading=when(q.kind){"route"->if(from.isBlank()||to.isBlank())"Incomplete route request" else from+" → "+to;"correction"->v(o,"request_type").replace('_',' ').ifBlank{"Route correction"}+v(o,"route_id").takeIf{it.isNotBlank()}?.let{" · "+it}.orEmpty();"bus"->v(o,"service_name","operator_name").ifBlank{"Add Your Bus request"};else->v(o,"category").ifBlank{"Feedback"}}
+                                val parts=when(q.kind){"route"->listOf("From: "+v(o,"from_text","from_id"),"To: "+v(o,"to_text","to_id"),"Stops: "+routeStops,"Time: "+v(o,"start_time"),"Service: "+v(o,"service_name"),"Phone: "+v(o,"phone"));"correction"->listOf("Type: "+v(o,"request_type"),"Route: "+v(o,"route_id"),"Details: "+v(o,"change_summary","notes","missing_place_name","corrected_time"),"Proposed stops: "+stops(o.optJSONArray("proposed_stops")),"Phone: "+v(o,"phone"));"bus"->listOf("Operator: "+v(o,"operator_name"),"Service: "+v(o,"service_name"),"Type: "+v(o,"bus_type","bus_types"),"Location: "+v(o,"location"),"From: "+v(o,"from_text"),"To: "+v(o,"to_text"),"Phone: "+v(o,"phone"),"Details: "+v(o,"details"));else->listOf("Category: "+v(o,"category"),"Message: "+v(o,"message"),"Related route: "+v(o,"related_route"),"Contact: "+v(o,"contact"))}.filter{it.substringAfter(":").isNotBlank()}.joinToString("\n")
+                                val card=LinearLayout(this@MdmPanelActivity).apply{orientation=1;setPadding(dp(10),dp(9),dp(10),dp(9));background=android.graphics.drawable.GradientDrawable().apply{setColor(getColor(com.bustime.app.R.color.background));cornerRadius=dp(9).toFloat();setStroke(dp(1),getColor(com.bustime.app.R.color.divider))}}
+                                card.addView(TextView(this@MdmPanelActivity).apply{text=heading;textSize=15f;setTypeface(typeface,android.graphics.Typeface.BOLD)})
+                                card.addView(TextView(this@MdmPanelActivity).apply{text=v(o,"created_at").replace('T',' ').take(16)+"  ·  "+title.uppercase(Locale.ROOT);textSize=11f;setTextColor(getColor(com.bustime.app.R.color.textSecondary));setPadding(0,dp(3),0,dp(5))})
+                                card.addView(TextView(this@MdmPanelActivity).apply{text=parts.ifEmpty{listOf("No request details were supplied.")}.joinToString("\n");textSize=13f})
+                                card.addView(Button(this@MdmPanelActivity).apply{text=if(q.kind=="route"||q.kind=="correction")"Open Route Editor" else if(q.kind=="bus")"Edit Bus Request" else "Open Feedback";setOnClickListener{if(q.kind=="route"||q.kind=="correction")editReviewRoute(q.table,o)else editReviewRequest(q.table,o)}},LinearLayout.LayoutParams(-1,dp(44)))
+                                val actions=LinearLayout(this@MdmPanelActivity).apply{orientation=0}
+                                if(q.kind=="feedback"){if(status!="reviewed"&&status!="deleted")actions.addView(Button(this@MdmPanelActivity).apply{text="Mark Reviewed";setOnClickListener{updateReviewItem(q.table,id,"reviewed")}},LinearLayout.LayoutParams(0,dp(44),1f))}
+                                else if(status!="approved"&&status!="deleted")actions.addView(Button(this@MdmPanelActivity).apply{text="Approve";setOnClickListener{updateReviewItem(q.table,id,"approved")}},LinearLayout.LayoutParams(0,dp(44),1f))
+                                if(status!="rejected"&&status!="deleted")actions.addView(Button(this@MdmPanelActivity).apply{text="Reject";setOnClickListener{updateReviewItem(q.table,id,"rejected")}},LinearLayout.LayoutParams(0,dp(44),1f))
+                                if(status=="deleted")actions.addView(Button(this@MdmPanelActivity).apply{text="Restore";setOnClickListener{updateReviewItem(q.table,id,"pending")}},LinearLayout.LayoutParams(0,dp(44),1f))
+                                else if(status!="pending")actions.addView(Button(this@MdmPanelActivity).apply{text="Move to Pending";setOnClickListener{updateReviewItem(q.table,id,"pending")}},LinearLayout.LayoutParams(0,dp(44),1f))
+                                if(status!="deleted")actions.addView(Button(this@MdmPanelActivity).apply{text="Delete";setOnClickListener{AlertDialog.Builder(this@MdmPanelActivity).setTitle("Move request to Deleted?").setMessage("The record will be hidden from active sections but can be restored from Deleted.").setNegativeButton("Cancel",null).setPositiveButton("Move to Deleted"){_,_->updateReviewItem(q.table,id,"deleted")}.show()}},LinearLayout.LayoutParams(0,dp(44),1f))
+                                if(actions.childCount>0)card.addView(actions,LinearLayout.LayoutParams(-1,-2))
+                                panel.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);bottomMargin=dp(6)})
                             }
-                            val details = when (kind) {
-                                "route" -> "Time: " + item.optString("start_time") + "\nService: " + item.optString("service_name") + "\nPhone: " + item.optString("phone") + "\nStops: " + item.optJSONArray("stops")?.toString().orEmpty()
-                                "correction" -> "Route: " + item.optString("route_id") + "\nNotes: " + item.optString("notes") + "\nPhone: " + item.optString("phone") + "\nProposed stops: " + item.optJSONArray("proposed_stops")?.toString().orEmpty()
-                                "bus" -> "Location: " + item.optString("location") + "\nFrom: " + item.optString("from_text") + "  To: " + item.optString("to_text") + "\nPhone: " + item.optString("phone") + "\nDetails: " + item.optString("details")
-                                else -> "Message: " + item.optString("message") + "\nRelated route: " + item.optString("related_route") + "\nContact: " + item.optString("contact")
-                            }
-                            val card = LinearLayout(this@MdmPanelActivity).apply {
-                                orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(10), dp(12), dp(10))
-                                background = android.graphics.drawable.GradientDrawable().apply {
-                                    setColor(getColor(com.bustime.app.R.color.surface)); cornerRadius = dp(10).toFloat()
-                                    setStroke(dp(1), getColor(com.bustime.app.R.color.divider))
-                                }
-                            }
-                            card.addView(TextView(this@MdmPanelActivity).apply { text = heading; textSize = 15f; setTypeface(typeface, android.graphics.Typeface.BOLD) })
-                            card.addView(TextView(this@MdmPanelActivity).apply { text = status.uppercase() + " · " + item.optString("created_at"); textSize = 11f; setTextColor(getColor(com.bustime.app.R.color.textSecondary)); setPadding(0, dp(3), 0, dp(5)) })
-                            card.addView(TextView(this@MdmPanelActivity).apply { text = details; textSize = 13f; maxLines = 5; ellipsize = android.text.TextUtils.TruncateAt.END })
-                            val reviewButton = Button(this@MdmPanelActivity).apply {
-                                text = uiText("Review", "रिव्यू", "ਰੀਵਿਊ")
-                                setOnClickListener {
-                                    AlertDialog.Builder(this@MdmPanelActivity).setTitle(heading).setMessage(details + "\n\nStatus: " + status)
-                                        .setPositiveButton(uiText("Approve", "स्वीकृत करें", "ਮਨਜ਼ੂਰ ਕਰੋ")) { _, _ -> updateReviewItem(table, id, "approved") }
-                                        .setNeutralButton(uiText("Reject", "अस्वीकार करें", "ਰੱਦ ਕਰੋ")) { _, _ -> updateReviewItem(table, id, "rejected") }
-                                        .setNegativeButton(uiText("Close", "बंद करें", "ਬੰਦ ਕਰੋ"), null).show()
-                                }
-                            }
-                            if (table == "route_submissions" || table == "correction_submissions") {
-                                val editButton = Button(this@MdmPanelActivity).apply {
-                                    text = uiText("Edit Route", "रूट एडिट करें", "ਰੂਟ ਸੋਧੋ")
-                                    setOnClickListener { editReviewRoute(table, item) }
-                                }
-                                card.addView(editButton, LinearLayout.LayoutParams(-1, dp(44)))
-                            }
-                            if (table == "bus_operator_submissions" || table == "feedback_submissions") {
-                                card.addView(Button(this@MdmPanelActivity).apply {
-                                    text = uiText("Edit Request", "रिक्वेस्ट एडिट करें", "ਬੇਨਤੀ ਸੋਧੋ")
-                                    setOnClickListener { editReviewRequest(table, item) }
-                                }, LinearLayout.LayoutParams(-1, dp(44)))
-                            }
-                            card.addView(reviewButton, LinearLayout.LayoutParams(-1, dp(44)))
-                            root.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
                         }
+                        root.addView(panel,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
                     }
-                    root.addView(Button(this@MdmPanelActivity).apply {
-                        text = uiText("Refresh Review Center", "रिव्यू सेंटर रीफ्रेश करें", "ਰੀਵਿਊ ਸੈਂਟਰ ਰਿਫ੍ਰੈਸ਼ ਕਰੋ")
-                        setOnClickListener { showReviewCenter() }
-                    }, LinearLayout.LayoutParams(-1, -2))
+                    root.addView(Button(this@MdmPanelActivity).apply{text="Refresh Review Center";setOnClickListener{showReviewCenter()}},LinearLayout.LayoutParams(-1,-2))
                     showRoot()
                 }
                 .onFailure { toast(it.message ?: uiText("Could not load Review Center", "रिव्यू सेंटर लोड नहीं हुआ", "ਰੀਵਿਊ ਸੈਂਟਰ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ")) }
