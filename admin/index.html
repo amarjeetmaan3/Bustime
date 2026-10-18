@@ -452,7 +452,7 @@ async function verifySingleAdmin() {
   if (!sbToken) return false;
   var res = await fetchWithTimeout(cfg.sbUrl.replace(/\/+$/, '') + '/auth/v1/user', {
     headers:{apikey:cfg.sbKey, Authorization:'Bearer '+sbToken}
-  }, 10000);
+  }, 20000);
   if (!res.ok) { saveAdminSession({}); return false; }
   var user = await res.json();
   if (!user || user.id !== ADMIN_AUTH_UID) {
@@ -1742,7 +1742,7 @@ async function sbLogin(email, password) {
   var res = await fetchWithTimeout(base + '/auth/v1/token?grant_type=password', {
     method: 'POST', headers: { apikey: cfg.sbKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: email, password: password })
-  }, 12000);
+  }, 30000);
   var j = await res.json();
   if (!res.ok) throw new Error(j.error_description || j.msg || 'Login failed');
   saveAdminSession(j);
