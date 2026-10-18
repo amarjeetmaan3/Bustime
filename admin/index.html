@@ -1741,7 +1741,7 @@ async function sbFetchRetryOnce(path, opts) {
   return raw;
 }
 async function sbLogin(email, password) {
-  var base = cfg.sbUrl.replace(/\\/+$/, '');
+  var base = cfg.sbUrl.replace(/\/+$/, '');
   var endpoint = '/auth/v1/token?grant_type=password';
   var res = await fetchWithTimeout(base + endpoint, {
     method: 'POST', headers: { apikey: cfg.sbKey, 'Content-Type': 'application/json' },
