@@ -436,7 +436,7 @@ function saveAdminSession(session) {
 async function fetchWithTimeout(url, options, timeoutMs) {
   var controller = new AbortController();
   var timedOut = false, startedAt = Date.now();
-  var safeEndpoint = String(url || '').replace(/^https?:\\/\\/[^/]+/i, '').split('?')[0] || '/';
+  var safeEndpoint = String(url || '').replace(/^https?:\/\/[^/]+/i, '').split('?')[0] || '/';
   var timer = setTimeout(function(){ timedOut = true; controller.abort(); }, timeoutMs || 20000);
   try {
     var response = await fetch(url, Object.assign({}, options || {}, {signal:controller.signal}));
