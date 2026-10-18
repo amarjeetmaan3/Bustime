@@ -435,18 +435,21 @@ function saveAdminSession(session) {
 }
 async function fetchWithTimeout(url, options, timeoutMs) {
   var controller = new AbortController();
-  var timedOut = false;
+  var timedOut = false, startedAt = Date.now();
+  var safeEndpoint = String(url || '').replace(/^https?:\\/\\/[^/]+/i, '').split('?')[0] || '/';
   var timer = setTimeout(function(){ timedOut = true; controller.abort(); }, timeoutMs || 20000);
   try {
-    return await fetch(url, Object.assign({}, options || {}, {signal:controller.signal}));
+    var response = await fetch(url, Object.assign({}, options || {}, {signal:controller.signal}));
+    response.__bustimeDiagnostic = { endpoint:safeEndpoint, elapsed_ms:Date.now()-startedAt, http_status:response.status };
+    return response;
   } catch (err) {
-    if (timedOut || (err && err.name === 'AbortError')) {
-      throw new Error('Supabase request timed out or was cancelled. Check your internet connection and Supabase project URL, then try again.');
-    }
-    throw err;
-  } finally {
-    clearTimeout(timer);
-  }
+    var reason = timedOut ? 'TIMEOUT' : ((err && err.name) || 'NETWORK_ERROR');
+    var detail = 'Supabase diagnostic: endpoint=' + safeEndpoint + '; result=' + reason + '; elapsed_ms=' + (Date.now()-startedAt);
+    if (err && err.message && !timedOut && err.name !== 'AbortError') detail += '; browser_error=' + err.message;
+    var diagnosticError = new Error(detail);
+    diagnosticError.name = 'SupabaseRequestDiagnosticError';
+    throw diagnosticError;
+  } finally { clearTimeout(timer); }
 }
 async function verifySingleAdmin() {
   if (!sbToken) return false;
@@ -1738,15 +1741,26 @@ async function sbFetchRetryOnce(path, opts) {
   return raw;
 }
 async function sbLogin(email, password) {
-  var base = cfg.sbUrl.replace(/\/+$/, '');
-  var res = await fetchWithTimeout(base + '/auth/v1/token?grant_type=password', {
+  var base = cfg.sbUrl.replace(/\\/+$/, '');
+  var endpoint = '/auth/v1/token?grant_type=password';
+  var res = await fetchWithTimeout(base + endpoint, {
     method: 'POST', headers: { apikey: cfg.sbKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: email, password: password })
   }, 30000);
-  var j = await res.json();
-  if (!res.ok) throw new Error(j.error_description || j.msg || 'Login failed');
+  var raw = await res.text(), j = {};
+  try { j = raw ? JSON.parse(raw) : {}; } catch (_) { j = {}; }
+  if (!res.ok) {
+    var message = j.msg || j.message || j.error_description || j.error || '';
+    throw new Error('Supabase login failed: endpoint=' + endpoint + '; HTTP ' + res.status +
+      '; elapsed_ms=' + (res.__bustimeDiagnostic ? res.__bustimeDiagnostic.elapsed_ms : 'unknown') +
+      (message ? '; server_error=' + message : '') +
+      (j.code ? '; error_code=' + j.code : '') +
+      (!message && raw ? '; response=' + raw.slice(0,240) : ''));
+  }
+  if (!j.access_token) throw new Error('Supabase login returned HTTP ' + res.status + ' but no access_token; endpoint=' + endpoint + '; response_content_type=' + (res.headers.get('content-type') || 'unknown'));
   saveAdminSession(j);
-  await verifySingleAdmin();
+  try { await verifySingleAdmin(); }
+  catch (err) { throw new Error('Login token received, but admin verification failed: ' + (err.message || String(err))); }
 }
 async function loadSubs() {
   subs = await sbFetch('/rest/v1/route_submissions?select=*&order=created_at.desc&limit=300');
