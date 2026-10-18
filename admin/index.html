@@ -1772,7 +1772,7 @@ function viewRouteReview() {
       '<label>Anon (public) key</label><input id="sb_key" value="' + esc(cfg.sbKey) + '">' +
       '<div class="row2"><div><label>Email</label><input id="sb_email" value="' + esc(cfg.sbEmail) + '"></div>' +
       '<div><label>Password</label><input id="sb_pass" type="password"></div></div>' +
-      '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="sb-login">Sign in</button></div></div>';
+      '<div class="dlg-foot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn primary" data-act="sb-login">Sign in</button><button class="btn" data-act="sb-connection-test">Connection Test</button></div><p class="muted" style="font-size:12px">Connection Test checks project reachability and Auth health without using your password.</p></div>';
   }
   if (!subs) return '<div class="card"><p class="muted">Loading...</p></div>' + (subsError ? '<div class="alert err">' + esc(subsError) + '</div>' : '');
   var counts = { pending:0, reviewed:0, approved:0, rejected:0, deleted:0 };
@@ -2800,6 +2800,29 @@ document.addEventListener('click', async function (e) {
     }
 
     // ---- user submissions (Supabase) ----
+    else if (act === 'sb-connection-test') {
+      cfg.sbUrl = val('sb_url'); cfg.sbKey = val('sb_key'); saveCfg();
+      b.disabled = true; b.textContent = 'Testing...';
+      var testBase = String(cfg.sbUrl || '').replace(/\/+$/, '');
+      var testResults = [];
+      async function checkSupabaseEndpoint(label, path) {
+        var started = Date.now(), controller = new AbortController(), timer = setTimeout(function(){controller.abort();}, 8000);
+        try {
+          var response = await fetch(testBase + path, {method:'GET', headers:{apikey:cfg.sbKey}, signal:controller.signal, cache:'no-store'});
+          var body = await response.text();
+          testResults.push(label + ': HTTP ' + response.status + ' (' + (Date.now()-started) + ' ms)' + (body ? '; response=' + body.slice(0,140).replace(/[\\r\\n]+/g,' ') : ''));
+        } catch (e) {
+          testResults.push(label + ': ' + (e && e.name === 'AbortError' ? 'TIMEOUT after 8000 ms' : 'BROWSER/NETWORK ERROR (' + ((e && e.message) || e) + ')') + '; elapsed=' + (Date.now()-started) + ' ms');
+        } finally { clearTimeout(timer); }
+      }
+      if (!/^https:\/\//i.test(testBase) || !cfg.sbKey) testResults.push('CONFIG: Project URL must start with https:// and public key must be filled.');
+      else {
+        await checkSupabaseEndpoint('Project REST', '/rest/v1/');
+        await checkSupabaseEndpoint('Auth health', '/auth/v1/health');
+      }
+      alert('Bustime Supabase Connection Test\\n\\n' + testResults.join('\\n'));
+      b.disabled = false; b.textContent = 'Connection Test';
+    }
     else if (act === 'sb-login') {
       cfg.sbUrl = val('sb_url'); cfg.sbKey = val('sb_key'); cfg.sbEmail = val('sb_email'); saveCfg();
       b.disabled = true; b.textContent = 'Signing in...';
