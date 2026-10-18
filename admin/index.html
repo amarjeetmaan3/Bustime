@@ -2820,7 +2820,7 @@ document.addEventListener('click', async function (e) {
         await checkSupabaseEndpoint('Project REST', '/rest/v1/');
         await checkSupabaseEndpoint('Auth health', '/auth/v1/health');
       }
-      alert('Bustime Supabase Connection Test\\n\\n' + testResults.join('\\n'));
+      alert('Bustime Supabase Connection Test\n\n' + testResults.join('\n'));
       b.disabled = false; b.textContent = 'Connection Test';
     }
     else if (act === 'sb-login') {
