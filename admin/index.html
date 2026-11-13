@@ -415,6 +415,7 @@ var recycleBinItems = [];
 var tab = 'settings';
 var contentSettings = {terms_enabled:true,terms:{en:'',hi:'',pa:''},popup_enabled:true,popup:{en:'',hi:'',pa:''},popup_seconds:5,ticker_enabled:true,ticker:{en:'',hi:'',pa:''},update_notifications_enabled:false};
 var sbToken = null, sbRefreshToken = null, subs = null, subsError = '';
+var reviewQueueAutoSyncTimer = null, reviewQueueAutoSyncBusy = false;
 var authRestoring = true, dataLoadError = '';
 var ADMIN_AUTH_UID = 'b0787029-45dc-4f37-8568-6a09a4fe2ad9';
 var ADMIN_SESSION_KEY = 'bustime_admin_session_v1';
@@ -2850,6 +2851,7 @@ document.addEventListener('click', async function (e) {
         }
       }
       tab = 'dashboard'; render();
+      startReviewQueueAutoSync();
     }
     else if (act === 'sb-logout') {
       try {
@@ -3279,6 +3281,48 @@ function startMdmAutoSync() {
   mdmAutoSyncTimer = setInterval(pollMdmAutoSync, 10000);
 }
 
+// Review Center queues are stored in Supabase, separately from the MDM route-change log.
+// Poll the same tables used by phone MDM so approvals/status changes appear in Web Admin
+// without a manual refresh. Never redraw while a reviewer is editing a request.
+function canPollReviewQueues() {
+  return !!sbToken && !authRestoring &&
+    ['review','busRequests','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 &&
+    !routeReviewEditor && !communityReviewEditor && !operatorFormOpen && !publishOpen;
+}
+function reviewQueueSignature() {
+  function rows(list, table) {
+    return (Array.isArray(list) ? list : []).map(function (x) {
+      return [table, x.id, x.status, x.updated_at || '', x.reviewed_at || '', x.approved_at || ''].join('|');
+    });
+  }
+  return JSON.stringify([]
+    .concat(rows(subs, 'route_submissions'))
+    .concat(rows(community.corrections, 'correction_submissions'))
+    .concat(rows(community.feedback, 'feedback_submissions'))
+    .concat(rows(community.busSubmissions, 'bus_operator_submissions')));
+}
+async function pollReviewQueues() {
+  if (reviewQueueAutoSyncBusy || !canPollReviewQueues()) return;
+  reviewQueueAutoSyncBusy = true;
+  var before = reviewQueueSignature();
+  try {
+    await Promise.all([loadSubs(), loadCommunity()]);
+    var after = reviewQueueSignature();
+    if (before !== after && canPollReviewQueues()) {
+      render();
+      toast('Review Center updated from Supabase.');
+    }
+  } catch (err) {
+    console.warn('Automatic Review Center refresh failed:', err);
+  } finally {
+    reviewQueueAutoSyncBusy = false;
+  }
+}
+function startReviewQueueAutoSync() {
+  if (reviewQueueAutoSyncTimer) clearInterval(reviewQueueAutoSyncTimer);
+  reviewQueueAutoSyncTimer = setInterval(pollReviewQueues, 10000);
+}
+
 // ============ Start ============
 // Restore the refresh token on reload, rotate it, verify the single owner account,
 // then fetch GitHub + Supabase data before opening the workspace.
@@ -3297,6 +3341,7 @@ render();
     if (loads.some(function(x){return x.status==='rejected';})) toast('Some data failed to load. Check your connection and use Refresh in that section.');
     render();
     startMdmAutoSync();
+    startReviewQueueAutoSync();
   } catch (err) {
     console.error('Bustime admin startup failed:', err);
     authRestoring = false;
