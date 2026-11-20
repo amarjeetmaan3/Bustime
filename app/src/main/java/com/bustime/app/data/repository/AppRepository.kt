@@ -47,10 +47,31 @@ class AppRepository private constructor(context: Context) {
     suspend fun getAllPlaces(): List<Place> = query { dao.getAllPlaces() }
 
     // ---------- बस ----------
-    suspend fun searchBusRoutes(fromId: String, toId: String): List<BusResult> =
-        query { dao.searchBusRoutes(fromId, toId) }
+    // जिन नतीजों में उस पड़ाव का समय खाली है, उनका क्रम अंदाज़े से लगता है (StopTimeEstimator)।
+    // सारे समय भरे हों तो डेटाबेस का क्रम ही रहता है, यानी पहले जैसा।
+    suspend fun searchBusRoutes(fromId: String, toId: String): List<BusResult> = query {
+        val rows = dao.searchBusRoutes(fromId, toId)
+        if (rows.none { it.fromTime == null }) {
+            rows
+        } else {
+            val estimator = StopTimeEstimator(dao.getAllStops())
+            rows.map { it to estimator.estimateAt(it.routeId, fromId, it.fromTime, toId) }
+                .sortedWith(compareBy<Pair<BusResult, Int?>>({ it.second ?: Int.MAX_VALUE }, { it.first.routeId }))
+                .map { it.first }
+        }
+    }
 
-    suspend fun busesAtStand(standId: String): List<StandResult> = query { dao.busesAtStand(standId) }
+    suspend fun busesAtStand(standId: String): List<StandResult> = query {
+        val rows = dao.busesAtStand(standId)
+        if (rows.none { it.atTime == null }) {
+            rows
+        } else {
+            val estimator = StopTimeEstimator(dao.getAllStops())
+            rows.map { it to estimator.estimateAt(it.routeId, standId, it.atTime) }
+                .sortedWith(compareBy<Pair<StandResult, Int?>>({ it.second ?: Int.MAX_VALUE }, { it.first.routeId }))
+                .map { it.first }
+        }
+    }
 
     suspend fun getRoute(routeId: String): Route? = query { dao.getRoute(routeId) }
 
