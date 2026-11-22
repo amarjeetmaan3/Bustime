@@ -184,6 +184,12 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                         Unit
                     } else {
                         val dto = gson.fromJson(payload, RouteDto::class.java)
+                        if (dto.hidden == true) {
+                            // A hidden route is not shown in the app. Remove any local copy and
+                            // keep syncing; treating it as invalid would block every later revision.
+                            dao.deleteRouteAndStops(id)
+                            return true
+                        }
                         val data = SnapshotImporter.build(SnapshotDto(0, existingPlaces, listOf(dto)))
                         val route = data.routes.firstOrNull { it.id == id } ?: return false
                         dao.upsertRouteWithStops(route, data.stops.filter { it.routeId == id })
