@@ -48,8 +48,6 @@
         <activity android:name=".ui.privacy.PrivacyPolicyActivity" android:exported="false" />
         <activity android:name=".ui.mdm.SettingsActivity" android:exported="false" />
         <activity android:name=".ui.mdm.UpdateDetailsActivity" android:exported="false" />
-        <activity android:name=".ui.mdm.MdmPasswordActivity" android:exported="false" />
-        <activity android:name=".ui.mdm.MdmPanelActivity" android:exported="false" />
 
         <activity android:name=".ui.search.SearchActivity" android:exported="false" />
         <!-- जगह चुनने का पूरा पेज: कीबोर्ड खुलते ही सूची उसके ऊपर सिकुड़कर दिखती है -->
