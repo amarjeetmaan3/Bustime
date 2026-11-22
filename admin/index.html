@@ -724,29 +724,22 @@ function fmtTime(t) {
   return ((h % 12) || 12) + ':' + m + ' ' + (h < 12 ? 'AM' : 'PM');
 }
 
-// ============ GitHub API ============
-function apiUrl() { return 'https://api.github.com/repos/' + cfg.owner + '/' + cfg.repo + '/contents/' + cfg.path; }
-function ghHeaders() {
-  var h = { 'Accept': 'application/vnd.github+json' };
-  if (cfg.token) h['Authorization'] = 'Bearer ' + cfg.token;
-  return h;
-}
+// ============ Data (Supabase is the single source of truth) ============
 function normalize(d) {
   var o = { dataVersion: d.dataVersion || 0, snapshotRevision: Number(d.snapshotRevision || 0), places: d.places || [], routes: d.routes || [] };
   if (d._note) o._note = d._note;
   return o;
 }
 async function loadData() {
-  var r = await fetchWithTimeout(apiUrl() + '?ref=' + encodeURIComponent(cfg.branch) + '&t=' + Date.now(),
-                      { headers: ghHeaders(), cache: 'no-store' }, 12000);
-  if (!r.ok) throw new Error('GitHub ' + r.status + ' - ' + (await r.text()).slice(0, 160));
-  var j = await r.json();
-  if (!j.content) throw new Error('Could not read the data file');
-  data = normalize(JSON.parse(b64decode(j.content)));
-  // Overlay MDM delta records so new/corrected stops and routes appear before snapshot publish.
-  await mergeMdmPublishedChanges();
+  // Rebuild the current places and routes by replaying the full Supabase change log
+  // (revision 1 is the original baseline). No GitHub file, token or workflow is involved.
+  data = normalize({ dataVersion: 0, snapshotRevision: 0, places: [], routes: [] });
+  mdmRevisionCursor = 0;
+  await mergeMdmPublishedChanges(0);
+  if (mdmSyncError) { data = null; throw new Error(mdmSyncError); }
   sharedBaseData = JSON.parse(JSON.stringify({ places: data.places || [], routes: data.routes || [] }));
-  sha = j.sha; baseVersion = data.dataVersion || 0; editing = null; publishOpen = false; setDirty(false);
+  baseVersion = Math.max(74, Number(mdmRevisionCursor || 0)); data.dataVersion = baseVersion;
+  editing = null; publishOpen = false; setDirty(false);
 }
 async function publishAdminDelete(entityType, entityId, payload) {
   if (!sbToken) throw new Error('Sign in as the owner admin before deleting published data.');
@@ -937,7 +930,7 @@ async function mergeMdmPublishedChanges(sinceRevision) {
     return false;
   }
 }
-// Approved submissions must survive page refreshes until the GitHub snapshot is published.
+// Approved submissions must survive page refreshes until they are published.
 function approvedPlaceNameMap(place) {
   var n=place&&place.name&&typeof place.name==='object'?place.name:{};
   return {en:String(n.en||'').trim(),hi:String(n.hi||'').trim(),pa:String(n.pa||'').trim()};
@@ -1152,42 +1145,15 @@ async function publish() {
 
   var sharedBefore = cloneSharedEntities(sharedBaseData || { places:[], routes:[] });
   var sharedAfter = cloneSharedEntities(data);
-  var out = {};
-  if (data._note) out._note = data._note;
-  out.dataVersion = baseVersion + 1;
-  out.places = data.places; out.routes = data.routes;
 
-  // Supabase is the source of truth for routine publishing. Write only changed records
-  // first; do not depend on a GitHub token, commit, or Actions workflow to reach the app.
+  // Supabase is the only publishing path: write only the changed records. The app picks
+  // them up on its next sync. No GitHub commit, token or Actions workflow is involved.
   publishSyncWarnings=0;
   await publishSharedDataDiff(sharedBefore, sharedAfter);
   sharedBaseData = sharedAfter;
   setDirty(false);
-  out.snapshotRevision = Number(mdmRevisionCursor || 0);
-  baseVersion = out.dataVersion;
-  data.dataVersion = out.dataVersion;
-
-  // Keep the GitHub snapshot as a best-effort recovery baseline, not as the publishing path.
-  // Its snapshotRevision lets a fresh install replay deltas if this backup is temporarily stale.
-  if (cfg.token) {
-    var body = {
-      message: 'Data backup v' + out.dataVersion + ' — published via Supabase Fast Update',
-      content: b64encode(JSON.stringify(out, null, 2) + '\n'),
-      sha: sha, branch: cfg.branch
-    };
-    var h = ghHeaders(); h['Content-Type'] = 'application/json';
-    try {
-      var r = await fetch(apiUrl(), { method:'PUT', headers:h, body:JSON.stringify(body) });
-      if (!r.ok) throw new Error('GitHub backup HTTP ' + r.status + ' - ' + (await r.text()).slice(0,160));
-      var j = await r.json();
-      sha = j.content.sha;
-    } catch (backupError) {
-      publishSyncWarnings++;
-      console.warn('Supabase publish succeeded; GitHub snapshot backup could not be updated:', backupError);
-    }
-  } else {
-    publishSyncWarnings++;
-  }
+  baseVersion = baseVersion + 1;
+  data.dataVersion = baseVersion;
 
   for(var ui=0;ui<approvedUpdates.length;ui++){
     var upd=approvedUpdates[ui];
@@ -1678,13 +1644,8 @@ async function deleteAdPoster(){
 
 var mdmPasswordFormOpen = false;
 function viewSettings() {
-  return '<div class="card"><h2>GitHub connection</h2><p class="muted">Data is read from and published to the file below in your repository.</p>' +
-    '<div class="row2"><div><label>GitHub username</label><input id="c_owner" value="' + esc(cfg.owner) + '"></div>' +
-    '<div><label>Repository</label><input id="c_repo" value="' + esc(cfg.repo) + '"></div></div>' +
-    '<div class="row2"><div><label>Branch</label><input id="c_branch" value="' + esc(cfg.branch) + '"></div>' +
-    '<div><label>Data file path</label><input id="c_path" value="' + esc(cfg.path) + '"></div></div>' +
-    '<label>GitHub token (memory only; not saved)</label><input id="c_token" type="password" autocomplete="off" value="' + esc(cfg.token) + '">' +
-    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="save-cfg">Save and load data</button></div>' +
+  return '<div class="card"><h2>Route data</h2><p class="muted">Places and routes are read from and published directly to the Supabase database. No GitHub file or build is used.</p>' +
+    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="save-cfg">Reload data</button></div>' +
     (data ? '<div class="alert ok">Loaded: data version ' + baseVersion + ', ' + data.places.length + ' places, ' + data.routes.length +
             ' routes.</div>' : '') + '</div>' +
     '<div class="card"><h2>MDM</h2>' +
@@ -1695,11 +1656,7 @@ function viewSettings() {
     '<div class="updater-setting-row"><div class="updater-setting-copy"><strong>Automatic app update prompts</strong><p id="settings_updater_status">'+(contentSettings.update_notifications_enabled===true?'ON — users can receive new-version prompts.':'OFF — users will not receive new-version prompts.')+'</p></div>' +
     '<button id="settings_updater_toggle" type="button" class="updater-switch '+(contentSettings.update_notifications_enabled===true?'on':'off')+'" role="switch" aria-checked="'+(contentSettings.update_notifications_enabled===true?'true':'false')+'" data-act="updater-toggle"><span class="updater-switch-track"><span class="updater-switch-knob"></span></span><strong>'+(contentSettings.update_notifications_enabled===true?'ON':'OFF')+'</strong></button></div>' +
     '<p class="muted" style="margin-top:10px">Green = ON, red = OFF. Press the switch to change it, then press Save. This does not cancel an Android download already in progress.</p>' +
-    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="updater-setting-save">Save updater setting</button></div></div>' +
-    '<div class="card"><h2>Creating a token (one time)</h2><p class="muted">' +
-    'GitHub &rarr; profile picture &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Fine-grained tokens &rarr; Generate new token.<br>' +
-    '&bull; Repository access: only the <b>Bustime</b> repository<br>&bull; Repository permissions: <b>Contents &rarr; Read and write</b><br>' +
-    'Paste the token above. It stays in memory only and must be entered again after reloading this page. Never share it or commit it to the repository.</p></div>';
+    '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="updater-setting-save">Save updater setting</button></div></div>';
 }
 
 
@@ -2089,7 +2046,7 @@ function communityTable(kind, record) {
 }
 function applyApprovedCorrection(x) {
   var r = data.routes.find(function(z){ return z.id === x.route_id; });
-  if (!r) throw new Error('Route '+x.route_id+' was not found in routes.json; request not approved.');
+  if (!r) throw new Error('Route '+x.route_id+' was not found in the route data; request not approved.');
   if (x.request_type === 'correct_time') {
     if (x.stop_id === r.from) r.time = x.corrected_time;
     else if (x.stop_id === r.to) r.arrive = x.corrected_time;
@@ -2309,7 +2266,7 @@ function renderModal() {
     $('#dlgBody').innerHTML = '<p class="muted" style="margin-top:14px">Data version will change from ' + baseVersion + ' to ' + (baseVersion + 1) +
       '. The app picks up the new data the next time it opens. No new APK is built.</p>' + reportHtml(v) +
       '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button>' +
-      '<button class="btn primary" data-act="publish"' + (v.errors.length ? ' disabled' : '') + '>Publish to GitHub</button></div>';
+      '<button class="btn primary" data-act="publish"' + (v.errors.length ? ' disabled' : '') + '>Publish</button></div>';
     ov.classList.add('show');
   } else if (editing) {
     var titles = { place: 'place', route: 'route' };
@@ -2704,10 +2661,10 @@ document.addEventListener('click', async function (e) {
       } catch (err) { toast('Could not save MDM password: ' + (err.message || err)); b.disabled = false; b.textContent = 'Save MDM password'; }
     }
     else if (act === 'save-cfg') {
-      cfg.owner = val('c_owner'); cfg.repo = val('c_repo'); cfg.branch = val('c_branch');
-      cfg.path = val('c_path'); cfg.token = document.getElementById('c_token').value.trim(); saveCfg();
       b.disabled = true; b.textContent = 'Loading...';
-      await loadData(); toast('Data loaded'); tab = 'dashboard'; render();
+      try { await loadData(); toast('Data loaded'); tab = 'dashboard'; }
+      catch (e) { dataLoadError = e.message || 'Could not load route data.'; toast('Data error: ' + dataLoadError); }
+      render();
     }
     else if (act === 'add-stop') { $('#stops').insertAdjacentHTML('beforeend', stopRow('', '')); initRouteAutoTranslation(); }
     else if (act === 'rm-stop') { b.closest('.stoprow').remove(); }
@@ -2891,7 +2848,7 @@ document.addEventListener('click', async function (e) {
       authRestoring = false;
       subs = null; dataLoadError = ''; render();
       var initialLoads = await Promise.allSettled([loadData(), loadSubs(), loadCommunity(), loadAdConfig().catch(function(e){throw e;})]);
-      if (initialLoads[0].status === 'rejected') dataLoadError = initialLoads[0].reason.message || 'Could not load GitHub route data.';
+      if (initialLoads[0].status === 'rejected') dataLoadError = initialLoads[0].reason.message || 'Could not load route data.';
       if (initialLoads[1].status === 'rejected') subsError = initialLoads[1].reason.message || 'Could not load route submissions.';
       var initialErrors = initialLoads.filter(function(x){return x.status==='rejected';});
       if (initialErrors.length) toast('Signed in, but some data did not load. Open the relevant section and retry.');
@@ -2927,15 +2884,15 @@ document.addEventListener('click', async function (e) {
       try { localStorage.removeItem(ADMIN_SESSION_KEY); } catch (_) {}
       subs = null; subsError = '';
       community = {corrections:null,busSubmissions:null,feedback:null,operators:null,categories:null};
-      data = null; sha = null; dataLoadError = '';
+      data = null; dataLoadError = '';
       tab = 'dashboard';
       render();
       toast('Signed out. Sign in again to open the admin panel.');
     }
     else if (act === 'data-retry') {
       dataLoadError = ''; render();
-      try { await loadData(); dataLoadError = ''; toast('GitHub route data loaded.'); }
-      catch (e) { dataLoadError = e.message || 'Could not load route data.'; toast('GitHub data error: ' + dataLoadError); }
+      try { await loadData(); dataLoadError = ''; toast('Route data loaded.'); }
+      catch (e) { dataLoadError = e.message || 'Could not load route data.'; toast('Data error: ' + dataLoadError); }
       render();
     }
     else if (act === 'sb-refresh') { subs = null; render(); await Promise.allSettled([loadSubs(), loadCommunity()]); render(); }
@@ -3107,7 +3064,7 @@ document.addEventListener('click', async function (e) {
       if(act==='community-approve-reviewed'&&edBlockIfProblems())return;
       var rv=communityEditorValues(),merged=Object.assign({},orig,rv),stamp=new Date().toISOString();
       if(act==='community-save-draft'){await sbFetch('/rest/v1/'+rt+'?id=eq.'+encodeURIComponent(rid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({reviewed_data:rv,reviewed_at:stamp})});orig.reviewed_data=rv;orig.reviewed_at=stamp;communityReviewEditor.record.reviewed_data=rv;toast('Reviewed draft saved. Request remains pending; original is unchanged.');render();return;}
-      if(!confirm('Approve the reviewed data into the main app data? This does not publish the GitHub snapshot.'))return;
+      if(!confirm('Approve the reviewed data into the main app data? This does not publish route changes.'))return;
       if(rk==='corrections'&&merged.request_type==='route_edit'&&!warnNearSubmittedPlaces((merged.proposed_stops||[]).map(function(st){return st.name;})))return;
       if(rk==='corrections')applyApprovedCorrection(merged);
       if(rk==='busSubmissions'){
@@ -3313,7 +3270,7 @@ document.addEventListener('change',async function(e){
   }
 });
 
-// Poll only the Supabase MDM change log; never reload the whole GitHub snapshot.
+// Poll only the Supabase MDM change log; never reload the whole data set.
 // Wait until the panel is in a safe state so an open editor or unsaved form is not overwritten.
 function canApplyMdmAutoSync() {
   return !!sbToken && !!data && !dirty && !editing && !routeReviewEditor &&
@@ -3385,7 +3342,7 @@ function startReviewQueueAutoSync() {
 
 // ============ Start ============
 // Restore the refresh token on reload, rotate it, verify the single owner account,
-// then fetch GitHub + Supabase data before opening the workspace.
+// then fetch the Supabase data before opening the workspace.
 authRestoring = true;
 render();
 (async function bootAdmin() {
@@ -3396,7 +3353,7 @@ render();
     dataLoadError = ''; subsError = '';
     render();
     var loads = await Promise.allSettled([loadData(), loadSubs(), loadCommunity(), loadAdConfig()]);
-    if (loads[0].status === 'rejected') dataLoadError = loads[0].reason && loads[0].reason.message || 'Could not load GitHub route data.';
+    if (loads[0].status === 'rejected') dataLoadError = loads[0].reason && loads[0].reason.message || 'Could not load route data.';
     if (loads[1].status === 'rejected') subsError = loads[1].reason && loads[1].reason.message || 'Could not load route submissions.';
     if (loads.some(function(x){return x.status==='rejected';})) toast('Some data failed to load. Check your connection and use Refresh in that section.');
     render();
