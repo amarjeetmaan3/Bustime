@@ -33,12 +33,20 @@ android {
         }
     }
 
+    // Testing keystore is supplied by CI from the TESTING_KEYSTORE_BASE64 secret.
+    // For local builds, an untracked app/bustime.jks may be used if present.
+    val testingKeyPath: String? = System.getenv("TESTING_KEYSTORE_PATH")
+    val testingKeyFile = testingKeyPath?.let { file(it) } ?: file("bustime.jks")
+    val hasTestingKey = testingKeyFile.exists()
+
     signingConfigs {
-        create("debugConfig") {
-            storeFile = file("${rootDir}/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        if (hasTestingKey) {
+            create("debugKey") {
+                storeFile = testingKeyFile
+                storePassword = "bustime123"
+                keyAlias = "bustime"
+                keyPassword = "bustime123"
+            }
         }
         if (hasReleaseKey) {
             create("releaseKey") {
@@ -52,7 +60,11 @@ android {
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("debugConfig")
+            // CI uses the saved testing key to preserve update compatibility.
+            // Without a local testing key, use Android's default debug signing.
+            if (hasTestingKey) {
+                signingConfig = signingConfigs.getByName("debugKey")
+            }
         }
         release {
             isMinifyEnabled = true
