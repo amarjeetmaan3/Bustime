@@ -120,14 +120,6 @@ class SettingsActivity : AppCompatActivity() {
         ) {
             startActivity(Intent(this@SettingsActivity, UpdateDetailsActivity::class.java))
         }
-        addSettingCard(
-            when (language) { "hi" -> "MDM एडमिन"; "pa" -> "MDM ਐਡਮਿਨ"; else -> "MDM Admin" },
-            R.drawable.ic_settings_gear,
-            R.drawable.bg_squircle_peach,
-            saffron
-        ) {
-            startActivity(Intent(this@SettingsActivity, MdmPasswordActivity::class.java))
-        }
         root.addView(MaterialButton(this).apply {
             text = getString(R.string.back)
             isAllCaps = false
