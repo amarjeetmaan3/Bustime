@@ -818,24 +818,25 @@ class MdmPanelActivity : AppCompatActivity() {
             row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).text =
                 stop.first?.takeIf { it.isNotBlank() }?.let { formatPreviewTime(it) }.orEmpty()
             row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).text = stop.second
-            row.findViewById<View>(com.bustime.app.R.id.lineTop).visibility =
-                if (index == 0) View.INVISIBLE else View.VISIBLE
-            row.findViewById<View>(com.bustime.app.R.id.lineBottom).visibility =
-                if (index == stops.lastIndex) View.INVISIBLE else View.VISIBLE
+            val nodeColor = when (index) {
+                0 -> getColor(com.bustime.app.R.color.stopFromHighlight)
+                stops.lastIndex -> getColor(com.bustime.app.R.color.stopToHighlight)
+                else -> getColor(com.bustime.app.R.color.stopNodeMid)
+            }
+            row.findViewById<com.bustime.app.ui.common.GlowingStopNodeView>(com.bustime.app.R.id.stopNodeView).configure(
+                color = nodeColor,
+                hasTop = index > 0,
+                hasBottom = index < stops.lastIndex,
+                endpoint = index == 0 || index == stops.lastIndex
+            )
             if (index == 0) {
                 row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).textSize = 18f
                 row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).textSize = 18f
-                val color = getColor(com.bustime.app.R.color.stopFromHighlight)
-                row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).setTextColor(color)
-                row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).setTextColor(color)
-                row.findViewById<View>(com.bustime.app.R.id.stopDot).backgroundTintList =
-                    android.content.res.ColorStateList.valueOf(color)
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).setTextColor(nodeColor)
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).setTextColor(nodeColor)
             } else if (index == stops.lastIndex) {
-                val color = getColor(com.bustime.app.R.color.stopToHighlight)
-                row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).setTextColor(color)
-                row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).setTextColor(color)
-                row.findViewById<View>(com.bustime.app.R.id.stopDot).backgroundTintList =
-                    android.content.res.ColorStateList.valueOf(color)
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopTime).setTextColor(nodeColor)
+                row.findViewById<TextView>(com.bustime.app.R.id.tvStopName).setTextColor(nodeColor)
             }
             container.addView(row)
         }

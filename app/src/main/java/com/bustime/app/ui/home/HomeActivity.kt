@@ -213,30 +213,34 @@ class HomeActivity : AppCompatActivity() {
 
     private fun updateLanguageIndicator(toolbar: Toolbar) {
         val item = toolbar.menu.findItem(R.id.action_language) ?: return
+        val density = resources.displayMetrics.density
+        val holder = FrameLayout(this).apply {
+            setPadding((4 * density).toInt(), (8 * density).toInt(), (4 * density).toInt(), (8 * density).toInt())
+        }
         val languageMark = TextView(this).apply {
             text = "A ਅ अ"
             setTextColor(android.graphics.Color.WHITE)
-            textSize = 15f
-            minWidth = (68 * resources.displayMetrics.density).toInt()
-            layoutParams = android.widget.FrameLayout.LayoutParams(
-                (68 * resources.displayMetrics.density).toInt(),
-                (48 * resources.displayMetrics.density).toInt(),
-                Gravity.CENTER
-            )
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            textSize = 13f
+            typeface = androidx.core.content.res.ResourcesCompat.getFont(this@HomeActivity, R.font.plus_jakarta_sans)
+                ?.let { android.graphics.Typeface.create(it, android.graphics.Typeface.BOLD) }
+                ?: android.graphics.Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
-            setPadding(
-                (8 * resources.displayMetrics.density).toInt(),
-                0,
-                (8 * resources.displayMetrics.density).toInt(),
-                0
-            )
+            background = ContextCompat.getDrawable(this@HomeActivity, R.drawable.bg_pill_lang)
+            setPadding((12 * density).toInt(), (6 * density).toInt(), (12 * density).toInt(), (6 * density).toInt())
             contentDescription = getString(R.string.language)
             isClickable = true
             isFocusable = true
             setOnClickListener { showLanguageDialog() }
         }
-        item.actionView = languageMark
+        holder.addView(
+            languageMark,
+            FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                (34 * density).toInt(),
+                Gravity.CENTER
+            )
+        )
+        item.actionView = holder
         item.title = getString(R.string.language)
     }
 
@@ -266,7 +270,7 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    private fun showLanguageDialog() {
+    internal fun showLanguageDialog() {
         val tags = arrayOf("en", "hi", "pa")
         val names = arrayOf("English", "हिन्दी", "ਪੰਜਾਬੀ")
         val selected = tags.indexOf(LanguageHelper.current()).coerceAtLeast(0)

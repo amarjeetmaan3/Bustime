@@ -49,6 +49,7 @@ class AddRouteActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_route)
+        findViewById<View>(R.id.btnNavBackAddRoute)?.setOnClickListener { finish() }
         repo = AppRepository.getInstance(this)
         stopsBox = findViewById(R.id.stopsBox)
         btnSubmit = findViewById(R.id.btnSubmitRoute)
@@ -128,6 +129,9 @@ class AddRouteActivity : AppCompatActivity() {
         findViewById<View>(R.id.layoutExisting).visibility = if (newMode) View.GONE else View.VISIBLE
         findViewById<View>(R.id.btnUseExistingRoute).visibility = if (newMode) View.VISIBLE else View.GONE
         findViewById<TextView>(R.id.tvModeHint).setText(if (newMode) R.string.ar_new_route_intro else R.string.ar_existing_route_intro)
+        val modeRes = if (newMode) R.string.ar_mode_new else R.string.ar_mode_existing
+        findViewById<TextView>(R.id.tvAddRouteSubtitle)?.setText(modeRes)
+        findViewById<TextView>(R.id.tvAddModeTitle)?.setText(modeRes)
     }
 
     private fun loadSelectedRoute() {

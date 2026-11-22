@@ -1,22 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#90CAF9</color>
-    <color name="colorPrimaryDark">#1E3A5F</color>
-    <color name="colorOnPrimary">#0B2540</color>
-    <color name="colorAccent">#FF80AB</color>
-    <color name="priceGreen">#81C784</color>
+    <!-- Midnight Highway Asphalt Palette (Dark Mode) -->
+    <color name="colorPrimary">#8EC0F2</color>
+    <color name="colorPrimaryDark">#0C2038</color>
+    <color name="colorPrimaryAccent">#5A9BE0</color>
+    <color name="colorPrimaryContainer">#1B314C</color>
+    <color name="colorOnPrimary">#0C2038</color>
 
-    <color name="bgScreen">#121212</color>
-    <color name="surface">#1E1E1E</color>
-    <color name="surfaceVariant">#262B33</color>
-    <color name="divider">#3A3F47</color>
-    <color name="noticeBg">#3A331A</color>
-    <color name="textPrimary">#ECEFF4</color>
-    <color name="textSecondary">#AEB7C2</color>
-    <color name="textGreen">#81C784</color>
-    <color name="stopFromHighlight">#81C784</color>
-    <color name="stopToHighlight">#EF9A9A</color>
+    <color name="colorAccent">#FF9666</color>
+    <color name="colorSecondaryBright">#FFB088</color>
+    <color name="colorSecondaryContainer">#3D2418</color>
+    <color name="colorAccentWarm">#FF9666</color>
+
+    <color name="colorTertiary">#6ADBA9</color>
+    <color name="priceGreen">#6ADBA9</color>
+    <color name="errorColor">#EF5350</color>
+
+    <!-- Surfaces & Neutrals -->
+    <color name="bgScreen">#0E141D</color>
+    <color name="surface">#161F2D</color>
+    <color name="surfaceVariant">#212D40</color>
+    <color name="surfaceElevated">#1C2738</color>
+    <color name="cardStroke">#39485D</color>
+    <color name="divider">#293649</color>
+
+    <!-- Hero Gradient -->
+    <color name="heroStart">#081424</color>
+    <color name="heroMid">#102742</color>
+    <color name="heroEnd">#1D426B</color>
+
+    <!-- Typography -->
+    <color name="textPrimary">#EEF2F6</color>
+    <color name="textSecondary">#AAB6C6</color>
+    <color name="textMuted">#7B899C</color>
+    <color name="textGreen">#6ADBA9</color>
+
+    <!-- Warning Ticker Bar -->
+    <color name="noticeBg">#231C16</color>
+    <color name="noticeStroke">#4A3B2C</color>
+    <color name="noticeText">#FFDF9B</color>
+    <color name="noticeAccent">#F59E0B</color>
+
+    <!-- Status, Chips & Semantic Badges -->
+    <color name="timeChipBg">#1B314C</color>
+    <color name="timeChipStroke">#2D4D73</color>
+    <color name="timeChipText">#8EC0F2</color>
+    <color name="estBadgeBg">#3D2E10</color>
+    <color name="estBadgeText">#FCD34D</color>
+    <color name="accentBadgeBg">#3D2E10</color>
+    <color name="accentBadgeText">#FCD34D</color>
+    <color name="tonalButtonBg">#1B314C</color>
+    <color name="tonalButtonText">#8EC0F2</color>
+    <color name="whatsappBg">#1B8D44</color>
+    <color name="whatsappText">#FFFFFF</color>
+    <color name="callBg">#137A55</color>
+    <color name="iconBadgeBg">#1B314C</color>
+    <color name="syncOnlineDot">#4ADE80</color>
+    <color name="syncOfflineDot">#FBBF24</color>
+
+    <!-- Route Timeline & Highlights -->
+    <color name="stopFromHighlight">#6ADBA9</color>
+    <color name="stopToHighlight">#FF9666</color>
     <color name="stopNumberText">#FFFFFF</color>
-    <color name="stopNumberStartBg">#2E7D32</color>
-    <color name="stopNumberOtherBg">#4B5563</color>
+    <color name="stopNumberStartBg">#137A55</color>
+    <color name="stopNumberOtherBg">#2B4363</color>
+    <color name="timelineRail">#39485D</color>
+
+    <!-- Screen Surfaces & Component Accents (Dark - Midnight Highway Asphalt) -->
+    <color name="topBarBg">#0B121C</color>
+    <color name="topBarText">#EEF2F6</color>
+    <color name="topBarSubtext">#94A3B8</color>
+    <color name="stopFieldBg">#101824</color>
+    <color name="overnightBg">#3E1C0A</color>
+    <color name="overnightStroke">#7C2D12</color>
+    <color name="overnightText">#FDE68A</color>
+    <color name="warmPillBg">#3B1E11</color>
+    <color name="warmPillText">#FF9666</color>
+    <color name="durationPillBg">#1B283C</color>
+    <color name="detailHeroStart">#1D3D6B</color>
+    <color name="detailHeroEnd">#102442</color>
+    <color name="stopNodeMid">#8EC0F2</color>
 </resources>

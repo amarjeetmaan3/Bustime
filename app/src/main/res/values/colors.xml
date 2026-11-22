@@ -1,23 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#1976D2</color>
-    <color name="colorPrimaryDark">#0D47A1</color>
+    <!-- Sunlit Regional Transit & Boarding-Pass Palette (Light Mode) -->
+    <color name="colorPrimary">#153456</color>
+    <color name="colorPrimaryDark">#0C2038</color>
+    <color name="colorPrimaryAccent">#255589</color>
+    <color name="colorPrimaryContainer">#DCE9F8</color>
     <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorAccent">#FF4081</color>
-    <color name="priceGreen">#388E3C</color>
 
-    <!-- लाइट / डार्क दोनों मोड के लिए: फ़ोन के सिस्टम के हिसाब से अपने-आप बदलते हैं (values-night/colors.xml) -->
-    <color name="bgScreen">#F5F5F5</color>
+    <color name="colorAccent">#E05A1E</color>
+    <color name="colorSecondaryBright">#F37A32</color>
+    <color name="colorSecondaryContainer">#FFE4D6</color>
+    <color name="colorAccentWarm">#E05A1E</color>
+
+    <color name="colorTertiary">#137A55</color>
+    <color name="priceGreen">#137A55</color>
+    <color name="errorColor">#C62828</color>
+
+    <!-- Surfaces & Neutrals -->
+    <color name="bgScreen">#F6F2EB</color>
     <color name="surface">#FFFFFF</color>
-    <color name="surfaceVariant">#EEF3FA</color>
-    <color name="divider">#E0E0E0</color>
-    <color name="noticeBg">#FFF8E1</color>
-    <color name="textPrimary">#1F2933</color>
-    <color name="textSecondary">#5F6B7A</color>
-    <color name="textGreen">#2E7D32</color>
-    <color name="stopFromHighlight">#2E7D32</color>
-    <color name="stopToHighlight">#C62828</color>
+    <color name="surfaceVariant">#EDE7DC</color>
+    <color name="surfaceElevated">#FFFFFF</color>
+    <color name="cardStroke">#D5CBBF</color>
+    <color name="divider">#E6DFD4</color>
+
+    <!-- Hero Gradient -->
+    <color name="heroStart">#0C2038</color>
+    <color name="heroMid">#153456</color>
+    <color name="heroEnd">#255589</color>
+
+    <!-- Typography -->
+    <color name="textPrimary">#161B22</color>
+    <color name="textSecondary">#535E6E</color>
+    <color name="textMuted">#7A8493</color>
+    <color name="textGreen">#137A55</color>
+
+    <!-- Warning Ticker Bar (Dark Espresso + Golden Text) -->
+    <color name="noticeBg">#231C16</color>
+    <color name="noticeStroke">#3D3127</color>
+    <color name="noticeText">#FFDF9B</color>
+    <color name="noticeAccent">#F59E0B</color>
+
+    <!-- Status, Chips & Semantic Badges -->
+    <color name="timeChipBg">#DCE9F8</color>
+    <color name="timeChipStroke">#C0D7F0</color>
+    <color name="timeChipText">#153456</color>
+    <color name="estBadgeBg">#FEF3C7</color>
+    <color name="estBadgeText">#B45309</color>
+    <color name="accentBadgeBg">#FEF3C7</color>
+    <color name="accentBadgeText">#B45309</color>
+    <color name="tonalButtonBg">#DCE9F8</color>
+    <color name="tonalButtonText">#153456</color>
+    <color name="whatsappBg">#1B8D44</color>
+    <color name="whatsappText">#FFFFFF</color>
+    <color name="callBg">#137A55</color>
+    <color name="iconBadgeBg">#DCE9F8</color>
+    <color name="syncOnlineDot">#4ADE80</color>
+    <color name="syncOfflineDot">#FBBF24</color>
+
+    <!-- Route Timeline & Highlights -->
+    <color name="stopFromHighlight">#137A55</color>
+    <color name="stopToHighlight">#E05A1E</color>
     <color name="stopNumberText">#FFFFFF</color>
-    <color name="stopNumberStartBg">#1B5E20</color>
-    <color name="stopNumberOtherBg">#374151</color>
+    <color name="stopNumberStartBg">#137A55</color>
+    <color name="stopNumberOtherBg">#153456</color>
+    <color name="timelineRail">#D5CBBF</color>
+
+    <!-- Screen Surfaces & Component Accents (Light) -->
+    <color name="topBarBg">#153456</color>
+    <color name="topBarText">#FFFFFF</color>
+    <color name="topBarSubtext">#DCE9F8</color>
+    <color name="stopFieldBg">#F7F4EE</color>
+    <color name="overnightBg">#FEF3C7</color>
+    <color name="overnightStroke">#F59E0B</color>
+    <color name="overnightText">#92400E</color>
+    <color name="warmPillBg">#FFE4D6</color>
+    <color name="warmPillText">#C2410C</color>
+    <color name="durationPillBg">#EDE7DC</color>
+    <color name="detailHeroStart">#153456</color>
+    <color name="detailHeroEnd">#255589</color>
+    <color name="stopNodeMid">#255589</color>
 </resources>

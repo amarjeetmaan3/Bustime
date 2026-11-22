@@ -10,173 +10,464 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fillViewport="true">
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="ifContentScrolls">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp">
-
-        <!-- From -> To (बीच में अदला-बदली का गोल बटन) -->
-        <androidx.cardview.widget.CardView
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp">
+            android:layout_height="wrap_content">
 
+            <!-- Curved Illustrated Highway Header Banner -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="124dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/app_name"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/img_highway_banner" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_hero_scrim" />
+
+                <!-- Curved 28dp Arch Sheet -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="34dp"
+                    android:layout_gravity="bottom"
+                    android:background="@drawable/bg_header_arch_sheet" />
+            </FrameLayout>
+
+            <!-- Main Scrollable Content -->
             <LinearLayout
+                android:id="@+id/busContentContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:paddingHorizontal="16dp"
+                android:paddingTop="18dp"
+                android:paddingBottom="16dp">
+
+            <!-- Overlapping Boarding-Pass Search Card (22dp radius) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardRouteSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="6dp"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Card Header Row: "Find Your Bus" + Language Pill -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="18dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/plus_jakarta_sans"
+                            android:text="@string/find_your_bus"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="17sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnCardLang"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_card_lang_pill"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:fontFamily="@font/plus_jakarta_sans"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="5dp"
+                            android:text="English"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Upper Boarding-Pass Section: Dotted Rail + Sleek FROM/TO Boxes + Overlapping Saffron Swap FAB -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="14dp"
+                        android:paddingBottom="8dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <!-- Custom Canvas Vertical Dotted Route Rail (Emerald -> Saffron) -->
+                            <com.bustime.app.ui.common.DottedRouteRailView
+                                android:layout_width="24dp"
+                                android:layout_height="match_parent"
+                                android:layout_marginEnd="10dp" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <!-- FROM Sleek Recessed Stop Box -->
+                                <LinearLayout
+                                    android:id="@+id/boxFrom"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_stop_field"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:orientation="vertical"
+                                    android:paddingStart="16dp"
+                                    android:paddingTop="10dp"
+                                    android:paddingEnd="58dp"
+                                    android:paddingBottom="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="@font/plus_jakarta_sans"
+                                        android:letterSpacing="0.08"
+                                        android:text="@string/from_hint"
+                                        android:textAllCaps="true"
+                                        android:textColor="@color/colorTertiary"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+
+                                    <EditText
+                                        android:id="@+id/etFrom"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:background="@null"
+                                        android:clickable="true"
+                                        android:cursorVisible="false"
+                                        android:focusable="false"
+                                        android:fontFamily="@font/plus_jakarta_sans"
+                                        android:hint="@string/select_bus_stop"
+                                        android:inputType="none"
+                                        android:maxLines="1"
+                                        android:padding="0dp"
+                                        android:textColor="@color/textPrimary"
+                                        android:textColorHint="@color/textMuted"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <!-- TO Sleek Recessed Stop Box -->
+                                <LinearLayout
+                                    android:id="@+id/boxTo"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="10dp"
+                                    android:background="@drawable/bg_stop_field"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:orientation="vertical"
+                                    android:paddingStart="16dp"
+                                    android:paddingTop="10dp"
+                                    android:paddingEnd="58dp"
+                                    android:paddingBottom="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="@font/plus_jakarta_sans"
+                                        android:letterSpacing="0.08"
+                                        android:text="@string/to_hint"
+                                        android:textAllCaps="true"
+                                        android:textColor="@color/colorAccent"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+
+                                    <EditText
+                                        android:id="@+id/etTo"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:background="@null"
+                                        android:clickable="true"
+                                        android:cursorVisible="false"
+                                        android:focusable="false"
+                                        android:fontFamily="@font/plus_jakarta_sans"
+                                        android:hint="@string/select_bus_stop"
+                                        android:inputType="none"
+                                        android:maxLines="1"
+                                        android:padding="0dp"
+                                        android:textColor="@color/textPrimary"
+                                        android:textColorHint="@color/textMuted"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- 180° Rotating Vibrant Saffron Swap FAB Overlapping Right Edge -->
+                        <com.google.android.material.floatingactionbutton.FloatingActionButton
+                            android:id="@+id/btnSwap"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|center_vertical"
+                            android:layout_marginEnd="10dp"
+                            android:contentDescription="@string/swap_places"
+                            android:src="@drawable/ic_swap_vert"
+                            app:backgroundTint="@color/colorAccent"
+                            app:elevation="5dp"
+                            app:fabCustomSize="46dp"
+                            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                            app:tint="#FFFFFF" />
+                    </FrameLayout>
+
+                    <!-- Signature Boarding-Pass Ticket Perforation Divider -->
+                    <com.bustime.app.ui.common.TicketPerforationView
+                        android:layout_width="match_parent"
+                        android:layout_height="22dp" />
+
+                    <!-- Lower Boarding-Pass Section: Saffron Gradient Search CTA -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="16dp">
+
+                        <LinearLayout
+                            android:id="@+id/btnSearchRoute"
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:background="@drawable/bg_saffron_cta"
+                            android:clickable="true"
+                            android:elevation="3dp"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="20dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="@string/search"
+                                android:src="@drawable/ic_search_modern"
+                                app:tint="#FFFFFF" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:fontFamily="@font/plus_jakarta_sans"
+                                android:text="@string/search"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Bus Stand Spotlight Card with Geometric Arcs & 1-Tap Quick-Jump Chips -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardStandSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="3dp"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp">
 
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
 
+                    <com.bustime.app.ui.common.SpotlightArcBackgroundView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="56dp"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
                         <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:id="@+id/tilStand"
+                            style="@style/Widget.Bustime.TextInputLayout"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="@string/from_hint">
+                            android:hint="@string/stand_hint"
+                            app:endIconContentDescription="@string/search"
+                            app:endIconDrawable="@drawable/ic_search_modern"
+                            app:endIconMode="custom"
+                            app:endIconTint="@color/colorPrimary"
+                            app:startIconDrawable="@drawable/ic_place_pin"
+                            app:startIconTint="@color/colorPrimary">
 
                             <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/etFrom"
+                                android:id="@+id/etStand"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:clickable="true"
                                 android:cursorVisible="false"
                                 android:focusable="false"
+                                android:fontFamily="@font/plus_jakarta_sans"
                                 android:inputType="none"
-                                android:maxLines="1" />
+                                android:maxLines="1"
+                                android:textColor="@color/textPrimary"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
                         </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        <!-- 1-Tap Quick-Jump Bus Stand Chips -->
+                        <HorizontalScrollView
+                            android:id="@+id/standQuickScroll"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:hint="@string/to_hint">
+                            android:layout_marginTop="12dp"
+                            android:scrollbars="none"
+                            android:visibility="gone">
 
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/etTo"
-                                android:layout_width="match_parent"
+                            <LinearLayout
+                                android:id="@+id/standQuickChipsContainer"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:clickable="true"
-                                android:cursorVisible="false"
-                                android:focusable="false"
-                                android:inputType="none"
-                                android:maxLines="1" />
-                        </com.google.android.material.textfield.TextInputLayout>
+                                android:orientation="horizontal" />
+                        </HorizontalScrollView>
                     </LinearLayout>
-
-                    <com.google.android.material.floatingactionbutton.FloatingActionButton
-                        android:id="@+id/btnSwap"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="end|center_vertical"
-                        android:contentDescription="@string/swap_places"
-                        android:src="@drawable/ic_swap_vert"
-                        app:backgroundTint="@color/colorPrimary"
-                        app:fabSize="mini"
-                        app:tint="@color/colorOnPrimary" />
                 </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                <Button
-                    android:id="@+id/btnSearchRoute"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="@string/search" />
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- बस स्टैंड सर्च -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilStand"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="@string/stand_hint"
-                        app:endIconMode="custom"
-                        app:endIconDrawable="@android:drawable/ic_menu_search"
-                        app:endIconContentDescription="@string/search">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etStand"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:clickable="true"
-                            android:cursorVisible="false"
-                            android:focusable="false"
-                            android:inputType="none"
-                            android:maxLines="1" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-
-                </LinearLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-    </LinearLayout>
+        </FrameLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <!-- Bottom Dock: Only Add a Bus Route & Book Bus Always Anchored at Bottom -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp">
+        android:paddingHorizontal="16dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="16dp">
 
-        <Button
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/btnAddBusRoute"
             android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:layout_marginEnd="6dp"
-            android:gravity="center"
-            android:maxLines="2"
-            android:minHeight="52dp"
-            android:textSize="12sp"
-            android:text="@string/add_route" />
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="@color/divider"
+            app:strokeWidth="1dp">
 
-        <Button
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="68dp"
+                android:orientation="horizontal"
+                android:padding="13dp">
+
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_squircle_peach">
+
+                    <ImageView
+                        android:layout_width="21dp"
+                        android:layout_height="21dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/add_route"
+                        android:src="@drawable/ic_add_route"
+                        app:tint="@color/colorAccent" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/plus_jakarta_sans"
+                    android:maxLines="2"
+                    android:text="@string/add_route"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/btnBookBus"
             android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
-            android:gravity="center"
-            android:maxLines="2"
-            android:minHeight="52dp"
-            android:textSize="12sp"
-            android:text="@string/book_bus" />
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="@color/divider"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="68dp"
+                android:orientation="horizontal"
+                android:padding="13dp">
+
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_squircle_emerald">
+
+                    <ImageView
+                        android:layout_width="21dp"
+                        android:layout_height="21dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/book_bus"
+                        android:src="@drawable/ic_bus_modern"
+                        app:tint="@color/colorTertiary" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/plus_jakarta_sans"
+                    android:maxLines="2"
+                    android:text="@string/book_bus"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 </LinearLayout>

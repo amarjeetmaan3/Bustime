@@ -268,4 +268,13 @@
     <string name="refresh_complete">डेटा सफलतापूर्वक अपडेट हो गया</string>
     <string name="refresh_latest">डेटा पहले से नवीनतम है</string>
     <string name="refresh_failed">रीफ़्रेश नहीं हो सका। इंटरनेट जाँचकर फिर कोशिश करें।</string>
+    <string name="find_your_bus">अपनी बस खोजें</string>
+    <string name="select_bus_stop">बस स्टॉप चुनें</string>
+    <string name="available_buses">उपलब्ध बसें</string>
+    <string name="passing_buses">गुज़रने वाली बसें</string>
+    <string name="buses_found_count">%1$d बसें मिलीं</string>
+    <string name="stops_count_label">%1$d पड़ाव</string>
+    <string name="complete_stop_sequence">सभी पड़ावों की सूची</string>
+    <string name="overnight_notice">रात भर का सफ़र (+1 दिन अगले दिन का समय दिखाता है)।</string>
+    <string name="plus_day_short">+%1$d दिन</string>
 </resources>

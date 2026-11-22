@@ -3,34 +3,45 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/bgScreen"
     android:orientation="vertical">
 
+    <!-- Deep Royal Indigo Top Bar over Twilight Header -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        
+        android:layout_height="wrap_content"
+        android:background="@color/heroStart"
+        app:elevation="0dp">
+
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:minHeight="48dp"
-            app:title="@string/app_name" />
- 
+            android:layout_height="58dp"
+            android:minHeight="58dp"
+            android:paddingHorizontal="6dp"
+            android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
+            app:popupTheme="@style/ThemeOverlay.Material3.Light"
+            app:title="@string/app_name"
+            app:titleTextAppearance="@style/TextAppearance.Bustime.ToolbarTitle"
+            app:titleTextColor="#FFFFFF" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Warning Ticker Bar: Dark Espresso (#231C16) + Golden Marquee (#FFDF9B) -->
     <TextView
         android:id="@+id/warningTicker"
         android:layout_width="match_parent"
-        android:layout_height="32dp"
-        android:background="#FFF4E0"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="10dp"
-        android:singleLine="true"
+        android:layout_height="36dp"
+        android:background="@color/noticeBg"
         android:ellipsize="marquee"
+        android:fontFamily="@font/plus_jakarta_sans"
+        android:gravity="center_vertical"
         android:marqueeRepeatLimit="-1"
+        android:paddingHorizontal="14dp"
         android:scrollHorizontally="true"
-        android:textColor="#9A5700"
+        android:singleLine="true"
+        android:textColor="@color/noticeText"
         android:textSize="13sp"
+        android:textStyle="bold"
         android:visibility="gone" />
 
     <FrameLayout
@@ -43,5 +54,6 @@
         android:id="@+id/startioMainBanner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/surface"
         android:visibility="gone" />
 </LinearLayout>

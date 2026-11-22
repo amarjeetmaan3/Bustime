@@ -2,69 +2,79 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:minHeight="62dp"
     android:orientation="horizontal">
 
-    <!-- समय (और ज़रूरत हो तो अगले दिन की तारीख) -->
+    <!-- Glowing Ringed Station Node & Connecting Rail -->
+    <com.bustime.app.ui.common.GlowingStopNodeView
+        android:id="@+id/stopNodeView"
+        android:layout_width="36dp"
+        android:layout_height="match_parent" />
+
+    <!-- Primary Stop Name + Multilingual Subtitle -->
     <LinearLayout
-        android:layout_width="84dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="end"
+        android:layout_weight="1"
         android:orientation="vertical"
-        android:paddingTop="10dp">
+        android:paddingStart="6dp"
+        android:paddingTop="11dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="13dp">
+
+        <TextView
+            android:id="@+id/tvStopName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:textColor="@color/textPrimary"
+            android:textSize="15.5sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvStopAltNames"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:maxLines="1"
+            android:textColor="@color/textMuted"
+            android:textSize="12sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Right-Aligned JetBrains Mono Time + Inline Warm +1 Day Pill -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="end|center_vertical"
+        android:orientation="horizontal"
+        android:paddingTop="11dp"
+        android:paddingEnd="4dp">
 
         <TextView
             android:id="@+id/tvStopTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/jetbrains_mono"
+            android:gravity="end"
             android:textColor="@color/textPrimary"
-            android:textSize="15sp"
+            android:textSize="14.5sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvStopDay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/textSecondary"
-            android:textSize="11sp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_warm_pill"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:paddingHorizontal="7dp"
+            android:paddingVertical="2.5dp"
+            android:textColor="@color/warmPillText"
+            android:textSize="10.5sp"
+            android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
-
-    <!-- बिंदु और रेखा -->
-    <FrameLayout
-        android:layout_width="32dp"
-        android:layout_height="match_parent">
-
-        <View
-            android:id="@+id/lineTop"
-            android:layout_width="2dp"
-            android:layout_height="16dp"
-            android:layout_gravity="center_horizontal"
-            android:background="@color/divider" />
-
-        <View
-            android:id="@+id/lineBottom"
-            android:layout_width="2dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="16dp"
-            android:background="@color/divider" />
-
-        <View
-            android:id="@+id/stopDot"
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="11dp"
-            android:background="@drawable/bg_dot" />
-    </FrameLayout>
-
-    <TextView
-        android:id="@+id/tvStopName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:paddingTop="9dp"
-        android:paddingBottom="12dp"
-        android:textColor="@color/textPrimary"
-        android:textSize="16sp" />
 </LinearLayout>

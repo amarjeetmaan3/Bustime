@@ -2,20 +2,25 @@ package com.bustime.app.ui.common
 
 import android.app.TimePickerDialog
 import android.content.DialogInterface
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
-import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import com.bustime.app.R
 import com.bustime.app.models.Place
 import com.bustime.app.utils.LanguageHelper
+import com.google.android.material.button.MaterialButton
 import org.json.JSONObject
 import java.util.Locale
 
@@ -23,7 +28,7 @@ import java.util.Locale
  * रूट के पड़ावों की एक जैसी लिस्ट: Route Correction और Add Route दोनों स्क्रीन यही इस्तेमाल करती हैं,
  * इसलिए दोनों हमेशा एक जैसी दिखती और चलती हैं।
  *
- * हर लाइन: नंबर (पहला और आख़िरी हरा) | नाम (सुझावों के साथ) | समय | + (नीचे नया पड़ाव) | ⋮ (ऊपर / नीचे / हटाओ)।
+ * हर लाइन: नंबर (पहला Emerald, आख़िरी Saffron, बीच के Indigo) | नाम (सुझावों के साथ) | समय (JetBrains Mono) | + (नीचे नया पड़ाव) | ⋮ (ऊपर / नीचे / हटाओ)।
  * ऊपर "Add Start" और नीचे "Add stop at end" बटन। जो जगह लिस्ट में पहले से है वह सुझाव में नहीं आती।
  *
  * drafts की हर एंट्री: {"place_id": id या null, "name": "...", "language": "en|hi|pa", "time": "HH:mm" या null}
@@ -77,62 +82,95 @@ class StopListEditor(
 
     fun render() {
         box.removeAllViews()
-        val bg = android.util.TypedValue()
-        val fg = android.util.TypedValue()
-        activity.theme.resolveAttribute(android.R.attr.colorBackground, bg, true)
-        activity.theme.resolveAttribute(android.R.attr.textColorPrimary, fg, true)
-        val surfaceColor = bg.data
-        val textColor = fg.data
-        val night = (activity.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val fontUi = ResourcesCompat.getFont(activity, R.font.plus_jakarta_sans)
+        val fontMono = ResourcesCompat.getFont(activity, R.font.jetbrains_mono)
+        val textPrimary = activity.getColor(R.color.textPrimary)
+        val textSecondary = activity.getColor(R.color.textSecondary)
+        val textMuted = activity.getColor(R.color.textMuted)
+        val primaryColor = activity.getColor(R.color.colorPrimary)
+        val primaryContainer = activity.getColor(R.color.colorPrimaryContainer)
+        val accentColor = activity.getColor(R.color.colorAccent)
+        val tertiaryColor = activity.getColor(R.color.colorTertiary)
+        val fieldBg = activity.getColor(R.color.stopFieldBg)
+        val dividerColor = activity.getColor(R.color.divider)
+        val surfaceColor = activity.getColor(R.color.surface)
+        val timeChipBg = activity.getColor(R.color.timeChipBg)
+        val timeChipStroke = activity.getColor(R.color.timeChipStroke)
+        val timeChipText = activity.getColor(R.color.timeChipText)
 
-        // Compact, theme-aware rows: no large white cards and no four-button toolbar per stop.
-        val addStart = Button(activity).apply {
-            text = activity.getString(R.string.community_add_start)
-            setTextColor(android.graphics.Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.rgb(32, 145, 75))
-            setOnClickListener {
-                drafts.add(0, newDraft())
-                render()
+        fun buildActionButton(label: String, onClick: () -> Unit): MaterialButton =
+            MaterialButton(activity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = label
+                isAllCaps = false
+                textSize = 13.5f
+                typeface = Typeface.create(fontUi, Typeface.BOLD)
+                cornerRadius = dp(14)
+                setTextColor(primaryColor)
+                backgroundTintList = ColorStateList.valueOf(primaryContainer)
+                strokeColor = ColorStateList.valueOf(timeChipStroke)
+                strokeWidth = dp(1)
+                insetTop = 0
+                insetBottom = 0
+                applyBouncyPress()
+                setOnClickListener { onClick() }
             }
+
+        val addStart = buildActionButton(activity.getString(R.string.community_add_start)) {
+            drafts.add(0, newDraft())
+            render()
         }
-        box.addView(addStart, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(8) })
+        box.addView(addStart, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(10) })
+
         drafts.forEachIndexed { index, draft ->
+            val isFirst = index == 0
+            val isLast = index == drafts.lastIndex
+
             val row = LinearLayout(activity).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(3), dp(2), dp(3), dp(2))
-                minimumHeight = dp(54)
-                background = android.graphics.drawable.GradientDrawable().apply {
-                    setColor(surfaceColor)
-                    cornerRadius = dp(7).toFloat()
+                setPadding(dp(8), dp(6), dp(6), dp(6))
+                minimumHeight = dp(58)
+                background = GradientDrawable().apply {
+                    setColor(fieldBg)
+                    setStroke(dp(1), dividerColor)
+                    cornerRadius = dp(16).toFloat()
                 }
             }
+
+            // Station order pill: Emerald for Start, Saffron for Destination, Soft Indigo for Middle stops
+            val badgeBgColor = when {
+                isFirst -> tertiaryColor
+                isLast -> accentColor
+                else -> primaryContainer
+            }
+            val badgeTextColor = if (isFirst || isLast) Color.WHITE else primaryColor
             val number = TextView(activity).apply {
                 text = (index + 1).toString()
-                textSize = 13f
-                setTextColor(activity.getColor(R.color.stopNumberText))
+                textSize = 12.5f
+                typeface = Typeface.create(fontMono, Typeface.BOLD)
+                setTextColor(badgeTextColor)
                 gravity = Gravity.CENTER
-                background = android.graphics.drawable.GradientDrawable().apply {
-                    setColor(activity.getColor(if (index == 0 || index == drafts.lastIndex) R.color.stopNumberStartBg else R.color.stopNumberOtherBg))
-                    cornerRadius = dp(14).toFloat()
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(badgeBgColor)
                 }
-                minWidth = dp(28)
-                setPadding(dp(5), dp(3), dp(5), dp(3))
             }
-            row.addView(number, LinearLayout.LayoutParams(dp(30), dp(28)).apply { marginEnd = dp(5) })
+            row.addView(number, LinearLayout.LayoutParams(dp(28), dp(28)).apply { marginEnd = dp(8) })
 
             val name = AutoCompleteTextView(activity).apply {
-                hint = if (index == 0) activity.getString(R.string.community_start_stop)
-                else if (index == drafts.lastIndex) activity.getString(R.string.community_destination)
-                else activity.getString(R.string.community_stop_name)
+                hint = when {
+                    isFirst -> activity.getString(R.string.community_start_stop)
+                    isLast -> activity.getString(R.string.community_destination)
+                    else -> activity.getString(R.string.community_stop_name)
+                }
                 threshold = 1
-                textSize = 14f
+                textSize = 14.5f
+                typeface = Typeface.create(fontUi, Typeface.BOLD)
                 setSingleLine(true)
-                setTextColor(textColor)
-                setHintTextColor(if (textColor == android.graphics.Color.WHITE) 0xFFAAAAAA.toInt() else 0xFF777777.toInt())
-                setPadding(dp(5), 0, dp(3), 0)
-                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                setTextColor(textPrimary)
+                setHintTextColor(textMuted)
+                setPadding(dp(2), 0, dp(4), 0)
+                setBackgroundColor(Color.TRANSPARENT)
                 setText(draft.optString("name"), false)
             }
             val initialLang = draft.optString("language", LanguageHelper.current())
@@ -185,24 +223,39 @@ class StopListEditor(
             }
             row.addView(name, LinearLayout.LayoutParams(0, dp(44), 1f))
 
-            val time = TextView(activity).apply {
-                val t = timeOf(draft).orEmpty()
-                text = if (t.isBlank()) "" else t
-                contentDescription = if (t.isBlank()) activity.getString(R.string.ar_tap_time) else t
-                textSize = 12f
-                // Empty time field: show a small, centered clock icon only. Do not use
-                // intrinsic drawable sizing here because it can make the clock look oversized.
-                val clock = if (t.isBlank()) androidx.core.content.ContextCompat.getDrawable(activity, R.drawable.ic_time_outline) else null
-                clock?.setBounds(0, 0, dp(18), dp(18))
-                setCompoundDrawables(clock, null, null, null)
-                gravity = Gravity.CENTER
-                setTextColor(if (t.isBlank()) (if (night) 0xFFB0BEC5.toInt() else 0xFF64748B.toInt()) else android.graphics.Color.rgb(58, 133, 190))
-                setPadding(dp(5), dp(4), dp(5), dp(4))
-                background = android.graphics.drawable.GradientDrawable().apply {
-                    setColor(if (night) 0xFF303943.toInt() else if (t.isBlank()) 0xFFF1F5F9.toInt() else 0xFFEAF3FA.toInt())
-                    setStroke(dp(1), if (night) 0xFF4B5563.toInt() else 0xFFD5DDE7.toInt())
-                    cornerRadius = dp(6).toFloat()
+            fun styleTimeChip(tv: TextView, value: String) {
+                val empty = value.isBlank()
+                tv.text = if (empty) "" else value
+                tv.contentDescription = if (empty) activity.getString(R.string.ar_tap_time) else value
+                if (empty) {
+                    val clock = ContextCompat.getDrawable(activity, R.drawable.ic_time_outline)?.mutate()
+                    clock?.setTint(textMuted)
+                    clock?.setBounds(0, 0, dp(17), dp(17))
+                    tv.setCompoundDrawables(clock, null, null, null)
+                    tv.setTextColor(textMuted)
+                    tv.background = GradientDrawable().apply {
+                        setColor(surfaceColor)
+                        setStroke(dp(1), dividerColor)
+                        cornerRadius = dp(10).toFloat()
+                    }
+                } else {
+                    tv.setCompoundDrawables(null, null, null, null)
+                    tv.setTextColor(timeChipText)
+                    tv.background = GradientDrawable().apply {
+                        setColor(timeChipBg)
+                        setStroke(dp(1), timeChipStroke)
+                        cornerRadius = dp(10).toFloat()
+                    }
                 }
+            }
+
+            val time = TextView(activity).apply {
+                textSize = 12.5f
+                typeface = Typeface.create(fontMono, Typeface.BOLD)
+                gravity = Gravity.CENTER
+                setPadding(dp(6), dp(4), dp(6), dp(4))
+                styleTimeChip(this, timeOf(draft).orEmpty())
+                applyBouncyPress()
                 setOnClickListener {
                     val cal = java.util.Calendar.getInstance()
                     val parts = timeOf(draft).orEmpty().split(":")
@@ -213,16 +266,7 @@ class StopListEditor(
                         val ok = validateTimes?.invoke(timesWith(index, value)) ?: true
                         if (ok) {
                             draft.put("time", value)
-                            text = value
-                            // Once a time is selected, show the time text without the clock icon.
-                            setCompoundDrawables(null, null, null, null)
-                            contentDescription = value
-                            setTextColor(android.graphics.Color.rgb(58, 133, 190))
-                            background = android.graphics.drawable.GradientDrawable().apply {
-                                setColor(if (night) 0xFF303943.toInt() else 0xFFEAF3FA.toInt())
-                                setStroke(dp(1), if (night) 0xFF4B5563.toInt() else 0xFFD5DDE7.toInt())
-                                cornerRadius = dp(6).toFloat()
-                            }
+                            styleTimeChip(this, value)
                         }
                     }, h, m, true)
                     dialog.setButton(DialogInterface.BUTTON_NEUTRAL, activity.getString(R.string.ar_clear)) { _, _ ->
@@ -232,18 +276,20 @@ class StopListEditor(
                     dialog.show()
                 }
             }
-            row.addView(time, LinearLayout.LayoutParams(dp(56), dp(36)).apply { marginStart = dp(3) })
+            row.addView(time, LinearLayout.LayoutParams(dp(58), dp(36)).apply { marginStart = dp(4) })
 
             val add = TextView(activity).apply {
                 text = "+"
-                textSize = 23f
+                textSize = 20f
+                typeface = Typeface.create(fontUi, Typeface.BOLD)
                 gravity = Gravity.CENTER
-                setTextColor(android.graphics.Color.WHITE)
-                background = android.graphics.drawable.GradientDrawable().apply {
-                    setColor(android.graphics.Color.rgb(32, 145, 75))
-                    cornerRadius = dp(7).toFloat()
+                setTextColor(Color.WHITE)
+                background = GradientDrawable().apply {
+                    setColor(activity.getColor(R.color.callBg))
+                    cornerRadius = dp(10).toFloat()
                 }
                 contentDescription = activity.getString(R.string.ar_add_stop_below)
+                applyBouncyPress()
                 setOnClickListener {
                     // A selected place's canonical single-language name is already in draft.
                     // Never overwrite it with an autocomplete presentation string.
@@ -252,13 +298,13 @@ class StopListEditor(
                     render()
                 }
             }
-            row.addView(add, LinearLayout.LayoutParams(dp(34), dp(36)).apply { marginStart = dp(4) })
+            row.addView(add, LinearLayout.LayoutParams(dp(34), dp(36)).apply { marginStart = dp(5) })
 
             val more = TextView(activity).apply {
                 text = "⋮"
-                textSize = 23f
+                textSize = 20f
                 gravity = Gravity.CENTER
-                setTextColor(textColor)
+                setTextColor(textSecondary)
                 contentDescription = activity.getString(R.string.ar_more_stop_actions)
                 setOnClickListener { anchor ->
                     if (draft.isNull("place_id")) draft.put("name", name.text.toString().trim())
@@ -291,20 +337,14 @@ class StopListEditor(
                     menu.show()
                 }
             }
-            row.addView(more, LinearLayout.LayoutParams(dp(28), dp(40)).apply { marginStart = dp(1) })
-            box.addView(row, LinearLayout.LayoutParams(-1, dp(58)).apply { setMargins(0, dp(1), 0, dp(1)) })
-            val divider = View(activity).apply { setBackgroundColor(if (textColor == android.graphics.Color.WHITE) 0xFF393939.toInt() else 0xFFE0E0E0.toInt()) }
-            box.addView(divider, LinearLayout.LayoutParams(-1, dp(1)))
+            row.addView(more, LinearLayout.LayoutParams(dp(28), dp(38)).apply { marginStart = dp(2) })
+            box.addView(row, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, dp(4), 0, dp(4)) })
         }
-        val addAtEnd = Button(activity).apply {
-            text = activity.getString(R.string.community_add_stop_end)
-            setTextColor(android.graphics.Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.rgb(32, 145, 75))
-            setOnClickListener {
-                drafts.add(newDraft())
-                render()
-            }
+
+        val addAtEnd = buildActionButton(activity.getString(R.string.community_add_stop_end)) {
+            drafts.add(newDraft())
+            render()
         }
-        box.addView(addAtEnd, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(8) })
+        box.addView(addAtEnd, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(10) })
     }
 }

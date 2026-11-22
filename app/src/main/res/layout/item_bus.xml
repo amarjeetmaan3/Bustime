@@ -1,67 +1,231 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginVertical="5dp"
+    android:layout_marginVertical="7dp"
     android:clickable="true"
     android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="14dp"
-    app:cardElevation="1dp">
+    app:cardCornerRadius="20dp"
+    app:cardElevation="2dp"
+    app:rippleColor="@color/colorPrimaryContainer"
+    app:strokeColor="@color/divider"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="12dp">
+        android:orientation="vertical">
 
-        <!-- समय का डिब्बा -->
-        <TextView
-            android:id="@+id/tvBusTime"
-            android:layout_width="86dp"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_time_chip"
-            android:gravity="center"
-            android:paddingVertical="12dp"
-            android:textColor="@color/colorPrimary"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
+        <!-- Header Row: Tinted Bus Icon Squircle + Bus Service / Route Name -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="15dp"
+            android:paddingBottom="12dp">
+
+            <FrameLayout
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@drawable/bg_squircle_indigo">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@string/app_name"
+                    android:src="@drawable/ic_bus_modern"
+                    app:tint="@color/colorPrimary" />
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/tvBusTitle"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="11dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:maxLines="1"
                 android:textColor="@color/textPrimary"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/tvBusExtra"
-                android:layout_width="match_parent"
+                android:id="@+id/tvServiceBadge"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:textColor="@color/textSecondary"
-                android:textSize="13sp" />
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_warm_pill"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:maxLines="1"
+                android:paddingHorizontal="9dp"
+                android:paddingVertical="3dp"
+                android:textColor="@color/warmPillText"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/btnBusCall"
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/bg_call_circle"
-            android:contentDescription="@string/call"
-            android:src="@drawable/ic_call"
-            app:tint="@color/colorOnPrimary" />
+        <!-- Departure -> Duration Pill + Saffron Dotted Track -> Arrival -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="10dp">
+
+            <!-- Left Column: Departure Time + From Stop -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvBusTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="18.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvFromStop"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/plus_jakarta_sans"
+                    android:maxLines="1"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="12.5sp" />
+            </LinearLayout>
+
+            <!-- Center Column: Clock + Duration Pill & Saffron-End Dotted Track -->
+            <LinearLayout
+                android:id="@+id/highwayTrackBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="6dp"
+                android:layout_weight="0.9"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/layoutDurationPill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:background="@drawable/bg_duration_pill"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="9dp"
+                    android:paddingVertical="3dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_time_outline"
+                        app:tint="@color/colorPrimary" />
+
+                    <TextView
+                        android:id="@+id/tvDurationPill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <com.bustime.app.ui.common.DashedHighwayTrackView
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp" />
+            </LinearLayout>
+
+            <!-- Right Column: Arrival Time + To Stop -->
+            <LinearLayout
+                android:id="@+id/layoutArrivalColumn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvBusArrivalTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:gravity="end"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="18.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvToStop"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/plus_jakarta_sans"
+                    android:gravity="end"
+                    android:maxLines="1"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="12.5sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Boarding-Pass Perforation Tear Line -->
+        <com.bustime.app.ui.common.TicketPerforationView
+            android:layout_width="match_parent"
+            android:layout_height="18dp" />
+
+        <!-- Bottom Stub: Route Info + Emerald Call Button -->
+        <LinearLayout
+            android:id="@+id/layoutFooterStub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="44dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="12dp">
+
+            <TextView
+                android:id="@+id/tvBusExtra"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:maxLines="1"
+                android:textColor="@color/textSecondary"
+                android:textSize="12.5sp" />
+
+            <ImageButton
+                android:id="@+id/btnBusCall"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_call_circle"
+                android:contentDescription="@string/call"
+                android:elevation="2dp"
+                android:padding="9dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_call"
+                app:tint="#FFFFFF" />
+        </LinearLayout>
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

@@ -27,27 +27,18 @@ android {
         versionCode = appVersionCode
         versionName = "1.0.$appVersionCode"
 
-        // ARM 32-bit और ARM 64-bit दोनों फोन के लिए native-library compatibility.
-        // minSdk Android version है; ABI filters processor architecture तय करते हैं.
+        // Support ARM phones as well as x86_64 Android emulators.
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
         }
     }
 
-    // Testing keystore is supplied by CI from the TESTING_KEYSTORE_BASE64 secret.
-    // For local builds, an untracked app/bustime.jks may be used if present.
-    val testingKeyPath: String? = System.getenv("TESTING_KEYSTORE_PATH")
-    val testingKeyFile = testingKeyPath?.let { file(it) } ?: file("bustime.jks")
-    val hasTestingKey = testingKeyFile.exists()
-
     signingConfigs {
-        if (hasTestingKey) {
-            create("debugKey") {
-                storeFile = testingKeyFile
-                storePassword = "bustime123"
-                keyAlias = "bustime"
-                keyPassword = "bustime123"
-            }
+        create("debugConfig") {
+            storeFile = file("${rootDir}/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
         if (hasReleaseKey) {
             create("releaseKey") {
@@ -61,11 +52,7 @@ android {
 
     buildTypes {
         debug {
-            // CI uses the saved testing key to preserve update compatibility.
-            // Without a local testing key, use Android's default debug signing.
-            if (hasTestingKey) {
-                signingConfig = signingConfigs.getByName("debugKey")
-            }
+            signingConfig = signingConfigs.getByName("debugConfig")
         }
         release {
             isMinifyEnabled = true
