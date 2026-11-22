@@ -10,6 +10,9 @@ import android.view.View
 import android.widget.ScrollView
 import com.bustime.app.ui.updater.GitHubUpdateChecker
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.bustime.app.data.repository.AppRepository
+import kotlinx.coroutines.launch
 
 class UpdateDetailsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,6 +91,13 @@ class UpdateDetailsActivity : AppCompatActivity() {
             setPadding(0, 20, 0, 4)
         })
         root.addView(currentVersion)
+        // Data sync diagnostics: shows this device's saved revision against the server's.
+        val syncStatus = TextView(this).apply { textSize = 13f; setPadding(0, 0, 0, 8); text = "Data sync: …" }
+        root.addView(syncStatus)
+        lifecycleScope.launch {
+            syncStatus.text = "Data sync: " + runCatching { AppRepository.getInstance(applicationContext).getSyncStatus() }
+                .getOrElse { "status unavailable (" + (it.message ?: "error") + ")" }
+        }
         root.addView(latestStatus)
         root.addView(releaseNotes)
         root.addView(checkButton)
