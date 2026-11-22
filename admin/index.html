@@ -612,13 +612,13 @@ var filters = { places:'', placeKind:'', routes:'' };
 
 var NAV = [
   ['dashboard','Dashboard'], ['analytics','Analytics & Stats'], ['bus','Bus'],
-  ['review','Review Center'], ['content','App Text & Warnings'], ['advertisement','Advertisement'], ['settings','Settings']
+  ['review','Review Center'], ['content','App Text & Warnings'], ['advertisement','Advertisement'], ['history','History'], ['settings','Settings']
 ];
 var TITLES = {
   dashboard:'Dashboard', analytics:'Analytics & Stats', bus:'Bus', places:'Bus · Places',
   routes:'Bus · Routes', busRequests:'Review Center · Add Route / Pending Bus Route', addBus:'Bus · Add Your Bus', busDirectory:'Bus · Operator Directory',
   corrections:'Review Center · Route Corrections', feedbackReview:'Review Center · Feedback',
-  review:'Review Center', content:'App Text & Warnings', advertisement:'Advertisement', settings:'Settings', recycleBin:'Recycle Bin'
+  review:'Review Center', content:'App Text & Warnings', advertisement:'Advertisement', settings:'Settings', history:'History', recycleBin:'Recycle Bin'
 };
 
 // ============ Helpers ============
@@ -775,6 +775,63 @@ async function recycleRequest(action, id) {
 async function loadRecycleBin() {
   var result = await recycleRequest('recycle-list');
   recycleBinItems = Array.isArray(result.items) ? result.items : [];
+}
+var historyState = { items: [], loading: false, error: '', hasMore: false, state: null, recycle: [] };
+async function loadHistory(reset) {
+  if (!sbToken) return;
+  if (historyState.loading) return;
+  historyState.loading = true; historyState.error = '';
+  if (reset) { historyState.items = []; }
+  render();
+  try {
+    var body = { limit: 200 };
+    if (!reset && historyState.items.length) body.before_revision = historyState.items[historyState.items.length - 1].revision;
+    var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
+      method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      body: JSON.stringify(body)
+    });
+    var result = {}; try { result = await response.json(); } catch (_) {}
+    if (!response.ok || !result.ok) throw new Error(result.error || ('HTTP ' + response.status));
+    historyState.items = historyState.items.concat(result.items || []);
+    historyState.hasMore = !!result.has_more;
+    historyState.state = result.state || null;
+    historyState.recycle = result.recycle || [];
+  } catch (e) { historyState.error = e.message; }
+  historyState.loading = false;
+  render();
+}
+function historyLabel(row) {
+  var p = row.payload || row.before || {};
+  if (row.entity_type === 'route') return (p.from || '?') + ' → ' + (p.to || '?') + (p.time ? ' · ' + p.time : '');
+  var n = p.name || {};
+  return n.en || n.hi || n.pa || row.entity_id;
+}
+function historyChanged(row) {
+  if (row.operation === 'delete') return 'Moved to Recycle Bin';
+  if (!row.before) return 'New or first version in this list';
+  var a = row.before, b = row.payload || {}, keys = {}, out = [];
+  Object.keys(a).concat(Object.keys(b)).forEach(function (k) { keys[k] = 1; });
+  Object.keys(keys).forEach(function (k) {
+    if (JSON.stringify(a[k]) !== JSON.stringify(b[k])) out.push(k);
+  });
+  return out.length ? 'Changed: ' + out.join(', ') : 'Re-published, no field changed (restore or repeat)';
+}
+function viewHistory() {
+  var s = historyState, last = 0, html;
+  var cur = s.state ? 'Current revision ' + s.state.revision + (s.state.published_at ? ' · last published ' + new Date(s.state.published_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '') : '';
+  html = '<div class="bus-page-head"><div><h2>History</h2><p class="muted">Every published place and route change, newest first. ' + esc(cur) + '</p></div>' +
+    '<button class="btn" data-act="history-refresh">↻ Refresh</button></div>';
+  if (s.error) html += '<div class="card"><p class="muted">Could not load history: ' + esc(s.error) + '</p></div>';
+  html += '<div class="tablewrap"><table><thead><tr><th>Rev</th><th>When (IST)</th><th>Type</th><th>Record</th><th>Action</th><th>What changed</th></tr></thead><tbody>' +
+    (s.items.map(function (row) {
+      var showRev = row.revision !== last; last = row.revision;
+      var op = row.operation === 'delete' ? '<span class="badge gray">delete</span>' : '<span class="badge">upsert</span>';
+      return '<tr><td>' + (showRev ? '<b>' + esc(row.revision) + '</b>' : '') + '</td><td>' + (showRev ? esc(new Date(row.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })) : '') +
+        '</td><td><span class="badge gray">' + esc(row.entity_type) + '</span></td><td><b>' + esc(historyLabel(row)) + '</b><div class="route-subline">ID: ' + esc(row.entity_id) + '</div></td><td>' + op +
+        '</td><td>' + esc(historyChanged(row)) + '</td></tr>';
+    }).join('') || '<tr><td colspan="6" class="empty">' + (s.loading ? 'Loading…' : 'No history yet.') + '</td></tr>') + '</tbody></table></div>';
+  if (s.hasMore && !s.loading) html += '<p><button class="btn" data-act="history-more">Load older</button></p>';
+  return html;
 }
 function viewRecycleBin() {
   return '<div class="bus-page-head"><div><h2>Recycle Bin</h2><p class="muted">Deleted bus routes and stops stay recoverable here until permanently deleted.</p></div><button class="btn" data-act="recycle-bin-refresh">Refresh</button></div>' +
@@ -1241,7 +1298,7 @@ function render() {
     places:viewPlaces, routes:viewRoutes,
     busRequests:viewBusRequests, busDirectory:function(){return viewCommunity('busDirectory');},
     addBus:function(){return viewCommunity('bus');},
-    corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, content:viewContentSettings, advertisement:viewAdvertisement, settings:viewSettings, recycleBin:viewRecycleBin };
+    corrections:function(){return viewCommunity('corrections');}, feedbackReview:function(){return viewCommunity('feedback');}, review:viewReview, content:viewContentSettings, advertisement:viewAdvertisement, settings:viewSettings, history:viewHistory, recycleBin:viewRecycleBin };
   if (dataTabs.indexOf(tab) >= 0 && !data) {
     v.innerHTML = '<div class="card"><h2>' + (dataLoadError ? 'Could not load route data' : 'Loading route data…') + '</h2><p class="muted">' + esc(dataLoadError || 'Fetching the current bus routes and places from GitHub.') + '</p>' + (dataLoadError ? '<button class="btn primary" data-act="data-retry">Retry loading</button> ' : '') + '<button class="btn" data-act="tab" data-t="settings">Open Settings</button></div>';
   } else {
@@ -2611,6 +2668,8 @@ document.addEventListener('click', async function (e) {
       await loadRecycleBin(); tab = 'recycleBin'; render(); toast('Recovery copy permanently deleted.');
     }
     else if (act === 'analytics-refresh') { loadAnalytics(); }
+    else if (act === 'history-refresh') { loadHistory(true); }
+    else if (act === 'history-more') { loadHistory(false); }
     else if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render();
       // Re-read MDM delta records when opening the places/routes workspace so newly added bus stands appear without a full browser reload.
@@ -2619,6 +2678,7 @@ document.addEventListener('click', async function (e) {
         render();
       }
       if (tab === 'analytics' && sbToken) { loadAnalytics(); }
+      if (tab === 'history' && sbToken) { loadHistory(true); }
    if (tab === 'advertisement') { loadAdConfig().then(function(){render();}).catch(function(err){toast('Advertisement settings: '+err.message);}); }
       if (tab === 'content' || tab === 'settings') { loadContentSettings().then(function(){render();}).catch(function(err){toast('App settings: '+err.message);}); }
       if (['review','busRequests','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }
