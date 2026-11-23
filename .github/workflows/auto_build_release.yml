@@ -1,4 +1,4 @@
-name: Auto Build and Release APK
+name: Build Bustime (Test APK + Play Store AAB)
 
 on:
   push:
@@ -150,26 +150,27 @@ jobs:
             app/build/outputs/apk/release/Bustime.apk
             app/build/outputs/bundle/release/*.aab
 
-      # ---------- GitHub Release (अपडेटर इसी से पढ़ता है) ----------
-      # सीक्रेट्स हों तो सिर्फ़ Release APK, वरना Debug APK (दोनों साथ नहीं, वरना साइन अलग होने से इंस्टॉल फेल)
-      - name: Publish GitHub Release (signed)
+      # ---------- Google Play Store release ----------
+      # Only the signed Android App Bundle is published as a release. Test APK stays an artifact.
+      - name: Verify signed Play Store AAB exists
+        if: env.HAS_RELEASE_KEY == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAB="$(find app/build/outputs/bundle/release -maxdepth 1 -name '*.aab' -print -quit)"
+          test -n "$AAB"
+          jarsigner -verify "$AAB" >/dev/null
+          echo "Verified signed AAB: $AAB"
+
+      - name: Publish Play Store AAB release
         if: env.HAS_RELEASE_KEY == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: Bustime v1.0.${{ github.run_number }}
-          files: |
-            app/build/outputs/apk/release/Bustime.apk
-            app/build/outputs/bundle/release/*.aab
+          name: Bustime Play Store Bundle v1.0.${{ github.run_number }}
+          files: app/build/outputs/bundle/release/*.aab
           make_latest: true
 
-      # Testing APK is signed with TESTING_KEYSTORE_BASE64 above, not Android's default debug key.
-      # This keeps the in-app updater working for existing test installs when production signing secrets are not configured.
-      - name: Publish GitHub Release (testing-signed APK)
+      - name: Explain skipped Play Store build
         if: env.HAS_RELEASE_KEY != 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Bustime v1.0.${{ github.run_number }}
-          files: app/build/outputs/apk/debug/Bustime.apk
-          make_latest: true
+        run: echo "Play Store AAB was not built because RELEASE_KEYSTORE_BASE64 is not configured in repository Actions secrets."
