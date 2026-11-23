@@ -108,8 +108,6 @@
     <string name="community_choose_stop">सुधारने वाला पड़ाव चुनें</string>
     <string name="community_correct_time_hint">सही समय (HH:MM)</string>
     <string name="community_extra_details">अतिरिक्त जानकारी (वैकल्पिक)</string>
-    <string name="contact_ai_disclaimer">AI सूचना चलाई जा रही है...</string>
-    <string name="contact_voice_loading">आवाज़ की सुविधा शुरू हो रही है, कृपया फिर कोशिश करें...</string>
     <string name="bb_departure">रवाना होने का समय: %1$s</string>
     <string name="bb_price_range">किराया: %1$s</string>
     <string name="update_title">नया अपडेट उपलब्ध है!</string>
