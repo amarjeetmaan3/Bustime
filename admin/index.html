@@ -409,6 +409,7 @@ function saveCfg() {
 
 // ============ State ============
 var data = null, baseVersion = 0, dirty = false;
+var snapshotVersion = 74;
 // Last clean shared state. Web Admin publishes the same entity deltas as Android MDM.
 var sharedBaseData = null;
 var mdmRevisionCursor = 0, mdmAutoSyncTimer = null, mdmAutoSyncBusy = false, mdmSyncError = null;
@@ -729,14 +730,14 @@ async function loadData() {
   await mergeMdmPublishedChanges(0);
   if (mdmSyncError) { data = null; throw new Error(mdmSyncError); }
   sharedBaseData = JSON.parse(JSON.stringify({ places: data.places || [], routes: data.routes || [] }));
-  baseVersion = Math.max(74, Number(mdmRevisionCursor || 0)); data.dataVersion = baseVersion;
+  baseVersion = Math.max(74, Number(mdmRevisionCursor || 0)); snapshotVersion = 74; data.dataVersion = baseVersion;
   editing = null; publishOpen = false; setDirty(false);
 }
 async function publishAdminDelete(entityType, entityId, payload) {
   if (!sbToken) throw new Error('Sign in as the owner admin before deleting published data.');
   var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-    body: JSON.stringify({ action: 'publish', changes: [{ entity_type: entityType, entity_id: String(entityId), operation: 'delete', payload: payload || null }] })
+    body: JSON.stringify({ action: 'publish', source: 'web_admin', changes: [{ entity_type: entityType, entity_id: String(entityId), operation: 'delete', payload: payload || null }] })
   });
   var result = {}; try { result = await response.json(); } catch (_) {}
   if (!response.ok || !result.ok) throw new Error(result.error || ('Could not move ' + entityType + ' (HTTP ' + response.status + ').'));
@@ -811,9 +812,9 @@ function viewHistory() {
       var showRev = row.revision !== last; last = row.revision;
       var op = row.operation === 'delete' ? '<span class="badge gray">delete</span>' : '<span class="badge">upsert</span>';
       return '<tr><td>' + (showRev ? '<b>' + esc(row.revision) + '</b>' : '') + '</td><td>' + (showRev ? esc(new Date(row.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })) : '') +
-        '</td><td><span class="badge gray">' + esc(row.entity_type) + '</span></td><td><b>' + esc(historyLabel(row)) + '</b><div class="route-subline">ID: ' + esc(row.entity_id) + '</div></td><td>' + op +
+        '</td><td><span class="badge gray">' + esc(row.source === 'web_admin' ? 'Web Admin' : (row.source === 'android_app' ? 'Android App' : 'Legacy / Unknown')) + '</span></td><td><span class="badge gray">' + esc(row.entity_type) + '</span></td><td><b>' + esc(historyLabel(row)) + '</b><div class="route-subline">ID: ' + esc(row.entity_id) + '</div></td><td>' + op +
         '</td><td>' + esc(historyChanged(row)) + '</td></tr>';
-    }).join('') || '<tr><td colspan="6" class="empty">' + (s.loading ? 'Loading…' : 'No history yet.') + '</td></tr>') + '</tbody></table></div>';
+    }).join('') || '<tr><td colspan="7" class="empty">' + (s.loading ? 'Loading…' : 'No history yet.') + '</td></tr>') + '</tbody></table></div>';
   if (s.hasMore && !s.loading) html += '<p><button class="btn" data-act="history-more">Load older</button></p>';
   return html;
 }
@@ -860,7 +861,7 @@ async function publishSharedDataDiff(before, after) {
   var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method:'POST',
     headers:{ apikey:cfg.sbKey, Authorization:'Bearer '+sbToken, 'Content-Type':'application/json', 'Cache-Control':'no-store' },
-    body:JSON.stringify({ action:'publish', changes:changes })
+    body:JSON.stringify({ action:'publish', source:'web_admin', changes:changes })
   });
   var result = {}; try { result = await response.json(); } catch (_) {}
   if (!response.ok || !result.ok) throw new Error(result.error || ('Shared data publish failed (HTTP '+response.status+').'));
@@ -1208,7 +1209,7 @@ function reportHtml(v) {
 // ============ Views ============
 function refreshChrome() {
   $('#dirty').style.display = dirty ? 'inline-block' : 'none';
-  $('#verPill').textContent = data ? 'Data v' + baseVersion : 'Not loaded';
+  $('#verPill').textContent = data ? 'Revision ' + baseVersion + ' · Snapshot v' + snapshotVersion : 'Not loaded';
   $('#pubBtn').disabled = !data || !dirty;
   $('#pageTitle').textContent = TITLES[tab] || '';
   var signOut = $('#adminSignOut');
@@ -1295,7 +1296,7 @@ function viewDashboard() {
   var v = validate();
   return '<div class="stats">' +
     stat(data.places.length, 'Places (' + stands + ' bus stands)') + stat(data.routes.length, 'Bus routes') + '</div>' +
-    '<div class="card"><h2>Data health</h2><p class="muted">Published data version: ' + baseVersion + '. ' +
+    '<div class="card"><h2>Data health</h2><p class="muted">Current revision: ' + baseVersion + ' · Snapshot version: ' + snapshotVersion + '. ' +
     (dirty ? 'You have unpublished changes.' : 'Everything is published.') + '</p>' + reportHtml(v) + '</div>' +
     '<div class="card"><h2>How it works</h2><p class="muted">Edit bus stops and routes here, then press <b>Publish</b>. ' +
     'The app picks up the new data the next time it opens. No new APK is needed for data changes.</p></div>';
@@ -1638,7 +1639,7 @@ async function deleteAdPoster(){
 function viewSettings() {
   return '<div class="card"><h2>Route data</h2><p class="muted">Places and routes are read from and published directly to the Supabase database. No GitHub file or build is used.</p>' +
     '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="save-cfg">Reload data</button></div>' +
-    (data ? '<div class="alert ok">Loaded: data version ' + baseVersion + ', ' + data.places.length + ' places, ' + data.routes.length +
+    (data ? '<div class="alert ok">Loaded: revision ' + baseVersion + ' · snapshot v' + snapshotVersion + ', ' + data.places.length + ' places, ' + data.routes.length +
             ' routes.</div>' : '') + '</div>' +
     '<div class="card"><h2>App Updater</h2><p class="muted">Control whether the Android app checks for new GitHub releases and shows the new-version popup. The saved setting applies across admin sessions and page refreshes.</p>' +
     '<div class="updater-setting-row"><div class="updater-setting-copy"><strong>Automatic app update prompts</strong><p id="settings_updater_status">'+(contentSettings.update_notifications_enabled===true?'ON — users can receive new-version prompts.':'OFF — users will not receive new-version prompts.')+'</p></div>' +
@@ -2193,7 +2194,7 @@ function renderModal() {
   } else if (publishOpen) {
     var v = validate();
     $('#dlgTitle').textContent = 'Publish changes';
-    $('#dlgBody').innerHTML = '<p class="muted" style="margin-top:14px">Data version will change from ' + baseVersion + ' to ' + (baseVersion + 1) +
+    $('#dlgBody').innerHTML = '<p class="muted" style="margin-top:14px">Revision will change from ' + baseVersion + ' to ' + (baseVersion + 1) +
       '. The app picks up the new data the next time it opens. No new APK is built.</p>' + reportHtml(v) +
       '<div class="dlg-foot"><button class="btn" data-act="close">Cancel</button>' +
       '<button class="btn primary" data-act="publish"' + (v.errors.length ? ' disabled' : '') + '>Publish</button></div>';
