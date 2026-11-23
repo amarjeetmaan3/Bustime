@@ -8,16 +8,6 @@ const cors = {
   "Cache-Control": "no-store",
 };
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: cors });
-function b64(bytes: Uint8Array): string { let s = ""; for (const b of bytes) s += String.fromCharCode(b); return btoa(s); }
-function fromB64(s: string): Uint8Array { return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
-async function derive(password: string, salt: Uint8Array, iterations: number): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-  return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256));
-}
-function equal(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0; for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i]; return diff === 0;
-}
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ error: "method_not_allowed" }, 405);
@@ -25,10 +15,11 @@ Deno.serve(async (req: Request) => {
   if (!url || !service) return reply({ error: "service_unavailable" }, 503);
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return reply({ error: "invalid_json" }, 400); }
-  const password = String(body.password || "");
-  let authorized = false;
+  // Only the signed-in owner (Supabase Auth Bearer token) may use this function.
+  // The legacy shared-password path was removed: a password check on a public endpoint can be guessed.
   const bearer = req.headers.get("Authorization") || "";
-  if (!password && /^Bearer\s+/.test(bearer)) {
+  let authorized = false;
+  if (/^Bearer\s+/.test(bearer)) {
     const userRes = await fetch(url + "/auth/v1/user", {
       headers: { apikey: req.headers.get("apikey") || "", Authorization: bearer, "Cache-Control": "no-store" }
     });
@@ -37,18 +28,7 @@ Deno.serve(async (req: Request) => {
       authorized = !!user && user.id === "b0787029-45dc-4f37-8568-6a09a4fe2ad9";
     }
   }
-  if (!authorized) {
-    if (!password || password.length > 256) return reply({ error: "invalid_password" }, 401);
-    const secretRes = await fetch(url + "/rest/v1/mdm_secret?select=password_salt,password_hash,iterations&id=eq.1&limit=1", {
-      headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }
-    });
-    if (!secretRes.ok) return reply({ error: "password_check_failed" }, 502);
-    const secrets = await secretRes.json();
-    if (!Array.isArray(secrets) || !secrets.length) return reply({ error: "password_not_configured" }, 409);
-    const secret = secrets[0];
-    const actual = await derive(password, fromB64(secret.password_salt), Number(secret.iterations));
-    if (!equal(actual, fromB64(secret.password_hash))) return reply({ error: "invalid_password" }, 401);
-  }
+  if (!authorized) return reply({ error: "admin_sign_in_required" }, 401);
 
   // Authenticated Review Center API; only these fixed submission tables can be accessed.
   const reviewTables = ["route_submissions", "correction_submissions", "feedback_submissions", "bus_operator_submissions"] as const;
@@ -104,7 +84,7 @@ Deno.serve(async (req: Request) => {
     return rows.length ? reply({ ok: true, item: rows[0] }) : reply({ error: "review_item_not_found" }, 404);
   }
 
-  // Shared Recycle Bin actions; only the authenticated owner/MDM password reaches here.
+  // Shared Recycle Bin actions; only the authenticated owner reaches here.
   if (body.action === "recycle-list") {
     const r = await fetch(url + "/rest/v1/data_recycle_bin?select=id,entity_type,entity_id,payload,deleted_at,deleted_revision&restored_at=is.null&permanently_deleted_at=is.null&order=deleted_at.desc&limit=500", {
       headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }

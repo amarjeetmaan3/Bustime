@@ -10,7 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
-import com.bustime.app.ads.StartIoAdsManager
+import com.bustime.app.ads.AdMobAdsManager
 import com.bustime.app.data.repository.AppRepository
 import com.bustime.app.ui.common.TransitDurationFormatter
 import com.bustime.app.ui.details.RouteDetailActivity
@@ -57,7 +57,7 @@ class SearchActivity : AppCompatActivity() {
                 intent.getStringExtra("FROM_ID")?.let { detailIntent.putExtra("SEARCH_FROM_ID", it) }
                 intent.getStringExtra("TO_ID")?.let { detailIntent.putExtra("SEARCH_TO_ID", it) }
             }
-            StartIoAdsManager.maybeShowFullscreen(this) { startActivity(detailIntent) }
+            AdMobAdsManager.maybeShowFullscreen(this) { startActivity(detailIntent) }
         }
         recycler.adapter = adapter
 
@@ -155,7 +155,7 @@ class SearchActivity : AppCompatActivity() {
             tvEmpty.setText(emptyRes)
             tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             if (items.isNotEmpty()) {
-                StartIoAdsManager.loadNativeAds(this@SearchActivity, items.size) { nativeAds, _ ->
+                AdMobAdsManager.loadNativeAds(this@SearchActivity, items.size) { nativeAds, _ ->
                     if (!isFinishing && !isDestroyed && nativeAds.isNotEmpty()) {
                         adapter.submit(items, nativeAds)
                     }

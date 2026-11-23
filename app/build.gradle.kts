@@ -23,7 +23,7 @@ android {
     defaultConfig {
         applicationId = "com.bustime.app"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 36
         versionCode = appVersionCode
         versionName = "1.0.$appVersionCode"
 
@@ -96,8 +96,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
-    // Start.io network ads: Banner, Native and Interstitial formats.
-    implementation("com.startapp:inapp-sdk:5.4.0")
+    // Google AdMob ads (Banner, Native, Interstitial) and the Google UMP consent form.
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
+    implementation("com.google.android.ump:user-messaging-platform:3.1.0")
 
     // Room Database Libraries
     val roomVersion = "2.6.1"

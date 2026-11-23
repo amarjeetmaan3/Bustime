@@ -8,6 +8,7 @@
     <!-- CALL_PHONE हटा दिया: ड्राइवर को कॉल ACTION_DIAL (डायलर खोलना) से होगी, जिसे परमिशन नहीं चाहिए -->
 
     <application
+        android:name=".BustimeApp"
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:roundIcon="@drawable/ic_launcher"
@@ -16,7 +17,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Bustime">
 
-        <!-- Start.io App ID is loaded from the remotely controlled ad_settings config. -->
+        <!-- Google AdMob App ID. This is Google's official SAMPLE app ID: replace it with the
+             real AdMob App ID (ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY) before the Play release. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

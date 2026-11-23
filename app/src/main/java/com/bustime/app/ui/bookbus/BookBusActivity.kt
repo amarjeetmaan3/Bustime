@@ -23,7 +23,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.bustime.app.R
-import com.bustime.app.ads.StartIoAdsManager
+import com.bustime.app.ads.AdMobAdsManager
 import com.bustime.app.ui.common.applyBouncyPress
 import com.bustime.app.ui.community.CommunitySupabase
 import com.google.android.material.button.MaterialButton
@@ -236,7 +236,7 @@ class BookBusActivity : AppCompatActivity() {
         val startIoBannerSlot = FrameLayout(this).apply { visibility = View.GONE }
         root.addView(startIoBannerSlot, LinearLayout.LayoutParams(-1, -2))
         setContentView(root)
-        StartIoAdsManager.attachBanner(this, startIoBannerSlot, "book_bus")
+        AdMobAdsManager.attachBanner(this, startIoBannerSlot, "book_bus")
 
         lifecycleScope.launch {
             val raw = withContext(Dispatchers.IO) { CommunitySupabase.getPublicOperators() }

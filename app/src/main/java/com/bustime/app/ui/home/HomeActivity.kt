@@ -12,7 +12,7 @@ import android.widget.ProgressBar
 import android.widget.Toast
 import android.widget.TextView
 import com.bustime.app.data.RemoteContentSettings
-import com.bustime.app.ads.StartIoAdsManager
+import com.bustime.app.ads.AdMobAdsManager
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -56,7 +56,7 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
-        StartIoAdsManager.attachBanner(this, findViewById(R.id.startioMainBanner), "main")
+        AdMobAdsManager.attachBanner(this, findViewById(R.id.startioMainBanner), "main")
         scheduleBackgroundDataSync()
         AnalyticsHelper.logFirstInstall(this)
         AnalyticsHelper.logAppOpened(this)

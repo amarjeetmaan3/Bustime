@@ -50,7 +50,10 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                 try {
                     val incremental = fetchIncremental()
                     if (incremental != null) return@withLock incremental
-                    fetchRemoteSnapshot()
+                    // The server could not be reached or a change was invalid: keep the data
+                    // already on the device and try again on the next sync.
+                    lastSyncFailed = true
+                    false
                 } catch (e: Exception) {
                     lastSyncFailed = true
                     Log.w(TAG, "Sync failed; existing local data kept: ${e.message}")
@@ -78,7 +81,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         applySnapshot(text, null)
     }
 
-    /** null means unavailable and triggers snapshot fallback; false means already current. */
+    /** null means the server was unavailable or sent an invalid change; false means already current. */
     private suspend fun fetchIncremental(): Boolean? {
         val state = getJson("${Constants.SUPABASE_URL}/functions/v1/bustime-data-sync?action=status")
             ?: return null
@@ -87,33 +90,10 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         val publishedRevision = stateRow.get("revision")?.asLong ?: 0L
         val localRevision = prefs.getLong(KEY_REVISION, 0L)
         if (publishedRevision == 0L) return null
-        val publishedSnapshotVersion = stateRow.get("snapshot_version")?.asInt ?: 0
-        val localSnapshotVersion = prefs.getInt(KEY_VERSION, 0)
-        if (publishedRevision <= localRevision) {
-            // Snapshot-only publishes can advance the baseline version without a
-            // new delta revision. Detect that case instead of incorrectly reporting
-            // "already current" and leaving this device on an older snapshot.
-            if (publishedSnapshotVersion > localSnapshotVersion) {
-                val refreshed = fetchRemoteSnapshot(forceFull = true)
-                if (lastSyncFailed) return false
-                prefs.edit()
-                    .putLong(KEY_REVISION, publishedRevision)
-                    .putLong(KEY_LAST_SYNC, System.currentTimeMillis())
-                    .apply()
-                return refreshed
-            }
-            return false
-        }
-        // A fresh install or an older build must replace its baseline first, so
-        // records deleted before this device's first delta cursor cannot survive.
-        var baselineChanged = false
-        if (localRevision == 0L) {
-            // Install the full baseline first, then replay the complete delta history.
-            // MDM-published changes may not exist in routes.json, so skipping history
-            // here would make MDM data disappear on fresh installs or older builds.
-            baselineChanged = fetchRemoteSnapshot(forceFull = true)
-            if (lastSyncFailed) return false
-        }
+        if (publishedRevision <= localRevision) return false
+        // A fresh install starts from the bundled data (imported by ensureLocalData) and then
+        // replays the complete change history from Supabase, so no other download is needed.
+        val baselineChanged = false
 
         val changes = ArrayList<JsonObject>()
         var offset = 0
@@ -228,39 +208,6 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         }
     }
 
-    private suspend fun fetchRemoteSnapshot(forceFull: Boolean = false): Boolean {
-        if (Constants.GITHUB_OWNER.startsWith("YOUR_")) {
-            lastSyncFailed = true
-            Log.w(TAG, "GitHub snapshot source is not configured")
-            return false
-        }
-        var conn: HttpURLConnection? = null
-        try {
-            conn = (URL(dataUrl()).openConnection() as HttpURLConnection).apply {
-                connectTimeout = 10000
-                readTimeout = 20000
-                setRequestProperty("Cache-Control", "no-cache")
-                setRequestProperty("Pragma", "no-cache")
-                if (!forceFull) prefs.getString(KEY_ETAG, null)?.let { setRequestProperty("If-None-Match", it) }
-            }
-            return when (conn.responseCode) {
-                200 -> applySnapshot(
-                    conn.inputStream.bufferedReader().use { it.readText() },
-                    conn.getHeaderField("ETag")
-                )
-                304 -> {
-                    // A forced baseline fetch must return the actual snapshot.
-                    lastSyncFailed = forceFull
-                    if (forceFull) Log.w(TAG, "Server returned 304 during required full snapshot")
-                    false
-                }
-                else -> { lastSyncFailed = true; Log.w(TAG, "Snapshot fetch HTTP ${conn.responseCode}"); false }
-            }
-        } finally {
-            conn?.disconnect()
-        }
-    }
-
     private suspend fun applySnapshot(text: String, etag: String?): Boolean {
         val dto = gson.fromJson(text, SnapshotDto::class.java)
         if (dto == null) {
@@ -300,9 +247,6 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         lastSyncFailed = false
         return true
     }
-
-    private fun dataUrl() =
-        "https://raw.githubusercontent.com/${Constants.GITHUB_OWNER}/${Constants.GITHUB_REPO}/main/app/src/main/assets/$ASSET_NAME"
 
     companion object {
         private const val TAG = "SnapshotSync"

@@ -6,10 +6,10 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bustime.app.R
-import com.bustime.app.ads.StartIoAdsManager
+import com.bustime.app.ads.AdMobAdsManager
 import com.bustime.app.ui.common.applyBouncyPress
 import com.bustime.app.utils.ContactActions
-import com.startapp.sdk.ads.nativead.NativeAdDetails
+import com.google.android.gms.ads.nativead.NativeAd
 
 data class BusItem(
     val routeId: String,
@@ -30,7 +30,7 @@ data class BusItem(
 class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var items: List<BusItem> = emptyList()
     // Each pair contains the number of route results before the ad and that ad's own SDK details.
-    private var nativeAds: List<Pair<Int, NativeAdDetails>> = emptyList()
+    private var nativeAds: List<Pair<Int, NativeAd>> = emptyList()
     private var nativePositions: List<Int> = emptyList()
 
     class RouteVH(view: View) : RecyclerView.ViewHolder(view) {
@@ -56,7 +56,7 @@ class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<
         val btnCall: View = view.findViewById(R.id.btnStandBusCall)
     }
 
-    fun submit(list: List<BusItem>, ads: List<Pair<Int, NativeAdDetails>> = emptyList()) {
+    fun submit(list: List<BusItem>, ads: List<Pair<Int, NativeAd>> = emptyList()) {
         items = list
         nativeAds = ads.sortedBy { it.first }
         nativePositions = nativeAds.mapIndexed { index, slot -> slot.first + index }
@@ -76,7 +76,7 @@ class BusAdapter(private val onClick: (BusItem) -> Unit) : RecyclerView.Adapter<
             viewType >= TYPE_NATIVE_BASE -> {
                 val adIndex = viewType - TYPE_NATIVE_BASE
                 object : RecyclerView.ViewHolder(
-                    StartIoAdsManager.buildNativeAdView(parent.context, nativeAds[adIndex].second)
+                    AdMobAdsManager.buildNativeAdView(parent.context, nativeAds[adIndex].second)
                 ) {}
             }
             viewType == TYPE_STAND -> {

@@ -385,17 +385,18 @@
 <script>
 // ============ Settings (stored only in this browser) ============
 var CFG_KEY = 'bustime_admin_cfg';
-var DEFAULT_CFG = { owner:'amarjeetmaan3', repo:'Bustime', branch:'main', path:'app/src/main/assets/routes.json', token:'', sbUrl:'https://mdryxbvmqsphbfkvqtnf.supabase.co', sbKey:'sb_publishable_1J6qNzpvPH-TTI-qxRU8wA_RVO7EpfM', sbEmail:'' };
+var DEFAULT_CFG = { sbUrl:'https://mdryxbvmqsphbfkvqtnf.supabase.co', sbKey:'sb_publishable_1J6qNzpvPH-TTI-qxRU8wA_RVO7EpfM', sbEmail:'' };
 var cfg = loadCfg();
 function loadCfg() {
   try {
     var stored = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
-    // Remove legacy persisted GitHub PATs; secrets are never restored from browser storage.
-    if (stored && Object.prototype.hasOwnProperty.call(stored, 'token')) {
-      delete stored.token;
+    // Remove legacy GitHub settings (and any token) left in this browser by older versions.
+    var legacy = ['token', 'owner', 'repo', 'branch', 'path'];
+    if (stored && legacy.some(function (k) { return Object.prototype.hasOwnProperty.call(stored, k); })) {
+      legacy.forEach(function (k) { delete stored[k]; });
       localStorage.setItem(CFG_KEY, JSON.stringify(stored));
     }
-    return Object.assign({}, DEFAULT_CFG, stored, {token:'', sbUrl:DEFAULT_CFG.sbUrl, sbKey:DEFAULT_CFG.sbKey});
+    return Object.assign({}, DEFAULT_CFG, stored, {sbUrl:DEFAULT_CFG.sbUrl, sbKey:DEFAULT_CFG.sbKey});
   } catch (e) { return Object.assign({}, DEFAULT_CFG); }
 }
 function saveCfg() {
@@ -407,7 +408,7 @@ function saveCfg() {
 }
 
 // ============ State ============
-var data = null, sha = null, baseVersion = 0, dirty = false;
+var data = null, baseVersion = 0, dirty = false;
 // Last clean shared state. Web Admin publishes the same entity deltas as Android MDM.
 var sharedBaseData = null;
 var mdmRevisionCursor = 0, mdmAutoSyncTimer = null, mdmAutoSyncBusy = false, mdmSyncError = null;
@@ -631,16 +632,6 @@ function esc(s) {
 function toast(msg) {
   var t = $('#toast'); t.textContent = msg; t.style.display = 'block';
   clearTimeout(toast._t); toast._t = setTimeout(function () { t.style.display = 'none'; }, 3500);
-}
-function b64encode(str) {
-  var bytes = new TextEncoder().encode(str), bin = '';
-  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
-}
-function b64decode(b64) {
-  var bin = atob(b64.replace(/\s/g, '')), bytes = new Uint8Array(bin.length);
-  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new TextDecoder().decode(bytes);
 }
 function pname(p) { var n=(p&&p.name)||{};return n.en||n.hi||n.pa||(p&&p.id)||''; }
 function placeById(id) { return data.places.find(function(p){return p.id===id;}); }
@@ -1320,7 +1311,7 @@ function viewAnalytics() {
     '<input type="date" id="analyticsTo" aria-label="End date" style="max-width:180px;display:none"></div>' +
     '<div class="stats" id="analyticsCards">' +
     analyticsStat('—','App installations','Unique installation IDs recorded since tracking was added') + analyticsStat('—','App sessions','Waiting for analytics data') +
-    analyticsStat('—','Bus searches','Waiting for analytics data') + analyticsStat('—','Contact actions','Waiting for analytics data') + analyticsStat('—','Ad earnings','Start.io reporting not connected') + '</div>' +
+    analyticsStat('—','Bus searches','Waiting for analytics data') + analyticsStat('—','Contact actions','Waiting for analytics data') + analyticsStat('—','Ad earnings','AdMob reporting not connected') + '</div>' +
     '<div class="row2"><div class="card"><h2>Activity over time</h2><p class="muted">Daily app events</p><div class="analytics-empty"><div class="analytics-bars">' +
     '<i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>Tracking not configured</b><p class="muted">Bars will show real daily totals after the app sends analytics events.</p></div></div>' +
     '<div class="card"><h2>Usage by section</h2><p class="muted">Bus activity</p><div class="analytics-empty"><div class="analytics-bars horizontal">' +
@@ -1328,8 +1319,8 @@ function viewAnalytics() {
     '<div class="card"><h2>Planned reports</h2><div class="row2"><div><b>Bus</b><p class="muted">From–To searches, stand searches, popular routes, no-result searches and route detail views.</p></div>' +
     '<div><b>Community</b><p class="muted">Add Route, route corrections, feedback, and Add Bus submissions by review status.</p></div>' +
     '<div><b>Coverage &amp; quality</b><p class="muted">Areas with low service coverage and frequently corrected information.</p></div>' +
-    '<div><b>Ads performance</b><p class="muted">Impressions, clicks and estimated earnings when Start.io reporting is integrated.</p></div></div>' +
-    '<div class="alert warn">Usage cards and charts load recorded app events. Start.io earnings require a separate official reporting integration.</div></div>';
+    '<div><b>Ads performance</b><p class="muted">Impressions, clicks and estimated earnings when AdMob reporting is integrated.</p></div></div>' +
+    '<div class="alert warn">Usage cards and charts load recorded app events. AdMob earnings require a separate official reporting integration.</div></div>';
 }
 async function loadAnalytics() {
   var cards = document.getElementById('analyticsCards');
@@ -1348,7 +1339,7 @@ async function loadAnalytics() {
   if (period && period.value !== 'custom') start.setHours(0,0,0,0);
   var daily = document.getElementById('analyticsDaily'), sections = document.getElementById('analyticsSections');
   if (!sbToken) {
-    cards.innerHTML = analyticsStat('—','App installations','Admin sign-in required') + analyticsStat('—','App sessions','Admin sign-in required') + analyticsStat('—','Bus searches','Admin sign-in required') + analyticsStat('—','Contact actions','Admin sign-in required') + analyticsStat('—','Ad earnings','Start.io reporting not connected');
+    cards.innerHTML = analyticsStat('—','App installations','Admin sign-in required') + analyticsStat('—','App sessions','Admin sign-in required') + analyticsStat('—','Bus searches','Admin sign-in required') + analyticsStat('—','Contact actions','Admin sign-in required') + analyticsStat('—','Ad earnings','AdMob reporting not connected');
     if (daily) daily.innerHTML = '<b>Sign in to view analytics</b>';
     if (sections) sections.innerHTML = '<b>Sign in to view analytics</b>';
     return;
@@ -1374,7 +1365,7 @@ async function loadAnalytics() {
       analyticsStat(Object.keys(unique).length,'App sessions','Unique random app sessions in selected period') +
       analyticsStat(bus,'Bus searches','From–To and stand searches')
       analyticsStat(contacts,'Contact actions','Recorded contact taps') +
-      analyticsStat('—','Ad earnings','Connect official Start.io reporting');
+      analyticsStat('—','Ad earnings','Connect official AdMob reporting');
     if (daily) {
       var buckets = {}, cursor = new Date(start); cursor.setHours(0,0,0,0);
       while (cursor <= now) { var key = cursor.getFullYear()+'-'+String(cursor.getMonth()+1).padStart(2,'0')+'-'+String(cursor.getDate()).padStart(2,'0'); buckets[key]=0; cursor.setDate(cursor.getDate()+1); }
@@ -1522,7 +1513,7 @@ var adSubtab = 'my';
 var adConfig = {
   my:{enabled:false,category:'general',poster_url:'',start_date:'',end_date:'',close_delay:3,
     route_id:'',target_kind:'route',target_id:'',call_enabled:false,phone:'',link_enabled:false,url:'',link_label:'Learn more',check_route_enabled:false,cta_label:'Check Route'},
-  startio:{app_id:'',banner_enabled:false,main_banner_enabled:false,book_bus_banner_enabled:false,
+  admob:{banner_unit_id:'',native_unit_id:'',interstitial_unit_id:'',banner_enabled:false,main_banner_enabled:false,book_bus_banner_enabled:false,
     native_enabled:false,results_native_enabled:false,fullscreen_enabled:false,bus_every:4,fullscreen_every:5}
 };
 function adEscape(v){return esc(v==null?'':String(v));}
@@ -1555,8 +1546,8 @@ function refreshAdActionLabel(){var select=document.getElementById('ad_target_id
 function adChecked(v){return v?' checked':'';}
 function viewAdvertisement(){
   var my=adSubtab==='my';
-  var c=my?adConfig.my:adConfig.startio;
-  var html='<div class="ad-workspace"><div class="ad-tabs"><button class="btn '+(my?'primary':'')+'" data-act="ad-subtab" data-sub="my">My Advertisement</button><button class="btn '+(!my?'primary':'')+'" data-act="ad-subtab" data-sub="startio">Start.io Ads</button></div>';
+  var c=my?adConfig.my:adConfig.admob;
+  var html='<div class="ad-workspace"><div class="ad-tabs"><button class="btn '+(my?'primary':'')+'" data-act="ad-subtab" data-sub="my">My Advertisement</button><button class="btn '+(!my?'primary':'')+'" data-act="ad-subtab" data-sub="admob">AdMob Ads</button></div>';
   if(my){
     html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Campaign setup</h2><p class="muted">A framed, dismissible poster shown at app launch — not a fullscreen ad.</p></div><label class="ad-check"><input id="ad_my_enabled" type="checkbox"'+adChecked(c.enabled)+'> Campaign enabled</label></div>'+
     '<div class="ad-grid"><div class="ad-field"><label>Campaign category</label><select id="ad_category" onchange="refreshAdTargets()"><option value="general" '+(c.category==='general'?'selected':'')+'>General promotion</option><option value="bus_route" '+((c.category==='bus_route'||(c.category==='bus_operator'&&c.target_kind==='route'))?'selected':'')+'>Bus Route</option><option value="bus_operator" '+((c.category==='bus_operator'&&c.target_kind!=='route')?'selected':'')+'>Bus Operator / Book Bus</option></select></div><div class="ad-field"><label>Close button delay</label><select id="ad_close_delay"><option value="2" '+(Number(c.close_delay)===2?'selected':'')+'>2 seconds</option><option value="3" '+(Number(c.close_delay||3)===3?'selected':'')+'>3 seconds (recommended)</option><option value="4" '+(Number(c.close_delay)===4?'selected':'')+'>4 seconds</option></select></div></div>'+
@@ -1570,8 +1561,10 @@ function viewAdvertisement(){
     '<div class="ad-field"><label>Custom link button label</label><input id="ad_link_label" value="'+adEscape(c.link_label||'Learn more')+'" placeholder="Learn more"></div></div>'+
     '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-my">Save campaign</button></div></section>';
   }else{
-    html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Start.io ad controls</h2><p class="muted">Use the App ID from your Start.io publisher portal. Start.io uses one App ID for these formats; Google Ad Unit IDs are not used.</p></div></div>'+
-    '<div class="ad-field"><label>Start.io App ID</label><input id="ad_startio_app_id" value="'+adEscape(c.app_id)+'" placeholder="App ID from portal.start.io"></div>'+
+    html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Google AdMob ad controls</h2><p class="muted">Create the app and one ad unit per format in your AdMob account, then paste each Ad Unit ID below. Leave a field empty to use Google test ads (test ads appear only in debug builds; release builds show nothing until a real ID is entered). The AdMob App ID itself is set in the app, not here.</p></div></div>'+
+    '<div class="ad-grid"><div class="ad-field"><label>Banner Ad Unit ID</label><input id="ad_banner_unit_id" value="'+adEscape(c.banner_unit_id)+'" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"></div>'+
+    '<div class="ad-field"><label>Native Ad Unit ID</label><input id="ad_native_unit_id" value="'+adEscape(c.native_unit_id)+'" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"></div>'+
+    '<div class="ad-field"><label>Interstitial Ad Unit ID</label><input id="ad_interstitial_unit_id" value="'+adEscape(c.interstitial_unit_id)+'" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"></div></div>'+
     '<div class="ad-subhead">Banner ads</div><div class="ad-grid">'+
     '<div><label class="ad-check"><input id="ad_banner_enabled" type="checkbox"'+adChecked(c.banner_enabled)+'> Enable Banner format</label><p class="muted ad-help">Master switch for all banner placements.</p></div>'+
     '<div><label class="ad-check"><input id="ad_main_banner_enabled" type="checkbox"'+adChecked(c.main_banner_enabled)+'> Main screen bottom banner</label><label class="ad-check"><input id="ad_book_bus_banner_enabled" type="checkbox"'+adChecked(c.book_bus_banner_enabled)+'> Book Bus screen banner</label></div></div>'+
@@ -1581,8 +1574,8 @@ function viewAdvertisement(){
     '<div class="ad-subhead">Full-screen ads</div><div class="ad-grid">'+
     '<div><label class="ad-check"><input id="ad_fullscreen_enabled" type="checkbox"'+adChecked(c.fullscreen_enabled)+'> Enable Full-screen / Interstitial ads</label><p class="muted ad-help">Off by default. When enabled, navigation continues if no ad is available.</p></div>'+
     '<div class="ad-field"><label>Show after this many route opens</label><input id="ad_fullscreen_every" type="number" min="2" max="20" value="'+adEscape(c.fullscreen_every||5)+'"></div></div>'+
-    '<p class="muted ad-help" style="margin-top:12px">Ads remain inactive until a valid App ID is entered and the relevant switches are enabled. Test ads are enabled only in Debug builds.</p>'+
-    '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-startio">Save Start.io settings</button></div></section>';
+    '<p class="muted ad-help" style="margin-top:12px">Ads stay off until the relevant switches are enabled. Users in regions that require consent see the Google consent form before any ad loads.</p>'+
+    '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-admob">Save AdMob settings</button></div></section>';
   }
   return html+'</div>';
 }
@@ -1593,7 +1586,7 @@ async function loadAdConfig(){
   if(rows&&rows[0]&&rows[0].config){
     var saved=rows[0].config;
     adConfig.my=Object.assign({},adConfig.my,saved.my||{});
-    adConfig.startio=Object.assign({},adConfig.startio,saved.startio||saved.admob||{});
+    adConfig.admob=Object.assign({},adConfig.admob,saved.admob||saved.startio||{});
   }
 }
 async function saveAdConfig(){
@@ -1780,53 +1773,6 @@ async function sbLogin(email, password) {
 async function loadSubs() {
   subs = await sbFetch('/rest/v1/route_submissions?select=*&order=created_at.desc&limit=300');
 }
-function viewRouteReview() {
-  if (!sbToken) {
-    return '<div class="card"><h2>Supabase sign-in</h2><p class="muted">Sign in with the admin user you created in Supabase (Authentication → Users). The password is never stored.</p>' +
-      '<label>Project URL</label><input id="sb_url" value="' + esc(cfg.sbUrl) + '" placeholder="https://xxxx.supabase.co">' +
-      '<label>Anon (public) key</label><input id="sb_key" value="' + esc(cfg.sbKey) + '">' +
-      '<div class="row2"><div><label>Email</label><input id="sb_email" value="' + esc(cfg.sbEmail) + '"></div>' +
-      '<div><label>Password</label><input id="sb_pass" type="password"></div></div>' +
-      '<div class="dlg-foot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn primary" data-act="sb-login">Sign in</button><button class="btn" data-act="sb-connection-test">Connection Test</button></div><p class="muted" style="font-size:12px">Connection Test checks project reachability and Auth health without using your password.</p></div>';
-  }
-  if (!subs) return '<div class="card"><p class="muted">Loading...</p></div>' + (subsError ? '<div class="alert err">' + esc(subsError) + '</div>' : '');
-  var counts = { pending:0, reviewed:0, approved:0, rejected:0, deleted:0 };
-  subs.forEach(function (s) { if (counts[s.status] !== undefined) counts[s.status]++; });
-  var head = '<div class="toolbar"><span class="grow muted">Approved and rejected submissions remain in their own lists.</span>' +
-    '<button class="btn" data-act="sb-refresh">Refresh</button><button class="btn" data-act="sb-logout">Sign out</button></div>' +
-    '<div class="toolbar" style="flex-wrap:wrap">' + ['pending','reviewed','approved','rejected','deleted'].map(function (st) {
-      var label = st === 'pending' ? 'Pending' : st === 'reviewed' ? 'Reviewed' : st === 'approved' ? 'Approved' : st === 'rejected' ? 'Rejected' : 'Deleted';
-      return '<button class="btn ' + (reviewStatus === st ? 'primary' : '') + '" data-act="review-status" data-status="' + st + '">' + label + ' (' + counts[st] + ')</button>';
-    }).join('') + '</div>';
-  var filtered = subs.map(function (s, index) { return { s:s, index:index }; }).filter(function (x) { return x.s.status === reviewStatus; });
-  if (!filtered.length) return head + '<div class="card"><p class="muted">No ' + esc(reviewStatus) + ' submissions.</p></div>';
-  return head + filtered.map(function (x) {
-    var s = x.s, i = x.index;
-    var stops = (s.stops || []).map(function (st) {
-      var offset = Number(st.day_offset || 0), dayText = offset ? ' <span class="badge">Day +' + offset + '</span>' : '';
-      var stopName = st.name || (pname(placeById(st.place)) || st.place || '');
-      if (st.name && st.after_place) dayText += ' <span class="badge">NEW stop after ' + esc(pname(placeById(st.after_place)) || st.after_place) + '</span>';
-      return '<div class="stoprow" style="display:flex;gap:8px;align-items:center;margin:4px 0"><input class="grow sub_name" aria-label="Stop name" data-place="' + esc(st.place || '') + '" value="' + esc(stopName) + '" ' + (s.status !== 'pending' && s.status !== 'reviewed' ? 'disabled' : '') + '>' + dayText +
-        '<input type="time" class="sub_t" data-place="' + esc(st.place || '') + '" value="' + esc(st.time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' && s.status !== 'reviewed' ? 'disabled' : '') + '></div>';
-    }).join('');
-    var actions = (s.status === 'pending' ? '<button class="btn primary" data-act="sb-approve" data-i="' + i + '">Open</button><button class="btn danger" data-act="sb-reject" data-i="' + i + '">Reject</button>' :
-      s.status === 'reviewed' ? '<span class="badge">Reviewed</span><button class="btn primary" data-act="sb-approve" data-i="' + i + '">Open</button><button class="btn" data-act="sb-status-pending" data-i="' + i + '">Move to Pending</button>' :
-      s.status === 'deleted' ? '<span class="badge gray">Deleted</span><button class="btn" data-act="sb-status-pending" data-i="' + i + '">Restore</button>' :
-      s.status === 'approved' ? '<span class="badge">Approved</span><button class="btn" data-act="sb-status-pending" data-i="' + i + '">Move to Pending</button>' : '<span class="badge gray">Rejected</span><button class="btn" data-act="sb-status-pending" data-i="' + i + '">Move to Pending</button>') +
-      '<button class="btn danger" data-act="sb-delete" data-i="' + i + '">Delete</button>';
-    var fromLabel = s.from_text || pname(placeById(s.from_id)) || s.from_id || '(missing From)';
-    var toLabel = s.to_text || pname(placeById(s.to_id)) || s.to_id || '(missing To)';
-    var requestTitle = s.submission_type === 'edit_existing_route' ? ' <span class="badge">Edit existing route #' + esc(s.route_id) + '</span>' : (s.submission_type === 'new_route' ? ' <span class="badge">New free-text route</span>' : '');
-    return '<div class="card" data-sub="' + i + '"><h2>' + esc(fromLabel) + ' &rarr; ' + esc(toLabel) + requestTitle + '</h2>' +
-      '<p class="muted">Sent ' + esc(new Date(s.created_at).toLocaleString()) + ' · Phone <b>' + esc(s.phone) + '</b>' +
-      '</p>' +
-      '<label>From / starting place</label><input class="sub_from" value="' + esc(fromLabel === '(missing From)' ? '' : fromLabel) + '" ' + (s.status !== 'pending' && s.status !== 'reviewed' ? 'disabled' : '') + '>' +
-      '<label>To / destination</label><input class="sub_to" value="' + esc(toLabel === '(missing To)' ? '' : toLabel) + '" ' + (s.status !== 'pending' && s.status !== 'reviewed' ? 'disabled' : '') + '>' +
-      '<label>Service name</label><input class="sub_service" value="' + esc(s.service_name || '') + '" ' + (s.status !== 'pending' && s.status !== 'reviewed' ? 'disabled' : '') + '>' +
-      '<label>Departure time</label><input type="time" class="sub_start" value="' + esc(s.start_time || '') + '" style="max-width:140px" ' + (s.status !== 'pending' && s.status !== 'reviewed' ? 'disabled' : '') + '>' +
-      '<label>Stop names and times (blank time = unknown)</label>' + stops + '<div class="dlg-foot" style="justify-content:flex-start;gap:8px">' + actions + '</div></div>';
-  }).join('');
-}
 function subCardValues(i) {
   var card = document.querySelector('[data-sub="' + i + '"]'), times = [];
   // The list can be re-rendered while a review click is being handled. Never
@@ -1881,17 +1827,6 @@ function warnNearSubmittedPlaces(names) {
   toast('Similar place name found: ' + warnings.join('; ') + '. Add a state suffix for a different location, or select the existing Place ID.');
   return false;
 }
-function ensureSubmittedPlace(rawName) {
-  var name = String(rawName || '').trim();
-  var lower = name.toLowerCase().replace(/\s+/g, ' ');
-  var existing = data.places.find(function (p) { return Object.keys(p.name || {}).some(function(k){ return String(p.name[k] || '').trim().toLowerCase().replace(/\s+/g, ' ') === lower; }); });
-  if (existing) return existing.id;
-  var id = makeId('place_user_', name, function (candidate) { return !!placeById(candidate); });
-  data.places.push({ id:id, kind:'place', name:{ en:name } });
-  setDirty(true);
-  return id;
-}
-
 // ============ Community submissions + Book Bus operators ============
 async function loadCommunity() {
   var specs = [
@@ -1911,7 +1846,7 @@ async function loadCommunity() {
     }
   }
   community._failed = failed;
-  if (failed.length) toast('Some tables could not load: ' + failed.join('; ') + '. Run supabase/fix_app_admin_sync.sql in Supabase SQL Editor, then Refresh.');
+  if (failed.length) toast('Some tables could not load: ' + failed.join('; ') + '. Check the table and its permissions in Supabase, then Refresh.');
 }
 function viewSupabaseSignIn() {
   return '<div class="bus-page-head"><div><h2>Supabase sign-in</h2><p class="muted">Sign in with the admin account to load and review submitted information.</p></div></div>' +
@@ -3194,7 +3129,7 @@ document.addEventListener('click', async function (e) {
       toast('App popup and ticker settings saved. Terms & Conditions were saved unchanged.'); render();
     }
 
-    else if (act === 'ad-subtab') { adSubtab=b.getAttribute('data-sub')==='startio'?'startio':'my'; render(); }
+    else if (act === 'ad-subtab') { adSubtab=b.getAttribute('data-sub')==='admob'?'admob':'my'; render(); }
     else if (act === 'ad-save-my') {
       adConfig.my.enabled=!!document.getElementById('ad_my_enabled').checked;
       adConfig.my.category=document.getElementById('ad_category').value;
@@ -3229,17 +3164,19 @@ document.addEventListener('click', async function (e) {
       if(adConfig.my.link_enabled&&!/^https?:\/\//i.test(adConfig.my.url))throw new Error('Enter a valid http:// or https:// URL.');
       await saveAdConfig();toast('My Advertisement settings saved.');render();
     }
-    else if (act === 'ad-save-startio') {
-      adConfig.startio.app_id=document.getElementById('ad_startio_app_id').value.trim();
-      adConfig.startio.banner_enabled=document.getElementById('ad_banner_enabled').checked;
-      adConfig.startio.main_banner_enabled=document.getElementById('ad_main_banner_enabled').checked;
-      adConfig.startio.book_bus_banner_enabled=document.getElementById('ad_book_bus_banner_enabled').checked;
-      adConfig.startio.native_enabled=document.getElementById('ad_native_enabled').checked;
-      adConfig.startio.results_native_enabled=document.getElementById('ad_results_native_enabled').checked;
-      adConfig.startio.fullscreen_enabled=document.getElementById('ad_fullscreen_enabled').checked;
-      adConfig.startio.bus_every=Math.max(1,Math.min(20,parseInt(document.getElementById('ad_bus_every').value,10)||4));
-      adConfig.startio.fullscreen_every=Math.max(2,Math.min(20,parseInt(document.getElementById('ad_fullscreen_every').value,10)||5));
-      await saveAdConfig();toast('Start.io settings saved.');render();
+    else if (act === 'ad-save-admob') {
+      adConfig.admob.banner_unit_id=document.getElementById('ad_banner_unit_id').value.trim();
+      adConfig.admob.native_unit_id=document.getElementById('ad_native_unit_id').value.trim();
+      adConfig.admob.interstitial_unit_id=document.getElementById('ad_interstitial_unit_id').value.trim();
+      adConfig.admob.banner_enabled=document.getElementById('ad_banner_enabled').checked;
+      adConfig.admob.main_banner_enabled=document.getElementById('ad_main_banner_enabled').checked;
+      adConfig.admob.book_bus_banner_enabled=document.getElementById('ad_book_bus_banner_enabled').checked;
+      adConfig.admob.native_enabled=document.getElementById('ad_native_enabled').checked;
+      adConfig.admob.results_native_enabled=document.getElementById('ad_results_native_enabled').checked;
+      adConfig.admob.fullscreen_enabled=document.getElementById('ad_fullscreen_enabled').checked;
+      adConfig.admob.bus_every=Math.max(1,Math.min(20,parseInt(document.getElementById('ad_bus_every').value,10)||4));
+      adConfig.admob.fullscreen_every=Math.max(2,Math.min(20,parseInt(document.getElementById('ad_fullscreen_every').value,10)||5));
+      await saveAdConfig();toast('AdMob settings saved.');render();
     }
     else if (act === 'ad-upload-poster') { /* file input is handled by change listener */ }
     else if (act === 'ad-delete-poster') {
