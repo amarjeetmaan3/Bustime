@@ -109,3 +109,11 @@ dependencies {
     // Coroutines (Background tasks)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
+
+gradle.taskGraph.whenReady {
+    if (!hasReleaseKey && allTasks.any { it.name.contains("Release", ignoreCase = true) }) {
+        throw GradleException(
+            "Release builds require RELEASE_KEYSTORE_PATH, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, and RELEASE_KEY_PASSWORD."
+        )
+    }
+}
