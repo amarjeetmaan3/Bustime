@@ -4,8 +4,7 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-// वर्ज़न: GitHub Actions run_number से आता है (-PappVersionCode=N), ताकि अपडेटर नया/पुराना पहचान सके
-// Update-check test trigger: build version is assigned by the Auto Build and Release workflow.
+// वर्ज़न: GitHub Actions run_number से आता है (-PappVersionCode=N), ताकि हर Play Store build का versionCode बढ़ता रहे.
 val appVersionCode: Int = (project.findProperty("appVersionCode") as String?)?.toIntOrNull() ?: 1
 
 // Store वाली रिलीज़ की-स्टोर: सिर्फ़ GitHub Secrets से आती है, कोड में कोई पासवर्ड नहीं
