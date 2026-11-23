@@ -1,6 +1,7 @@
 package com.bustime.app.ui.mdm
 
 import android.content.Intent
+import android.net.Uri
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
@@ -22,7 +23,7 @@ import com.bustime.app.ui.common.applyBouncyPress
 import com.bustime.app.utils.LanguageHelper
 import com.google.android.material.button.MaterialButton
 
-/** Settings landing page. Update checking opens a dedicated version-details screen. */
+/** Settings landing page. Check Updates opens Bustime's Google Play listing. */
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,7 +119,7 @@ class SettingsActivity : AppCompatActivity() {
             R.drawable.bg_squircle_indigo,
             primary
         ) {
-            startActivity(Intent(this@SettingsActivity, UpdateDetailsActivity::class.java))
+            openPlayStoreListing()
         }
         root.addView(MaterialButton(this).apply {
             text = getString(R.string.back)
@@ -132,6 +133,16 @@ class SettingsActivity : AppCompatActivity() {
 
         outer.addView(ScrollView(this).apply { addView(root) }, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(outer)
+    }
+
+    private fun openPlayStoreListing() {
+        val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))
+        try {
+            startActivity(marketIntent)
+        } catch (_: Exception) {
+            val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$packageName"))
+            startActivity(webIntent)
+        }
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
