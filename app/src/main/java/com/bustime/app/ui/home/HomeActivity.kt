@@ -22,7 +22,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.bustime.app.R
 import com.bustime.app.data.repository.AppRepository
-import com.bustime.app.ui.updater.GitHubUpdateChecker
 import com.bustime.app.utils.LanguageHelper
 import com.bustime.app.utils.AnalyticsHelper
 import kotlinx.coroutines.launch
@@ -61,10 +60,6 @@ class HomeActivity : AppCompatActivity() {
         AnalyticsHelper.logFirstInstall(this)
         AnalyticsHelper.logAppOpened(this)
         com.bustime.app.ads.CustomPopupManager.showLocalSponsorshipAd(this)
-
-
-        // अपडेटर चेक करना
-        GitHubUpdateChecker(this).checkForLatestUpdate()
 
         // ऐप खुलने / वापस foreground में आने पर quietly check for new data.
         // कोई polling loop नहीं; पुराना local data offline में उपलब्ध रहता है.
