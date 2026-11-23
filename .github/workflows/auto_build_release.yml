@@ -16,8 +16,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # true तभी होगा जब GitHub Secrets में RELEASE_KEYSTORE_BASE64 डाली हो
-      HAS_RELEASE_KEY: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+      # true तभी होगा जब चारों Release signing secrets configured हों
+      HAS_RELEASE_KEY: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' && secrets.RELEASE_STORE_PASSWORD != '' && secrets.RELEASE_KEY_ALIAS != '' && secrets.RELEASE_KEY_PASSWORD != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -159,7 +159,12 @@ jobs:
           set -euo pipefail
           AAB="$(find app/build/outputs/bundle/release -maxdepth 1 -name '*.aab' -print -quit)"
           test -n "$AAB"
-          jarsigner -verify "$AAB" >/dev/null
+          VERIFY_OUTPUT="$(jarsigner -verify "$AAB" 2>&1)"
+          printf "%s\\n" "$VERIFY_OUTPUT"
+          if ! printf "%s" "$VERIFY_OUTPUT" | grep -qi "jar verified"; then
+            echo "ERROR: AAB is not signed with the configured release key."
+            exit 1
+          fi
           echo "Verified signed AAB: $AAB"
 
       - name: Publish Play Store AAB release
