@@ -264,34 +264,16 @@ class StopListEditor(
             }
             row.addView(name, LinearLayout.LayoutParams(0, dp(44), 1f))
 
-            fun styleTimeChip(tv: TextView, value: String) {
-                val empty = value.isBlank()
-                tv.text = if (empty) "" else value
-                tv.contentDescription = if (empty) activity.getString(R.string.ar_tap_time) else value
-                tv.setCompoundDrawables(null, null, null, null)
-                if (empty) {
-                    tv.setTextColor(0xff153456.toInt())
-                    tv.background = GradientDrawable().apply {
-                        setColor(0xfff4f8fd.toInt())
-                        setStroke(dp(1), 0xffa9c3df.toInt())
-                        cornerRadius = dp(12).toFloat()
-                    }
-                } else {
-                    tv.setTextColor(0xff153456.toInt())
-                    tv.background = GradientDrawable().apply {
-                        setColor(0xffeaf2fb.toInt())
-                        setStroke(dp(1), 0xffb9cfe6.toInt())
-                        cornerRadius = dp(12).toFloat()
-                    }
-                }
-            }
-
             val time = LinearLayout(activity).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER
                 setPadding(dp(5), dp(4), dp(5), dp(4))
-                styleTimeChip(TextView(activity), timeOf(draft).orEmpty())
                 val currentTime = timeOf(draft)
+                background = GradientDrawable().apply {
+                    setColor(if (currentTime.isNullOrBlank()) 0xfff4f8fd.toInt() else 0xffeaf2fb.toInt())
+                    setStroke(dp(1), if (currentTime.isNullOrBlank()) 0xffa9c3df.toInt() else 0xffb9cfe6.toInt())
+                    cornerRadius = dp(12).toFloat()
+                }
                 if (currentTime.isNullOrBlank()) {
                     addView(ClockGlyphView(activity), LinearLayout.LayoutParams(dp(27), dp(27)))
                 } else {
@@ -315,7 +297,7 @@ class StopListEditor(
                         val ok = validateTimes?.invoke(timesWith(index, value)) ?: true
                         if (ok) {
                             draft.put("time", value)
-                            styleTimeChip(this, value)
+                            render()
                         }
                     }, h, m, true)
                     dialog.setButton(DialogInterface.BUTTON_NEUTRAL, activity.getString(R.string.ar_clear)) { _, _ ->
