@@ -1635,16 +1635,11 @@ async function deleteAdPoster(){
   toast('Poster deleted and campaign URL cleared.');
 }
 
-var mdmPasswordFormOpen = false;
 function viewSettings() {
   return '<div class="card"><h2>Route data</h2><p class="muted">Places and routes are read from and published directly to the Supabase database. No GitHub file or build is used.</p>' +
     '<div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="save-cfg">Reload data</button></div>' +
     (data ? '<div class="alert ok">Loaded: data version ' + baseVersion + ', ' + data.places.length + ' places, ' + data.routes.length +
             ' routes.</div>' : '') + '</div>' +
-    '<div class="card"><h2>MDM</h2>' +
-    '<button class="btn" data-act="mdm-toggle-form">MDM</button>' +
-    (mdmPasswordFormOpen ? '<div style="max-width:440px;margin-top:14px"><label>New MDM password (minimum 8 characters)</label><input id="mdm_password" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter a new MDM password"><label>Confirm password</label><input id="mdm_password_confirm" type="password" autocomplete="new-password" maxlength="256" placeholder="Enter it again"><div class="dlg-foot" style="justify-content:flex-start"><button class="btn primary" data-act="mdm-save-password">Save MDM password</button></div></div>' : '') +
-    '</div>' +
     '<div class="card"><h2>App Updater</h2><p class="muted">Control whether the Android app checks for new GitHub releases and shows the new-version popup. The saved setting applies across admin sessions and page refreshes.</p>' +
     '<div class="updater-setting-row"><div class="updater-setting-copy"><strong>Automatic app update prompts</strong><p id="settings_updater_status">'+(contentSettings.update_notifications_enabled===true?'ON — users can receive new-version prompts.':'OFF — users will not receive new-version prompts.')+'</p></div>' +
     '<button id="settings_updater_toggle" type="button" class="updater-switch '+(contentSettings.update_notifications_enabled===true?'on':'off')+'" role="switch" aria-checked="'+(contentSettings.update_notifications_enabled===true?'true':'false')+'" data-act="updater-toggle"><span class="updater-switch-track"><span class="updater-switch-knob"></span></span><strong>'+(contentSettings.update_notifications_enabled===true?'ON':'OFF')+'</strong></button></div>' +
@@ -2577,24 +2572,6 @@ document.addEventListener('click', async function (e) {
     }
     else if (act === 'close') { editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render(); }
     else if (act === 'open-publish') { publishOpen = true; render(); }
-    else if (act === 'mdm-toggle-form') { mdmPasswordFormOpen = !mdmPasswordFormOpen; render(); }
-    else if (act === 'mdm-save-password') {
-      var p1 = val('mdm_password'), p2 = val('mdm_password_confirm');
-      if (p1.length < 8) { toast('Use at least 8 characters for the MDM password.'); return; }
-      if (p1 !== p2) { toast('The two passwords do not match.'); return; }
-      if (!cfg.sbUrl || !cfg.sbKey || !sbToken) { toast('Sign in to Supabase first.'); return; }
-      b.disabled = true; b.textContent = 'Saving…';
-      try {
-        var mr = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken },
-          body: JSON.stringify({ action: 'set', password: p1 })
-        });
-        var mj = await mr.json().catch(function(){ return {}; });
-        if (!mr.ok || !mj.ok) throw new Error(mj.error || ('HTTP ' + mr.status));
-        mdmPasswordFormOpen = false; render(); toast('MDM password saved securely.');
-      } catch (err) { toast('Could not save MDM password: ' + (err.message || err)); b.disabled = false; b.textContent = 'Save MDM password'; }
-    }
     else if (act === 'save-cfg') {
       b.disabled = true; b.textContent = 'Loading...';
       try { await loadData(); toast('Data loaded'); tab = 'dashboard'; }
