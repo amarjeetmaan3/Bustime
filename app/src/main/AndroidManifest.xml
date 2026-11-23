@@ -2,10 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- ऐप के अंदर से अपडेट इंस्टॉल करने के लिए। Store वाली रिलीज़ में अपडेटर बंद करते समय इसे हटाना है -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <!-- CALL_PHONE हटा दिया: ड्राइवर को कॉल ACTION_DIAL (डायलर खोलना) से होगी, जिसे परमिशन नहीं चाहिए -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />    <!-- CALL_PHONE हटा दिया: ड्राइवर को कॉल ACTION_DIAL (डायलर खोलना) से होगी, जिसे परमिशन नहीं चाहिए -->
 
     <application
         android:name=".BustimeApp"
@@ -23,15 +20,6 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
 
         <!-- ऐप के अंदर चुनी भाषा पुराने Android (13 से नीचे) में भी याद रखने के लिए -->
         <service
@@ -52,7 +40,6 @@
         <activity android:name=".ui.home.HomeActivity" android:exported="false" />
         <activity android:name=".ui.privacy.PrivacyPolicyActivity" android:exported="false" />
         <activity android:name=".ui.mdm.SettingsActivity" android:exported="false" />
-        <activity android:name=".ui.mdm.UpdateDetailsActivity" android:exported="false" />
 
         <activity android:name=".ui.search.SearchActivity" android:exported="false" />
         <!-- जगह चुनने का पूरा पेज: कीबोर्ड खुलते ही सूची उसके ऊपर सिकुड़कर दिखती है -->
