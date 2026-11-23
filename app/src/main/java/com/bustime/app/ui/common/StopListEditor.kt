@@ -46,6 +46,47 @@ class StopListEditor(
     private val removeWarning: String? = null,
     private val validateTimes: ((List<String?>) -> Boolean)? = null
 ) {
+    /** Same custom analog clock glyph used by the new External Admin app. */
+    private class ClockGlyphView(context: android.content.Context) : android.view.View(context) {
+        private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+        override fun onDraw(canvas: android.graphics.Canvas) {
+            super.onDraw(canvas)
+            val cx = width / 2f
+            val cy = height / 2f
+            val radius = minOf(width, height) * 0.43f
+            paint.style = android.graphics.Paint.Style.FILL
+            paint.color = 0xffeaf2fb.toInt()
+            canvas.drawCircle(cx, cy, radius, paint)
+
+            paint.style = android.graphics.Paint.Style.STROKE
+            paint.strokeWidth = resources.displayMetrics.density * 1.8f
+            paint.color = 0xff245b8f.toInt()
+            canvas.drawCircle(cx, cy, radius, paint)
+
+            for (i in 0 until 12) {
+                val angle = Math.PI * i / 6.0
+                val outer = radius * 0.78f
+                val inner = radius * (if (i % 3 == 0) 0.57f else 0.68f)
+                paint.strokeWidth = resources.displayMetrics.density * (if (i % 3 == 0) 1.8f else 1.1f)
+                canvas.drawLine(
+                    cx + Math.sin(angle).toFloat() * inner,
+                    cy - Math.cos(angle).toFloat() * inner,
+                    cx + Math.sin(angle).toFloat() * outer,
+                    cy - Math.cos(angle).toFloat() * outer,
+                    paint
+                )
+            }
+
+            paint.strokeCap = android.graphics.Paint.Cap.ROUND
+            paint.strokeWidth = resources.displayMetrics.density * 2.5f
+            canvas.drawLine(cx, cy, cx, cy - radius * 0.48f, paint)
+            canvas.drawLine(cx, cy, cx + radius * 0.38f, cy + radius * 0.20f, paint)
+            paint.style = android.graphics.Paint.Style.FILL
+            canvas.drawCircle(cx, cy, resources.displayMetrics.density * 2.2f, paint)
+        }
+    }
+
     private fun dp(n: Int): Int = (n * activity.resources.displayMetrics.density).toInt()
 
     fun newDraft(): JSONObject = JSONObject().put("place_id", JSONObject.NULL).put("name", "")
@@ -227,34 +268,42 @@ class StopListEditor(
                 val empty = value.isBlank()
                 tv.text = if (empty) "" else value
                 tv.contentDescription = if (empty) activity.getString(R.string.ar_tap_time) else value
+                tv.setCompoundDrawables(null, null, null, null)
                 if (empty) {
-                    val clock = ContextCompat.getDrawable(activity, R.drawable.ic_time_outline)?.mutate()
-                    clock?.setTint(textMuted)
-                    clock?.setBounds(0, 0, dp(17), dp(17))
-                    tv.setCompoundDrawables(clock, null, null, null)
-                    tv.setTextColor(textMuted)
+                    tv.setTextColor(0xff153456.toInt())
                     tv.background = GradientDrawable().apply {
-                        setColor(surfaceColor)
-                        setStroke(dp(1), dividerColor)
-                        cornerRadius = dp(10).toFloat()
+                        setColor(0xfff4f8fd.toInt())
+                        setStroke(dp(1), 0xffa9c3df.toInt())
+                        cornerRadius = dp(12).toFloat()
                     }
                 } else {
-                    tv.setCompoundDrawables(null, null, null, null)
-                    tv.setTextColor(timeChipText)
+                    tv.setTextColor(0xff153456.toInt())
                     tv.background = GradientDrawable().apply {
-                        setColor(timeChipBg)
-                        setStroke(dp(1), timeChipStroke)
-                        cornerRadius = dp(10).toFloat()
+                        setColor(0xffeaf2fb.toInt())
+                        setStroke(dp(1), 0xffb9cfe6.toInt())
+                        cornerRadius = dp(12).toFloat()
                     }
                 }
             }
 
-            val time = TextView(activity).apply {
-                textSize = 12.5f
-                typeface = Typeface.create(fontMono, Typeface.BOLD)
+            val time = LinearLayout(activity).apply {
+                orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER
-                setPadding(dp(6), dp(4), dp(6), dp(4))
-                styleTimeChip(this, timeOf(draft).orEmpty())
+                setPadding(dp(5), dp(4), dp(5), dp(4))
+                styleTimeChip(TextView(activity), timeOf(draft).orEmpty())
+                val currentTime = timeOf(draft)
+                if (currentTime.isNullOrBlank()) {
+                    addView(ClockGlyphView(activity), LinearLayout.LayoutParams(dp(27), dp(27)))
+                } else {
+                    addView(TextView(activity).apply {
+                        text = currentTime
+                        textSize = 13f
+                        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                        gravity = Gravity.CENTER
+                        setTextColor(0xff153456.toInt())
+                    }, LinearLayout.LayoutParams(-1, -1))
+                }
+                contentDescription = currentTime ?: activity.getString(R.string.ar_tap_time)
                 applyBouncyPress()
                 setOnClickListener {
                     val cal = java.util.Calendar.getInstance()
@@ -276,7 +325,7 @@ class StopListEditor(
                     dialog.show()
                 }
             }
-            row.addView(time, LinearLayout.LayoutParams(dp(58), dp(36)).apply { marginStart = dp(4) })
+            row.addView(time, LinearLayout.LayoutParams(dp(74), dp(44)).apply { marginStart = dp(5) })
 
             val add = TextView(activity).apply {
                 text = "+"
