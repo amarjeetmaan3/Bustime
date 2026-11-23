@@ -5,15 +5,8 @@
 -keep class * extends androidx.room.RoomDatabase
 -dontwarn androidx.room.**
 
-# Retrofit
--keep class retrofit2.** { *; }
--keep class okhttp3.** { *; }
--dontwarn retrofit2.**
--dontwarn okhttp3.**
-
-# Gson / Retrofit (release में minify चालू है, इसके बिना API जवाब पार्स नहीं होगा)
+# Gson (used by Supabase sync response parsing)
 -keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*
--keep interface com.bustime.app.data.remote.** { *; }
 -keep class kotlin.coroutines.Continuation
 -keepclassmembers,allowobfuscation class * {
     @com.google.gson.annotations.SerializedName <fields>;
