@@ -746,7 +746,7 @@ async function publishAdminDelete(entityType, entityId, payload) {
 }
 async function recycleRequest(action, id) {
   if (!sbToken) throw new Error('Sign in as the owner admin first.');
-  var body = { action: action };
+  var body = { action: action, source: 'web_admin' };
   if (id != null) body.id = Number(id);
   var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method:'POST',
@@ -807,7 +807,7 @@ function viewHistory() {
   html = '<div class="bus-page-head"><div><h2>History</h2><p class="muted">Every published place and route change, newest first. ' + esc(cur) + '</p></div>' +
     '<button class="btn" data-act="history-refresh">↻ Refresh</button></div>';
   if (s.error) html += '<div class="card"><p class="muted">Could not load history: ' + esc(s.error) + '</p></div>';
-  html += '<div class="tablewrap"><table><thead><tr><th>Rev</th><th>When (IST)</th><th>Type</th><th>Record</th><th>Action</th><th>What changed</th></tr></thead><tbody>' +
+  html += '<div class="tablewrap"><table><thead><tr><th>Rev</th><th>When (IST)</th><th>Source</th><th>Type</th><th>Record</th><th>Action</th><th>What changed</th></tr></thead><tbody>' +
     (s.items.map(function (row) {
       var showRev = row.revision !== last; last = row.revision;
       var op = row.operation === 'delete' ? '<span class="badge gray">delete</span>' : '<span class="badge">upsert</span>';
