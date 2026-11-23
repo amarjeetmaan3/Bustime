@@ -723,14 +723,29 @@ function normalize(d) {
   return o;
 }
 async function loadData() {
-  // Rebuild the current places and routes by replaying the full Supabase change log
-  // (revision 1 is the original baseline). No GitHub file, token or workflow is involved.
-  data = normalize({ dataVersion: 0, snapshotRevision: 0, places: [], routes: [] });
-  mdmRevisionCursor = 0;
-  await mergeMdmPublishedChanges(0);
+  // Load the authoritative full baseline from Supabase Master Data first.
+  // Then replay only changes newer than the snapshot revision.
+  if (!cfg.sbUrl || !cfg.sbKey) throw new Error('Supabase connection is not configured.');
+  var snapshotUrl = cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/bustime-data-sync?action=snapshot';
+  var response = await fetchWithTimeout(snapshotUrl, {
+    headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + cfg.sbKey, Accept: 'application/json', 'Cache-Control': 'no-store' },
+    cache: 'no-store'
+  }, 20000);
+  var snapshot = {};
+  try { snapshot = await response.json(); } catch (_) {}
+  if (!response.ok) throw new Error(snapshot.error || ('Master Data snapshot HTTP ' + response.status));
+  if (!snapshot || !Array.isArray(snapshot.places) || !Array.isArray(snapshot.routes) ||
+      !snapshot.places.length || !snapshot.routes.length || !Number(snapshot.snapshotRevision)) {
+    throw new Error('Supabase Master Data returned an incomplete snapshot.');
+  }
+  data = normalize(snapshot);
+  mdmRevisionCursor = Number(snapshot.snapshotRevision || 0);
+  await mergeMdmPublishedChanges(mdmRevisionCursor);
   if (mdmSyncError) { data = null; throw new Error(mdmSyncError); }
   sharedBaseData = JSON.parse(JSON.stringify({ places: data.places || [], routes: data.routes || [] }));
-  baseVersion = Math.max(74, Number(mdmRevisionCursor || 0)); snapshotVersion = 74; data.dataVersion = baseVersion;
+  snapshotVersion = Number(data.dataVersion || 0);
+  baseVersion = Math.max(snapshotVersion, Number(mdmRevisionCursor || 0));
+  data.dataVersion = baseVersion;
   editing = null; publishOpen = false; setDirty(false);
 }
 async function publishAdminDelete(entityType, entityId, payload) {
