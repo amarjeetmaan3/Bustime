@@ -31,7 +31,9 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                 try {
                     if (dao.countPlaces() == 0) {
                         prefs.edit().remove(KEY_VERSION).remove(KEY_ETAG).remove(KEY_HASH).remove(KEY_REVISION).apply()
-                        importBundled()
+                        // Prefer the current Supabase master snapshot on a fresh install.
+                        // The bundled snapshot remains an offline/temporary fallback.
+                        if (!importRemoteSnapshot()) importBundled()
                     }
                     Unit
                 } catch (e: Exception) {
@@ -76,6 +78,21 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         "Local revision $localRevision / Server revision $serverRevision · Local snapshot v$localVersion / Server snapshot v$serverVersion"
     }
 
+    private suspend fun importRemoteSnapshot(): Boolean {
+        val response = getJson("${Constants.SUPABASE_URL}/functions/v1/bustime-data-sync?action=snapshot")
+            ?: return false
+        if (!response.isJsonObject) return false
+        return try {
+            val dto = gson.fromJson(response, SnapshotDto::class.java) ?: return false
+            if (dto.dataVersion == null || dto.snapshotRevision == null ||
+                dto.places.isNullOrEmpty() || dto.routes.isNullOrEmpty()) return false
+            applySnapshot(gson.toJson(dto), null)
+        } catch (e: Exception) {
+            Log.w(TAG, "Remote master snapshot invalid; using bundled fallback: ${e.message}")
+            false
+        }
+    }
+
     private suspend fun importBundled() {
         val text = context.assets.open(ASSET_NAME).bufferedReader().use { it.readText() }
         applySnapshot(text, null)
@@ -91,8 +108,8 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         val localRevision = prefs.getLong(KEY_REVISION, 0L)
         if (publishedRevision == 0L) return null
         if (publishedRevision <= localRevision) return false
-        // A fresh install starts from the bundled data (imported by ensureLocalData) and then
-        // replays the complete change history from Supabase, so no other download is needed.
+        // A fresh install starts from the latest Supabase master snapshot (or the bundled
+        // fallback) and replays only changes newer than the snapshot revision.
         val baselineChanged = false
 
         val changes = ArrayList<JsonObject>()
@@ -243,7 +260,9 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         }
         dao.replaceAll(data.places, data.routes, data.stops)
         prefs.edit().putInt(KEY_VERSION, version).putString(KEY_ETAG, etag)
-            .putString(KEY_HASH, contentHash).putLong(KEY_LAST_SYNC, System.currentTimeMillis()).apply()
+            .putString(KEY_HASH, contentHash)
+            .putLong(KEY_REVISION, dto.snapshotRevision ?: 0L)
+            .putLong(KEY_LAST_SYNC, System.currentTimeMillis()).apply()
         lastSyncFailed = false
         return true
     }

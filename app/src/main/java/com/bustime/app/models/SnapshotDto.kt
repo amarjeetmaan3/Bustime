@@ -5,7 +5,8 @@ package com.bustime.app.models
 data class SnapshotDto(
     val dataVersion: Int?,
     val places: List<PlaceDto>?,
-    val routes: List<RouteDto>?
+    val routes: List<RouteDto>?,
+    val snapshotRevision: Long? = null
 )
 
 data class PlaceDto(

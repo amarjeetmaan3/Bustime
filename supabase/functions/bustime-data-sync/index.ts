@@ -18,7 +18,40 @@ Deno.serve(async (req: Request) => {
   if (!base || !serviceKey) return new Response(JSON.stringify({ error: "sync_service_unavailable" }), { status: 503, headers: corsHeaders });
 
   let path: string;
-  if (action === "status") {
+  if (action === "snapshot") {
+    try {
+      const [stateRes, placesRes, routesRes] = await Promise.all([
+        fetch(base.replace(/\/$/, "") + "/rest/v1/data_sync_state?select=revision,snapshot_version&id=eq.1", {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Cache-Control": "no-store" },
+        }),
+        fetch(base.replace(/\/$/, "") + "/rest/v1/master_places?select=payload&order=id.asc", {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Cache-Control": "no-store" },
+        }),
+        fetch(base.replace(/\/$/, "") + "/rest/v1/master_routes?select=payload&order=id.asc", {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Cache-Control": "no-store" },
+        }),
+      ]);
+      if (!stateRes.ok || !placesRes.ok || !routesRes.ok) {
+        return new Response(JSON.stringify({ error: "master_snapshot_read_failed" }), { status: 502, headers: corsHeaders });
+      }
+      const [states, placeRows, routeRows] = await Promise.all([stateRes.json(), placesRes.json(), routesRes.json()]);
+      if (!Array.isArray(states) || !states.length || !Array.isArray(placeRows) || !Array.isArray(routeRows)) {
+        return new Response(JSON.stringify({ error: "master_snapshot_invalid" }), { status: 503, headers: corsHeaders });
+      }
+      const snapshot = {
+        dataVersion: Number(states[0].snapshot_version || 0),
+        snapshotRevision: Number(states[0].revision || 0),
+        places: placeRows.map((row: { payload: unknown }) => row.payload),
+        routes: routeRows.map((row: { payload: unknown }) => row.payload),
+      };
+      if (!snapshot.dataVersion || !snapshot.snapshotRevision || !snapshot.places.length || !snapshot.routes.length) {
+        return new Response(JSON.stringify({ error: "master_snapshot_empty" }), { status: 503, headers: corsHeaders });
+      }
+      return new Response(JSON.stringify(snapshot), { headers: { ...corsHeaders, "Cache-Control": "no-store" } });
+    } catch (_error) {
+      return new Response(JSON.stringify({ error: "master_snapshot_unavailable" }), { status: 502, headers: corsHeaders });
+    }
+  } else if (action === "status") {
     path = "/rest/v1/data_sync_state?select=revision,snapshot_version&id=eq.1";
   } else if (action === "changes") {
     const sinceRaw = url.searchParams.get("since") ?? "0";
