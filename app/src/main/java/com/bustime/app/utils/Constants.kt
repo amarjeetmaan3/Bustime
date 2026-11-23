@@ -1,9 +1,6 @@
 package com.bustime.app.utils
 
 object Constants {
-    // API और बैकएंड
-    const val BASE_URL = "https://your-private-api.com/"
-    
     // GitHub अपडेटर: यहाँ अपना GitHub username लिखो (रिपो का नाम Bustime है)
     const val GITHUB_OWNER = "amarjeetmaan3"
     const val GITHUB_REPO = "Bustime"
@@ -14,5 +11,4 @@ object Constants {
 
     // SharedPreferences
     const val PREFS_NAME = "BustimePrefs"
-    const val KEY_LAST_SYNC_TIME = "last_sync_time"
 }
