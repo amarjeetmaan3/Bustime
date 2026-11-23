@@ -106,9 +106,8 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
 
-    // Retrofit (API) Libraries
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // Gson is used directly by the Supabase sync and response parsers.
+    implementation("com.google.code.gson:gson:2.10.1")
 
     // Coroutines (Background tasks)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
