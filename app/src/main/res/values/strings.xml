@@ -112,8 +112,6 @@
     <string name="community_choose_stop">Choose stop to correct</string>
     <string name="community_correct_time_hint">Correct time (HH:MM)</string>
     <string name="community_extra_details">Extra details (optional)</string>
-    <string name="contact_ai_disclaimer">Playing AI Disclaimer...</string>
-    <string name="contact_voice_loading">Voice engine is loading, please try again...</string>
     <string name="bb_departure">Departure: %1$s</string>
     <string name="bb_price_range">Price: %1$s</string>
     <string name="update_title">New Update Available!</string>
