@@ -108,8 +108,6 @@
     <string name="community_choose_stop">ਸੁਧਾਰ ਲਈ ਅੱਡਾ ਚੁਣੋ</string>
     <string name="community_correct_time_hint">ਸਹੀ ਸਮਾਂ (HH:MM)</string>
     <string name="community_extra_details">ਹੋਰ ਜਾਣਕਾਰੀ (ਵਿਕਲਪਿਕ)</string>
-    <string name="contact_ai_disclaimer">AI ਜਾਣਕਾਰੀ ਚਲਾਈ ਜਾ ਰਹੀ ਹੈ...</string>
-    <string name="contact_voice_loading">ਆਵਾਜ਼ ਦੀ ਸਹੂਲਤ ਲੋਡ ਹੋ ਰਹੀ ਹੈ, ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ...</string>
     <string name="bb_departure">ਰਵਾਨਗੀ: %1$s</string>
     <string name="bb_price_range">ਕਿਰਾਇਆ: %1$s</string>
     <string name="update_title">ਨਵਾਂ ਅੱਪਡੇਟ ਉਪਲਬਧ ਹੈ!</string>
