@@ -140,6 +140,8 @@ Deno.serve(async (req: Request) => {
   if (body.action !== "publish") return reply({ error: "unknown_action" }, 400);
   const snapshotVersion = body.snapshot_version === undefined ? null : Number(body.snapshot_version);
   if (snapshotVersion !== null && (!Number.isSafeInteger(snapshotVersion) || snapshotVersion < 1)) return reply({ error: "invalid_snapshot_version" }, 400);
+  const source = String(body.source || "android_app");
+  if (!["android_app", "web_admin"].includes(source)) return reply({ error: "invalid_source" }, 400);
   const input = body.changes;
   if (!Array.isArray(input) || input.length < 1 || input.length > 250) return reply({ error: "invalid_changes" }, 400);
   const changes: Array<Record<string, unknown>> = [];
@@ -242,7 +244,7 @@ Deno.serve(async (req: Request) => {
     }
     if (!archived.ok) return reply({ error: "recycle_bin_archive_failed", detail: (await archived.text()).slice(0, 200) }, 502);
   }
-  const rows = changes.map(c => ({ revision, ...c }));
+  const rows = changes.map(c => ({ revision, source, ...c }));
   const insert = await fetch(url + "/rest/v1/data_change_log", {
     method: "POST",
     headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
