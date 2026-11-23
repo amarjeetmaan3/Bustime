@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
   if (beforeRaw !== null && (!Number.isSafeInteger(beforeRaw) || beforeRaw < 1)) return reply({ error: "invalid_before_revision" }, 400);
   const h = { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" };
 
-  const logUrl = url + "/rest/v1/data_change_log?select=revision,entity_type,entity_id,operation,payload,created_at" +
+  const logUrl = url + "/rest/v1/data_change_log?select=revision,source,entity_type,entity_id,operation,payload,created_at" +
     (beforeRaw !== null ? "&revision=lt." + beforeRaw : "") + "&order=revision.desc,entity_type.asc,entity_id.asc&limit=" + limit;
   const [logRes, stateRes, binRes] = await Promise.all([
     fetch(logUrl, { headers: h }),
