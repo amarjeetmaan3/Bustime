@@ -178,4 +178,4 @@ jobs:
 
       - name: Explain skipped Play Store build
         if: env.HAS_RELEASE_KEY != 'true'
-        run: echo "Play Store AAB was not built because RELEASE_KEYSTORE_BASE64 is not configured in repository Actions secrets."
+        run: echo "Play Store AAB was not built because one or more of RELEASE_KEYSTORE_BASE64, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, or RELEASE_KEY_PASSWORD is missing from repository Actions secrets."
