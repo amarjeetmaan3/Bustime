@@ -296,7 +296,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                 "revision" to revision,
                 "failures" to failureBatch.map { it.toJson() },
                 "resolved" to resolvedBatch.map { it.keyJson() },
-                "snapshot_recovered" to (snapshotRecovered && isFinalBatch),
+                "snapshot_recovered" to (snapshotRecovered && batch == 0),
                 "advance_checkpoint" to isFinalBatch
             )
             val response = postJson(
