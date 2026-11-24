@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
             p_revision: revision,
             p_failures: cleanFailures.slice(from, from + batchSize),
             p_resolved: cleanResolved.slice(from, from + batchSize),
-            p_snapshot_recovered: body.snapshot_recovered === true && finalBatch,
+            p_snapshot_recovered: body.snapshot_recovered === true && batch === 0,
             p_advance_checkpoint: advanceCheckpoint && finalBatch,
           }),
         });
