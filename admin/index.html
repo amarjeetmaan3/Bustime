@@ -1841,7 +1841,7 @@ function viewContentSettings() {
 // ============ Supabase (user submissions) ============
 async function sbFetch(path, opts) {
   opts = opts || {};
-  var base = cfg.sbUrl.replace(/\\/+$/, '');
+  var base = cfg.sbUrl.replace(/\/+$/, '');
   var headers = Object.assign({ apikey: cfg.sbKey, 'Content-Type': 'application/json' }, opts.headers || {});
   var res = await adminFetch(base + path, Object.assign({}, opts, { headers: headers }), 12000);
   if (!res.ok) {
