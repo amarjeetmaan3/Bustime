@@ -66,7 +66,7 @@ object AdMobAdsManager {
     private const val TEST_BANNER = "ca-app-pub-3940256099942544/9214589741"
     private const val TEST_NATIVE = "ca-app-pub-3940256099942544/2247696110"
     private const val TEST_INTERSTITIAL = "ca-app-pub-3940256099942544/1033173712"
-    private const val TEST_APP_OPEN = "ca-app-pub-3940256099942544/3419835294"
+    private const val TEST_APP_OPEN = "ca-app-pub-3940256099942544/9257395921"
 
     private const val LIVE_BANNER = "ca-app-pub-9324657457517005/7394786506"
     private const val LIVE_NATIVE = "ca-app-pub-9324657457517005/8108725074"
