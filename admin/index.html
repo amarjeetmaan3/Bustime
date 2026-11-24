@@ -1740,7 +1740,32 @@ async function loadAdConfig(){
   if(rows&&rows[0]&&rows[0].config){
     var saved=rows[0].config;
     adConfig.my=Object.assign({},adConfig.my,saved.my||{});
-    adConfig.admob=Object.assign({},adConfig.admob,saved.admob||saved.startio||{});
+    var savedAdmob=saved.admob||saved.startio||{};
+    adConfig.admob=Object.assign({},adConfig.admob,savedAdmob);
+    // One-time migration: apply the owner's explicitly requested initial AdMob schedule.
+    // Later Admin changes are preserved because this marker is saved with the settings.
+    if(Number(savedAdmob.admob_setup_version||0)<1){
+      Object.assign(adConfig.admob,{
+        admob_setup_version:1,
+        app_open_unit_id:'ca-app-pub-9324657457517005/1629192619',
+        banner_unit_id:'ca-app-pub-9324657457517005/7394786506',
+        interstitial_unit_id:'ca-app-pub-9324657457517005/4031994670',
+        native_unit_id:'ca-app-pub-9324657457517005/8108725074',
+        app_open_enabled:true,
+        banner_enabled:true,
+        main_banner_enabled:true,
+        book_bus_banner_enabled:true,
+        native_enabled:true,
+        results_native_enabled:true,
+        fullscreen_enabled:true,
+        app_open_every:1,
+        bus_every:4,
+        fullscreen_every:5,
+        night_start_hour:20,
+        night_end_hour:6
+      });
+      await saveAdConfig();
+    }
   }
 }
 async function saveAdConfig(){
