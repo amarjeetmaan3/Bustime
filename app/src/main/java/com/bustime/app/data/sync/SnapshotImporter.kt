@@ -113,7 +113,7 @@ object SnapshotImporter {
             }
             stops.add(RouteStop(id, order, to!!, arriveTime))
             routes.add(
-                Route(id, from, to, time.orEmpty(), clean(r.service), clean(r.routeName),
+                Route(id, from!!, to!!, time.orEmpty(), clean(r.service), clean(r.routeName),
                     clean(r.contact), clean(r.info), r.longRoute == true, clean(r.startDate))
             )
         }
