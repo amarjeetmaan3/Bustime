@@ -95,8 +95,6 @@ object SnapshotImporter {
                 } else {
                     intermediateIds.add(pid)
                 }
-                val rawTime = clean(s.time)
-                if (rawTime != null && !TIME.matches(rawTime)) routeInvalid = true
             }
 
             if (routeInvalid) {
