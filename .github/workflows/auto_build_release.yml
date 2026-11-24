@@ -119,9 +119,29 @@ jobs:
           path: app/build/outputs/apk/debug/Bustime.apk
 
       # ---------- Store बिल्ड (सिर्फ़ जब सीक्रेट्स हों) ----------
-      - name: Decode release keystore
+      - name: Decode and check release keystore
         if: env.HAS_RELEASE_KEY == 'true'
-        run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+        shell: bash
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | tr -d ' \r\n' | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "Keystore file size: $(wc -c < "$RUNNER_TEMP/release.jks") bytes (expected about 2696)"
+          echo "Alias length: ${#RELEASE_KEY_ALIAS} (expected 14), store password length: ${#RELEASE_STORE_PASSWORD}, key password length: ${#RELEASE_KEY_PASSWORD} (expected 20 each)"
+          if ! keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass "$RELEASE_STORE_PASSWORD" > "$RUNNER_TEMP/ks.txt" 2>&1; then
+            echo "ERROR: keystore cannot be opened. Either RELEASE_KEYSTORE_BASE64 was pasted incompletely or RELEASE_STORE_PASSWORD is wrong."
+            exit 1
+          fi
+          grep -c "PrivateKeyEntry" "$RUNNER_TEMP/ks.txt" | sed 's/^/Private key entries: /'
+          if ! keytool -exportcert -keystore "$RUNNER_TEMP/release.jks" -alias "$RELEASE_KEY_ALIAS" -storepass "$RELEASE_STORE_PASSWORD" -keypass "$RELEASE_KEY_PASSWORD" -file "$RUNNER_TEMP/cert.der" > /dev/null 2>&1; then
+            echo "ERROR: alias or RELEASE_KEY_ALIAS / RELEASE_KEY_PASSWORD is wrong."
+            exit 1
+          fi
+          echo "Keystore check passed."
 
       - name: Build signed Release APK + AAB
         if: env.HAS_RELEASE_KEY == 'true'
