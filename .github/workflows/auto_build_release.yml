@@ -175,13 +175,24 @@ jobs:
       - name: Verify signed Play Store AAB exists
         if: env.HAS_RELEASE_KEY == 'true'
         shell: bash
+        env:
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
         run: |
           set -euo pipefail
           AAB="$(find app/build/outputs/bundle/release -maxdepth 1 -name '*.aab' -print -quit)"
           test -n "$AAB"
-          VERIFY_OUTPUT="$(jarsigner -verify "$AAB" 2>&1)"
-          printf "%s\\n" "$VERIFY_OUTPUT"
-          if ! printf "%s" "$VERIFY_OUTPUT" | grep -qi "jar verified"; then
+          VERIFY_OUTPUT="$(jarsigner -verify "$AAB" 2>&1 || true)"
+          printf '%s\n' "$VERIFY_OUTPUT"
+          case "$VERIFY_OUTPUT" in
+            *"jar verified"*) ;;
+            *) echo "ERROR: AAB signature is missing or invalid."; exit 1 ;;
+          esac
+          # The AAB must be signed by our release key, not by any other key.
+          AAB_FP="$(keytool -printcert -jarfile "$AAB" 2>/dev/null | grep -m1 'SHA256:' | sed 's/.*SHA256: *//' || true)"
+          KEY_FP="$(keytool -list -v -keystore "$RUNNER_TEMP/release.jks" -storepass "$RELEASE_STORE_PASSWORD" 2>/dev/null | grep -m1 'SHA256:' | sed 's/.*SHA256: *//' || true)"
+          echo "AAB signer SHA256:     $AAB_FP"
+          echo "Release key SHA256:    $KEY_FP"
+          if [ -z "$AAB_FP" ] || [ "$AAB_FP" != "$KEY_FP" ]; then
             echo "ERROR: AAB is not signed with the configured release key."
             exit 1
           fi
