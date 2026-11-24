@@ -484,8 +484,19 @@ async function refreshAdminAccessToken() {
     }, 15000);
     var session = {}; try { session = await res.json(); } catch (_) {}
     if (!res.ok || !session.access_token) {
-      saveAdminSession({});
-      throw new Error('Admin session expired. Please sign in again.');
+      // Another tab may have rotated the refresh token while this request was in flight.
+      var rotated = null;
+      try { rotated = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null'); } catch (_) {}
+      if (rotated && rotated.refresh_token && rotated.refresh_token !== sbRefreshToken) {
+        var retryRefresh = await fetchWithTimeout(base + '/auth/v1/token?grant_type=refresh_token', {
+          method:'POST', headers:{apikey:cfg.sbKey,'Content-Type':'application/json'},
+          body:JSON.stringify({refresh_token:rotated.refresh_token})
+        }, 15000);
+        session = {}; try { session = await retryRefresh.json(); } catch (_) {}
+        if (!retryRefresh.ok || !session.access_token) throw new Error('Admin session expired. Please sign in again.');
+      } else {
+        throw new Error('Admin session expired. Please sign in again.');
+      }
     }
     saveAdminSession(session);
     if (!await verifySingleAdmin()) throw new Error('Admin session expired. Please sign in again.');
@@ -1830,33 +1841,14 @@ function viewContentSettings() {
 // ============ Supabase (user submissions) ============
 async function sbFetch(path, opts) {
   opts = opts || {};
-  var base = cfg.sbUrl.replace(/\/+$/, '');
+  var base = cfg.sbUrl.replace(/\\/+$/, '');
   var headers = Object.assign({ apikey: cfg.sbKey, 'Content-Type': 'application/json' }, opts.headers || {});
-  if (sbToken) headers.Authorization = 'Bearer ' + sbToken;
-  var res = await fetchWithTimeout(base + path, Object.assign({}, opts, { headers: headers }), 12000);
-  if (res.status === 401 && sbRefreshToken && !opts.__bustimeRetried) {
-    var refreshRes = await fetchWithTimeout(base + '/auth/v1/token?grant_type=refresh_token', {
-      method:'POST', headers:{apikey:cfg.sbKey,'Content-Type':'application/json'},
-      body:JSON.stringify({refresh_token:sbRefreshToken})
-    }, 12000);
-    var refreshed = await refreshRes.json();
-    if (refreshRes.ok) {
-      saveAdminSession(refreshed);
-      await verifySingleAdmin();
-      var retryOpts = Object.assign({}, opts, {__bustimeRetried:true});
-      delete retryOpts.__bustimeRetried;
-      return sbFetchRetryOnce(path, retryOpts);
-    }
-    saveAdminSession({});
-    throw new Error('Admin session expired. Please sign in again.');
-  }
+  var res = await adminFetch(base + path, Object.assign({}, opts, { headers: headers }), 12000);
   if (!res.ok) {
     var t = ''; try { var j = await res.json(); t = j.error_description || j.message || j.hint || ''; } catch (e) {}
     throw new Error('Supabase ' + res.status + (t ? ': ' + t : ''));
   }
   if (res.status === 204) return null;
-  // PostgREST may return an empty body even with a 2xx status (Prefer: return=minimal).
-  // Do not call response.json() on an empty string: it throws "Unexpected end of JSON input".
   var raw = await res.text();
   if (!raw || !raw.trim()) return null;
   var contentType = res.headers.get('content-type') || '';
