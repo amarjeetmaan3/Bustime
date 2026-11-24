@@ -164,15 +164,15 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             var processed = 0
             while (true) {
                 val page = getJson(
-                    "${Constants.SUPABASE_URL}/functions/v1/bustime-data-sync?action=changes&since=$localRevision&offset=$offset"
+                    "${Constants.SUPABASE_URL}/functions/v1/bustime-data-sync?action=changes&since=$localRevision&until=$publishedRevision&offset=$offset"
                 ) ?: return null
 
                 if (page.isJsonObject && page.asJsonObject.get("error")?.asString == "snapshot_required") {
                     if (!importRemoteSnapshot()) return null
                     val snapshotRevision = prefs.getLong(KEY_REVISION, 0L)
-                    prefs.edit().putBoolean(KEY_SNAPSHOT_REPORT_PENDING, true).apply()
-                    val reported = reportSync(snapshotRevision, emptyList(), emptyList(), snapshotRecovered = true)
-                    if (reported) prefs.edit().remove(KEY_SNAPSHOT_REPORT_PENDING).apply()
+                    val snapshotFailures = pendingSnapshotFailures()
+                    val reported = reportSync(snapshotRevision, snapshotFailures, emptyList(), snapshotRecovered = true)
+                    if (reported) clearPendingSnapshotFailures()
                     if (!reported) return null
                     Log.d(TAG, "Recovered with full snapshot at revision $snapshotRevision")
                     return true
@@ -202,7 +202,8 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                 if (offset >= MAX_INCREMENTAL_ROWS) continue
             }
 
-            if (!reportSync(publishedRevision, failures, resolved, snapshotRecovered = false)) return null
+            if (!reportSync(publishedRevision, failures + pendingSnapshotFailures(), resolved, snapshotRecovered = false)) return null
+            clearPendingSnapshotFailures()
             prefs.edit()
                 .putLong(KEY_REVISION, publishedRevision)
                 .putInt(KEY_VERSION, stateRow.get("snapshot_version")?.asInt ?: 0)
@@ -213,16 +214,33 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         }
 
         val snapshotReportPending = prefs.getBoolean(KEY_SNAPSHOT_REPORT_PENDING, false)
-        val reported = reportSync(localRevision, failures, resolved, snapshotRecovered = snapshotReportPending)
+        val reported = reportSync(localRevision, failures + pendingSnapshotFailures(), resolved, snapshotRecovered = snapshotReportPending)
         if (!reported) return null
-        if (snapshotReportPending) prefs.edit().remove(KEY_SNAPSHOT_REPORT_PENDING).apply()
+        clearPendingSnapshotFailures()
         prefs.edit().putLong(KEY_LAST_SYNC, System.currentTimeMillis()).apply()
         return resolved.isNotEmpty()
     }
 
+    private fun pendingSnapshotFailures(): List<FailedChange> {
+        val raw = prefs.getString(KEY_PENDING_SNAPSHOT_FAILURES, null) ?: return emptyList()
+        return try {
+            val json = JsonParser().parse(raw)
+            if (!json.isJsonArray) return emptyList()
+            json.asJsonArray.mapNotNull { element ->
+                if (!element.isJsonObject) null else failedChange(element.asJsonObject, element.asJsonObject.get("error_message")?.asString)
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun clearPendingSnapshotFailures() {
+        prefs.edit().remove(KEY_PENDING_SNAPSHOT_FAILURES).remove(KEY_SNAPSHOT_REPORT_PENDING).apply()
+    }
+
     private fun failedChange(change: JsonObject, message: String?): FailedChange? {
         return try {
-            val revision = change.get("revision")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asLong ?: return null
+            val revision = (change.get("failure_revision") ?: change.get("revision"))?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asLong ?: return null
             val type = change.get("entity_type")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString ?: return null
             val id = change.get("entity_id")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString?.trim() ?: return null
             if (revision < 1L || type !in listOf("place", "route") || id.isEmpty()) null
@@ -255,23 +273,39 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         resolved: List<FailedChange>,
         snapshotRecovered: Boolean
     ): Boolean {
-        val body = mapOf(
-            "action" to "report",
-            "device_id" to getDeviceId(),
-            "app_version" to appVersion(),
-            "revision" to revision,
-            "failures" to failures.map { it.toJson() },
-            "resolved" to resolved.map { it.keyJson() },
-            "snapshot_recovered" to snapshotRecovered
+        val batchSize = 100
+        val batchCount = maxOf(
+            1,
+            (failures.size + batchSize - 1) / batchSize,
+            (resolved.size + batchSize - 1) / batchSize
         )
-        val response = postJson(
-            "${Constants.SUPABASE_URL}/functions/v1/bustime-data-sync",
-            gson.toJson(body)
-        )
-        val ok = response != null && response.isJsonObject &&
-            response.asJsonObject.get("ok")?.asBoolean == true
-        if (!ok) Log.w(TAG, "Could not save sync checkpoint/error report; local cursor will not advance")
-        return ok
+        for (batch in 0 until batchCount) {
+            val from = batch * batchSize
+            val failureBatch = failures.drop(from).take(batchSize)
+            val resolvedBatch = resolved.drop(from).take(batchSize)
+            val isFinalBatch = batch == batchCount - 1
+            val body = mapOf(
+                "action" to "report",
+                "device_id" to getDeviceId(),
+                "app_version" to appVersion(),
+                "revision" to revision,
+                "failures" to failureBatch.map { it.toJson() },
+                "resolved" to resolvedBatch.map { it.keyJson() },
+                "snapshot_recovered" to (snapshotRecovered && isFinalBatch),
+                "advance_checkpoint" to isFinalBatch
+            )
+            val response = postJson(
+                "${Constants.SUPABASE_URL}/functions/v1/bustime-data-sync",
+                gson.toJson(body)
+            )
+            val ok = response != null && response.isJsonObject &&
+                response.asJsonObject.get("ok")?.asBoolean == true
+            if (!ok) {
+                Log.w(TAG, "Could not save sync report batch ${batch + 1}/$batchCount; local cursor will not advance")
+                return false
+            }
+        }
+        return true
     }
 
     /** null means success; a message means this one change failed and may be retried. */
@@ -402,21 +436,69 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         }
 
         val data = SnapshotImporter.build(dto)
-        if (data.places.isEmpty() || data.routes.isEmpty() || (requireCleanData && data.skipped > 0)) {
+        if (data.places.isEmpty() || data.routes.isEmpty()) {
             lastSyncFailed = true
-            Log.w(TAG, "Refusing incomplete snapshot; skipped ${data.skipped} invalid records")
+            Log.w(TAG, "Snapshot has no usable places or routes; existing local data retained")
             return false
         }
 
-        // replaceAll is a Room @Transaction: the previous dataset survives a failed replacement.
-        dao.replaceAll(data.places, data.routes, data.stops)
+        // Preserve the previous local copy of any identifiable invalid snapshot record.
+        // Also preserve old places required by a retained route so no route becomes dangling.
+        val oldPlaces = dao.getAllPlaces().associateBy { it.id }
+        val oldRoutes = dao.getAllRoutes().associateBy { it.id }
+        val oldStops = dao.getAllStops().groupBy { it.routeId }
+        val mergedPlaces = LinkedHashMap<String, Place>()
+        data.places.forEach { mergedPlaces[it.id] = it }
+        for (id in data.failedPlaceIds) oldPlaces[id]?.let { mergedPlaces[id] = it }
+
+        val mergedRoutes = LinkedHashMap<String, Route>()
+        data.routes.forEach { mergedRoutes[it.id] = it }
+        val mergedStops = data.stops.toMutableList()
+        for (id in data.failedRouteIds) {
+            val oldRoute = oldRoutes[id] ?: continue
+            mergedRoutes[id] = oldRoute
+            val retainedStops = oldStops[id].orEmpty()
+            mergedStops.removeAll { it.routeId == id }
+            mergedStops.addAll(retainedStops)
+            retainedStops.forEach { stop -> oldPlaces[stop.placeId]?.let { mergedPlaces.putIfAbsent(it.id, it) } }
+        }
+
+        val safeRoutes = mergedRoutes.values.filter { route ->
+            val routeStops = mergedStops.filter { it.routeId == route.id }.sortedBy { it.stopOrder }
+            val valid = route.fromId in mergedPlaces && route.toId in mergedPlaces &&
+                routeStops.isNotEmpty() && routeStops.all { it.placeId in mergedPlaces } &&
+                routeStops.first().placeId == route.fromId && routeStops.last().placeId == route.toId
+            if (!valid) Log.w(TAG, "Snapshot route ${route.id} retained only if its complete stop chain is valid")
+            valid
+        }
+        val safeRouteIds = safeRoutes.map { it.id }.toSet()
+        val safeStops = mergedStops.filter { it.routeId in safeRouteIds }
+        if (mergedPlaces.isEmpty() || safeRoutes.isEmpty()) {
+            lastSyncFailed = true
+            Log.w(TAG, "Snapshot recovery produced no complete dataset; existing local data retained")
+            return false
+        }
+
+        val snapshotFailures = ArrayList<FailedChange>()
+        if (requireCleanData && dto.snapshotRevision > 0L) {
+            data.failedPlaceIds.forEach { snapshotFailures.add(FailedChange(dto.snapshotRevision, "place", it, "Snapshot record failed validation")) }
+            data.failedRouteIds.forEach { snapshotFailures.add(FailedChange(dto.snapshotRevision, "route", it, "Snapshot record or stop chain failed validation")) }
+        }
+
+        // The replacement remains one Room transaction; valid data is imported and old copies
+        // of identifiable bad records are retained instead of rejecting the entire snapshot.
+        dao.replaceAll(mergedPlaces.values.toList(), safeRoutes, safeStops)
         prefs.edit()
             .putInt(KEY_VERSION, dto.dataVersion)
             .putString(KEY_ETAG, etag)
             .putString(KEY_HASH, contentHash)
             .putLong(KEY_REVISION, dto.snapshotRevision)
             .putLong(KEY_LAST_SYNC, System.currentTimeMillis())
+            .putString(KEY_PENDING_SNAPSHOT_FAILURES, gson.toJson(snapshotFailures.map { it.toJson() }))
+            .putBoolean(KEY_SNAPSHOT_REPORT_PENDING, snapshotFailures.isNotEmpty())
             .apply()
+        if (data.skipped > 0) Log.w(TAG, "Snapshot imported with ${data.skipped} isolated invalid records")
+
         lastSyncFailed = false
         return true
     }
@@ -433,5 +515,6 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         private const val KEY_REVISION = "data_sync_revision"
         private const val KEY_DEVICE_ID = "data_sync_device_id"
         private const val KEY_SNAPSHOT_REPORT_PENDING = "data_sync_snapshot_report_pending"
+        private const val KEY_PENDING_SNAPSHOT_FAILURES = "data_sync_pending_snapshot_failures"
     }
 }
