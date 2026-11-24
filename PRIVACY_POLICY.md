@@ -38,15 +38,13 @@ You can reset or delete your advertising ID and opt out of ads personalisation i
 We use **Supabase** for the database and backend functions that store submissions, usage events and data-update diagnostics, and **Google AdMob** for ads. This policy page is a static web page that may log ordinary web-request information when opened. These providers process data on our behalf or under their own terms, and data may be stored or processed on servers outside India.
 
 ## 7. How long we keep information
-Personal information is removed automatically by a scheduled job that runs every day:
+**Feedback and data-deletion requests** are deleted automatically by a scheduled job that runs every day: 90 days after the administrator reviews them (180 days after they were sent if never reviewed). Other information is kept as follows:
 
 | Information | How long we keep it |
 |---|---|
-| Phone numbers, notes and extra details in route, correction and operator submissions | Removed 90 days after the administrator reviews the submission (180 days after it was sent if it was never reviewed). The approved route or stop information itself stays published; it contains no personal data. |
-| Feedback and data-deletion requests | Deleted 90 days after review (180 days after it was sent if never reviewed). |
-| Usage events | Deleted after 180 days. |
-| Data-update diagnostics (device identifier, error messages) | Resolved errors deleted after 90 days; all other records after 180 days. |
-| Published operator listings | Kept while the listing is active, until the operator asks for removal or the administrator removes it. |
+| Route submissions, route corrections and bus-operator submissions (including the mobile number sent with them) | Kept with the record of the change, so that the published route or listing can be verified and kept accurate. We remove your number or the record on request (see section 8). |
+| Usage events and data-update diagnostics (random identifier, app version, error messages) | Kept for as long as needed to understand app usage and keep data updates working, and may be cleaned up periodically. |
+| Published routes, stops and operator listings | Kept while they are active, until the operator asks for removal or the administrator removes them. |
 | Advertising data | Held by Google under its own policies. |
 
 Short-term backups kept by our service provider may hold deleted data for a limited time. Information may be kept longer where needed to resolve a dispute, protect against abuse, or comply with law.
@@ -58,7 +56,7 @@ You may ask us to correct or delete the information you submitted, or to remove 
 Data is sent over encrypted (HTTPS) connections, public tables only accept new submissions, and review and publishing tools are restricted to the administrator. No system can be guaranteed completely secure.
 
 ## 10. Children
-Bustime is a general-audience transport information app and is not directed to children. The submission forms (which ask for a mobile number) are meant for adults aged 18 or over. We do not knowingly collect personal information from children. If you believe a child has sent us personal information, contact us and we will delete it.
+Bustime is a general public transport information app, designed for people aged 13 and over, and is not directed to children under 13. Searching routes and timings does not need any personal information. The forms that ask for a mobile number (route and correction submissions, operator listings, feedback) are meant for adults aged 18 or over; if you are under 18, please ask a parent or guardian to send it for you. We do not knowingly collect personal information from children under 13. If you believe a child has sent us personal information, contact us and we will delete it.
 
 ## 11. Changes
 We may update this policy when the app, backend services, advertising or the law change. The date above will be revised, and material changes will also be shown in the app.
