@@ -15,11 +15,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Bustime">
 
-        <!-- Google AdMob App ID. This is Google's official SAMPLE app ID: replace it with the
-             real AdMob App ID (ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY) before the Play release. -->
+        <!-- Bustime production AdMob App ID. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-9324657457517005~4521211154" />
 
 
         <!-- ऐप के अंदर चुनी भाषा पुराने Android (13 से नीचे) में भी याद रखने के लिए -->

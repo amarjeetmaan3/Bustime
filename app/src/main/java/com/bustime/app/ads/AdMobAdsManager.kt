@@ -23,6 +23,8 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.appopen.AppOpenAd
+import com.google.android.gms.ads.appopen.AppOpenAdLoadCallback
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.nativead.NativeAd
@@ -32,6 +34,7 @@ import com.google.android.ump.UserMessagingPlatform
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Calendar
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -45,11 +48,16 @@ data class AdConfig(
     val nativeEnabled: Boolean = false,
     val resultsNativeEnabled: Boolean = false,
     val fullscreenEnabled: Boolean = false,
+    val appOpenEnabled: Boolean = false,
     val busEvery: Int = 4,
     val fullscreenEvery: Int = 5,
+    val appOpenEvery: Int = 1,
+    val nightStartHour: Int = 20,
+    val nightEndHour: Int = 6,
     val bannerUnitId: String = "",
     val nativeUnitId: String = "",
-    val interstitialUnitId: String = ""
+    val interstitialUnitId: String = "",
+    val appOpenUnitId: String = ""
 )
 
 /** Google AdMob ads with the Google UMP consent flow. CustomPopupManager (own campaigns) is untouched. */
@@ -58,6 +66,12 @@ object AdMobAdsManager {
     private const val TEST_BANNER = "ca-app-pub-3940256099942544/9214589741"
     private const val TEST_NATIVE = "ca-app-pub-3940256099942544/2247696110"
     private const val TEST_INTERSTITIAL = "ca-app-pub-3940256099942544/1033173712"
+    private const val TEST_APP_OPEN = "ca-app-pub-3940256099942544/9257395921"
+
+    private const val LIVE_BANNER = "ca-app-pub-9324657457517005/7394786506"
+    private const val LIVE_NATIVE = "ca-app-pub-9324657457517005/8108725074"
+    private const val LIVE_INTERSTITIAL = "ca-app-pub-9324657457517005/4031994670"
+    private const val LIVE_APP_OPEN = "ca-app-pub-9324657457517005/1629192619"
 
     private val main = Handler(Looper.getMainLooper())
     private val lock = Any()
@@ -70,8 +84,9 @@ object AdMobAdsManager {
         (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
     private fun unitOrTest(context: Context, configured: String, test: String): String? = when {
-        configured.isNotBlank() -> configured
+        // Never serve live account ads while developing or testing the app.
         isDebuggable(context) -> test
+        configured.isNotBlank() -> configured
         else -> null
     }
 
@@ -139,12 +154,17 @@ object AdMobAdsManager {
                     bookBusBannerEnabled = cfg.optBoolean("book_bus_banner_enabled", false),
                     nativeEnabled = cfg.optBoolean("native_enabled", false),
                     resultsNativeEnabled = cfg.optBoolean("results_native_enabled", false),
-                    fullscreenEnabled = cfg.optBoolean("fullscreen_enabled", false),
+                    fullscreenEnabled = cfg.optBoolean("fullscreen_enabled", true),
+                    appOpenEnabled = cfg.optBoolean("app_open_enabled", true),
                     busEvery = cfg.optInt("bus_every", 4).coerceIn(1, 20),
                     fullscreenEvery = cfg.optInt("fullscreen_every", 5).coerceIn(2, 20),
-                    bannerUnitId = cfg.optString("banner_unit_id").trim(),
-                    nativeUnitId = cfg.optString("native_unit_id").trim(),
-                    interstitialUnitId = cfg.optString("interstitial_unit_id").trim()
+                    appOpenEvery = cfg.optInt("app_open_every", 1).coerceIn(1, 20),
+                    nightStartHour = cfg.optInt("night_start_hour", 20).coerceIn(0, 23),
+                    nightEndHour = cfg.optInt("night_end_hour", 6).coerceIn(0, 23),
+                    bannerUnitId = cfg.optString("banner_unit_id").trim().ifBlank { LIVE_BANNER },
+                    nativeUnitId = cfg.optString("native_unit_id").trim().ifBlank { LIVE_NATIVE },
+                    interstitialUnitId = cfg.optString("interstitial_unit_id").trim().ifBlank { LIVE_INTERSTITIAL },
+                    appOpenUnitId = cfg.optString("app_open_unit_id").trim().ifBlank { LIVE_APP_OPEN }
                 )
             } finally {
                 connection.disconnect()
@@ -155,6 +175,59 @@ object AdMobAdsManager {
     }
 
     private fun gone(context: Context) = context is Activity && (context.isFinishing || context.isDestroyed)
+
+    /** Night window uses the device's local clock; defaults to 20:00–06:00. */
+    private fun isInsideNightWindow(config: AdConfig): Boolean {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val start = config.nightStartHour.coerceIn(0, 23)
+        val end = config.nightEndHour.coerceIn(0, 23)
+        return if (start < end) hour >= start && hour < end else hour >= start || hour < end
+    }
+
+    /** App Open is shown only in the configured night window and never delays navigation on failure. */
+    fun maybeShowAppOpen(activity: Activity, onContinue: () -> Unit) {
+        var continued = false
+        fun continueOnce() {
+            if (!continued) {
+                continued = true
+                if (!gone(activity)) onContinue()
+            }
+        }
+        refresh(activity) { config ->
+            val unit = unitOrTest(activity, config.appOpenUnitId, TEST_APP_OPEN)
+            if (!config.appOpenEnabled || !isInsideNightWindow(config) || unit == null || gone(activity)) {
+                continueOnce()
+                return@refresh
+            }
+            val prefs = activity.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+            val count = prefs.getInt("admob_app_open_count", 0) + 1
+            prefs.edit().putInt("admob_app_open_count", count).apply()
+            if (count % config.appOpenEvery != 0) {
+                continueOnce()
+                return@refresh
+            }
+            prepare(activity) { canRequest ->
+                if (!canRequest || gone(activity)) {
+                    continueOnce()
+                    return@prepare
+                }
+                try {
+                    AppOpenAd.load(activity, unit, AdRequest.Builder().build(), object : AppOpenAdLoadCallback() {
+                        override fun onAdLoaded(ad: AppOpenAd) {
+                            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+                                override fun onAdDismissedFullScreenContent() = continueOnce()
+                                override fun onAdFailedToShowFullScreenContent(error: AdError) = continueOnce()
+                            }
+                            if (gone(activity)) continueOnce() else ad.show(activity)
+                        }
+                        override fun onAdFailedToLoad(error: LoadAdError) = continueOnce()
+                    })
+                } catch (_: Exception) {
+                    continueOnce()
+                }
+            }
+        }
+    }
 
     fun attachBanner(context: Context, container: FrameLayout, placement: String) {
         container.removeAllViews()
@@ -244,7 +317,7 @@ object AdMobAdsManager {
     fun maybeShowFullscreen(activity: Activity, onContinue: () -> Unit) {
         refresh(activity) { config ->
             val unit = unitOrTest(activity, config.interstitialUnitId, TEST_INTERSTITIAL)
-            if (!config.fullscreenEnabled || unit == null || gone(activity)) {
+            if (!config.fullscreenEnabled || !isInsideNightWindow(config) || unit == null || gone(activity)) {
                 onContinue()
                 return@refresh
             }

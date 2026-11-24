@@ -1660,8 +1660,8 @@ var adSubtab = 'my';
 var adConfig = {
   my:{enabled:false,category:'general',poster_url:'',start_date:'',end_date:'',close_delay:3,
     route_id:'',target_kind:'route',target_id:'',call_enabled:false,phone:'',link_enabled:false,url:'',link_label:'Learn more',check_route_enabled:false,cta_label:'Check Route'},
-  admob:{banner_unit_id:'',native_unit_id:'',interstitial_unit_id:'',banner_enabled:false,main_banner_enabled:false,book_bus_banner_enabled:false,
-    native_enabled:false,results_native_enabled:false,fullscreen_enabled:false,bus_every:4,fullscreen_every:5}
+  admob:{banner_unit_id:'ca-app-pub-9324657457517005/7394786506',native_unit_id:'ca-app-pub-9324657457517005/8108725074',interstitial_unit_id:'ca-app-pub-9324657457517005/4031994670',app_open_unit_id:'ca-app-pub-9324657457517005/1629192619',banner_enabled:true,main_banner_enabled:true,book_bus_banner_enabled:true,
+    native_enabled:true,results_native_enabled:true,fullscreen_enabled:true,app_open_enabled:true,bus_every:4,fullscreen_every:5,app_open_every:1,night_start_hour:20,night_end_hour:6}
 };
 function adEscape(v){return esc(v==null?'':String(v));}
 var adTargetCache={routes:[],operators:[]};
@@ -1708,10 +1708,14 @@ function viewAdvertisement(){
     '<div class="ad-field"><label>Custom link button label</label><input id="ad_link_label" value="'+adEscape(c.link_label||'Learn more')+'" placeholder="Learn more"></div></div>'+
     '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-my">Save campaign</button></div></section>';
   }else{
-    html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Google AdMob ad controls</h2><p class="muted">Create the app and one ad unit per format in your AdMob account, then paste each Ad Unit ID below. Leave a field empty to use Google test ads (test ads appear only in debug builds; release builds show nothing until a real ID is entered). The AdMob App ID itself is set in the app, not here.</p></div></div>'+
-    '<div class="ad-grid"><div class="ad-field"><label>Banner Ad Unit ID</label><input id="ad_banner_unit_id" value="'+adEscape(c.banner_unit_id)+'" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"></div>'+
+    html+='<section class="card ad-panel"><div class="ad-heading"><div><h2>Google AdMob ad controls</h2><p class="muted">Bustime App ID is configured in Android. These four Ad Unit IDs and placement switches are remotely controlled from this panel. App Open and Interstitial are restricted to the configured night window; Banner and Native remain available all day.</p></div></div>'+
+    '<div class="ad-grid"><div class="ad-field"><label>App Open Ad Unit ID</label><input id="ad_app_open_unit_id" value="'+adEscape(c.app_open_unit_id)+'" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"></div>'+
+    '<div class="ad-field"><label>Banner Ad Unit ID</label><input id="ad_banner_unit_id" value="'+adEscape(c.banner_unit_id)+'" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"></div>'+
     '<div class="ad-field"><label>Native Ad Unit ID</label><input id="ad_native_unit_id" value="'+adEscape(c.native_unit_id)+'" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"></div>'+
     '<div class="ad-field"><label>Interstitial Ad Unit ID</label><input id="ad_interstitial_unit_id" value="'+adEscape(c.interstitial_unit_id)+'" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"></div></div>'+
+    '<div class="ad-subhead">App Open ads</div><div class="ad-grid">'+
+    '<div><label class="ad-check"><input id="ad_app_open_enabled" type="checkbox"'+adChecked(c.app_open_enabled)+'> Enable App Open ads</label><p class="muted ad-help">Only shown when the app is opened between the night start and end times.</p></div>'+
+    '<div class="ad-field"><label>Show every this many app opens</label><input id="ad_app_open_every" type="number" min="1" max="20" value="'+adEscape(c.app_open_every||1)+'"></div></div>'+
     '<div class="ad-subhead">Banner ads</div><div class="ad-grid">'+
     '<div><label class="ad-check"><input id="ad_banner_enabled" type="checkbox"'+adChecked(c.banner_enabled)+'> Enable Banner format</label><p class="muted ad-help">Master switch for all banner placements.</p></div>'+
     '<div><label class="ad-check"><input id="ad_main_banner_enabled" type="checkbox"'+adChecked(c.main_banner_enabled)+'> Main screen bottom banner</label><label class="ad-check"><input id="ad_book_bus_banner_enabled" type="checkbox"'+adChecked(c.book_bus_banner_enabled)+'> Book Bus screen banner</label></div></div>'+
@@ -1721,7 +1725,10 @@ function viewAdvertisement(){
     '<div class="ad-subhead">Full-screen ads</div><div class="ad-grid">'+
     '<div><label class="ad-check"><input id="ad_fullscreen_enabled" type="checkbox"'+adChecked(c.fullscreen_enabled)+'> Enable Full-screen / Interstitial ads</label><p class="muted ad-help">Off by default. When enabled, navigation continues if no ad is available.</p></div>'+
     '<div class="ad-field"><label>Show after this many route opens</label><input id="ad_fullscreen_every" type="number" min="2" max="20" value="'+adEscape(c.fullscreen_every||5)+'"></div></div>'+
-    '<p class="muted ad-help" style="margin-top:12px">Ads stay off until the relevant switches are enabled. Users in regions that require consent see the Google consent form before any ad loads.</p>'+
+    '<div class="ad-subhead">Night schedule (device local time)</div><div class="ad-grid">'+
+    '<div class="ad-field"><label>Night start hour (0–23)</label><input id="ad_night_start_hour" type="number" min="0" max="23" value="'+adEscape(c.night_start_hour==null?20:c.night_start_hour)+'"></div>'+
+    '<div class="ad-field"><label>Night end hour (0–23)</label><input id="ad_night_end_hour" type="number" min="0" max="23" value="'+adEscape(c.night_end_hour==null?6:c.night_end_hour)+'"></div></div>'+
+    '<p class="muted ad-help" style="margin-top:12px">App Open and Interstitial are allowed only inside this night window (default 20:00–06:00). Banner and Native are not restricted by this schedule. Users in regions that require consent see the Google consent form before any ad loads.</p>'+
     '<div class="ad-savebar"><button class="btn primary" data-act="ad-save-admob">Save AdMob settings</button></div></section>';
   }
   return html+'</div>';
@@ -1733,7 +1740,32 @@ async function loadAdConfig(){
   if(rows&&rows[0]&&rows[0].config){
     var saved=rows[0].config;
     adConfig.my=Object.assign({},adConfig.my,saved.my||{});
-    adConfig.admob=Object.assign({},adConfig.admob,saved.admob||saved.startio||{});
+    var savedAdmob=saved.admob||saved.startio||{};
+    adConfig.admob=Object.assign({},adConfig.admob,savedAdmob);
+    // One-time migration: apply the owner's explicitly requested initial AdMob schedule.
+    // Later Admin changes are preserved because this marker is saved with the settings.
+    if(Number(savedAdmob.admob_setup_version||0)<1){
+      Object.assign(adConfig.admob,{
+        admob_setup_version:1,
+        app_open_unit_id:'ca-app-pub-9324657457517005/1629192619',
+        banner_unit_id:'ca-app-pub-9324657457517005/7394786506',
+        interstitial_unit_id:'ca-app-pub-9324657457517005/4031994670',
+        native_unit_id:'ca-app-pub-9324657457517005/8108725074',
+        app_open_enabled:true,
+        banner_enabled:true,
+        main_banner_enabled:true,
+        book_bus_banner_enabled:true,
+        native_enabled:true,
+        results_native_enabled:true,
+        fullscreen_enabled:true,
+        app_open_every:1,
+        bus_every:4,
+        fullscreen_every:5,
+        night_start_hour:20,
+        night_end_hour:6
+      });
+      await saveAdConfig();
+    }
   }
 }
 async function saveAdConfig(){
@@ -3274,6 +3306,7 @@ document.addEventListener('click', async function (e) {
       await saveAdConfig();toast('My Advertisement settings saved.');render();
     }
     else if (act === 'ad-save-admob') {
+      adConfig.admob.app_open_unit_id=document.getElementById('ad_app_open_unit_id').value.trim();
       adConfig.admob.banner_unit_id=document.getElementById('ad_banner_unit_id').value.trim();
       adConfig.admob.native_unit_id=document.getElementById('ad_native_unit_id').value.trim();
       adConfig.admob.interstitial_unit_id=document.getElementById('ad_interstitial_unit_id').value.trim();
@@ -3283,8 +3316,12 @@ document.addEventListener('click', async function (e) {
       adConfig.admob.native_enabled=document.getElementById('ad_native_enabled').checked;
       adConfig.admob.results_native_enabled=document.getElementById('ad_results_native_enabled').checked;
       adConfig.admob.fullscreen_enabled=document.getElementById('ad_fullscreen_enabled').checked;
+      adConfig.admob.app_open_enabled=document.getElementById('ad_app_open_enabled').checked;
       adConfig.admob.bus_every=Math.max(1,Math.min(20,parseInt(document.getElementById('ad_bus_every').value,10)||4));
       adConfig.admob.fullscreen_every=Math.max(2,Math.min(20,parseInt(document.getElementById('ad_fullscreen_every').value,10)||5));
+      adConfig.admob.app_open_every=Math.max(1,Math.min(20,parseInt(document.getElementById('ad_app_open_every').value,10)||1));
+      adConfig.admob.night_start_hour=Math.max(0,Math.min(23,parseInt(document.getElementById('ad_night_start_hour').value,10)||0));
+      adConfig.admob.night_end_hour=Math.max(0,Math.min(23,parseInt(document.getElementById('ad_night_end_hour').value,10)||0));
       await saveAdConfig();toast('AdMob settings saved.');render();
     }
     else if (act === 'ad-upload-poster') { /* file input is handled by change listener */ }
