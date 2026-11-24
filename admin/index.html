@@ -977,7 +977,7 @@ async function publishSharedDataDiff(before, after) {
   if (!changes.length) return 0;
   if (changes.length > 250) throw new Error('This publish contains ' + changes.length + ' changed routes/stops. Please publish smaller batches (250 changes maximum) so the shared sync remains consistent.');
   // Refuse stale tabs before publishing; the Edge Function also performs an atomic revision check.
-  var stateResponse = await adminFetch(cfg.sbUrl.replace(/\\/+$/, '') + '/functions/v1/mdm-publish', {
+  var stateResponse = await adminFetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method:'POST', headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken,'Content-Type':'application/json','Cache-Control':'no-store'},
     body:JSON.stringify({action:'list'}), cache:'no-store'
   });
