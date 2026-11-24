@@ -155,13 +155,16 @@ Deno.serve(async (req: Request) => {
     const sinceRaw = url.searchParams.get("since") ?? "0";
     const untilRaw = url.searchParams.get("until");
     const offsetRaw = url.searchParams.get("offset") ?? "0";
-    if (!/^\d+$/.test(sinceRaw) || !untilRaw || !/^\d+$/.test(untilRaw) || !/^\d+$/.test(offsetRaw)) return reply({ error: "invalid_cursor" }, 400);
-    const since = Number(sinceRaw), until = Number(untilRaw), offset = Number(offsetRaw);
-    if (!Number.isSafeInteger(since) || !Number.isSafeInteger(until) || until < since || !Number.isSafeInteger(offset) || offset < 0) {
+    if (!/^\d+$/.test(sinceRaw) || (untilRaw !== null && !/^\d+$/.test(untilRaw)) || !/^\d+$/.test(offsetRaw)) return reply({ error: "invalid_cursor" }, 400);
+    const since = Number(sinceRaw), until = untilRaw === null ? null : Number(untilRaw), offset = Number(offsetRaw);
+    if (!Number.isSafeInteger(since) || (until !== null && (!Number.isSafeInteger(until) || until < since)) || !Number.isSafeInteger(offset) || offset < 0) {
       return reply({ error: "cursor_out_of_range" }, 400);
     }
     if (offset >= 20000) return reply({ error: "snapshot_required", reason: "change_history_page_limit" }, 409);
-    const path = `/rest/v1/data_change_log?select=revision,entity_type,entity_id,operation,payload&revision=gt.${since}&revision=lte.${until}&order=revision.asc,entity_type.asc,entity_id.asc&limit=1000&offset=${offset}`;
+    const revisionFilter = until === null
+      ? `revision=gt.${since}`
+      : `and=(revision.gt.${since},revision.lte.${until})`;
+    const path = `/rest/v1/data_change_log?select=revision,entity_type,entity_id,operation,payload&${revisionFilter}&order=revision.asc,entity_type.asc,entity_id.asc&limit=1000&offset=${offset}`;
     try {
       const response = await fetch(root + path, { headers: serviceHeaders });
       return new Response(await response.text(), { status: response.status, headers: corsHeaders });
