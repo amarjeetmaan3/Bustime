@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
     let body: Record<string, unknown>;
     try {
       const raw = await req.text();
-      if (raw.length > 180_000) return reply({ error: "report_too_large" }, 413);
+      if (raw.length > 1_000_000) return reply({ error: "report_too_large" }, 413);
       body = JSON.parse(raw);
     } catch {
       return reply({ error: "invalid_json" }, 400);
