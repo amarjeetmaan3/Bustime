@@ -472,8 +472,12 @@ var adminRefreshPromise = null;
 async function refreshAdminAccessToken() {
   if (adminRefreshPromise) return adminRefreshPromise;
   adminRefreshPromise = (async function () {
+    try {
+      var latestStored = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
+      if (latestStored && latestStored.refresh_token) sbRefreshToken = latestStored.refresh_token;
+    } catch (_) {}
     if (!sbRefreshToken) throw new Error('Admin session expired. Please sign in again.');
-    var base = cfg.sbUrl.replace(/\\/+$/, '');
+    var base = cfg.sbUrl.replace(/\/+$/, '');
     var res = await fetchWithTimeout(base + '/auth/v1/token?grant_type=refresh_token', {
       method:'POST', headers:{apikey:cfg.sbKey,'Content-Type':'application/json'},
       body:JSON.stringify({refresh_token:sbRefreshToken})
@@ -503,6 +507,10 @@ async function adminFetch(url, options, timeoutMs) {
   return await fetchWithTimeout(url, Object.assign({}, opts, {headers:headers}), timeoutMs || 20000);
 }
 
+window.addEventListener('storage', function (event) {
+  if (event.key !== ADMIN_SESSION_KEY) return;
+  try { var latest = JSON.parse(event.newValue || 'null'); if (latest && latest.refresh_token) sbRefreshToken = latest.refresh_token; } catch (_) {}
+});
 async function restoreAdminSession() {
   try {
     var stored = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
@@ -788,7 +796,7 @@ async function publishAdminDelete(entityType, entityId, payload) {
   if (!sbToken) throw new Error('Sign in as the owner admin before deleting published data.');
   var response = await adminFetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-    body: JSON.stringify({ action: 'publish', source: 'web_admin', changes: [{ entity_type: entityType, entity_id: String(entityId), operation: 'delete', payload: payload || null }] })
+    body: JSON.stringify({ action: 'publish', source: 'web_admin', expected_revision: Number(mdmRevisionCursor || 0), changes: [{ entity_type: entityType, entity_id: String(entityId), operation: 'delete', payload: payload || null }] })
   });
   var result = {}; try { result = await response.json(); } catch (_) {}
   if (!response.ok || !result.ok) throw new Error(result.error || ('Could not move ' + entityType + ' (HTTP ' + response.status + ').'));
@@ -798,6 +806,7 @@ async function publishAdminDelete(entityType, entityId, payload) {
 async function recycleRequest(action, id) {
   if (!sbToken) throw new Error('Sign in as the owner admin first.');
   var body = { action: action, source: 'web_admin' };
+  if (action === 'recycle-restore') body.expected_revision = Number(mdmRevisionCursor || 0);
   if (id != null) body.id = Number(id);
   var response = await adminFetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method:'POST',
@@ -1038,6 +1047,9 @@ async function mergeMdmPublishedChanges(sinceRevision) {
       }
     });
     mdmRevisionCursor = Math.max(mdmRevisionCursor, maxRevision);
+    mdmStaleWarning = '';
+    baseVersion = Math.max(baseVersion, mdmRevisionCursor);
+    data.dataVersion = baseVersion;
     return allChanges.length > 0;
   } catch (err) {
     mdmSyncError = err && err.message ? err.message : String(err);
