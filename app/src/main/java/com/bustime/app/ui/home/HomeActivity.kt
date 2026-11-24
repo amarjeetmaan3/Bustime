@@ -56,10 +56,13 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
         AdMobAdsManager.attachBanner(this, findViewById(R.id.startioMainBanner), "main")
+        AdMobAdsManager.maybeShowAppOpen(this) {
+            com.bustime.app.ads.CustomPopupManager.showLocalSponsorshipAd(this)
+        }
         scheduleBackgroundDataSync()
         AnalyticsHelper.logFirstInstall(this)
         AnalyticsHelper.logAppOpened(this)
-        com.bustime.app.ads.CustomPopupManager.showLocalSponsorshipAd(this)
+        // Custom sponsorship campaign is shown after the App Open ad is dismissed or skipped.
 
         // ऐप खुलने / वापस foreground में आने पर quietly check for new data.
         // कोई polling loop नहीं; पुराना local data offline में उपलब्ध रहता है.
