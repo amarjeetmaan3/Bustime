@@ -776,16 +776,21 @@ async function loadRecycleBin() {
   var result = await recycleRequest('recycle-list');
   recycleBinItems = Array.isArray(result.items) ? result.items : [];
 }
-var historyState = { items: [], loading: false, error: '', hasMore: false, state: null, recycle: [] };
+var historyState = { items: [], loading: false, error: '', hasMore: false, state: null, recycle: [], filters: { filter_operation:'', filter_entity_type:'', filter_source:'', filter_search:'', filter_from:'', filter_to:'' } };
+var syncMonitorState = { devices: [], errors: [], state: null, loading: false, error: '', status: 'pending' };
 async function loadHistory(reset) {
-  if (!sbToken) return;
-  if (historyState.loading) return;
+  if (!sbToken || historyState.loading) return;
   historyState.loading = true; historyState.error = '';
-  if (reset) { historyState.items = []; }
+  if (reset) { historyState.items = []; historyState.hasMore = false; }
   render();
   try {
-    var body = { limit: 200 };
-    if (!reset && historyState.items.length) body.before_revision = historyState.items[historyState.items.length - 1].revision;
+    var body = Object.assign({ limit: 200 }, historyState.filters || {});
+    if (!reset && historyState.items.length) {
+      var last = historyState.items[historyState.items.length - 1];
+      body.before_revision = last.revision;
+      body.before_entity_type = last.entity_type;
+      body.before_entity_id = last.entity_id;
+    }
     var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
       method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
       body: JSON.stringify(body)
@@ -799,6 +804,35 @@ async function loadHistory(reset) {
   } catch (e) { historyState.error = e.message; }
   historyState.loading = false;
   render();
+}
+async function loadSyncMonitor(status) {
+  if (!sbToken || syncMonitorState.loading) return;
+  syncMonitorState.loading = true; syncMonitorState.error = '';
+  if (status) syncMonitorState.status = status;
+  render();
+  try {
+    var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
+      method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      body: JSON.stringify({ action: 'sync-monitor', status: syncMonitorState.status })
+    });
+    var result = {}; try { result = await response.json(); } catch (_) {}
+    if (!response.ok || !result.ok) throw new Error(result.error || ('HTTP ' + response.status));
+    syncMonitorState.devices = result.devices || [];
+    syncMonitorState.errors = result.errors || [];
+    syncMonitorState.state = result.state || null;
+  } catch (e) { syncMonitorState.error = e.message; }
+  syncMonitorState.loading = false;
+  render();
+}
+async function scheduleSyncRetry(deviceId, revision, entityType, entityId) {
+  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
+    method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    body: JSON.stringify({ action: 'sync-retry', device_id: deviceId, revision: Number(revision), entity_type: entityType, entity_id: entityId })
+  });
+  var result = {}; try { result = await response.json(); } catch (_) {}
+  if (!response.ok || !result.ok) throw new Error(result.error || ('HTTP ' + response.status));
+  await loadSyncMonitor(syncMonitorState.status);
+  toast('Retry scheduled. The phone will retry during its next Sync.');
 }
 function historyLabel(row) {
   var p = row.payload || row.before || {};
@@ -817,11 +851,37 @@ function historyChanged(row) {
   return out.length ? 'Changed: ' + out.join(', ') : 'Re-published, no field changed (restore or repeat)';
 }
 function viewHistory() {
-  var s = historyState, last = 0, html;
+  var s = historyState, sm = syncMonitorState, last = 0, html;
   var cur = s.state ? 'Current revision ' + s.state.revision + (s.state.published_at ? ' · last published ' + new Date(s.state.published_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '') : '';
-  html = '<div class="bus-page-head"><div><h2>History</h2><p class="muted">Every published place and route change, newest first. ' + esc(cur) + '</p></div>' +
-    '<button class="btn" data-act="history-refresh">↻ Refresh</button></div>';
+  var pending = sm.errors.filter(function(x){return x.status==='pending';}).length;
+  var failedDevices = sm.devices.filter(function(x){return !!x.last_error;}).length;
+  html = '<div class="bus-page-head"><div><h2>History & Sync Monitoring</h2><p class="muted">Permanent record of every published place and route change. ' + esc(cur) + '</p></div>' +
+    '<button class="btn" data-act="history-refresh">↻ Refresh All</button></div>';
+  html += '<div class="card"><div class="bus-page-head"><div><h3>Device Sync Monitoring</h3><p class="muted">Sync health and failed changes reported by installed Bustime devices. This panel is visible only to the signed-in admin.</p></div>' +
+    '<select id="syncMonitorStatus" class="input"><option value="pending"' + (sm.status==='pending'?' selected':'') + '>Pending errors</option><option value="all"' + (sm.status==='all'?' selected':'') + '>All errors</option><option value="resolved"' + (sm.status==='resolved'?' selected':'') + '>Resolved</option><option value="superseded"' + (sm.status==='superseded'?' selected':'') + '>Superseded</option></select>' +
+    '<button class="btn" data-act="sync-monitor-refresh">Refresh Monitor</button></div>';
+  html += '<div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0">' +
+    '<div class="card"><b>' + sm.devices.length + '</b><div class="muted">Known devices</div></div>' +
+    '<div class="card"><b>' + pending + '</b><div class="muted">Pending errors</div></div>' +
+    '<div class="card"><b>' + failedDevices + '</b><div class="muted">Devices with errors</div></div>' +
+    '<div class="card"><b>' + (sm.state ? esc(sm.state.revision) : '—') + '</b><div class="muted">Server revision</div></div></div>';
+  if (sm.error) html += '<p class="alert err">Could not load Sync Monitoring: ' + esc(sm.error) + '</p>';
+  if (sm.loading) html += '<p class="muted">Loading device sync information…</p>';
+  html += '<h4>Devices</h4><div class="tablewrap"><table><thead><tr><th>Device</th><th>App</th><th>Last Sync Revision</th><th>Last Seen</th><th>Last Error</th></tr></thead><tbody>' +
+    (sm.devices.map(function(d){return '<tr><td><b>' + esc(String(d.device_id||'').slice(0,8)) + '</b><div class="route-subline">' + esc(d.device_id||'') + '</div></td><td>' + esc(d.app_version||'—') + '</td><td>' + esc(d.last_success_revision||0) + '</td><td>' + esc(d.last_seen_at ? new Date(d.last_seen_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}) : '—') + '</td><td>' + esc(d.last_error||'—') + '</td></tr>';}).join('') ||
+      '<tr><td colspan="5" class="empty">No device sync reports received yet.</td></tr>') + '</tbody></table></div>';
+  html += '<h4>Failed Change Records</h4><div class="tablewrap"><table><thead><tr><th>Status</th><th>Device</th><th>Revision</th><th>Record</th><th>Error</th><th>Attempts</th><th>Next Retry</th><th>Action</th></tr></thead><tbody>' +
+    (sm.errors.map(function(x){var retry=x.status==='pending'?'<button class="btn sm" data-act="sync-error-retry" data-device="' + esc(x.device_id) + '" data-revision="' + Number(x.revision) + '" data-type="' + esc(x.entity_type) + '" data-id="' + esc(x.entity_id) + '">Retry now</button>':'—';return '<tr><td><span class="badge gray">' + esc(x.status) + '</span></td><td>' + esc(String(x.device_id||'').slice(0,8)) + '</td><td>' + esc(x.revision) + '</td><td>' + esc(x.entity_type + ' · ' + x.entity_id) + '</td><td>' + esc(x.error_code + ': ' + (x.error_message||'')) + '</td><td>' + esc(x.attempts) + '</td><td>' + esc(x.next_retry_at ? new Date(x.next_retry_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}) : '—') + '</td><td>' + retry + '</td></tr>';}).join('') ||
+      '<tr><td colspan="8" class="empty">' + (sm.loading?'Loading…':'No matching sync errors.') + '</td></tr>') + '</tbody></table></div></div>';
   if (s.error) html += '<div class="card"><p class="muted">Could not load history: ' + esc(s.error) + '</p></div>';
+  html += '<div class="card"><h3>Filter History</h3><div class="form-grid">' +
+    '<label>Action<select id="historyFilterOperation" class="input"><option value="">All actions</option><option value="upsert"' + (s.filters.filter_operation==='upsert'?' selected':'') + '>Add / Update</option><option value="delete"' + (s.filters.filter_operation==='delete'?' selected':'') + '>Delete</option></select></label>' +
+    '<label>Record type<select id="historyFilterType" class="input"><option value="">All types</option><option value="route"' + (s.filters.filter_entity_type==='route'?' selected':'') + '>Route</option><option value="place"' + (s.filters.filter_entity_type==='place'?' selected':'') + '>Place</option></select></label>' +
+    '<label>Source<select id="historyFilterSource" class="input"><option value="">All sources</option><option value="web_admin"' + (s.filters.filter_source==='web_admin'?' selected':'') + '>Web Admin</option><option value="android_app"' + (s.filters.filter_source==='android_app'?' selected':'') + '>Android App</option><option value="legacy"' + (s.filters.filter_source==='legacy'?' selected':'') + '>Legacy</option></select></label>' +
+    '<label>Record ID<input id="historyFilterSearch" class="input" value="' + esc(s.filters.filter_search||'') + '" placeholder="Search by Route / Place ID"></label>' +
+    '<label>From date<input id="historyFilterFrom" class="input" type="date" value="' + esc(s.filters.filter_from||'') + '"></label>' +
+    '<label>To date<input id="historyFilterTo" class="input" type="date" value="' + esc(s.filters.filter_to||'') + '"></label></div>' +
+    '<p><button class="btn primary" data-act="history-filter-apply">Apply Filters</button> <button class="btn" data-act="history-filter-clear">Clear Filters</button></p></div>';
   html += '<div class="tablewrap"><table><thead><tr><th>Rev</th><th>When (IST)</th><th>Source</th><th>Type</th><th>Record</th><th>Action</th><th>What changed</th></tr></thead><tbody>' +
     (s.items.map(function (row) {
       var showRev = row.revision !== last; last = row.revision;
@@ -2571,8 +2631,12 @@ document.addEventListener('click', async function (e) {
       await loadRecycleBin(); tab = 'recycleBin'; render(); toast('Recovery copy permanently deleted.');
     }
     else if (act === 'analytics-refresh') { loadAnalytics(); }
-    else if (act === 'history-refresh') { loadHistory(true); }
+    else if (act === 'history-refresh') { loadHistory(true); loadSyncMonitor(syncMonitorState.status); }
     else if (act === 'history-more') { loadHistory(false); }
+    else if (act === 'sync-monitor-refresh') { var smStatus = document.getElementById('syncMonitorStatus'); await loadSyncMonitor(smStatus ? smStatus.value : 'pending'); }
+    else if (act === 'sync-error-retry') { await scheduleSyncRetry(b.getAttribute('data-device'), b.getAttribute('data-revision'), b.getAttribute('data-type'), b.getAttribute('data-id')); }
+    else if (act === 'history-filter-apply') { historyState.filters = { filter_operation: ($('#historyFilterOperation')||{}).value||'', filter_entity_type: ($('#historyFilterType')||{}).value||'', filter_source: ($('#historyFilterSource')||{}).value||'', filter_search: ($('#historyFilterSearch')||{}).value||'', filter_from: ($('#historyFilterFrom')||{}).value||'', filter_to: ($('#historyFilterTo')||{}).value||'' }; await loadHistory(true); }
+    else if (act === 'history-filter-clear') { historyState.filters = { filter_operation:'', filter_entity_type:'', filter_source:'', filter_search:'', filter_from:'', filter_to:'' }; await loadHistory(true); }
     else if (act === 'tab') {
       tab = b.getAttribute('data-t'); editing = null; routeReviewEditor = null; communityReviewEditor = null; publishOpen = false; render();
       // Re-read MDM delta records when opening the places/routes workspace so newly added bus stands appear without a full browser reload.
@@ -2581,7 +2645,7 @@ document.addEventListener('click', async function (e) {
         render();
       }
       if (tab === 'analytics' && sbToken) { loadAnalytics(); }
-      if (tab === 'history' && sbToken) { loadHistory(true); }
+      if (tab === 'history' && sbToken) { loadHistory(true); loadSyncMonitor('pending'); }
    if (tab === 'advertisement') { loadAdConfig().then(function(){render();}).catch(function(err){toast('Advertisement settings: '+err.message);}); }
       if (tab === 'content' || tab === 'settings') { loadContentSettings().then(function(){render();}).catch(function(err){toast('App settings: '+err.message);}); }
       if (['review','busRequests','addBus','corrections','feedbackReview'].indexOf(tab) >= 0 && sbToken) { try { await Promise.all([loadSubs(), loadCommunity()]); } catch (e) { subsError = e.message; } render(); }

@@ -28,3 +28,15 @@ Every later change to `app/src/main/assets/routes.json` triggers **Publish trans
 - The Android cursor advances only after all records in that revision apply.
 - The first sync uses the current GitHub snapshot to remove stale records from older installations; subsequent syncs fetch only deltas.
 - Offline devices keep their existing local database and retry when they next foreground or WorkManager runs.
+
+
+## Reliable per-device Sync and permanent diagnostics
+
+- `data_change_log` remains the permanent master history. No retention job or automatic deletion is configured for it.
+- Android applies each history row independently. A row that fails validation/application is recorded against that installation and does not stop later valid rows.
+- The local revision cursor advances only after the Edge Function has transactionally stored the device checkpoint and its failed-row records.
+- Failed rows are retried automatically with increasing backoff during the next foreground or WorkManager sync. A newer history row for the same entity supersedes an older failed row, so retries cannot roll a route back to stale data.
+- At the 20,000-row incremental safety boundary, Android requests a consistent master snapshot. Snapshot data is validated before a Room transaction replaces the local dataset; an incomplete snapshot is rejected.
+- `sync_device_state` and `sync_error_logs` contain per-installation progress and diagnostics only. They do not duplicate the published route history and are not exposed to anonymous/authenticated Data API roles.
+- The signed-in owner sees device status, pending/resolved/superseded errors, and manual retry scheduling in the existing Web Admin History page under Sync Monitoring.
+- History filters support operation, entity type, source, record ID, and date range. History pagination uses a composite revision/type/ID cursor so a large publish revision is not partially skipped.
