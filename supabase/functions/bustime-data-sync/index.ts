@@ -45,7 +45,7 @@ Deno.serve(async (req: Request) => {
     const failures = Array.isArray(body.failures) ? body.failures : [];
     const resolved = Array.isArray(body.resolved) ? body.resolved : [];
     if (!uuidPattern.test(deviceId) || !Number.isSafeInteger(revision) || revision < 0 ||
-        failures.length > 100 || resolved.length > 100) {
+        failures.length > 500 || resolved.length > 500) {
       return reply({ error: "invalid_sync_report" }, 400);
     }
     const cleanFailures = [];
@@ -81,28 +81,40 @@ Deno.serve(async (req: Request) => {
       cleanResolved.push({ revision: r, entity_type: type, entity_id: id });
     }
 
-    try {
-      const result = await fetch(root + "/rest/v1/rpc/record_bustime_sync_report", {
-        method: "POST",
-        headers: serviceHeaders,
-        body: JSON.stringify({
-          p_device_id: deviceId,
-          p_app_version: appVersion,
-          p_revision: revision,
-          p_failures: cleanFailures,
-          p_resolved: cleanResolved,
-          p_snapshot_recovered: body.snapshot_recovered === true,
-          p_advance_checkpoint: body.advance_checkpoint === true,
-        }),
-      });
-      const text = await result.text();
-      return new Response(text || JSON.stringify({ error: "empty_sync_report_response" }), {
-        status: result.status,
-        headers: corsHeaders,
-      });
-    } catch {
-      return reply({ error: "sync_report_unavailable" }, 502);
+    const batchSize = 100;
+    const batchCount = Math.max(1, Math.ceil(failures.length / batchSize), Math.ceil(resolved.length / batchSize));
+    const advanceCheckpoint = body.advance_checkpoint !== false;
+    for (let batch = 0; batch < batchCount; batch++) {
+      const from = batch * batchSize;
+      const finalBatch = batch === batchCount - 1;
+      try {
+        const result = await fetch(root + "/rest/v1/rpc/record_bustime_sync_report", {
+          method: "POST",
+          headers: serviceHeaders,
+          body: JSON.stringify({
+            p_device_id: deviceId,
+            p_app_version: appVersion,
+            p_revision: revision,
+            p_failures: cleanFailures.slice(from, from + batchSize),
+            p_resolved: cleanResolved.slice(from, from + batchSize),
+            p_snapshot_recovered: body.snapshot_recovered === true && finalBatch,
+            p_advance_checkpoint: advanceCheckpoint && finalBatch,
+          }),
+        });
+        const text = await result.text();
+        if (!result.ok) return new Response(text || JSON.stringify({ error: "sync_report_rejected" }), {
+          status: result.status,
+          headers: corsHeaders,
+        });
+        if (finalBatch) return new Response(text || JSON.stringify({ error: "empty_sync_report_response" }), {
+          status: result.status,
+          headers: corsHeaders,
+        });
+      } catch {
+        return reply({ error: "sync_report_unavailable" }, 502);
+      }
     }
+    return reply({ ok: true, revision, checkpoint_advanced: advanceCheckpoint });
   }
 
   const url = new URL(req.url);
