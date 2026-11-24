@@ -134,6 +134,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         val failures = ArrayList<FailedChange>()
         val resolved = ArrayList<FailedChange>()
         var changed = false
+        var snapshotRetried = false
         val deviceId = getDeviceId()
 
         // Retry failed records after their backoff. The server excludes superseded events,
@@ -146,7 +147,7 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
                 if (!element.isJsonObject) continue
                 val change = element.asJsonObject
                 val error = if (change.get("operation")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString == "snapshot_retry") {
-                    if (importRemoteSnapshot()) null else "Snapshot retry did not produce a newer valid snapshot"
+                    if (importRemoteSnapshot()) { snapshotRetried = true; null } else "Snapshot retry did not produce a newer valid snapshot"
                 } else {
                     applyChange(change)
                 }
@@ -162,6 +163,20 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             }
         } else if (retryRows != null && retryRows.isJsonObject && retryRows.asJsonObject.has("error")) {
             Log.w(TAG, "Retry queue unavailable: ${retryRows.asJsonObject.get("error")}")
+        }
+
+        if (snapshotRetried) {
+            val snapshotRevision = prefs.getLong(KEY_REVISION, 0L)
+            val reported = reportSync(
+                snapshotRevision,
+                failures + pendingSnapshotFailures(),
+                resolved,
+                snapshotRecovered = true
+            )
+            if (!reported) return null
+            clearPendingSnapshotFailures()
+            Log.d(TAG, "Recovered a previously invalid snapshot record at revision $snapshotRevision")
+            return true
         }
 
         if (publishedRevision > localRevision) {
