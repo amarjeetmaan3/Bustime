@@ -220,7 +220,23 @@ Deno.serve(async (req: Request) => {
   if (!stateRes.ok) return reply({ error: "sync_state_read_failed" }, 502);
   const stateRows = await stateRes.json();
   if (!Array.isArray(stateRows) || !stateRows.length) return reply({ error: "sync_state_missing" }, 503);
-  const state = stateRows[0], revision = Number(state.revision || 0) + 1;
+  const state = stateRows[0], currentRevision = Number(state.revision || 0), revision = currentRevision + 1;
+  // Web Admin supplies the revision it edited. Claim the next revision with a
+  // conditional UPDATE so two tabs/devices cannot publish from the same stale base.
+  // Only one request can change revision=N to N+1; every other request gets 409.
+  const expectedRevision = body.expected_revision === undefined ? null : Number(body.expected_revision);
+  if (expectedRevision !== null) {
+    if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) return reply({ error: "invalid_expected_revision" }, 400);
+    if (expectedRevision !== currentRevision) return reply({ error: "publish_revision_conflict", expected_revision: expectedRevision, current_revision: currentRevision }, 409);
+    const claim = await fetch(url + "/rest/v1/data_sync_state?id=eq.1&revision=eq." + currentRevision, {
+      method: "PATCH",
+      headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify({ revision, published_at: new Date().toISOString() })
+    });
+    if (!claim.ok) return reply({ error: "publish_revision_claim_failed" }, 502);
+    const claimedRows = await claim.json();
+    if (!Array.isArray(claimedRows) || !claimedRows.length) return reply({ error: "publish_revision_conflict", expected_revision: expectedRevision, current_revision: currentRevision }, 409);
+  }
   // Archive complete payloads before emitting tombstones, so a failed archive never destroys recoverability.
   for (const item of deleteArchives) {
     const existing = await fetch(url + "/rest/v1/data_recycle_bin?select=id&entity_type=eq." + item.entity_type + "&entity_id=eq." + encodeURIComponent(item.entity_id) + "&restored_at=is.null&permanently_deleted_at=is.null&limit=1", {
@@ -251,10 +267,16 @@ Deno.serve(async (req: Request) => {
     body: JSON.stringify(rows)
   });
   if (!insert.ok) return reply({ error: "change_log_write_failed", detail: (await insert.text()).slice(0, 300) }, 502);
-  const stateUpdate = await fetch(url + "/rest/v1/data_sync_state?id=eq.1", {
+  // Revision was already atomically claimed above for guarded Web Admin publishes.
+  // Legacy Android/MDM callers without expected_revision retain the previous update path.
+  const stateUpdate = expectedRevision === null ? await fetch(url + "/rest/v1/data_sync_state?id=eq.1", {
     method: "PATCH",
     headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify(Object.assign({ revision, published_at: new Date().toISOString() }, snapshotVersion === null ? {} : { snapshot_version: snapshotVersion }))
+  }) : await fetch(url + "/rest/v1/data_sync_state?id=eq.1", {
+    method: "PATCH",
+    headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify(Object.assign({ published_at: new Date().toISOString() }, snapshotVersion === null ? {} : { snapshot_version: snapshotVersion }))
   });
   if (!stateUpdate.ok) return reply({ error: "sync_state_update_failed", revision }, 502);
   if (restoreId !== null) {
