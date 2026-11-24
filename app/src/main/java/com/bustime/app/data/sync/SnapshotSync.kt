@@ -144,7 +144,11 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             for (element in retryRows.asJsonArray) {
                 if (!element.isJsonObject) continue
                 val change = element.asJsonObject
-                val error = applyChange(change)
+                val error = if (change.get("operation")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString == "snapshot_retry") {
+                    if (importRemoteSnapshot()) null else "Snapshot retry did not produce a newer valid snapshot"
+                } else {
+                    applyChange(change)
+                }
                 val item = failedChange(change, error)
                 if (error != null) {
                     if (item == null) return null
