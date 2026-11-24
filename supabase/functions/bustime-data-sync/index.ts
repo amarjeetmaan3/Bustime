@@ -45,7 +45,7 @@ Deno.serve(async (req: Request) => {
     const failures = Array.isArray(body.failures) ? body.failures : [];
     const resolved = Array.isArray(body.resolved) ? body.resolved : [];
     if (!uuidPattern.test(deviceId) || !Number.isSafeInteger(revision) || revision < 0 ||
-        failures.length > 500 || resolved.length > 500) {
+        failures.length > 100 || resolved.length > 100) {
       return reply({ error: "invalid_sync_report" }, 400);
     }
     const cleanFailures = [];
@@ -92,6 +92,7 @@ Deno.serve(async (req: Request) => {
           p_failures: cleanFailures,
           p_resolved: cleanResolved,
           p_snapshot_recovered: body.snapshot_recovered === true,
+          p_advance_checkpoint: body.advance_checkpoint === true,
         }),
       });
       const text = await result.text();
@@ -147,7 +148,7 @@ Deno.serve(async (req: Request) => {
       return reply({ error: "cursor_out_of_range" }, 400);
     }
     if (offset >= 20000) return reply({ error: "snapshot_required", reason: "change_history_page_limit" }, 409);
-    const path = `/rest/v1/data_change_log?select=revision,entity_type,entity_id,operation,payload&revision=gt.${since}&order=revision.asc,entity_type.asc,entity_id.asc&limit=1000&offset=${offset}`;
+    const path = `/rest/v1/data_change_log?select=revision,entity_type,entity_id,operation,payload&revision=gt.${since}&revision=lte.${until}&order=revision.asc,entity_type.asc,entity_id.asc&limit=1000&offset=${offset}`;
     try {
       const response = await fetch(root + path, { headers: serviceHeaders });
       return new Response(await response.text(), { status: response.status, headers: corsHeaders });
