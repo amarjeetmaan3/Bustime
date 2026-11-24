@@ -31,13 +31,14 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
         val revision: Long,
         val entityType: String,
         val entityId: String,
-        val message: String
+        val message: String,
+        val errorCode: String = "change_apply_failed"
     ) {
         fun toJson(): Map<String, Any> = mapOf(
             "revision" to revision,
             "entity_type" to entityType,
             "entity_id" to entityId,
-            "error_code" to "change_apply_failed",
+            "error_code" to errorCode,
             "error_message" to message.take(300)
         )
         fun keyJson(): Map<String, Any> = mapOf(
@@ -485,8 +486,8 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
 
         val snapshotFailures = ArrayList<FailedChange>()
         if (requireCleanData && dto.snapshotRevision > 0L) {
-            data.failedPlaceIds.forEach { snapshotFailures.add(FailedChange(dto.snapshotRevision, "place", it, "Snapshot record failed validation")) }
-            data.failedRouteIds.forEach { snapshotFailures.add(FailedChange(dto.snapshotRevision, "route", it, "Snapshot record or stop chain failed validation")) }
+            data.failedPlaceIds.forEach { snapshotFailures.add(FailedChange(dto.snapshotRevision, "place", it, "Snapshot record failed validation", "snapshot_record_invalid")) }
+            data.failedRouteIds.forEach { snapshotFailures.add(FailedChange(dto.snapshotRevision, "route", it, "Snapshot record or stop chain failed validation", "snapshot_route_invalid")) }
         }
 
         // The replacement remains one Room transaction; valid data is imported and old copies
