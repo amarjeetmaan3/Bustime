@@ -141,10 +141,11 @@ Deno.serve(async (req: Request) => {
 
   if (action === "changes") {
     const sinceRaw = url.searchParams.get("since") ?? "0";
+    const untilRaw = url.searchParams.get("until");
     const offsetRaw = url.searchParams.get("offset") ?? "0";
-    if (!/^\d+$/.test(sinceRaw) || !/^\d+$/.test(offsetRaw)) return reply({ error: "invalid_cursor" }, 400);
-    const since = Number(sinceRaw), offset = Number(offsetRaw);
-    if (!Number.isSafeInteger(since) || !Number.isSafeInteger(offset) || offset < 0) {
+    if (!/^\d+$/.test(sinceRaw) || !untilRaw || !/^\d+$/.test(untilRaw) || !/^\d+$/.test(offsetRaw)) return reply({ error: "invalid_cursor" }, 400);
+    const since = Number(sinceRaw), until = Number(untilRaw), offset = Number(offsetRaw);
+    if (!Number.isSafeInteger(since) || !Number.isSafeInteger(until) || until < since || !Number.isSafeInteger(offset) || offset < 0) {
       return reply({ error: "cursor_out_of_range" }, 400);
     }
     if (offset >= 20000) return reply({ error: "snapshot_required", reason: "change_history_page_limit" }, 409);
