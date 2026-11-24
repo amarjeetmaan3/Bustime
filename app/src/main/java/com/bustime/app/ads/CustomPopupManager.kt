@@ -26,7 +26,9 @@ import com.bustime.app.utils.Constants
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import java.time.LocalDate
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /** Fetches the remotely configured, non-fullscreen owner campaign poster. */
 object CustomPopupManager {
@@ -51,7 +53,7 @@ object CustomPopupManager {
                 } finally { conn.disconnect() }
             } catch (_: Exception) { null }
             if (config == null || !config.optBoolean("enabled", false)) return@Thread
-            val today = LocalDate.now().toString()
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
             val start = config.optString("start_date")
             val end = config.optString("end_date")
             if (start.isNotBlank() && today < start || end.isNotBlank() && today > end) return@Thread
