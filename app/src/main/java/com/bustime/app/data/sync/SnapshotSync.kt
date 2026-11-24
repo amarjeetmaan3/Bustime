@@ -248,8 +248,10 @@ class SnapshotSync(private val context: Context, private val dao: TransportDao) 
             val revision = (change.get("failure_revision") ?: change.get("revision"))?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asLong ?: return null
             val type = change.get("entity_type")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString ?: return null
             val id = change.get("entity_id")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString?.trim() ?: return null
+            val code = change.get("error_code")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString
+                ?: "change_apply_failed"
             if (revision < 1L || type !in listOf("place", "route") || id.isEmpty()) null
-            else FailedChange(revision, type, id, message ?: "")
+            else FailedChange(revision, type, id, message ?: "", code)
         } catch (_: Exception) {
             null
         }
