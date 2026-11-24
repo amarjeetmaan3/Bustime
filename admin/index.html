@@ -412,7 +412,7 @@ var data = null, baseVersion = 0, dirty = false;
 var snapshotVersion = 74;
 // Last clean shared state. Web Admin publishes the same entity deltas as Android MDM.
 var sharedBaseData = null;
-var mdmRevisionCursor = 0, mdmAutoSyncTimer = null, mdmAutoSyncBusy = false, mdmSyncError = null;
+var mdmRevisionCursor = 0, mdmAutoSyncTimer = null, mdmAutoSyncBusy = false, mdmSyncError = null, mdmStaleWarning = '';
 var recycleBinItems = [];
 var tab = 'settings';
 var contentSettings = {terms_enabled:true,terms:{en:'',hi:'',pa:''},popup_enabled:true,popup:{en:'',hi:'',pa:''},popup_seconds:5,ticker_enabled:true,ticker:{en:'',hi:'',pa:''},update_notifications_enabled:false};
@@ -467,6 +467,42 @@ async function verifySingleAdmin() {
   }
   return true;
 }
+
+var adminRefreshPromise = null;
+async function refreshAdminAccessToken() {
+  if (adminRefreshPromise) return adminRefreshPromise;
+  adminRefreshPromise = (async function () {
+    if (!sbRefreshToken) throw new Error('Admin session expired. Please sign in again.');
+    var base = cfg.sbUrl.replace(/\\/+$/, '');
+    var res = await fetchWithTimeout(base + '/auth/v1/token?grant_type=refresh_token', {
+      method:'POST', headers:{apikey:cfg.sbKey,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:sbRefreshToken})
+    }, 15000);
+    var session = {}; try { session = await res.json(); } catch (_) {}
+    if (!res.ok || !session.access_token) {
+      saveAdminSession({});
+      throw new Error('Admin session expired. Please sign in again.');
+    }
+    saveAdminSession(session);
+    if (!await verifySingleAdmin()) throw new Error('Admin session expired. Please sign in again.');
+    return true;
+  })();
+  try { return await adminRefreshPromise; }
+  finally { adminRefreshPromise = null; }
+}
+async function adminFetch(url, options, timeoutMs) {
+  var opts = Object.assign({}, options || {});
+  var headers = Object.assign({}, opts.headers || {});
+  headers.apikey = headers.apikey || cfg.sbKey;
+  if (sbToken) headers.Authorization = 'Bearer ' + sbToken;
+  opts.headers = headers;
+  var res = await fetchWithTimeout(url, opts, timeoutMs || 20000);
+  if (res.status !== 401) return res;
+  await refreshAdminAccessToken();
+  headers.Authorization = 'Bearer ' + sbToken;
+  return await fetchWithTimeout(url, Object.assign({}, opts, {headers:headers}), timeoutMs || 20000);
+}
+
 async function restoreAdminSession() {
   try {
     var stored = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
@@ -750,7 +786,7 @@ async function loadData() {
 }
 async function publishAdminDelete(entityType, entityId, payload) {
   if (!sbToken) throw new Error('Sign in as the owner admin before deleting published data.');
-  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
+  var response = await adminFetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
     body: JSON.stringify({ action: 'publish', source: 'web_admin', changes: [{ entity_type: entityType, entity_id: String(entityId), operation: 'delete', payload: payload || null }] })
   });
@@ -763,7 +799,7 @@ async function recycleRequest(action, id) {
   if (!sbToken) throw new Error('Sign in as the owner admin first.');
   var body = { action: action, source: 'web_admin' };
   if (id != null) body.id = Number(id);
-  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
+  var response = await adminFetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method:'POST',
     headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken,'Content-Type':'application/json','Cache-Control':'no-store'},
     body:JSON.stringify(body), cache:'no-store'
@@ -791,7 +827,7 @@ async function loadHistory(reset) {
       body.before_entity_type = last.entity_type;
       body.before_entity_id = last.entity_id;
     }
-    var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
+    var response = await adminFetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
       method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
       body: JSON.stringify(body)
     });
@@ -811,7 +847,7 @@ async function loadSyncMonitor(status) {
   if (status) syncMonitorState.status = status;
   render();
   try {
-    var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
+    var response = await adminFetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
       method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
       body: JSON.stringify({ action: 'sync-monitor', status: syncMonitorState.status })
     });
@@ -825,7 +861,7 @@ async function loadSyncMonitor(status) {
   render();
 }
 async function scheduleSyncRetry(deviceId, revision, entityType, entityId) {
-  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
+  var response = await adminFetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-history', {
     method: 'POST', headers: { apikey: cfg.sbKey, Authorization: 'Bearer ' + sbToken, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
     body: JSON.stringify({ action: 'sync-retry', device_id: deviceId, revision: Number(revision), entity_type: entityType, entity_id: entityId })
   });
@@ -931,12 +967,24 @@ async function publishSharedDataDiff(before, after) {
   if (!sbToken || !cfg.sbUrl || !cfg.sbKey) throw new Error('Sign in to the owner admin and configure Supabase before publishing shared route data.');
   if (!changes.length) return 0;
   if (changes.length > 250) throw new Error('This publish contains ' + changes.length + ' changed routes/stops. Please publish smaller batches (250 changes maximum) so the shared sync remains consistent.');
+  // Refuse stale tabs before publishing; the Edge Function also performs an atomic revision check.
+  var stateResponse = await adminFetch(cfg.sbUrl.replace(/\\/+$/, '') + '/functions/v1/mdm-publish', {
+    method:'POST', headers:{apikey:cfg.sbKey,Authorization:'Bearer '+sbToken,'Content-Type':'application/json','Cache-Control':'no-store'},
+    body:JSON.stringify({action:'list'}), cache:'no-store'
+  });
+  var stateResult = {}; try { stateResult = await stateResponse.json(); } catch (_) {}
+  if (!stateResponse.ok || !stateResult.ok || !stateResult.state) throw new Error('Could not verify the latest published revision. Nothing was published; retry when connected.');
+  var serverRevision = Number(stateResult.state.revision || 0);
+  if (serverRevision !== Number(mdmRevisionCursor || 0)) {
+    mdmStaleWarning = 'Another Admin tab/device has published newer data. This tab must refresh before publishing.';
+    throw new Error('This Admin tab is out of date (local revision ' + Number(mdmRevisionCursor || 0) + ', server revision ' + serverRevision + '). Nothing was published. Your unsaved edits are still on this screen; refresh the latest data before reapplying them.');
+  }
   // Routine publishes advance only the change-log revision. snapshot_version is reserved
   // for deliberate full-baseline rebuilds, so ordinary edits never force a full download.
-  var response = await fetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
+  var response = await adminFetch(cfg.sbUrl.replace(/\/+$/, '') + '/functions/v1/mdm-publish', {
     method:'POST',
     headers:{ apikey:cfg.sbKey, Authorization:'Bearer '+sbToken, 'Content-Type':'application/json', 'Cache-Control':'no-store' },
-    body:JSON.stringify({ action:'publish', source:'web_admin', changes:changes })
+    body:JSON.stringify({ action:'publish', source:'web_admin', expected_revision:Number(mdmRevisionCursor || 0), changes:changes })
   });
   var result = {}; try { result = await response.json(); } catch (_) {}
   if (!response.ok || !result.ok) throw new Error(result.error || ('Shared data publish failed (HTTP '+response.status+').'));
@@ -1372,7 +1420,7 @@ function viewDashboard() {
   return '<div class="stats">' +
     stat(data.places.length, 'Places (' + stands + ' bus stands)') + stat(data.routes.length, 'Bus routes') + '</div>' +
     '<div class="card"><h2>Data health</h2><p class="muted">Current revision: ' + baseVersion + ' · Snapshot version: ' + snapshotVersion + '. ' +
-    (dirty ? 'You have unpublished changes.' : 'Everything is published.') + '</p>' + reportHtml(v) + '</div>' +
+    (mdmStaleWarning ? mdmStaleWarning : (dirty ? 'You have unpublished changes.' : 'Everything is published.')) + '</p>' + reportHtml(v) + '</div>' +
     '<div class="card"><h2>How it works</h2><p class="muted">Edit bus stops and routes here, then press <b>Publish</b>. ' +
     'The app picks up the new data the next time it opens. No new APK is needed for data changes.</p></div>';
 }
