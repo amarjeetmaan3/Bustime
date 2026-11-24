@@ -84,8 +84,9 @@ object AdMobAdsManager {
         (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
     private fun unitOrTest(context: Context, configured: String, test: String): String? = when {
-        configured.isNotBlank() -> configured
+        // Never serve live account ads while developing or testing the app.
         isDebuggable(context) -> test
+        configured.isNotBlank() -> configured
         else -> null
     }
 
