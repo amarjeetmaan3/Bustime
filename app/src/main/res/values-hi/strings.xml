@@ -42,7 +42,7 @@
     <string name="ar_not_set">ऑनलाइन भेजने की सुविधा अभी चालू नहीं है</string>
     <string name="ar_no_routes">अभी कोई रूट उपलब्ध नहीं है। बाद में कोशिश करें।</string>
     <string name="correction_route">रूट में सुधार</string>
-    <string name="book_bus">बस बुक करें</string>
+    <string name="book_bus">बस सेवा</string>
     <string name="bus_type">बस का प्रकार</string>
     <string name="seat_type">सीटों का प्रकार</string>
     <string name="operator_location">बस की लोकेशन</string>
