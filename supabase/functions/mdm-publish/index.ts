@@ -73,6 +73,49 @@ Deno.serve(async (req: Request) => {
     const status = body.action === "review-delete" ? "deleted" : String(body.status || "");
     if (table === "feedback_submissions" && (body.action === "review-delete" || !["pending", "reviewed"].includes(status))) return reply({ error: "feedback_status_not_allowed" }, 403);
     if (!["pending", "reviewed", "approved", "rejected", "deleted"].includes(status)) return reply({ error: "invalid_review_status" }, 400);
+    // Publishing an approved bus submission into the public directory is part of approval.
+    // Use the submission UUID as the operator UUID so repeated approvals are idempotent.
+    if (table === "bus_operator_submissions" && status === "approved") {
+      const sourceRes = await fetch(url + "/rest/v1/bus_operator_submissions?select=*&id=eq." + encodeURIComponent(id) + "&limit=1", {
+        headers: { apikey: service, Authorization: "Bearer " + service, "Cache-Control": "no-store" }
+      });
+      if (!sourceRes.ok) return reply({ error: "bus_submission_read_failed", detail: (await sourceRes.text()).slice(0, 200) }, 502);
+      const sourceRows = await sourceRes.json();
+      if (!Array.isArray(sourceRows) || !sourceRows.length) return reply({ error: "review_item_not_found" }, 404);
+      const source = sourceRows[0] as Record<string, unknown>;
+      const operatorName = String(source.operator_name || "").trim();
+      const serviceName = String(source.service_name || operatorName).trim();
+      const location = String(source.location || "").trim();
+      const phone = String(source.phone || "").trim();
+      const busTypes = Array.isArray(source.bus_types) ? source.bus_types.filter((v): v is string => typeof v === "string" && !!v.trim()) : [];
+      if (!operatorName || !serviceName || !location || !phone || !busTypes.length) {
+        return reply({ error: "bus_service_fields_required", message: "Service name, bus types, operating location and phone are required." }, 400);
+      }
+      const operator = {
+        id,
+        operator_name: operatorName,
+        service_name: serviceName,
+        bus_type: String(source.bus_type || busTypes[0]),
+        custom_category: source.custom_category ?? null,
+        seat_type: source.seat_type ?? null,
+        sleeper_count: source.sleeper_count ?? null,
+        seater_count: source.seater_count ?? null,
+        from_text: source.from_text ?? null,
+        to_text: source.to_text ?? null,
+        phone,
+        details: source.details ?? null,
+        active: true,
+        location,
+        whatsapp: source.whatsapp ?? null,
+        bus_types: busTypes
+      };
+      const publishBus = await fetch(url + "/rest/v1/bus_operators?on_conflict=id", {
+        method: "POST",
+        headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify(operator)
+      });
+      if (!publishBus.ok) return reply({ error: "bus_directory_publish_failed", detail: (await publishBus.text()).slice(0, 250) }, 502);
+    }
     const patch: Record<string, unknown> = { status };
     if (status === "reviewed") patch.reviewed_at = new Date().toISOString();
     if (table === "feedback_submissions" && status === "pending") patch.reviewed_at = null;
