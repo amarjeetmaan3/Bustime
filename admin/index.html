@@ -1358,10 +1358,17 @@ function reportHtml(v) {
 // Approved route corrections that are saved on the server but not yet published.
 // They survive a page refresh, so Publish must stay available for them.
 function pendingApprovedCount() {
-  return (community.corrections || []).filter(function (x) {
+  var corrections = (community.corrections || []).filter(function (x) {
     var rd = x && x.reviewed_data && typeof x.reviewed_data === 'object' ? x.reviewed_data : {};
     return x.status === 'approved' && rd._bustime_publish_pending === true && !rd._bustime_published_version;
   }).length;
+  // Approved new-route submissions whose route is not yet in the published (server) route list.
+  var publishedRoutes = (sharedBaseData && sharedBaseData.routes) || (data && data.routes) || [];
+  var newRoutes = (Array.isArray(subs) ? subs : []).filter(function (x) {
+    if (!x || x.status !== 'approved' || x.submission_type === 'edit_existing_route') return false;
+    return !x.route_id || !publishedRoutes.some(function (r) { return String(r.id) === String(x.route_id); });
+  }).length;
+  return corrections + newRoutes;
 }
 function refreshChrome() {
   var waitingApproved = pendingApprovedCount();
