@@ -1309,6 +1309,8 @@ async function publish() {
         method:'PATCH',headers:{Prefer:'return=minimal'},
         body:JSON.stringify({reviewed_data:cu.reviewed_data})
       });
+      var cachedCorrection=(community.corrections||[]).find(function(z){return z.id===cu.id;});
+      if(cachedCorrection)cachedCorrection.reviewed_data=cu.reviewed_data;
     }catch(communitySyncError){publishSyncWarnings++;}
   }
   return true;
@@ -1353,10 +1355,19 @@ function reportHtml(v) {
 }
 
 // ============ Views ============
+// Approved route corrections that are saved on the server but not yet published.
+// They survive a page refresh, so Publish must stay available for them.
+function pendingApprovedCount() {
+  return (community.corrections || []).filter(function (x) {
+    var rd = x && x.reviewed_data && typeof x.reviewed_data === 'object' ? x.reviewed_data : {};
+    return x.status === 'approved' && rd._bustime_publish_pending === true && !rd._bustime_published_version;
+  }).length;
+}
 function refreshChrome() {
-  $('#dirty').style.display = dirty ? 'inline-block' : 'none';
+  var waitingApproved = pendingApprovedCount();
+  $('#dirty').style.display = (dirty || waitingApproved) ? 'inline-block' : 'none';
   $('#verPill').textContent = data ? 'Revision ' + baseVersion + ' · Snapshot v' + snapshotVersion : 'Not loaded';
-  $('#pubBtn').disabled = !data || !dirty;
+  $('#pubBtn').disabled = !data || !(dirty || waitingApproved);
   $('#pageTitle').textContent = TITLES[tab] || '';
   var signOut = $('#adminSignOut');
   if (signOut) signOut.style.display = sbToken ? 'inline-block' : 'none';
