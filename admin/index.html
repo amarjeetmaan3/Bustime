@@ -910,7 +910,7 @@ function viewHistory() {
   var s = historyState, sm = syncMonitorState, last = 0, html;
   var cur = s.state ? 'Current revision ' + s.state.revision + (s.state.published_at ? ' · last published ' + new Date(s.state.published_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '') : '';
   var pending = sm.errors.filter(function(x){return x.status==='pending';}).length;
-  var failedDevices = sm.devices.filter(function(x){return !!x.last_error;}).length;
+  var failedDevices = sm.devices.filter(function(x){return String(x.last_error == null ? '' : x.last_error).trim().length > 0;}).length;
   html = '<div class="bus-page-head"><div><h2>History & Sync Monitoring</h2><p class="muted">Permanent record of every published place and route change. ' + esc(cur) + '</p></div>' +
     '<button class="btn" data-act="history-refresh">↻ Refresh All</button></div>';
   html += '<div class="card"><div class="bus-page-head"><div><h3>Device Sync Monitoring</h3><p class="muted">Sync health and failed changes reported by installed Bustime devices. This panel is visible only to the signed-in admin.</p></div>' +
