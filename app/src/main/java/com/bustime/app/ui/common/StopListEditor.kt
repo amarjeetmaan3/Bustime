@@ -213,6 +213,8 @@ class StopListEditor(
                 setPadding(dp(2), 0, dp(4), 0)
                 setBackgroundColor(Color.TRANSPARENT)
                 setText(draft.optString("name"), false)
+                // Keep the phone-number autofill suggestion out of stop-name fields.
+                androidx.core.view.ViewCompat.setImportantForAutofill(this, android.view.View.IMPORTANT_FOR_AUTOFILL_NO)
             }
             val initialLang = draft.optString("language", LanguageHelper.current())
             // Keep each autocomplete row and the text inserted by AutoCompleteTextView to ONE

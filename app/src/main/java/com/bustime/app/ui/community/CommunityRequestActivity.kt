@@ -288,6 +288,17 @@ class CommunityRequestActivity : AppCompatActivity() {
         correctionDrafts.forEachIndexed { index, d ->
             val name = d.optString("name").trim()
             if (name.isBlank()) { toast(getString(R.string.community_enter_stop_name, index + 1)); return }
+            // A stop name made only of digits/phone symbols is almost always a mistaken phone-number paste.
+            if (name.matches(Regex("^[+0-9\\s\\-()]{6,}$"))) {
+                toast(
+                    when (LanguageHelper.current()) {
+                        "hi" -> "स्टॉप ${index + 1} के नाम में मोबाइल नंबर है। कृपया सही स्टॉप का नाम लिखें।"
+                        "pa" -> "ਸਟਾਪ ${index + 1} ਦੇ ਨਾਮ ਵਿੱਚ ਮੋਬਾਈਲ ਨੰਬਰ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਸਹੀ ਨਾਮ ਲਿਖੋ।"
+                        else -> "Stop ${index + 1} has a phone number as its name. Please enter the real stop name."
+                    }
+                )
+                return
+            }
             // JSONObject.NULL can stringify to "null"; treat it as an empty optional time.
             val t = if (d.isNull("time")) "" else d.optString("time").trim().takeUnless { it == "null" }.orEmpty()
             if (t.isNotBlank() && !t.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))) { toast(getString(R.string.community_stop_invalid_time, index + 1)); return }
@@ -619,7 +630,13 @@ class CommunityRequestActivity : AppCompatActivity() {
             setHintTextColor(getColor(R.color.textMuted))
             setBackgroundColor(Color.TRANSPARENT)
             setPadding(0, dp(3), 0, 0)
-            if (isPhone) inputType = InputType.TYPE_CLASS_PHONE
+            if (isPhone) {
+                inputType = InputType.TYPE_CLASS_PHONE
+                androidx.core.view.ViewCompat.setImportantForAutofill(this, android.view.View.IMPORTANT_FOR_AUTOFILL_YES)
+                androidx.core.view.ViewCompat.setAutofillHints(this, android.view.View.AUTOFILL_HINT_PHONE)
+            } else {
+                androidx.core.view.ViewCompat.setImportantForAutofill(this, android.view.View.IMPORTANT_FOR_AUTOFILL_NO)
+            }
             if (multiLine) {
                 minLines = 2
                 maxLines = 4

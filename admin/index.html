@@ -2048,7 +2048,7 @@ function viewCommunity(mode) {
     var textValue = (x.category||'') + ' ' + (x.message||'');
     if (mode === 'bus' || mode === 'busDirectory') return mode === 'bus' ? x._kind === 'busSubmissions' : false;
     if (mode === 'corrections') return x._kind === 'corrections';
-    if (mode === 'feedback') return x._kind === 'feedback' && !/correct/i.test(textValue);
+    if (mode === 'feedback') return x._kind === 'feedback';
     return communitySection === 'all' || x._kind === communitySection;
   }
   var html = '<div class="toolbar"><span class="grow muted">' + esc(mode === 'bus' ? 'Review Add Your Bus submissions. Manual operator management is in Operator Directory.' : mode === 'busDirectory' ? 'Manage published bus operators separately from submitted requests.' : mode === 'corrections' ? 'Route correction requests only.' : mode === 'feedback' ? 'General feedback and suggestions.' : 'Requests grouped by category.') + '</span><button class="btn" data-act="community-refresh">Refresh</button>' + (sbToken ? '<button class="btn" data-act="sb-logout">Sign out</button>' : '') + '</div>';
@@ -2117,7 +2117,7 @@ function viewReview() {
     (community[pair[0]]||[]).forEach(function(x){x._kind=pair[0];x._label=pair[1];all.push(x);});
   });
   var pendingRoutes=(subs||[]).filter(function(x){return x.status==='pending';}).length;
-  var pendingCorrections=all.filter(function(x){return x.status==='pending' && (x._kind==='corrections' || x._kind==='feedback' && /correct/i.test((x.category||'')+' '+(x.message||'')));}).length;
+  var pendingCorrections=all.filter(function(x){return x.status==='pending' && x._kind==='corrections';}).length;
   var pendingBus=all.filter(function(x){return x.status==='pending' && x._kind==='busSubmissions';}).length;
   var pendingFeedback=all.filter(function(x){return x.status==='pending' && x._kind==='feedback';}).length;
   return '<div class="bus-page-head"><div><h2>Review Center</h2><p class="muted">A clear overview of incoming information. Open the relevant section to review each request type; nothing here is a booking queue.</p></div><button class="btn" data-act="community-refresh">Refresh all</button></div>'+
