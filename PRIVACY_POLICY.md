@@ -50,7 +50,7 @@ We use **Supabase** for the database and backend functions that store submission
 Short-term backups kept by our service provider may hold deleted data for a limited time. Information may be kept longer where needed to resolve a dispute, protect against abuse, or comply with law.
 
 ## 8. Your choices and deletion requests
-You may ask us to correct or delete the information you submitted, or to remove your number from a published operator listing. Use **Feedback → Delete my data** in the app (a mobile number and enough details to identify the information are required), or email [support@bustime.example](mailto:support@bustime.example). We may contact you to verify the request. We aim to reply within 30 days. Because there are no user accounts in Bustime, there is no account to close.
+You may ask us to correct or delete the information you submitted, or to remove your number from a published operator listing. Use **Feedback → Delete my data** in the app (a mobile number and enough details to identify the information are required), or email [Amarjeet.maan15@gmail.com](mailto:Amarjeet.maan15@gmail.com). We may contact you to verify the request. We aim to reply within 30 days. Because there are no user accounts in Bustime, there is no account to close.
 
 ## 9. App permissions and security
 **Permissions:** Bustime asks only for permission to use the internet and to check whether the network is available. It does not request access to your location, contacts, camera, microphone, photos, files, calendar, call logs, SMS or phone state. The Google AdMob SDK may use the Android advertising ID (a standard Google Play services identifier that you can reset or delete in Android settings).
@@ -64,7 +64,7 @@ Bustime is a general public transport information app, designed for people aged 
 We may update this policy when the app, backend services, advertising or the law change. The date above will be revised, and material changes will also be shown in the app.
 
 ## 12. Contact and grievances
-Developer: Amarjeet Maan, India. For questions, complaints, corrections or deletion requests, email [support@bustime.example](mailto:support@bustime.example) or use **Feedback** inside Bustime. The terms of use are shown in the app when you first open it.
+Developer: Amarjeet Maan, India. For questions, complaints, corrections or deletion requests, email [Amarjeet.maan15@gmail.com](mailto:Amarjeet.maan15@gmail.com) or use **Feedback** inside Bustime. The terms of use are shown in the app when you first open it.
 
 ## 13. Applicable law
 This policy is intended to operate consistently with the laws of India, including the Information Technology Act, 2000 and the Digital Personal Data Protection Act, 2023. Nothing here removes rights or obligations that cannot legally be excluded.
